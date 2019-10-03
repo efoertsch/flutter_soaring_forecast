@@ -1,7 +1,7 @@
 
 ///  Generated via https://javiercbk.github.io/json_to_dart/ fron soargbsc.com/rasp/current.json
-/// Note need to remove subsequent regions (e.g. Mifflin) after first (e.g. NewEngland) for generator
-///  to successfully gen output\\
+/// If you need to regen you will need to remove subsequent regions (e.g. Mifflin) after first (e.g. NewEngland) for generator
+///  to successfully gen output (as of 10/2/19)
 ///  Somewhat confusingly - changed lower 'Regions' class to Region and updated List<Regions> to List<Region>, etc
 
 class Regions {
