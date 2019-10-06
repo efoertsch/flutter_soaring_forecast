@@ -1,6 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast/rasp.dart';
+import 'package:logging/logging.dart';
 
-void main() => runApp(MyApp());
+
+void main() {
+  _setUpLoggin();
+  runApp(MyApp());
+}
+
+void _setUpLoggin(){
+  Logger.root.level = Level.ALL;
+  Logger.root.onRecord.listen((rec){
+    print ('${rec.level.name}: ${rec.time}: ${rec.message}');
+  });
+
+}
+
 
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
@@ -14,128 +29,10 @@ class MyApp extends StatelessWidget {
           primarySwatch: Colors.blue,
           primaryColor: Colors.blue,
         ),
-        home: RaspLayout());
+        home: RaspPage()
+    );
   }
 }
 
-class RaspLayout extends StatefulWidget {
-  @override
-  RaspLayoutState createState() => RaspLayoutState();
-}
-
-class RaspLayoutState extends State<RaspLayout> {
-  var _forecastModels = ["GFS", "NAM", "RAP"];
-  var _forecastDates = [
-    "Weds. Oct 2",
-    "Thurs. Oct 3",
-    "Fri. Oct 4",
-    'Sat. Oct 5'
-  ];
-
-  var selectedForecastModel;
-  var selectedForecastDate;
-
-  @override
-  Widget build(BuildContext context) {
-    selectedForecastModel = _forecastModels[0];
-    selectedForecastDate = _forecastDates[0];
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('RASP'),
-        actions: <Widget>[
-          IconButton(icon: Icon(Icons.list),
-              onPressed: null),
-        ],
-      ),
-      body: _forecastLayout(),
-    );
-  }
-
-  Widget _forecastLayout() {
-    return Column(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-      getForecastModels(),
-    ]);
-  }
-
-  Widget getForecastModels() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        forecastModelDropDownList(),
-        forecastDatesDropDownList(),
-      ],
-    );
-  }
 
 
-
-  Widget forecastModelDropDownList() {
-    return DropdownButton<String>(
-      value: selectedForecastModel,
-      //icon: Icon(Icons.arrow_downward),
-      iconSize: 24,
-      elevation: 16,
-      style: TextStyle(color: Colors.deepPurple),
-      underline: Container(
-        height: 2,
-        color: Colors.deepPurpleAccent,
-      ),
-      onChanged: (String newValue) {
-        setState(() {
-          selectedForecastModel = newValue;
-        });
-      },
-      items: _forecastModels.map<DropdownMenuItem<String>>((String value) {
-        return DropdownMenuItem<String>(
-          value: value,
-          child: Text(value),
-        );
-      }).toList(),
-    );
-  }
-
-   Widget forecastDatesDropDownList() {
-    return DropdownButton<String>(
-      value: selectedForecastDate,
-      icon: Icon(Icons.arrow_downward),
-//      iconSize: 24,
-//      elevation: 16,
-//      style: TextStyle(color: Colors.deepPurple),
-//      underline: Container(
-//        height: 2,
-//        color: Colors.deepPurpleAccent,
-//      ),
-      onChanged: (String newValue) {
-        setState(() {
-          selectedForecastModel = newValue;
-        });
-      },
-      items: _forecastDates.map<DropdownMenuItem<String>>((String value) {
-        return DropdownMenuItem<String>(
-          value: value,
-          child: Text(value),
-        );
-      }).toList(),
-    );
-  }
-
-  Widget _forecastDatesDropDownList() {
-    return DropdownButton<String>(
-        value: selectedForecastDate,
-        icon: Icon(Icons.arrow_downward),
-      onChanged: (String newValue) {
-        setState(() {
-          selectedForecastModel = newValue;
-        });
-      },
-      items: _forecastDates.map<DropdownMenuItem<String>>((String value) {
-        return DropdownMenuItem<String>(
-          value: value,
-          child: Text(value),
-        );
-      }).toList(),
-    );
-
-  }
-
-}

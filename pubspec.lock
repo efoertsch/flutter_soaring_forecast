@@ -8,6 +8,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.36.4"
+  analyzer_plugin:
+    dependency: transitive
+    description:
+      name: analyzer_plugin
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.1.0"
   args:
     dependency: transitive
     description:
@@ -79,9 +86,16 @@ packages:
     source: hosted
     version: "4.2.2"
   built_value:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: built_value
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "6.7.1"
+  built_value_generator:
+    dependency: "direct dev"
+    description:
+      name: built_value_generator
       url: "https://pub.dartlang.org"
     source: hosted
     version: "6.7.1"
@@ -99,6 +113,20 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.0.2"
+  chopper:
+    dependency: "direct main"
+    description:
+      name: chopper
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "2.5.3"
+  chopper_generator:
+    dependency: "direct dev"
+    description:
+      name: chopper_generator
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "2.5.0"
   code_builder:
     dependency: transitive
     description:
@@ -194,7 +222,7 @@ packages:
     source: hosted
     version: "0.14.0+3"
   http:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: http
       url: "https://pub.dartlang.org"
@@ -229,19 +257,12 @@ packages:
     source: hosted
     version: "0.6.1+1"
   json_annotation:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: json_annotation
       url: "https://pub.dartlang.org"
     source: hosted
     version: "3.0.0"
-  json_serializable:
-    dependency: "direct main"
-    description:
-      name: json_serializable
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "3.2.2"
   kernel:
     dependency: transitive
     description:
@@ -312,6 +333,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.4.0"
+  provider:
+    dependency: "direct main"
+    description:
+      name: provider
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "3.1.0"
   pub_semver:
     dependency: transitive
     description:
