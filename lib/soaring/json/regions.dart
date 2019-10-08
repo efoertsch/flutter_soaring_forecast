@@ -1,19 +1,8 @@
 
+import 'package:flutter_soaring_forecast/soaring/json/forecast_models.dart';
 import 'package:json_annotation/json_annotation.dart';
-import 'package:retrofit/retrofit.dart';
-import 'package:dio/dio.dart';
-
 
 part 'regions.g.dart';
-
-@RestApi(baseUrl: "https://soargbsc.com/rasp/")
-abstract class RaspClient {
-  factory RaspClient(Dio dio) = _RaspClient;
-
-  @GET("current.json")
-  Future<Regions> getRegions();
-}
-
 
 ///  Generated via https://javiercbk.github.io/jsontodart/ fron soargbsc.com/rasp/current.json
 /// If you need to regen you will need to remove subsequent regions (e.g. Mifflin) after first (e.g. NewEngland) for generator
@@ -40,6 +29,23 @@ class Region {
   String name;
   List<String> printDates;
   List<Soundings> soundings;
+  // list of models for each printDate in printDates
+  // must be added in same order as printDates
+  // OK, just a bit convoluted/confusing
+  List<ForecastModels> forecastModels;
+
+  addForecastModel(ForecastModels forecastModels){
+    this.forecastModels.add(forecastModels);
+  }
+
+  clearForecastModels(){
+    forecastModels.clear();
+  }
+
+  ForecastModels getForecastModel(int i){
+    return (forecastModels != null && i < forecastModels.length)  ? forecastModels[i] : null ;
+
+  }
 
   Region({this.dates, this.name , this.printDates, this.soundings
   });

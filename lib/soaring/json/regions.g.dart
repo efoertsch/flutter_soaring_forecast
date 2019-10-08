@@ -34,7 +34,10 @@ Region _$RegionFromJson(Map<String, dynamic> json) {
         ?.map((e) =>
             e == null ? null : Soundings.fromJson(e as Map<String, dynamic>))
         ?.toList(),
-  );
+  )..forecastModels = (json['forecastModels'] as List)
+      ?.map((e) =>
+          e == null ? null : ForecastModels.fromJson(e as Map<String, dynamic>))
+      ?.toList();
 }
 
 Map<String, dynamic> _$RegionToJson(Region instance) => <String, dynamic>{
@@ -42,6 +45,7 @@ Map<String, dynamic> _$RegionToJson(Region instance) => <String, dynamic>{
       'name': instance.name,
       'printDates': instance.printDates,
       'soundings': instance.soundings,
+      'forecastModels': instance.forecastModels,
     };
 
 Soundings _$SoundingsFromJson(Map<String, dynamic> json) {
@@ -69,35 +73,3 @@ Map<String, dynamic> _$AirspaceToJson(Airspace instance) => <String, dynamic>{
       'baseUrl': instance.baseUrl,
       'files': instance.files,
     };
-
-// **************************************************************************
-// RetrofitGenerator
-// **************************************************************************
-
-class _RaspClient implements RaspClient {
-  _RaspClient(this._dio) {
-    ArgumentError.checkNotNull(_dio, '_dio');
-  }
-
-  final Dio _dio;
-
-  final String baseUrl = 'https://soargbsc.com/rasp/';
-
-  @override
-  getRegions() async {
-    const _extra = <String, dynamic>{};
-    final queryParameters = <String, dynamic>{};
-    final _data = <String, dynamic>{};
-    final Response<Map<String, dynamic>> _result = await _dio.request(
-        'current.json',
-        queryParameters: queryParameters,
-        options: RequestOptions(
-            method: 'GET',
-            headers: <String, dynamic>{},
-            extra: _extra,
-            baseUrl: baseUrl),
-        data: _data);
-    final value = Regions.fromJson(_result.data);
-    return Future.value(value);
-  }
-}

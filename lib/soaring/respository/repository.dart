@@ -1,7 +1,7 @@
-import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart';
+import 'package:flutter_soaring_forecast/soaring/json/forecast_models.dart';
+import 'package:flutter_soaring_forecast/soaring/json/rasp_api.dart';
 import 'package:flutter_soaring_forecast/soaring/json/regions.dart';
 
 class Repository {
@@ -22,10 +22,22 @@ class Repository {
     return repository;
   }
 
-  //  get the list of forecast regions (e.g. NewEngland, Mifflin) and forecast dates, etc for each region
-  Future<Regions> getCurrentJson() async {
-    return raspClient.getRegions();
+  ///  get the list of available forecast regions (e.g. NewEngland, Mifflin) and forecast dates, etc for each region
+  Future<Regions> getRegions() {
+    return  raspClient.getRegions();
   }
+
+
+  getForecastModels(Region region) async {
+    region.clearForecastModels();
+    for (String printDate in region.printDates) {
+      ForecastModels forecastModels = await raspClient.getForecastModels(
+          region.name, printDate);
+      region.addForecastModel(forecastModels);
+    }
+
+  }
+
 
   dispose(){
     // what do I need to do here
