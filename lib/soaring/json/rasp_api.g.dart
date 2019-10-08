@@ -9,21 +9,27 @@ part of 'rasp_api.dart';
 class _RaspClient implements RaspClient {
   _RaspClient(this._dio) {
     ArgumentError.checkNotNull(_dio, '_dio');
-    _dio.options.baseUrl = 'https://soargbsc.com/rasp/';
   }
 
   final Dio _dio;
+
+  final String baseUrl = 'https://soargbsc.com/rasp/';
 
   @override
   getRegions() async {
     const _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
-    const _data = null;
-    final _result = await _dio.request('current.json',
+    final _data = <String, dynamic>{};
+    final Response<Map<String, dynamic>> _result = await _dio.request(
+        'current.json',
         queryParameters: queryParameters,
-        options: RequestOptions(method: 'GET', headers: {}, extra: _extra),
+        options: RequestOptions(
+            method: 'GET',
+            headers: <String, dynamic>{},
+            extra: _extra,
+            baseUrl: baseUrl),
         data: _data);
-    var value = Regions.fromJson(_result.data);
+    final value = Regions.fromJson(_result.data);
     return Future.value(value);
   }
 
@@ -33,12 +39,17 @@ class _RaspClient implements RaspClient {
     ArgumentError.checkNotNull(date, 'date');
     const _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
-    const _data = null;
-    final _result = await _dio.request('/rasp/$region/$date/status.json',
+    final _data = <String, dynamic>{};
+    final Response<Map<String, dynamic>> _result = await _dio.request(
+        '$region/$date/status.json',
         queryParameters: queryParameters,
-        options: RequestOptions(method: 'GET', headers: {}, extra: _extra),
+        options: RequestOptions(
+            method: 'GET',
+            headers: <String, dynamic>{},
+            extra: _extra,
+            baseUrl: baseUrl),
         data: _data);
-    var value = ForecastModels.fromJson(_result.data);
+    final value = ForecastModels.fromJson(_result.data);
     return Future.value(value);
   }
 }

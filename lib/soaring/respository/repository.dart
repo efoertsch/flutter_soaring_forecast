@@ -17,24 +17,26 @@ class Repository {
       repository = Repository._();
       _context = context;
       dio.interceptors.add(LogInterceptor(responseBody: true));
+      dio.options.receiveTimeout = 300000;
       raspClient = new RaspClient(dio);
     }
     return repository;
   }
 
   ///  get the list of available forecast regions (e.g. NewEngland, Mifflin) and forecast dates, etc for each region
-  Future<Regions> getRegions() {
+  Future<Regions> getRegions()  async {
     return  raspClient.getRegions();
   }
 
 
-  getForecastModels(Region region) async {
+  Future<Region> getForecastModels(Region region) async {
     region.clearForecastModels();
-    for (String printDate in region.printDates) {
+    for (String date in region.dates) {
       ForecastModels forecastModels = await raspClient.getForecastModels(
-          region.name, printDate);
+          region.name, date);
       region.addForecastModel(forecastModels);
     }
+    return new Future<Region>.value(region);
 
   }
 

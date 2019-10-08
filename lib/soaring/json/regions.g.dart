@@ -34,10 +34,7 @@ Region _$RegionFromJson(Map<String, dynamic> json) {
         ?.map((e) =>
             e == null ? null : Soundings.fromJson(e as Map<String, dynamic>))
         ?.toList(),
-  )..forecastModels = (json['forecastModels'] as List)
-      ?.map((e) =>
-          e == null ? null : ForecastModels.fromJson(e as Map<String, dynamic>))
-      ?.toList();
+  );
 }
 
 Map<String, dynamic> _$RegionToJson(Region instance) => <String, dynamic>{
@@ -45,7 +42,6 @@ Map<String, dynamic> _$RegionToJson(Region instance) => <String, dynamic>{
       'name': instance.name,
       'printDates': instance.printDates,
       'soundings': instance.soundings,
-      'forecastModels': instance.forecastModels,
     };
 
 Soundings _$SoundingsFromJson(Map<String, dynamic> json) {

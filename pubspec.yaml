@@ -18,12 +18,12 @@ environment:
 
 dependencies:
 
-  #dio: 2.2.2
+  dio: 2.1.16
   json_serializable: ^3.2.2
   json_annotation: 3.0.0
-  retrofit: 1.0.1
+  retrofit: 0.6.3
   logger: 0.7.0  #for logging purpose
-  provider: 3.1.0
+  #provider: 3.1.0
 
 
   flutter:
@@ -36,7 +36,7 @@ dependencies:
 
 dev_dependencies:
 
-  retrofit_generator: any
+  retrofit_generator: 0.6.3
   build_runner: any
 
   flutter_test:

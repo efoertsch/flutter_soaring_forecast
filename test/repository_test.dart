@@ -7,20 +7,22 @@ void main() {
 
   Repository repository = Repository(null);
 
-  getPrintDatesForFirstRegion(Region region) async {
-    await repository.getForecastModels(region) ;
-    expect(region.forecastModels.length , region.printDates.length);
-
-  }
-
   test("Get current.json", () async {
     repository.getRegions().then(expectAsync1(
             (regions) =>
-               expect(regions.regions.length,2)
-                 //print("Regions: ${regions.regions.length}")
+               //expect(regions.regions.length,2)
+                 print("Regions: ${regions.regions.length}")
             ))
         ;
   });
+
+
+  getPrintDatesForFirstRegion(Region region) async {
+    print("getting modelforecasts for ${region.name}");
+    repository.getForecastModels(region).then(expectAsync1((region) =>
+       expect(region.forecastModels.length , region.printDates.length)
+    ));
+  }
 
   test("Get forecastModels for each printdate in region", () async {
     repository.getRegions().then(expectAsync1(

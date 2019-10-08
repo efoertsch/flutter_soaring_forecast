@@ -13,6 +13,6 @@ abstract class RaspClient {
   @GET("current.json")
   Future<Regions> getRegions();
 
-  @GET("/rasp/{region}/{date}/status.json")
+  @GET("{region}/{date}/status.json")
   Future<ForecastModels> getForecastModels(@Path("region") String region, @Path("date") String date);
 }

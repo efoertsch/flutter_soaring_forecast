@@ -32,7 +32,8 @@ class Region {
   // list of models for each printDate in printDates
   // must be added in same order as printDates
   // OK, just a bit convoluted/confusing
-  List<ForecastModels> forecastModels;
+  @JsonKey(ignore: true)
+  List<ForecastModels> forecastModels = List();
 
   addForecastModel(ForecastModels forecastModels){
     this.forecastModels.add(forecastModels);
