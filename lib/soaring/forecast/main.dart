@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_soaring_forecast/soaring/forecast/rasp_layout.dart';
 import 'package:flutter_soaring_forecast/soaring/respository/repository.dart';
+import 'package:flutter_soaring_forecast/soaring/values/strings.dart';
 import 'package:provider/provider.dart';
+
+import 'main_screen.dart';
 
 void main() => runApp(MyApp());
 
@@ -11,16 +13,15 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Provider(
-      builder: (_) => Repository(context),
-      dispose: (context, value) => value.dispose(),
-      child:   MaterialApp(
-        title: 'SoaringForecast',
-        theme: ThemeData(
-          // brightness: Brightness.dark,
-          primarySwatch: Colors.blue,
-          primaryColor: Colors.blue,
-        ),
-        home: RaspLayout()));
-
+        builder: (_) => Repository(context),
+        dispose: (context, value) => value.dispose(),
+        child: MaterialApp(
+            title: Strings.appTitle,
+            theme: ThemeData(
+              // brightness: Brightness.dark,
+              primarySwatch: Colors.blue,
+              primaryColor: Colors.blue,
+            ),
+            home: MainScreen()));
   }
 }

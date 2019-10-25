@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_soaring_forecast/soaring/bloc/bloc_provider.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast/rasp_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/json/regions.dart';
 import 'package:flutter_soaring_forecast/soaring/respository/repository.dart';
 import 'package:provider/provider.dart';
 
-class RaspLayout extends StatefulWidget {
-  @override
-  RaspLayoutState createState() => RaspLayoutState();
-}
-
-class RaspLayoutState extends State<RaspLayout> {
+class RaspScreen extends StatelessWidget {
   var _forecastModels = ["GFS", "NAM", "RAP"];
   var _forecastDates = [
     "Weds. Oct 2",
@@ -17,8 +14,8 @@ class RaspLayoutState extends State<RaspLayout> {
     'Sat. Oct 5'
   ];
 
-  var Repository repository;
-  var Regions regions;
+  Repository repository;
+  Regions regions;
 
   var selectedForecastModel;
   var selectedForecastDate;
@@ -26,20 +23,20 @@ class RaspLayoutState extends State<RaspLayout> {
   @override
   Widget build(BuildContext context) {
     repository = Provider.of<Repository>(context);
-    getRegions();
 
-    selectedForecastModel =  _forecastModels[0];
+    selectedForecastModel = _forecastModels[0];
     selectedForecastDate = _forecastDates[0];
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('RASP'),
-        actions: <Widget>[
-          IconButton(icon: Icon(Icons.list),
-              onPressed: null),
-        ],
-      ),
-      body: _forecastLayout(),
-    );
+    return BlocProvider<RaspBloc>(
+        bloc: RaspBloc(),
+        child: Scaffold(
+          appBar: AppBar(
+            title: Text('RASP'),
+            actions: <Widget>[
+              IconButton(icon: Icon(Icons.list), onPressed: null),
+            ],
+          ),
+          body: _forecastLayout(),
+        ));
   }
 
   Widget _forecastLayout() {
@@ -58,7 +55,6 @@ class RaspLayoutState extends State<RaspLayout> {
     );
   }
 
-
   Widget forecastModelDropDownList() {
     return DropdownButton<String>(
       value: selectedForecastModel,
@@ -71,9 +67,9 @@ class RaspLayoutState extends State<RaspLayout> {
         color: Colors.deepPurpleAccent,
       ),
       onChanged: (String newValue) {
-        setState(() {
-          selectedForecastModel = newValue;
-        });
+//        setState(() {
+//          selectedForecastModel = newValue;
+//        });
       },
       items: _forecastModels.map<DropdownMenuItem<String>>((String value) {
         return DropdownMenuItem<String>(
@@ -96,9 +92,9 @@ class RaspLayoutState extends State<RaspLayout> {
 //        color: Colors.deepPurpleAccent,
 //      ),
       onChanged: (String newValue) {
-        setState(() {
-          selectedForecastModel = newValue;
-        });
+//        setState(() {
+//          selectedForecastModel = newValue;
+//        });
       },
       items: _forecastDates.map<DropdownMenuItem<String>>((String value) {
         return DropdownMenuItem<String>(
@@ -107,37 +103,5 @@ class RaspLayoutState extends State<RaspLayout> {
         );
       }).toList(),
     );
-  }
-
-  Widget _forecastDatesDropDownList() {
-    return DropdownButton<String>(
-      value: selectedForecastDate,
-      icon: Icon(Icons.arrow_downward),
-      onChanged: (String newValue) {
-        setState(() {
-          selectedForecastModel = newValue;
-        });
-      },
-      items: _forecastDates.map<DropdownMenuItem<String>>((String value) {
-        return DropdownMenuItem<String>(
-          value: value,
-          child: Text(value),
-        );
-      }).toList(),
-    );
-  }
-
-  void getRegions() async  {
-    try {
-      regions = await repository.getRegions();
-      var region = regions?.regions[1];
-      var dates = region.printDates;
-      printDates.
-
-      selectedForecastModel = region.printDates;
-
-  } catch (Exception e){
-      // do something
-    }
   }
 }

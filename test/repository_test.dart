@@ -26,7 +26,7 @@ void main() {
 
   test("Get forecastModels for each printdate in region", () async {
     repository.getRegions().then(expectAsync1(
-            (regions) => getPrintDatesForFirstRegion(regions.regions[1])
+            (regions) => getPrintDatesForFirstRegion(regions.regions[0])
     ));
   });
 

@@ -1,5 +1,5 @@
-
 import 'dart:convert';
+
 import 'package:json_annotation/json_annotation.dart';
 
 part 'forecast_models.g.dart';
@@ -8,7 +8,8 @@ part 'forecast_models.g.dart';
 /// Gen'ed Dart code from JSON string via using https://app.quicktype.io/
 /// Then dart code modified for generator
 
-ForecastModels forecastModelsFromJson(String str) => ForecastModels.fromJson(json.decode(str));
+ForecastModels forecastModelsFromJson(String str) =>
+    ForecastModels.fromJson(json.decode(str));
 
 String forecastModelsToJson(ForecastModels data) => json.encode(data.toJson());
 
@@ -20,9 +21,17 @@ class ForecastModels {
     this.models,
   });
 
-  factory ForecastModels.fromJson(Map<String, dynamic> json) => _$ForecastModelsFromJson(json);
-  Map<String, dynamic> toJson() =>_$ForecastModelsToJson(this);
+  List<String> getModelNames() {
+    var modelNames = List<String>();
+    for (Model model in models) {
+      modelNames.add(model.name);
+    }
+    return modelNames;
+  }
 
+  factory ForecastModels.fromJson(Map<String, dynamic> json) =>
+      _$ForecastModelsFromJson(json);
+  Map<String, dynamic> toJson() => _$ForecastModelsToJson(this);
 }
 
 @JsonSerializable()
@@ -41,5 +50,4 @@ class Model {
 
   factory Model.fromJson(Map<String, dynamic> json) => _$ModelFromJson(json);
   Map<String, dynamic> toJson() => _$ModelToJson(this);
-
 }

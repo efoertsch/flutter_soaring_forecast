@@ -5,6 +5,7 @@ import 'package:flutter_soaring_forecast/soaring/json/rasp_api.dart';
 import 'package:flutter_soaring_forecast/soaring/json/regions.dart';
 
 class Repository {
+  // Hmmm. How to make this only available via static gettter
   static Repository repository;
   static Dio dio = Dio();
   static BuildContext _context;
@@ -24,24 +25,26 @@ class Repository {
   }
 
   ///  get the list of available forecast regions (e.g. NewEngland, Mifflin) and forecast dates, etc for each region
-  Future<Regions> getRegions()  async {
-    return  raspClient.getRegions();
+  Future<Regions> getRegions() async {
+    return raspClient.getRegions();
   }
-
 
   Future<Region> getForecastModels(Region region) async {
     region.clearForecastModels();
     for (String date in region.dates) {
-      ForecastModels forecastModels = await raspClient.getForecastModels(
-          region.name, date);
-      region.addForecastModel(forecastModels);
+      try {
+        ForecastModels forecastModels =
+            await raspClient.getForecastModels(region.name, date);
+        region.addForecastModel(forecastModels);
+      } catch (error, stackTrace) {
+        region.addForecastModel(ForecastModels());
+        print(stackTrace);
+      }
     }
     return new Future<Region>.value(region);
-
   }
 
-
-  dispose(){
+  dispose() {
     // what do I need to do here
   }
 }

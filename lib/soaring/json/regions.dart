@@ -1,4 +1,3 @@
-
 import 'package:flutter_soaring_forecast/soaring/json/forecast_models.dart';
 import 'package:json_annotation/json_annotation.dart';
 
@@ -17,10 +16,9 @@ class Regions {
 
   Regions({this.initialRegion, this.regions, this.airspace});
 
-  factory Regions.fromJson(Map<String, dynamic> json) => _$RegionsFromJson(json);
+  factory Regions.fromJson(Map<String, dynamic> json) =>
+      _$RegionsFromJson(json);
   Map<String, dynamic> toJson() => _$RegionsToJson(this);
-
-    
 }
 
 @JsonSerializable()
@@ -31,26 +29,33 @@ class Region {
   List<Soundings> soundings;
   // list of models for each printDate in printDates
   // must be added in same order as printDates
-  // OK, just a bit convoluted/confusing
+  // Yeah, just a bit convoluted/confusing
   @JsonKey(ignore: true)
-  List<ForecastModels> forecastModels = List();
+  List<ForecastModels> _forecastModels = List();
 
-  addForecastModel(ForecastModels forecastModels){
-    this.forecastModels.add(forecastModels);
+
+  addForecastModel(ForecastModels forecastModels) {
+    this._forecastModels.add(forecastModels);
   }
 
-  clearForecastModels(){
-    forecastModels.clear();
+  clearForecastModels() {
+    _forecastModels.clear();
   }
 
-  ForecastModels getForecastModel(int i){
-    return (forecastModels != null && i < forecastModels.length)  ? forecastModels[i] : null ;
+  // For the specified index (date) get the list of models
+  List<String> getForecastModelNames(int i) {
+        ForecastModels forecastModels = _forecastModels[i];
 
+
+
+    }
   }
 
-  Region({this.dates, this.name , this.printDates, this.soundings
-  });
+  List<ForecastModels> getForecastModel(int i) {
+    return _forecastModels;
+  }
 
+  Region({this.dates, this.name, this.printDates, this.soundings});
 
   factory Region.fromJson(Map<String, dynamic> json) => _$RegionFromJson(json);
   Map<String, dynamic> toJson() => _$RegionToJson(this);
@@ -64,7 +69,8 @@ class Soundings {
 
   Soundings({this.location, this.longitude, this.latitude});
 
-  factory Soundings.fromJson(Map<String, dynamic> json) => _$SoundingsFromJson(json);
+  factory Soundings.fromJson(Map<String, dynamic> json) =>
+      _$SoundingsFromJson(json);
   Map<String, dynamic> toJson() => _$SoundingsToJson(this);
 }
 
@@ -73,8 +79,9 @@ class Airspace {
   String baseUrl;
   List<String> files;
 
-   Airspace({this.baseUrl, this.files});
+  Airspace({this.baseUrl, this.files});
 
-  factory Airspace.fromJson(Map<String, dynamic> json) => _$AirspaceFromJson(json);
+  factory Airspace.fromJson(Map<String, dynamic> json) =>
+      _$AirspaceFromJson(json);
   Map<String, dynamic> toJson() => _$AirspaceToJson(this);
 }
