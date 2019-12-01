@@ -1,11 +1,25 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_soaring_forecast/soaring/bloc/bloc_provider.dart';
-import 'package:flutter_soaring_forecast/soaring/forecast/rasp_bloc.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_soaring_forecast/soaring/bloc/bloc.dart';
+import 'package:flutter_soaring_forecast/soaring/bloc/regions_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/json/regions.dart';
 import 'package:flutter_soaring_forecast/soaring/respository/repository.dart';
-import 'package:provider/provider.dart';
 
-class RaspScreen extends StatelessWidget {
+class RaspScreen extends StatefulWidget {
+  final BuildContext repositoryContext;
+
+  Repository repository;
+  Regions regions;
+  RegionsBloc _regionsBloc;
+  RaspDataBloc _raspDataBloc;
+
+  RaspScreen({Key key, @required this.repositoryContext}) : super(key: key);
+
+  @override
+  _RaspScreenState createState() => _RaspScreenState();
+}
+
+class _RaspScreenState extends State<RaspScreen> {
   var _forecastModels = ["GFS", "NAM", "RAP"];
   var _forecastDates = [
     "Weds. Oct 2",
@@ -14,29 +28,24 @@ class RaspScreen extends StatelessWidget {
     'Sat. Oct 5'
   ];
 
-  Repository repository;
-  Regions regions;
-
   var selectedForecastModel;
   var selectedForecastDate;
 
   @override
   Widget build(BuildContext context) {
-    repository = Provider.of<Repository>(context);
+    final RaspDataBloc raspDataBloc = BlocProvider.of<RaspDataBloc>(context);
 
     selectedForecastModel = _forecastModels[0];
     selectedForecastDate = _forecastDates[0];
-    return BlocProvider<RaspBloc>(
-        bloc: RaspBloc(),
-        child: Scaffold(
-          appBar: AppBar(
-            title: Text('RASP'),
-            actions: <Widget>[
-              IconButton(icon: Icon(Icons.list), onPressed: null),
-            ],
-          ),
-          body: _forecastLayout(),
-        ));
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('RASP'),
+        actions: <Widget>[
+          IconButton(icon: Icon(Icons.list), onPressed: null),
+        ],
+      ),
+      body: _forecastLayout(),
+    );
   }
 
   Widget _forecastLayout() {

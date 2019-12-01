@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter_soaring_forecast/soaring/bloc/bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/json/regions.dart';
 import 'package:flutter_soaring_forecast/soaring/respository/repository.dart';
 
@@ -16,10 +15,10 @@ import 'package:flutter_soaring_forecast/soaring/respository/repository.dart';
 /// 3. Independent of the above, get the list of forecast types, e.g.
 ///    Thermal Updraft velocity that are(should be) available for each model.
 
-class RaspBloc implements Bloc {
+class RaspBlocOld {
   Repository repository;
 
-  RaspBloc() {
+  RaspBlocOld() {
     repository = Repository.repository;
   }
 
@@ -43,7 +42,7 @@ class RaspBloc implements Bloc {
   /// List of forecast models, e.g. GFS, NAM, ...
   List<String> get forecastModelsList {
     if (_forecastModels == null) {
-      getForecastModelsFromRasp();
+      getForecastModelsFromRasp(_selectedRegion);
     }
     return List<String>();
   }
@@ -90,8 +89,9 @@ class RaspBloc implements Bloc {
     return 'GFS';
   }
 
-  List<String> getForecastModelsFromRasp(String region) async {
-    await repository.getForecastModels(region);
+  Future<Region> getForecastModelsFromRasp(Region region) async {
+    await repository.loadForecastModelsByDateForRegion(region);
+    return new Future<Region>.value(region);
   }
 
   String getSelectedRegionNamePreference() {
@@ -115,7 +115,8 @@ class RaspBloc implements Bloc {
 
   /// For each date, get forecast models for that date
   void getForecastModelsForSelectedRegionDate(Region region) async {
-    _selectedRegion = await repository.getForecastModels(region);
+    _selectedRegion =
+        await repository.loadForecastModelsByDateForRegion(region);
     // get list of models for the first date
     setForecastModels(_selectedRegion.getForecastModelNames(0));
   }

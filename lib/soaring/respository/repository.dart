@@ -29,7 +29,7 @@ class Repository {
     return raspClient.getRegions();
   }
 
-  Future<Region> getForecastModels(Region region) async {
+  Future<Region> loadForecastModelsByDateForRegion(Region region) async {
     region.clearForecastModels();
     for (String date in region.dates) {
       try {

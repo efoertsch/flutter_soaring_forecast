@@ -4,8 +4,8 @@ import 'package:json_annotation/json_annotation.dart';
 part 'regions.g.dart';
 
 ///  Generated via https://javiercbk.github.io/jsontodart/ fron soargbsc.com/rasp/current.json
-/// If you need to regen you will need to remove subsequent regions (e.g. Mifflin) after first (e.g. NewEngland) for generator
-///  to successfully gen output (as of 10/2/19)
+/// As of 10/2/19 if you need to regen you will need to remove subsequent regions (e.g. Mifflin) after first (e.g. NewEngland) for generator
+///  to successfully gen output
 ///  Somewhat confusingly - changed lower 'Regions' class to Region and updated List<Regions> to List<Region>, etc
 
 @JsonSerializable()
@@ -33,7 +33,6 @@ class Region {
   @JsonKey(ignore: true)
   List<ForecastModels> _forecastModels = List();
 
-
   addForecastModel(ForecastModels forecastModels) {
     this._forecastModels.add(forecastModels);
   }
@@ -42,17 +41,19 @@ class Region {
     _forecastModels.clear();
   }
 
-  // For the specified index (date) get the list of models
-  List<String> getForecastModelNames(int i) {
-        ForecastModels forecastModels = _forecastModels[i];
-
-
-
-    }
+  List<ForecastModels> getForecastModels() {
+    return _forecastModels;
   }
 
-  List<ForecastModels> getForecastModel(int i) {
-    return _forecastModels;
+  // For the specified index (date) get the list of models
+  List<String> getForecastModelNames(int i) {
+    return (_forecastModels.length > 0
+        ? _forecastModels[i].getModelNames()
+        : List<String>());
+  }
+
+  ForecastModels getForecastModel(int i) {
+    return _forecastModels[i];
   }
 
   Region({this.dates, this.name, this.printDates, this.soundings});
