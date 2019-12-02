@@ -54,5 +54,6 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
           forecastModelsModels.getModel(0).times,
           forecastModelsModels.getModel(0).times[0]);
     }
+    return null;
   }
 }

@@ -50,7 +50,7 @@ class _RaspScreenState extends State<RaspScreen> {
   String _selectedForecastModel;
   String _selectedForecastDate;
   String _selectedForecastType;
-  String _selectedForecastTime;
+  int _selectedForecastTimeIndex = 0;
 
   // Executed only when class created
   @override
@@ -59,7 +59,7 @@ class _RaspScreenState extends State<RaspScreen> {
     _selectedForecastModel = _forecastModels.first;
     _selectedForecastDate = _forecastDates.first;
     _selectedForecastType = _forecastTypes.first;
-    _selectedForecastTime = _forecastTimes.first;
+    _selectedForecastTimeIndex = 0;
   }
 
   final _scaffoldKey = GlobalKey<ScaffoldState>();
@@ -183,42 +183,66 @@ class _RaspScreenState extends State<RaspScreen> {
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
         Expanded(
-          flex: 2,
+          flex: 3,
           child: Text(' '),
         ),
         Expanded(
-            flex: 1,
-            child: GestureDetector(
-              onTap: () {
-                final snackBar = SnackBar(content: Text("Tap"));
-
-                _scaffoldKey.currentState..showSnackBar(snackBar);
-              },
+          flex: 5,
+          child: Row(children: [
+            Expanded(
+                flex: 1,
+                child: GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      if (--_selectedForecastTimeIndex < 0)
+                        _selectedForecastTimeIndex = _forecastTimes.length - 1;
+                    });
+//                final snackBar = SnackBar(content: Text("Back"));
+//                _scaffoldKey.currentState..showSnackBar(snackBar);
+                  },
+                  child: Text(
+                    '<',
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 30,
+                        color: Colors.blueAccent),
+                  ),
+                )),
+            Expanded(
+              flex: 6,
               child: Text(
-                '<',
-                style: TextStyle(fontWeight: FontWeight.bold),
+                _forecastTimes[_selectedForecastTimeIndex],
+                style: TextStyle(fontSize: 20),
               ),
-            )),
-        Expanded(
-          flex: 5,
-          child: Text(
-            _selectedForecastTime,
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
+            ),
+            Expanded(
+                flex: 1,
+                child: GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      if (++_selectedForecastTimeIndex >
+                          _forecastTimes.length - 1)
+                        _selectedForecastTimeIndex = 0;
+                    });
+//                final snackBar = SnackBar(content: Text("Forward"));
+//                _scaffoldKey.currentState..showSnackBar(snackBar);
+                  },
+                  child: Text(
+                    '>',
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 30,
+                        color: Colors.blueAccent),
+                  ),
+                )),
+          ]),
         ),
         Expanded(
-          flex: 1,
-          child: Text(
-            '>',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-        ),
-        Expanded(
-          flex: 5,
+          flex: 3,
           child: Text(
             'Pause',
             textAlign: TextAlign.end,
-            style: TextStyle(fontWeight: FontWeight.bold),
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
           ),
         ),
       ],
