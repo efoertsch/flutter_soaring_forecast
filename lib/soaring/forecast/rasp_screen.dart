@@ -28,15 +28,29 @@ class _RaspScreenState extends State<RaspScreen> {
     'Sat. Oct 5'
   ];
 
-  var selectedForecastModel;
-  var selectedForecastDate;
+  var _forecastTypes = [
+    "Thermal Updraft Velocity & B/S Ratio",
+    "Thermal Updraft Velocity (W*)",
+    "Buoyancy/Shear Ratio"
+  ];
+
+  String _selectedForecastModel;
+  String _selectedForecastDate;
+  String _selectedForecastType;
+
+  // Executed only when class created
+  @override
+  void initState() {
+    super.initState();
+    _selectedForecastModel = _forecastModels.first;
+    _selectedForecastDate = _forecastDates.first;
+    _selectedForecastType = _forecastTypes.first;
+  }
 
   @override
   Widget build(BuildContext context) {
     final RaspDataBloc raspDataBloc = BlocProvider.of<RaspDataBloc>(context);
 
-    selectedForecastModel = _forecastModels[0];
-    selectedForecastDate = _forecastDates[0];
     return Scaffold(
       appBar: AppBar(
         title: Text('RASP'),
@@ -49,36 +63,48 @@ class _RaspScreenState extends State<RaspScreen> {
   }
 
   Widget _forecastLayout() {
-    return Column(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-      getForecastModels(),
-    ]);
+    return Padding(
+        padding: EdgeInsets.all(8.0),
+        child: Column(mainAxisAlignment: MainAxisAlignment.start, children: [
+          getForecastModelsAndDates(),
+          getForecastTypes(),
+        ]));
   }
 
-  Widget getForecastModels() {
+  Widget getForecastModelsAndDates() {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      mainAxisAlignment: MainAxisAlignment.start,
       children: [
-        forecastModelDropDownList(),
-        forecastDatesDropDownList(),
+        Expanded(
+          flex: 3,
+          child: forecastModelDropDownList(),
+        ),
+        Expanded(
+            flex: 7,
+            child: Padding(
+              padding: EdgeInsets.only(left: 16.0),
+              child: forecastDatesDropDownList(),
+            )),
       ],
     );
   }
 
   Widget forecastModelDropDownList() {
     return DropdownButton<String>(
-      value: selectedForecastModel,
+      value: _selectedForecastModel,
+      isExpanded: true,
       //icon: Icon(Icons.arrow_downward),
       iconSize: 24,
       elevation: 16,
-      style: TextStyle(color: Colors.deepPurple),
-      underline: Container(
-        height: 2,
-        color: Colors.deepPurpleAccent,
-      ),
+      //style: TextStyle(color: Colors.deepPurple),
+//      underline: Container(
+//        height: 2,
+//        //color: Colors.deepPurpleAccent,
+//      ),
       onChanged: (String newValue) {
-//        setState(() {
-//          selectedForecastModel = newValue;
-//        });
+        setState(() {
+          _selectedForecastModel = newValue;
+        });
       },
       items: _forecastModels.map<DropdownMenuItem<String>>((String value) {
         return DropdownMenuItem<String>(
@@ -91,8 +117,9 @@ class _RaspScreenState extends State<RaspScreen> {
 
   Widget forecastDatesDropDownList() {
     return DropdownButton<String>(
-      value: selectedForecastDate,
-      icon: Icon(Icons.arrow_downward),
+      isExpanded: true,
+      value: _selectedForecastDate,
+      //icon: Icon(Icons.arrow_downward),
 //      iconSize: 24,
 //      elevation: 16,
 //      style: TextStyle(color: Colors.deepPurple),
@@ -101,11 +128,30 @@ class _RaspScreenState extends State<RaspScreen> {
 //        color: Colors.deepPurpleAccent,
 //      ),
       onChanged: (String newValue) {
-//        setState(() {
-//          selectedForecastModel = newValue;
-//        });
+        setState(() {
+          _selectedForecastDate = newValue;
+        });
       },
       items: _forecastDates.map<DropdownMenuItem<String>>((String value) {
+        return DropdownMenuItem<String>(
+          value: value,
+          child: Text(value),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget getForecastTypes() {
+    return DropdownButton<String>(
+      isExpanded: true,
+      value: _selectedForecastType,
+      //icon: Icon(Icons.arrow_downward),
+      onChanged: (String newValue) {
+        setState(() {
+          _selectedForecastType = newValue;
+        });
+      },
+      items: _forecastTypes.map<DropdownMenuItem<String>>((String value) {
         return DropdownMenuItem<String>(
           value: value,
           child: Text(value),
