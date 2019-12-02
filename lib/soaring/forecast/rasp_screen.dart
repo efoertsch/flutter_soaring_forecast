@@ -34,9 +34,23 @@ class _RaspScreenState extends State<RaspScreen> {
     "Buoyancy/Shear Ratio"
   ];
 
+  var _forecastTimes = [
+    "0900(Local)",
+    "1000(Local)",
+    "1100(Local)",
+    "1200(Local)",
+    "1300(Local)",
+    "1400(Local)",
+    "1500(Local)",
+    "1600(Local)",
+    "1700(Local)",
+    "1800(Local)"
+  ];
+
   String _selectedForecastModel;
   String _selectedForecastDate;
   String _selectedForecastType;
+  String _selectedForecastTime;
 
   // Executed only when class created
   @override
@@ -45,21 +59,24 @@ class _RaspScreenState extends State<RaspScreen> {
     _selectedForecastModel = _forecastModels.first;
     _selectedForecastDate = _forecastDates.first;
     _selectedForecastType = _forecastTypes.first;
+    _selectedForecastTime = _forecastTimes.first;
   }
+
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   Widget build(BuildContext context) {
     final RaspDataBloc raspDataBloc = BlocProvider.of<RaspDataBloc>(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('RASP'),
-        actions: <Widget>[
-          IconButton(icon: Icon(Icons.list), onPressed: null),
-        ],
-      ),
-      body: _forecastLayout(),
-    );
+        key: _scaffoldKey,
+        appBar: AppBar(
+          title: Text('RASP'),
+          actions: <Widget>[
+            IconButton(icon: Icon(Icons.list), onPressed: null),
+          ],
+        ),
+        body: _forecastLayout());
   }
 
   Widget _forecastLayout() {
@@ -68,6 +85,7 @@ class _RaspScreenState extends State<RaspScreen> {
         child: Column(mainAxisAlignment: MainAxisAlignment.start, children: [
           getForecastModelsAndDates(),
           getForecastTypes(),
+          displayForecastTimes(),
         ]));
   }
 
@@ -157,6 +175,53 @@ class _RaspScreenState extends State<RaspScreen> {
           child: Text(value),
         );
       }).toList(),
+    );
+  }
+
+  Widget displayForecastTimes() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.start,
+      children: [
+        Expanded(
+          flex: 2,
+          child: Text(' '),
+        ),
+        Expanded(
+            flex: 1,
+            child: GestureDetector(
+              onTap: () {
+                final snackBar = SnackBar(content: Text("Tap"));
+
+                _scaffoldKey.currentState..showSnackBar(snackBar);
+              },
+              child: Text(
+                '<',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            )),
+        Expanded(
+          flex: 5,
+          child: Text(
+            _selectedForecastTime,
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ),
+        Expanded(
+          flex: 1,
+          child: Text(
+            '>',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ),
+        Expanded(
+          flex: 5,
+          child: Text(
+            'Pause',
+            textAlign: TextAlign.end,
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ),
+      ],
     );
   }
 }
