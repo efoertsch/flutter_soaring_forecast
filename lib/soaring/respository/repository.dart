@@ -45,7 +45,6 @@ class Repository {
     return new Future<Region>.value(region);
   }
 
-
   Future<ForecastTypes> getForecastTypes() async {
     /// Retrieves a list of forecast types
     try {
