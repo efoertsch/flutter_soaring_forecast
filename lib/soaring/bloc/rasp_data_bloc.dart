@@ -28,10 +28,9 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     if (event is GetRaspForecastOptions) {
       yield* _mapGetRaspModelToState(event.region);
     }
-    if (event is LoadForecastTypes){
+    if (event is LoadForecastTypes) {
       yield* _getForecastTypes();
     }
-
   }
 
   Stream<RaspDataState> _mapGetRaspModelToState(Region region) async* {
@@ -66,7 +65,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     try {
       ForecastTypes forecastTypes = await this.repository.getForecastTypes();
       yield ForecastTypesLoaded(forecastTypes);
-    } catch(_) {
+    } catch (_) {
       yield null;
     }
   }

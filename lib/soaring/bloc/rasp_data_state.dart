@@ -23,7 +23,7 @@ class RaspDataNotLoaded extends RaspDataState {
   String toString() => 'RaspNotLoaded';
 }
 
-class ForecastTypesLoaded extends RaspDataState{
+class ForecastTypesLoaded extends RaspDataState {
   final ForecastTypes forecastTypes;
   ForecastTypesLoaded(this.forecastTypes);
 }

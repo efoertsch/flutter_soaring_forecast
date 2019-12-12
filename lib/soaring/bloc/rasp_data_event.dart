@@ -1,4 +1,3 @@
-import 'package:flutter_soaring_forecast/soaring/json/forecast_types.dart';
 import 'package:flutter_soaring_forecast/soaring/json/regions.dart';
 
 /// https://medium.com/flutter-community/flutter-bloc-pattern-for-dummies-like-me-c22d40f05a56
@@ -33,12 +32,11 @@ class LoadForecastTypes extends RaspDataEvent {
 }
 
 /// Tell bloc to retrieve the forecast for given parms
-class LoadRaspForecast extends RaspDataEvent{
+class LoadRaspForecast extends RaspDataEvent {
   final String regionName;
   final String forecastModel;
   final String forecastDate;
   final String forecastType;
-  LoadRaspForecast(this.regionName, this.forecastModel, this.forecastDate, this.forecastType);
+  LoadRaspForecast(this.regionName, this.forecastModel, this.forecastDate,
+      this.forecastType);
 }
-
-

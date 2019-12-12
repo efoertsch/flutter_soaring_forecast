@@ -45,11 +45,13 @@ class Repository {
     return new Future<Region>.value(region);
   }
 
+
   Future<ForecastTypes> getForecastTypes() async {
     /// Retrieves a list of forecast types
     try {
       final json = DefaultAssetBundle.of(_context)
           .loadString('assets/json/forecast_options.json');
+      // TODO - why is method hanging here
       ForecastTypes forecastTypes = forecastTypesFromJson(await json);
       return Future<ForecastTypes>.value(forecastTypes);
     } catch (error, stackTrace) {
