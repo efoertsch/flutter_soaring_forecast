@@ -4,6 +4,7 @@ import 'package:bloc/bloc.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_soaring_forecast/soaring/bloc/rasp_data_event.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/rasp_data.dart';
+import 'package:flutter_soaring_forecast/soaring/json/forecast_types.dart';
 import 'package:flutter_soaring_forecast/soaring/json/regions.dart';
 import 'package:flutter_soaring_forecast/soaring/respository/repository.dart';
 
@@ -27,6 +28,10 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     if (event is GetRaspForecastOptions) {
       yield* _mapGetRaspModelToState(event.region);
     }
+    if (event is LoadForecastTypes){
+      yield* _getForecastTypes();
+    }
+
   }
 
   Stream<RaspDataState> _mapGetRaspModelToState(Region region) async* {
@@ -55,5 +60,14 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
           forecastModelsModels.getModel(0).times[0]);
     }
     return null;
+  }
+
+  Stream<RaspDataState> _getForecastTypes() async* {
+    try {
+      ForecastTypes forecastTypes = await this.repository.getForecastTypes();
+      yield ForecastTypesLoaded(forecastTypes);
+    } catch(_) {
+      yield null;
+    }
   }
 }

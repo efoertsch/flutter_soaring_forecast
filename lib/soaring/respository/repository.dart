@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_soaring_forecast/soaring/json/forecast_models.dart';
+import 'package:flutter_soaring_forecast/soaring/json/forecast_types.dart';
 import 'package:flutter_soaring_forecast/soaring/json/rasp_api.dart';
 import 'package:flutter_soaring_forecast/soaring/json/regions.dart';
 
@@ -44,7 +45,20 @@ class Repository {
     return new Future<Region>.value(region);
   }
 
+  Future<ForecastTypes> getForecastTypes() async {
+    /// Retrieves a list of forecast types
+    try {
+      final json = DefaultAssetBundle.of(_context)
+          .loadString('assets/json/forecast_options.json');
+      ForecastTypes forecastTypes = forecastTypesFromJson(await json);
+      return Future<ForecastTypes>.value(forecastTypes);
+    } catch (error, stackTrace) {
+      print(stackTrace);
+      return Future<ForecastTypes>.value(null);
+    }
+  }
+
   dispose() {
-    // what do I need to do here
+    // TODO what do I need to do here?
   }
 }

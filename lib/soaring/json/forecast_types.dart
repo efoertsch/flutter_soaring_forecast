@@ -1,0 +1,98 @@
+// To parse this JSON data, do
+//
+//     final forecastTypes = forecastTypesFromJson(jsonString);
+/// Steps to create class and ...g.dart file
+/// 1. Used assets/json/forecast_options as input to https://app.quicktype.io/
+/// 2. Modified code for generator:
+///    a. Added @JsonSerializable() for each class (except enums) below
+///    b. Add getters as needed for convenience
+
+import 'dart:convert';
+
+import 'package:json_annotation/json_annotation.dart';
+
+part 'forecast_types.g.dart';
+
+ForecastTypes forecastTypesFromJson(String str) =>
+    ForecastTypes.fromJson(json.decode(str));
+
+String forecastTypesToJson(ForecastTypes data) => json.encode(data.toJson());
+
+@JsonSerializable()
+class ForecastTypes {
+  List<Forecast> forecasts;
+
+  ForecastTypes({
+    this.forecasts,
+  });
+
+  factory ForecastTypes.fromJson(Map<String, dynamic> json) => ForecastTypes(
+        forecasts: List<Forecast>.from(
+            json["forecasts"].map((x) => Forecast.fromJson(x))),
+      );
+
+  Map<String, dynamic> toJson() => {
+        "forecasts": List<dynamic>.from(forecasts.map((x) => x.toJson())),
+      };
+}
+
+@JsonSerializable()
+class Forecast {
+  String forecastName;
+  ForecastType forecastType;
+  String forecastNameDisplay;
+  String forecastDescription;
+  ForecastCategory forecastCategory;
+
+  Forecast({
+    this.forecastName,
+    this.forecastType,
+    this.forecastNameDisplay,
+    this.forecastDescription,
+    this.forecastCategory,
+  });
+
+  factory Forecast.fromJson(Map<String, dynamic> json) => Forecast(
+        forecastName: json["forecast_name"],
+        forecastType: forecastTypeValues.map[json["forecast_type"]],
+        forecastNameDisplay: json["forecast_name_display"],
+        forecastDescription: json["forecast_description"],
+        forecastCategory: forecastCategoryValues.map[json["forecast_category"]],
+      );
+
+  Map<String, dynamic> toJson() => {
+        "forecast_name": forecastName,
+        "forecast_type": forecastTypeValues.reverse[forecastType],
+        "forecast_name_display": forecastNameDisplay,
+        "forecast_description": forecastDescription,
+        "forecast_category": forecastCategoryValues.reverse[forecastCategory],
+      };
+}
+
+enum ForecastCategory { THERMAL, WIND, CLOUD, WAVE }
+
+final forecastCategoryValues = EnumValues({
+  "cloud": ForecastCategory.CLOUD,
+  "thermal": ForecastCategory.THERMAL,
+  "wave": ForecastCategory.WAVE,
+  "wind": ForecastCategory.WIND
+});
+
+enum ForecastType { EMPTY, FULL }
+
+final forecastTypeValues =
+    EnumValues({"": ForecastType.EMPTY, "full": ForecastType.FULL});
+
+class EnumValues<T> {
+  Map<String, T> map;
+  Map<T, String> reverseMap;
+
+  EnumValues(this.map);
+
+  Map<T, String> get reverse {
+    if (reverseMap == null) {
+      reverseMap = map.map((k, v) => new MapEntry(v, k));
+    }
+    return reverseMap;
+  }
+}

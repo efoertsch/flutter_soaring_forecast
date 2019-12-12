@@ -7,6 +7,10 @@ abstract class RegionsEvent {}
 // All the events that can trigger getting a rasp forecast
 
 class GetRegions extends RegionsEvent {
-  final Regions regions;
-  GetRegions(this.regions);
+  GetRegions();
+}
+
+class GetRegion extends RegionsEvent {
+  final Region region;
+  GetRegion(this.region);
 }

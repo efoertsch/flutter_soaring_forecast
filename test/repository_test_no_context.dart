@@ -22,4 +22,10 @@ void main() {
     repository.getRegions().then(expectAsync1(
         (regions) => getPrintDatesForFirstRegion(regions.regions[0])));
   });
+
+  test("Get forecast types", () async {
+    repository.getForecastTypes().then(expectAsync1(
+        (forecastTypes) => expect(forecastTypes.forecasts.length, 43)));
+    //print(foreastTypes.toString())))
+  });
 }

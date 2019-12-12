@@ -2,17 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/bloc/bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/bloc/regions_bloc.dart';
+import 'package:flutter_soaring_forecast/soaring/bloc/regions_event.dart';
+import 'package:flutter_soaring_forecast/soaring/bloc/regions_state.dart';
 import 'package:flutter_soaring_forecast/soaring/json/regions.dart';
 import 'package:flutter_soaring_forecast/soaring/respository/repository.dart';
 
 class RaspScreen extends StatefulWidget {
   final BuildContext repositoryContext;
-
   Repository repository;
-  Regions regions;
-  RegionsBloc _regionsBloc;
-  RaspDataBloc _raspDataBloc;
-
   RaspScreen({Key key, @required this.repositoryContext}) : super(key: key);
 
   @override
@@ -20,6 +17,7 @@ class RaspScreen extends StatefulWidget {
 }
 
 class _RaspScreenState extends State<RaspScreen> {
+  //TODO replace with repository api calls
   var _forecastModels = ["GFS", "NAM", "RAP"];
   var _forecastDates = [
     "Weds. Oct 2",
@@ -51,11 +49,21 @@ class _RaspScreenState extends State<RaspScreen> {
   String _selectedForecastDate;
   String _selectedForecastType;
   int _selectedForecastTimeIndex = 0;
+  Regions _regions;
+  Region _region;
+  Region _selectedRegion;
+  RaspDataBloc _raspDataBloc;
+  RegionsBloc _regionsBloc;
 
   // Executed only when class created
   @override
   void initState() {
     super.initState();
+    _regionsBloc = BlocProvider.of<RegionsBloc>(context);
+    _raspDataBloc = BlocProvider.of<RaspDataBloc>(context);
+
+    _regionsBloc.add(GetRegions());
+
     _selectedForecastModel = _forecastModels.first;
     _selectedForecastDate = _forecastDates.first;
     _selectedForecastType = _forecastTypes.first;
@@ -63,21 +71,6 @@ class _RaspScreenState extends State<RaspScreen> {
   }
 
   final _scaffoldKey = GlobalKey<ScaffoldState>();
-
-  @override
-  Widget build(BuildContext context) {
-    final RaspDataBloc raspDataBloc = BlocProvider.of<RaspDataBloc>(context);
-
-    return Scaffold(
-        key: _scaffoldKey,
-        appBar: AppBar(
-          title: Text('RASP'),
-          actions: <Widget>[
-            IconButton(icon: Icon(Icons.list), onPressed: null),
-          ],
-        ),
-        body: _forecastLayout());
-  }
 
   Widget _forecastLayout() {
     return Padding(
@@ -247,5 +240,50 @@ class _RaspScreenState extends State<RaspScreen> {
         ),
       ],
     );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    MultiBlocListener(
+        listeners: [
+          BlocListener<RegionsBloc, RegionsState>(
+            listener: (context, state) {
+              if (state is RegionsLoaded) {
+                _regions = state.regions;
+              } else if (state is RegionLoaded) {
+                _selectedRegion = state.region;
+                _raspDataBloc.add(GetRaspForecastOptions(_selectedRegion));
+              }
+            },
+          ),
+          BlocListener<RaspDataBloc, RaspDataState>(
+            listener: (context, state) {
+              if (state is RaspDataLoaded) {
+                _forecastModels = state.raspData.modelNames;
+                _selectedForecastModel = _forecastModels.first;
+                _forecastDates = state.raspData.forecastDates;
+                _selectedForecastDate = _forecastDates.first;
+              }
+            },
+          ),
+        ],
+        child:
+            BlocBuilder<RegionsBloc, RegionsState>(builder: (context, state) {
+          if (state is RegionsLoading) {
+            return Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+
+          return Scaffold(
+              key: _scaffoldKey,
+              appBar: AppBar(
+                title: Text('RASP'),
+                actions: <Widget>[
+                  IconButton(icon: Icon(Icons.list), onPressed: null),
+                ],
+              ),
+              body: _forecastLayout());
+        }));
   }
 }

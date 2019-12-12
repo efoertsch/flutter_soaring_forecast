@@ -32,6 +32,11 @@ class RegionsBloc extends Bloc<RegionsEvent, RegionsState> {
     // TODO: Add Logic
     if (event is GetRegions) {
       yield* _mapGetRegionsToState();
+      return;
+    }
+    if (event is GetRegion) {
+      yield* _mapGetRegionToState(event);
+      return;
     }
   }
 
@@ -39,8 +44,22 @@ class RegionsBloc extends Bloc<RegionsEvent, RegionsState> {
     try {
       final regions = await this.repository.getRegions();
       yield RegionsLoaded(regions);
+      // TODO - get last regions displayed from repository and if in list of regions
+      // select that one as first to load
+      this.add(GetRegion(regions.regions.first));
     } catch (_) {
       yield RegionsNotLoaded();
+    }
+  }
+
+  Stream<RegionsState> _mapGetRegionToState(GetRegion getRegion) async* {
+    try {
+      final region = await this
+          .repository
+          .loadForecastModelsByDateForRegion(getRegion.region);
+      yield RegionLoaded(region);
+    } catch (_) {
+      yield RegionNotLoaded(getRegion.region.name);
     }
   }
 }
