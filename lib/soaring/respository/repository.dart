@@ -66,7 +66,7 @@ class Repository {
     try {
       final json = DefaultAssetBundle.of(_context)
           .loadString('assets/json/forecast_options.json');
-      // TODO - why is method hanging here
+      // TODO - why is method hanging here in test
       ForecastTypes forecastTypes = forecastTypesFromJson(await json);
       return Future<ForecastTypes>.value(forecastTypes);
     } catch (error, stackTrace) {

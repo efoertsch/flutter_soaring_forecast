@@ -28,16 +28,15 @@ class Region {
   List<String> printDates;
   List<Soundings> soundings;
 
-  // Custom coded field
-  @JsonKey(ignore: true)
-  List<ModelDates> _modelDates = List();
-
   Region({this.dates, this.name, this.printDates, this.soundings});
 
   factory Region.fromJson(Map<String, dynamic> json) => _$RegionFromJson(json);
+
   Map<String, dynamic> toJson() => _$RegionToJson(this);
 
-  //------------- Custom code --------------------------
+  //---------- Custom Code -----------------------
+  @JsonKey(ignore: true)
+  List<ModelDates> _modelDates = List();
 
   void clearRegionModelDates() {
     _modelDates.clear();
@@ -76,11 +75,41 @@ class Region {
     return _modelDates
         .firstWhere(((modelDates) => modelDates.modelName == modelName));
   }
+
+//---------- End Custom Code -----------------------
 }
 
-/// Convenience classes
-///For a model name (e.g. nam), hold the list of dates and details for each date that
-/// a forecast has been created for
+@JsonSerializable()
+class Soundings {
+  String location;
+  String longitude;
+  String latitude;
+
+  Soundings({this.location, this.longitude, this.latitude});
+
+  factory Soundings.fromJson(Map<String, dynamic> json) =>
+      _$SoundingsFromJson(json);
+  Map<String, dynamic> toJson() => _$SoundingsToJson(this);
+}
+
+@JsonSerializable()
+class Airspace {
+  String baseUrl;
+  List<String> files;
+
+  Airspace({this.baseUrl, this.files});
+
+  factory Airspace.fromJson(Map<String, dynamic> json) =>
+      _$AirspaceFromJson(json);
+  Map<String, dynamic> toJson() => _$AirspaceToJson(this);
+}
+
+//------------- Custom code --------------------------
+/// Cutom coded convenience classes
+/// For each model (e.g. gfs, nam, ...) forecasts have been produced for
+///, hold the list of dates and forecast times and lat/long details
+/// Note that this class 'inverts' the web order. Here it is model, dates
+/// whereas web is dates, model
 class ModelDates {
   String modelName;
   List<ModelDateDetails> modelDateDetailList = List();
@@ -110,29 +139,6 @@ class ModelDateDetails {
     this.date = date;
     this.model = model;
   }
-}
 
-@JsonSerializable()
-class Soundings {
-  String location;
-  String longitude;
-  String latitude;
-
-  Soundings({this.location, this.longitude, this.latitude});
-
-  factory Soundings.fromJson(Map<String, dynamic> json) =>
-      _$SoundingsFromJson(json);
-  Map<String, dynamic> toJson() => _$SoundingsToJson(this);
-}
-
-@JsonSerializable()
-class Airspace {
-  String baseUrl;
-  List<String> files;
-
-  Airspace({this.baseUrl, this.files});
-
-  factory Airspace.fromJson(Map<String, dynamic> json) =>
-      _$AirspaceFromJson(json);
-  Map<String, dynamic> toJson() => _$AirspaceToJson(this);
+  //---------- End Custom Code -----------------------
 }

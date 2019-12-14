@@ -4,6 +4,7 @@ import 'package:flutter_soaring_forecast/soaring/bloc/rasp_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/json/forecast_types.dart';
 import 'package:flutter_soaring_forecast/soaring/json/regions.dart';
 import 'package:flutter_soaring_forecast/soaring/respository/repository.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class RaspScreen extends StatefulWidget {
   final BuildContext repositoryContext;
@@ -15,34 +16,6 @@ class RaspScreen extends StatefulWidget {
 }
 
 class _RaspScreenState extends State<RaspScreen> {
-  //TODO replace with repository api calls
-//  var _forecastModels = ["GFS", "NAM", "RAP"];
-//  var _forecastDates = [
-//    "Weds. Oct 2",
-//    "Thurs. Oct 3",
-//    "Fri. Oct 4",
-//    'Sat. Oct 5'
-//  ];
-//
-//  var _forecastTypes = [
-//    "Thermal Updraft Velocity & B/S Ratio",
-//    "Thermal Updraft Velocity (W*)",
-//    "Buoyancy/Shear Ratio"
-//  ];
-//
-//  var _forecastTimes = [
-//    "0900(Local)",
-//    "1000(Local)",
-//    "1100(Local)",
-//    "1200(Local)",
-//    "1300(Local)",
-//    "1400(Local)",
-//    "1500(Local)",
-//    "1600(Local)",
-//    "1700(Local)",
-//    "1800(Local)"
-//  ];
-
   RaspDataBloc _raspDataBloc;
   Region _region;
   List<ModelDates> _modelDates = List();
@@ -94,11 +67,10 @@ class _RaspScreenState extends State<RaspScreen> {
     );
   }
 
+  // Display GFS, NAM, ....
   Widget forecastModelDropDownList() {
     return DropdownButton<String>(
-      value: (_selectedModelDates == null
-          ? "Loading"
-          : _selectedModelDates.modelName),
+      value: (_selectedModelDates.modelName),
       isExpanded: true,
       //icon: Icon(Icons.arrow_downward),
       iconSize: 24,
@@ -107,6 +79,7 @@ class _RaspScreenState extends State<RaspScreen> {
         setState(() {
           _selectedModelDates = _modelDates
               .firstWhere((modelDates) => modelDates.modelName == newValue);
+          updateForecastDates();
         });
       },
       items: _modelDates
@@ -121,6 +94,7 @@ class _RaspScreenState extends State<RaspScreen> {
     );
   }
 
+  // Display forecast dates for selected model (eg. GFS)
   Widget forecastDatesDropDownList() {
     return DropdownButton<String>(
       isExpanded: true,
@@ -128,9 +102,14 @@ class _RaspScreenState extends State<RaspScreen> {
       onChanged: (String newValue) {
         setState(() {
           _selectedForecastDate = newValue;
+          updateForecastTimesList();
         });
       },
-      items: _forecastDates.map<DropdownMenuItem<String>>((String value) {
+      items: _selectedModelDates
+          .getModelDateDetailList()
+          .map((modelDateDetails) => modelDateDetails.printDate)
+          .toList()
+          .map<DropdownMenuItem<String>>((String value) {
         return DropdownMenuItem<String>(
           value: value,
           child: Text(value),
@@ -139,13 +118,11 @@ class _RaspScreenState extends State<RaspScreen> {
     );
   }
 
+  // Display description of forecast types (eq. 'Thermal Updraft Velocity (W*)' for wstar)
   Widget getForecastTypes() {
     return DropdownButton<String>(
       isExpanded: true,
-      value: (_selectedForecast == null
-          ? "Loading"
-          : _selectedForecast.forecastNameDisplay),
-      //icon: Icon(Icons.arrow_downward),
+      value: _selectedForecast.forecastNameDisplay,
       onChanged: (String newValue) {
         setState(() {
           _selectedForecast = _forecasts.firstWhere(
@@ -164,6 +141,7 @@ class _RaspScreenState extends State<RaspScreen> {
     );
   }
 
+  // Display forecast time for model and date
   Widget displayForecastTimes() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.start,
@@ -243,13 +221,7 @@ class _RaspScreenState extends State<RaspScreen> {
         _modelDates = state.region.getModelDates();
       } else if (state is RaspModelDatesSelected) {
         _selectedModelDates = state.modelDates;
-        _forecastDates = _selectedModelDates
-            .getModelDateDetailList()
-            .map((modelDateDetails) => modelDateDetails.printDate)
-            .toList();
-        _forecastTimes =
-            _selectedModelDates.getModelDateDetailList().first.model.times;
-        _selectedForecastTimeIndex = 0;
+        updateForecastDates();
       } else if (state is RaspForecastTypesLoaded) {
         _forecasts = state.forecasts;
         _selectedForecast = _forecasts.first;
@@ -260,7 +232,8 @@ class _RaspScreenState extends State<RaspScreen> {
           _modelDates == null ||
           _selectedModelDates == null ||
           _forecastTimes == null ||
-          _forecasts == null) {
+          _forecasts == null ||
+          _selectedForecast == null) {
         return Center(
           child: CircularProgressIndicator(),
         );
@@ -268,6 +241,7 @@ class _RaspScreenState extends State<RaspScreen> {
 
       return Scaffold(
           key: _scaffoldKey,
+          drawer: getDrawer(context),
           appBar: AppBar(
             title: Text('RASP'),
             actions: <Widget>[
@@ -276,5 +250,160 @@ class _RaspScreenState extends State<RaspScreen> {
           ),
           body: _forecastLayout());
     }));
+  }
+
+  // Dependent on having
+  void updateForecastDates() {
+    _forecastDates = _selectedModelDates
+        .getModelDateDetailList()
+        .map((modelDateDetails) => modelDateDetails.printDate)
+        .toList();
+    // stay on same date if new model has forecast for that date
+    if (!_forecastDates.contains(_selectedForecastDate)) {
+      _selectedForecastDate = _forecastDates.first;
+    }
+    updateForecastTimesList();
+  }
+
+  void updateForecastTimesList() {
+    _forecastTimes = _selectedModelDates
+        .getModelDateDetailList()
+        .firstWhere((modelDateDetails) =>
+            modelDateDetails.printDate == _selectedForecastDate)
+        .model
+        .times;
+    // Stay on same time if new forecastTimes has same time as previous
+    // Making reasonable assumption that times in same order across models/dates
+    if (_selectedForecastTimeIndex > _forecastTimes.length - 1) {
+      _selectedForecastTimeIndex = 0;
+    }
+  }
+
+  Widget getDrawer(BuildContext context) {
+    return Drawer(
+// Add a ListView to the drawer. This ensures the user can scroll
+// through the options in the drawer if there isn't enough vertical
+// space to fit everything.
+      child: ListView(
+// Important: Remove any padding from the ListView.
+        padding: EdgeInsets.zero,
+        children: <Widget>[
+          new SizedBox(
+            height: 120.0,
+            child: DrawerHeader(
+              child: Text(
+                'SoaringForecast',
+                style:
+                    TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+              decoration: BoxDecoration(
+                color: Colors.blue,
+              ),
+            ),
+          ),
+          ListTile(
+            title: Text('Windy'),
+            onTap: () {
+// Update the state of the app
+// ...
+// Then close the drawer
+              Navigator.pop(context);
+            },
+          ),
+          ListTile(
+            title: Text('SkySight'),
+            onTap: () {
+              _launchWebBrowser("https://skysight.io/");
+            },
+          ),
+          ListTile(
+            title: Text('Dr Jacks'),
+            onTap: () {
+              _launchWebBrowser("http://www.drjack.info/BLIP/univiewer.html");
+            },
+          ),
+          ListTile(
+            title: Text('Airport METAR/TAF'),
+            onTap: () {
+// Update the state of the app
+// ...
+// Then close the drawer
+              Navigator.pop(context);
+            },
+          ),
+          ListTile(
+            title: Text('NOAA'),
+            onTap: () {
+// Update the state of the app
+// ...
+// Then close the drawer
+              Navigator.pop(context);
+            },
+          ),
+          ListTile(
+            title: Text('GEOS NE'),
+            onTap: () {
+// Update the state of the app
+// ...
+// Then close the drawer
+              Navigator.pop(context);
+            },
+          ),
+          ListTile(
+            title: Text('Airport List'),
+            onTap: () {
+// Update the state of the app
+// ...
+// Then close the drawer
+              Navigator.pop(context);
+            },
+          ),
+          ListTile(
+            title: Text('Task List'),
+            onTap: () {
+// Update the state of the app
+// ...
+// Then close the drawer
+              Navigator.pop(context);
+            },
+          ),
+          ListTile(
+            title: Text('Import Turnpoints'),
+            onTap: () {
+// Update the state of the app
+// ...
+// Then close the drawer
+              Navigator.pop(context);
+            },
+          ),
+          ListTile(
+            title: Text('Settings'),
+            onTap: () {
+// Update the state of the app
+// ...
+// Then close the drawer
+              Navigator.pop(context);
+            },
+          ),
+          ListTile(
+            title: Text('About'),
+            onTap: () {
+// Update the state of the app
+// ...
+// Then close the drawer
+              Navigator.pop(context);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+void _launchWebBrowser(String url) async {
+  if (await canLaunch(url)) {
+    await launch(url);
+  } else {
+    throw 'Could not launch $url';
   }
 }
