@@ -18,12 +18,17 @@ environment:
 
 dependencies:
 
-  dio: 2.2.2
-  json_serializable: ^3.2.2
+  dio: 2.1.16
+  json_serializable: ^3.2.3
   json_annotation: 3.0.0
-  retrofit: any
+  retrofit: 0.6.3
   logger: 0.7.0  #for logging purpose
-  provider: 3.1.0
+  provider: 3.2.0
+  flutter_bloc: 2.1.1
+  equatable: ^1.0.0
+  webview_flutter: ^0.3.18+1
+  url_launcher: ^5.4.1
+  path_provider: ^1.5.1
 
 
   flutter:
@@ -36,7 +41,7 @@ dependencies:
 
 dev_dependencies:
 
-  retrofit_generator: any
+  retrofit_generator: 0.6.3
   build_runner: any
 
   flutter_test:
@@ -48,6 +53,9 @@ dev_dependencies:
 
 # The following section is specific to Flutter.
 flutter:
+
+  assets:
+    - assets/json/forecast_options.json
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
