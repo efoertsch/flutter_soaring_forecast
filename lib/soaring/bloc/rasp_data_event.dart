@@ -6,6 +6,15 @@ abstract class RaspDataEvent {}
 
 // All the events that can trigger getting a rasp forecast
 
+class GetDefaultRaspRegion extends RaspDataEvent {
+  GetDefaultRaspRegion();
+}
+
+class GetRaspRegion extends RaspDataEvent {
+  final Region region;
+  GetRaspRegion(this.region);
+}
+
 class GetRaspModel extends RaspDataEvent {
   final String raspModel;
   GetRaspModel(this.raspModel);

@@ -8,6 +8,8 @@ part 'forecast_models.g.dart';
 /// (region 'NewEngland' and date '2019-10-08' are variables supplied to Rest api)
 /// Gen'ed Dart code from JSON string via using https://app.quicktype.io/
 /// Then dart code modified for generator
+/// Then generated ...g.dart file running following command in terminal
+///    flutter packages pub run build_runner build
 
 ForecastModels forecastModelsFromJson(String str) =>
     ForecastModels.fromJson(json.decode(str));
@@ -28,6 +30,10 @@ class ForecastModels {
       modelNames.add(model.name);
     }
     return modelNames;
+  }
+
+  List<Model> getModels() {
+    return models;
   }
 
   Model getModel(int i) {

@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_soaring_forecast/soaring/bloc/bloc.dart';
-import 'package:flutter_soaring_forecast/soaring/bloc/regions_bloc.dart';
-import 'package:flutter_soaring_forecast/soaring/bloc/regions_event.dart';
-import 'package:flutter_soaring_forecast/soaring/bloc/regions_state.dart';
+import 'package:flutter_soaring_forecast/soaring/bloc/rasp_bloc.dart';
+import 'package:flutter_soaring_forecast/soaring/json/forecast_types.dart';
 import 'package:flutter_soaring_forecast/soaring/json/regions.dart';
 import 'package:flutter_soaring_forecast/soaring/respository/repository.dart';
 
@@ -18,55 +16,51 @@ class RaspScreen extends StatefulWidget {
 
 class _RaspScreenState extends State<RaspScreen> {
   //TODO replace with repository api calls
-  var _forecastModels = ["GFS", "NAM", "RAP"];
-  var _forecastDates = [
-    "Weds. Oct 2",
-    "Thurs. Oct 3",
-    "Fri. Oct 4",
-    'Sat. Oct 5'
-  ];
+//  var _forecastModels = ["GFS", "NAM", "RAP"];
+//  var _forecastDates = [
+//    "Weds. Oct 2",
+//    "Thurs. Oct 3",
+//    "Fri. Oct 4",
+//    'Sat. Oct 5'
+//  ];
+//
+//  var _forecastTypes = [
+//    "Thermal Updraft Velocity & B/S Ratio",
+//    "Thermal Updraft Velocity (W*)",
+//    "Buoyancy/Shear Ratio"
+//  ];
+//
+//  var _forecastTimes = [
+//    "0900(Local)",
+//    "1000(Local)",
+//    "1100(Local)",
+//    "1200(Local)",
+//    "1300(Local)",
+//    "1400(Local)",
+//    "1500(Local)",
+//    "1600(Local)",
+//    "1700(Local)",
+//    "1800(Local)"
+//  ];
 
-  var _forecastTypes = [
-    "Thermal Updraft Velocity & B/S Ratio",
-    "Thermal Updraft Velocity (W*)",
-    "Buoyancy/Shear Ratio"
-  ];
-
-  var _forecastTimes = [
-    "0900(Local)",
-    "1000(Local)",
-    "1100(Local)",
-    "1200(Local)",
-    "1300(Local)",
-    "1400(Local)",
-    "1500(Local)",
-    "1600(Local)",
-    "1700(Local)",
-    "1800(Local)"
-  ];
-
-  String _selectedForecastModel;
-  String _selectedForecastDate;
-  String _selectedForecastType;
-  int _selectedForecastTimeIndex = 0;
-  Regions _regions;
-  Region _region;
-  Region _selectedRegion;
   RaspDataBloc _raspDataBloc;
-  RegionsBloc _regionsBloc;
+  Region _region;
+  List<ModelDates> _modelDates = List();
+  ModelDates _selectedModelDates;
+  List<String> _forecastDates = List();
+  String _selectedForecastDate;
+  List<Forecast> _forecasts = List();
+  Forecast _selectedForecast;
+  List<String> _forecastTimes = List();
+  int _selectedForecastTimeIndex = 0;
 
   // Executed only when class created
   @override
   void initState() {
     super.initState();
-    _regionsBloc = BlocProvider.of<RegionsBloc>(context);
     _raspDataBloc = BlocProvider.of<RaspDataBloc>(context);
-
-    _regionsBloc.add(GetRegions());
-
-    _selectedForecastModel = _forecastModels.first;
-    _selectedForecastDate = _forecastDates.first;
-    _selectedForecastType = _forecastTypes.first;
+    _raspDataBloc.add(GetDefaultRaspRegion());
+    _raspDataBloc.add(LoadForecastTypes());
     _selectedForecastTimeIndex = 0;
   }
 
@@ -102,25 +96,26 @@ class _RaspScreenState extends State<RaspScreen> {
 
   Widget forecastModelDropDownList() {
     return DropdownButton<String>(
-      value: _selectedForecastModel,
+      value: (_selectedModelDates == null
+          ? "Loading"
+          : _selectedModelDates.modelName),
       isExpanded: true,
       //icon: Icon(Icons.arrow_downward),
       iconSize: 24,
       elevation: 16,
-      //style: TextStyle(color: Colors.deepPurple),
-//      underline: Container(
-//        height: 2,
-//        //color: Colors.deepPurpleAccent,
-//      ),
       onChanged: (String newValue) {
         setState(() {
-          _selectedForecastModel = newValue;
+          _selectedModelDates = _modelDates
+              .firstWhere((modelDates) => modelDates.modelName == newValue);
         });
       },
-      items: _forecastModels.map<DropdownMenuItem<String>>((String value) {
+      items: _modelDates
+          .map((modelDates) => modelDates.modelName)
+          .toList()
+          .map<DropdownMenuItem<String>>((String value) {
         return DropdownMenuItem<String>(
           value: value,
-          child: Text(value),
+          child: Text(value.toUpperCase()),
         );
       }).toList(),
     );
@@ -130,14 +125,6 @@ class _RaspScreenState extends State<RaspScreen> {
     return DropdownButton<String>(
       isExpanded: true,
       value: _selectedForecastDate,
-      //icon: Icon(Icons.arrow_downward),
-//      iconSize: 24,
-//      elevation: 16,
-//      style: TextStyle(color: Colors.deepPurple),
-//      underline: Container(
-//        height: 2,
-//        color: Colors.deepPurpleAccent,
-//      ),
       onChanged: (String newValue) {
         setState(() {
           _selectedForecastDate = newValue;
@@ -155,14 +142,20 @@ class _RaspScreenState extends State<RaspScreen> {
   Widget getForecastTypes() {
     return DropdownButton<String>(
       isExpanded: true,
-      value: _selectedForecastType,
+      value: (_selectedForecast == null
+          ? "Loading"
+          : _selectedForecast.forecastNameDisplay),
       //icon: Icon(Icons.arrow_downward),
       onChanged: (String newValue) {
         setState(() {
-          _selectedForecastType = newValue;
+          _selectedForecast = _forecasts.firstWhere(
+              (forecast) => forecast.forecastNameDisplay == newValue);
         });
       },
-      items: _forecastTypes.map<DropdownMenuItem<String>>((String value) {
+      items: _forecasts
+          .map((forecast) => forecast.forecastNameDisplay)
+          .toList()
+          .map<DropdownMenuItem<String>>((String value) {
         return DropdownMenuItem<String>(
           value: value,
           child: Text(value),
@@ -244,46 +237,44 @@ class _RaspScreenState extends State<RaspScreen> {
 
   @override
   Widget build(BuildContext context) {
-    MultiBlocListener(
-        listeners: [
-          BlocListener<RegionsBloc, RegionsState>(
-            listener: (context, state) {
-              if (state is RegionsLoaded) {
-                _regions = state.regions;
-              } else if (state is RegionLoaded) {
-                _selectedRegion = state.region;
-                _raspDataBloc.add(GetRaspForecastOptions(_selectedRegion));
-              }
-            },
-          ),
-          BlocListener<RaspDataBloc, RaspDataState>(
-            listener: (context, state) {
-              if (state is RaspDataLoaded) {
-                _forecastModels = state.raspData.modelNames;
-                _selectedForecastModel = _forecastModels.first;
-                _forecastDates = state.raspData.forecastDates;
-                _selectedForecastDate = _forecastDates.first;
-              }
-            },
-          ),
-        ],
-        child:
-            BlocBuilder<RegionsBloc, RegionsState>(builder: (context, state) {
-          if (state is RegionsLoading) {
-            return Center(
-              child: CircularProgressIndicator(),
-            );
-          }
+    return BlocListener<RaspDataBloc, RaspDataState>(
+        listener: (context, state) {
+      if (state is RaspRegionLoaded) {
+        _modelDates = state.region.getModelDates();
+      } else if (state is RaspModelDatesSelected) {
+        _selectedModelDates = state.modelDates;
+        _forecastDates = _selectedModelDates
+            .getModelDateDetailList()
+            .map((modelDateDetails) => modelDateDetails.printDate)
+            .toList();
+        _forecastTimes =
+            _selectedModelDates.getModelDateDetailList().first.model.times;
+        _selectedForecastTimeIndex = 0;
+      } else if (state is RaspForecastTypesLoaded) {
+        _forecasts = state.forecasts;
+        _selectedForecast = _forecasts.first;
+      }
+    }, child:
+            BlocBuilder<RaspDataBloc, RaspDataState>(builder: (context, state) {
+      if (state is InitialRaspDataState ||
+          _modelDates == null ||
+          _selectedModelDates == null ||
+          _forecastTimes == null ||
+          _forecasts == null) {
+        return Center(
+          child: CircularProgressIndicator(),
+        );
+      }
 
-          return Scaffold(
-              key: _scaffoldKey,
-              appBar: AppBar(
-                title: Text('RASP'),
-                actions: <Widget>[
-                  IconButton(icon: Icon(Icons.list), onPressed: null),
-                ],
-              ),
-              body: _forecastLayout());
-        }));
+      return Scaffold(
+          key: _scaffoldKey,
+          appBar: AppBar(
+            title: Text('RASP'),
+            actions: <Widget>[
+              IconButton(icon: Icon(Icons.list), onPressed: null),
+            ],
+          ),
+          body: _forecastLayout());
+    }));
   }
 }

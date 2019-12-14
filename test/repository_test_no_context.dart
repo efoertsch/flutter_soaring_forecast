@@ -15,7 +15,8 @@ void main() {
     print("getting modelforecasts for ${region.name}");
     repository.loadForecastModelsByDateForRegion(region).then(expectAsync1(
         (region) => expect(
-            region.getForecastModels().length, region.printDates.length)));
+            region.getModelDates().first.getModelDateDetailList().length, 7,
+            reason: "Number of forecast dates should be 6")));
   }
 
   test("Get forecastModels for each printdate in region", () async {

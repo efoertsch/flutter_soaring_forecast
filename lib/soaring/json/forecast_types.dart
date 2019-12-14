@@ -13,6 +13,12 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'forecast_types.g.dart';
 
+/// 1. Gen'ed Dart code from JSON string via using https://app.quicktype.io/
+/// 2. Dart code modified for generator
+/// 3. Added part'forecast_types.g.dart' above
+/// 4. Generated ...g.dart file running following command in terminal
+///    flutter packages pub run build_runner build
+
 ForecastTypes forecastTypesFromJson(String str) =>
     ForecastTypes.fromJson(json.decode(str));
 

@@ -27,39 +27,89 @@ class Region {
   String name;
   List<String> printDates;
   List<Soundings> soundings;
-  // list of models for each printDate in printDates
-  // must be added in same order as printDates
-  // Yeah, just a bit convoluted/confusing
+
+  // Custom coded field
   @JsonKey(ignore: true)
-  List<ForecastModels> _forecastModels = List();
-
-  addForecastModel(ForecastModels forecastModels) {
-    this._forecastModels.add(forecastModels);
-  }
-
-  clearForecastModels() {
-    _forecastModels.clear();
-  }
-
-  List<ForecastModels> getForecastModels() {
-    return _forecastModels;
-  }
-
-  // For the specified index (date) get the list of models
-  List<String> getForecastModelNames(int i) {
-    return (_forecastModels.length > 0
-        ? _forecastModels[i].getModelNames()
-        : List<String>());
-  }
-
-  ForecastModels getForecastModel(int i) {
-    return _forecastModels[i];
-  }
+  List<ModelDates> _modelDates = List();
 
   Region({this.dates, this.name, this.printDates, this.soundings});
 
   factory Region.fromJson(Map<String, dynamic> json) => _$RegionFromJson(json);
   Map<String, dynamic> toJson() => _$RegionToJson(this);
+
+  //------------- Custom code --------------------------
+
+  void clearRegionModelDates() {
+    _modelDates.clear();
+  }
+
+  List<ModelDates> getModelDates() {
+    return _modelDates;
+  }
+
+  void addForecastModelsForDate(
+      ForecastModels forecastModels, String date, String printdate) {
+    List<Model> forecastModelList = forecastModels.getModels();
+    // For this date, for each model (gfs, name) create model/date/date details
+    forecastModelList
+        .forEach((model) => addToModelDates(model, date, printdate));
+  }
+
+  /// For a particular model (e.g. nam) add the date and model details
+  void addToModelDates(Model model, String date, String printDate) {
+    ModelDateDetails modelDateDetails =
+        ModelDateDetails(printDate, date, model);
+    // See if you have already seen that model
+    ModelDates modelDates = _modelDates.firstWhere(
+        (modelDates) => (modelDates.modelName == model.name),
+        orElse: () => null);
+    if (modelDates == null) {
+      // First time for that model so add it to the list with the date details
+      _modelDates.add(ModelDates(model.name, modelDateDetails));
+    } else {
+      // model already in list so just add new date/details to the list
+      modelDates.addNewModelDates(modelDateDetails);
+    }
+  }
+
+  ModelDates getModelDatesForModel(String modelName) {
+    return _modelDates
+        .firstWhere(((modelDates) => modelDates.modelName == modelName));
+  }
+}
+
+/// Convenience classes
+///For a model name (e.g. nam), hold the list of dates and details for each date that
+/// a forecast has been created for
+class ModelDates {
+  String modelName;
+  List<ModelDateDetails> modelDateDetailList = List();
+
+  ModelDates(String modelName, ModelDateDetails modelDateDetails) {
+    this.modelName = modelName;
+    modelDateDetailList.add(modelDateDetails);
+  }
+
+  List<ModelDateDetails> getModelDateDetailList() {
+    return modelDateDetailList;
+  }
+
+  void addNewModelDates(ModelDateDetails newModelDateDetails) {
+    modelDateDetailList.add(newModelDateDetails);
+  }
+}
+
+/// For a specific model and date , hold the date deta
+class ModelDateDetails {
+  String printDate;
+  String date;
+  Model model;
+
+  ModelDateDetails(String printDate, String date, Model model) {
+    this.printDate = printDate;
+    this.date = date;
+    this.model = model;
+  }
 }
 
 @JsonSerializable()
