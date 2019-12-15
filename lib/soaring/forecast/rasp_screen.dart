@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/bloc/rasp_bloc.dart';
+import 'package:flutter_soaring_forecast/soaring/json/forecast_models.dart';
 import 'package:flutter_soaring_forecast/soaring/json/forecast_types.dart';
 import 'package:flutter_soaring_forecast/soaring/json/regions.dart';
 import 'package:flutter_soaring_forecast/soaring/respository/repository.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class RaspScreen extends StatefulWidget {
@@ -15,6 +17,7 @@ class RaspScreen extends StatefulWidget {
   _RaspScreenState createState() => _RaspScreenState();
 }
 
+//TODO - keep more data details in Bloc,
 class _RaspScreenState extends State<RaspScreen> {
   RaspDataBloc _raspDataBloc;
   Region _region;
@@ -26,6 +29,17 @@ class _RaspScreenState extends State<RaspScreen> {
   Forecast _selectedForecast;
   List<String> _forecastTimes = List();
   int _selectedForecastTimeIndex = 0;
+
+  GoogleMapController mapController;
+  final LatLng _center = const LatLng(43.1394043, -72.0759888);
+  LatLngBounds mapLatLngBounds = LatLngBounds(
+      southwest: LatLng(41.2665329, -73.6473083),
+      northeast: LatLng(45.0120811, -70.5046997));
+
+  void _onMapCreated(GoogleMapController controller) {
+    mapController = controller;
+    _setMapLatLngBounds();
+  }
 
   // Executed only when class created
   @override
@@ -46,7 +60,19 @@ class _RaspScreenState extends State<RaspScreen> {
           getForecastModelsAndDates(),
           getForecastTypes(),
           displayForecastTimes(),
+          displayGoogleMap()
         ]));
+  }
+
+  Expanded displayGoogleMap() {
+    return Expanded(
+        child: GoogleMap(
+      onMapCreated: _onMapCreated,
+      initialCameraPosition: CameraPosition(
+        target: _center,
+        zoom: 11.0,
+      ),
+    ));
   }
 
   Widget getForecastModelsAndDates() {
@@ -175,7 +201,7 @@ class _RaspScreenState extends State<RaspScreen> {
             Expanded(
               flex: 6,
               child: Text(
-                _forecastTimes[_selectedForecastTimeIndex],
+                _forecastTimes[_selectedForecastTimeIndex] + " (Local)",
                 style: TextStyle(fontSize: 20),
               ),
             ),
@@ -225,6 +251,8 @@ class _RaspScreenState extends State<RaspScreen> {
       } else if (state is RaspForecastTypesLoaded) {
         _forecasts = state.forecasts;
         _selectedForecast = _forecasts.first;
+      } else if (state is RaspMapLatLngBounds) {
+        mapLatLngBounds = state.regionLatLngBounds;
       }
     }, child:
             BlocBuilder<RaspDataBloc, RaspDataState>(builder: (context, state) {
@@ -252,6 +280,15 @@ class _RaspScreenState extends State<RaspScreen> {
     }));
   }
 
+  void _setMapLatLngBounds() {
+    mapController?.animateCamera(
+      CameraUpdate.newLatLngBounds(
+        mapLatLngBounds,
+        8,
+      ),
+    );
+  }
+
   // Dependent on having
   void updateForecastDates() {
     _forecastDates = _selectedModelDates
@@ -263,6 +300,13 @@ class _RaspScreenState extends State<RaspScreen> {
       _selectedForecastDate = _forecastDates.first;
     }
     updateForecastTimesList();
+  }
+
+  void getMapBounds() {
+    Model model = _selectedModelDates.getModelDateDetailList().first.model;
+    mapLatLngBounds = LatLngBounds(
+        southwest: model.getSouthWestLatLng(),
+        northeast: model.getNorthEastLatLng());
   }
 
   void updateForecastTimesList() {

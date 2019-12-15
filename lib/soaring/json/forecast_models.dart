@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'forecast_models.g.dart';
@@ -61,4 +62,21 @@ class Model {
 
   factory Model.fromJson(Map<String, dynamic> json) => _$ModelFromJson(json);
   Map<String, dynamic> toJson() => _$ModelToJson(this);
+
+  // -----------  Custom code -----------------
+  LatLng getSouthWestLatLng() {
+    if (corners != null && corners.length > 0 && corners[0].length > 1) {
+      return new LatLng(corners[0][0], corners[0][1]);
+    }
+    return LatLng(0.0, 0.0);
+  }
+
+  LatLng getNorthEastLatLng() {
+    if (corners != null && corners.length > 1 && corners[1].length > 1) {
+      return new LatLng(corners[1][0], corners[1][1]);
+    }
+    return LatLng(0.0, 0.0);
+  }
+
+  //------------ End custom code ---------------
 }
