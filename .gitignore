@@ -9,7 +9,8 @@
 .history
 .svn/
 .metadata
-android/
+
+
 ios/
 
 # IntelliJ related
@@ -40,6 +41,10 @@ ios/
 **/android/gradlew.bat
 **/android/local.properties
 **/android/**/GeneratedPluginRegistrant.java
+
+**/android/app/src/debug/res/values
+**/android/app/src/release/res/values/
+
 
 # iOS/XCode related
 **/ios/**/*.mode1v3

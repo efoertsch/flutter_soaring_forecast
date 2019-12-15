@@ -29,6 +29,7 @@ dependencies:
   webview_flutter: ^0.3.18+1
   url_launcher: ^5.4.1
   path_provider: ^1.5.1
+  google_maps_flutter: ^0.5.11
 
 
   flutter:

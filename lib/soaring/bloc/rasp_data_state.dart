@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_soaring_forecast/soaring/json/forecast_types.dart';
 import 'package:flutter_soaring_forecast/soaring/json/regions.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 @immutable
 abstract class RaspDataState {}
@@ -37,12 +38,18 @@ class RaspModelDatesSelected extends RaspDataState {
   RaspModelDatesSelected(this.modelDates);
 }
 
-class RaspDataLoading extends RaspDataState {
-  @override
-  String toString() => 'RaspDataLoading';
-}
-
 class RaspForecastTypesLoaded extends RaspDataState {
   final List<Forecast> forecasts;
   RaspForecastTypesLoaded(this.forecasts);
+}
+
+class RaspMapLatLngBounds extends RaspDataState {
+  final LatLngBounds regionLatLngBounds;
+  RaspMapLatLngBounds(this.regionLatLngBounds);
+}
+
+//TODO add stacktrace?
+class RaspMapLatLngBoundsError extends RaspDataState {
+  @override
+  String toString() => 'Error creating Google Map Lat/Lng bounds';
 }

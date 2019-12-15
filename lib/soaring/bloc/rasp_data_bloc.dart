@@ -3,9 +3,11 @@ import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_soaring_forecast/soaring/bloc/rasp_data_event.dart';
+import 'package:flutter_soaring_forecast/soaring/json/forecast_models.dart';
 import 'package:flutter_soaring_forecast/soaring/json/forecast_types.dart';
 import 'package:flutter_soaring_forecast/soaring/json/regions.dart';
 import 'package:flutter_soaring_forecast/soaring/respository/repository.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import 'rasp_bloc.dart';
 
@@ -14,6 +16,7 @@ import 'rasp_bloc.dart';
 class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
   final Repository repository;
   Regions _regions;
+  Region region;
 
   RaspDataBloc({@required this.repository});
 
@@ -30,7 +33,8 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
       return;
     }
     if (event is GetRaspRegion) {
-      yield* _getRaspRegion(event.region);
+      region = event.region;
+      yield* _getRaspRegion();
       return;
     }
 
@@ -51,22 +55,24 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
       }
       if (_regions != null) {
         // TODO - get last region displayed from repository and if in list of regions
-        Region region = _regions.regions
+        region = _regions.regions
             .firstWhere((region) => (region.name == _regions.initialRegion));
-        yield RaspRegionLoaded(region);
-        // Get models for each forecast date
-        await repository.loadForecastModelsByDateForRegion(region);
-        // TODO - get last model (gfs, name) from repository and display
-        yield RaspModelDatesSelected(region.getModelDates().first);
+        yield* _getRaspRegion();
       }
     } catch (_) {
       yield RaspRegionsNotLoaded();
     }
   }
 
-  Stream<RaspDataState> _getRaspRegion(Region region) async* {
+  Stream<RaspDataState> _getRaspRegion() async* {
     try {
       await _loadRaspValuesForRegion(region);
+      yield RaspRegionLoaded(region);
+      // Get models for each forecast date
+      await repository.loadForecastModelsByDateForRegion(region);
+      // TODO - get last model (gfs, name) from repository and display
+      yield RaspModelDatesSelected(region.getModelDates().first);
+      yield* _getMapLatLngBounds();
     } catch (_) {
       yield RaspRegionNotLoaded(region.name);
     }
@@ -82,6 +88,20 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
       yield RaspForecastTypesLoaded(forecastTypes.forecasts);
     } catch (_) {
       yield null;
+    }
+  }
+
+  Stream<RaspDataState> _getMapLatLngBounds() async* {
+    try {
+      Model model =
+          region.getModelDates().first.getModelDateDetailList().first.model;
+      var mapLatLngBounds = LatLngBounds(
+          southwest: model.getSouthWestLatLng(),
+          northeast: model.getNorthEastLatLng());
+      yield RaspMapLatLngBounds(mapLatLngBounds);
+    } catch (_) {
+      //TODO why isn't RaspMapLatLngBoundsError valid?
+      yield RaspMapLatLngBoundsError();
     }
   }
 }
