@@ -278,7 +278,6 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState>
           ..addListener(() {
             print("Animation value: $animation.value");
           });
-
   }
 
   @override
