@@ -21,7 +21,7 @@ class _RaspClient implements RaspClient {
     final queryParameters = <String, dynamic>{};
     final _data = <String, dynamic>{};
     final Response<Map<String, dynamic>> _result = await _dio.request(
-        'current.json',
+        '/current.json',
         queryParameters: queryParameters,
         options: RequestOptions(
             method: 'GET',
@@ -41,7 +41,7 @@ class _RaspClient implements RaspClient {
     final queryParameters = <String, dynamic>{};
     final _data = <String, dynamic>{};
     final Response<Map<String, dynamic>> _result = await _dio.request(
-        '$region/$date/status.json',
+        '/$region/$date/status.json',
         queryParameters: queryParameters,
         options: RequestOptions(
             method: 'GET',

@@ -1,16 +1,22 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
+    as Constants;
+import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image.dart';
 import 'package:flutter_soaring_forecast/soaring/json/forecast_models.dart';
 import 'package:flutter_soaring_forecast/soaring/json/forecast_types.dart';
 import 'package:flutter_soaring_forecast/soaring/json/rasp_api.dart';
 import 'package:flutter_soaring_forecast/soaring/json/regions.dart';
+import 'package:flutter_soaring_forecast/soaring/respository/ImageCacheManager.dart';
 
 class Repository {
   // Hmmm. How to make this only available via static gettter
   static Repository repository;
   static Dio dio = Dio();
   static BuildContext _context;
-  static RaspClient raspClient;
+  static RaspClient _raspClient;
 
   Repository._();
 
@@ -20,7 +26,7 @@ class Repository {
       _context = context;
       dio.interceptors.add(LogInterceptor(responseBody: true));
       dio.options.receiveTimeout = 300000;
-      raspClient = new RaspClient(dio);
+      _raspClient = new RaspClient(dio);
     }
     return repository;
   }
@@ -37,7 +43,7 @@ class Repository {
 
   ///  1. Get the list of available forecast regions (e.g. NewEngland, Mifflin) and forecast dates, etc for each region
   Future<Regions> getRegions() async {
-    return raspClient.getRegions();
+    return _raspClient.getRegions();
   }
 
   /// 2. For selected region, iterate through dates for which forecasts have
@@ -49,7 +55,7 @@ class Repository {
     for (int i = 0; i < region.dates.length - 1; ++i) {
       try {
         ForecastModels forecastModels =
-            await raspClient.getForecastModels(region.name, dates[i]);
+            await _raspClient.getForecastModels(region.name, dates[i]);
         region.addForecastModelsForDate(
             forecastModels, dates[i], printdates[i]);
       } catch (error, stackTrace) {
@@ -77,5 +83,30 @@ class Repository {
 
   dispose() {
     // TODO what do I need to do here?
+  }
+
+  // ----------- Get RASP forecast images -----------------------
+  Future<SoaringForecastImage> getRaspForecastImageByUrl(
+      SoaringForecastImage soaringForecastImage) async {
+    String fullUrl = Constants.RASP_BASE_URL + soaringForecastImage.imageUrl;
+    File file = await ImageCacheManager().getSingleFile(fullUrl);
+    print("Downloading forecast image: $fullUrl");
+    Image image = Image.file(file);
+    soaringForecastImage.setImage(image);
+    return Future<SoaringForecastImage>.value(soaringForecastImage);
+  }
+
+  Future<Image> getRaspForecastImageByParms(
+      String regionName,
+      String forecastDate,
+      String model,
+      String forecastType,
+      String forecastTime,
+      String imageType) async {
+    String url = Constants.RASP_BASE_URL +
+        "/$regionName/$forecastDate/$model/$forecastType.$forecastTime}local.d2.$imageType.png";
+    File file = await ImageCacheManager().getSingleFile(url);
+    Image image = Image.file(file);
+    return Future<Image>.value(image);
   }
 }

@@ -105,7 +105,7 @@ class Airspace {
 }
 
 //------------- Custom code --------------------------
-/// Cutom coded convenience classes
+/// Custom coded convenience classes
 /// For each model (e.g. gfs, nam, ...) forecasts have been produced for
 ///, hold the list of dates and forecast times and lat/long details
 /// Note that this class 'inverts' the web order. Here it is model, dates

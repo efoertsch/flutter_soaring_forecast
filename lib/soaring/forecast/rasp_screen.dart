@@ -1,12 +1,16 @@
+import 'package:after_layout/after_layout.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_soaring_forecast/soaring/bloc/rasp_bloc.dart';
-import 'package:flutter_soaring_forecast/soaring/json/forecast_models.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_data_state.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/rasp_selection_values.dart';
 import 'package:flutter_soaring_forecast/soaring/json/forecast_types.dart';
 import 'package:flutter_soaring_forecast/soaring/json/regions.dart';
 import 'package:flutter_soaring_forecast/soaring/respository/repository.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+import 'bloc/rasp_data_bloc.dart';
+import 'bloc/rasp_data_event.dart';
 
 class RaspScreen extends StatefulWidget {
   final BuildContext repositoryContext;
@@ -18,27 +22,47 @@ class RaspScreen extends StatefulWidget {
 }
 
 //TODO - keep more data details in Bloc,
-class _RaspScreenState extends State<RaspScreen> {
+class _RaspScreenState extends State<RaspScreen>
+    with SingleTickerProviderStateMixin, AfterLayoutMixin<RaspScreen> {
   RaspDataBloc _raspDataBloc;
   Region _region;
-  List<ModelDates> _modelDates = List();
-  ModelDates _selectedModelDates;
-  List<String> _forecastDates = List();
+  List<String> _modelNames;
+  String _selectedModelName;
+  List<String> _forecastDates;
   String _selectedForecastDate;
-  List<Forecast> _forecasts = List();
-  Forecast _selectedForecast;
-  List<String> _forecastTimes = List();
+  List<String> _forecastTimes;
   int _selectedForecastTimeIndex = 0;
+  List<Forecast> _forecasts;
+  Forecast _selectedForecast;
+  bool firstLayoutComplete = false;
 
   GoogleMapController mapController;
+  // Default values - NewEngland lat/lng of course!
   final LatLng _center = const LatLng(43.1394043, -72.0759888);
-  LatLngBounds mapLatLngBounds = LatLngBounds(
+  LatLngBounds _mapLatLngBounds = LatLngBounds(
       southwest: LatLng(41.2665329, -73.6473083),
       northeast: LatLng(45.0120811, -70.5046997));
 
+  @override
+  void afterFirstLayout(BuildContext context) {
+    // Calling the same function "after layout" to resolve the issue.
+    firstLayoutComplete = true;
+    print(
+        "First layout complete. mapcontroller is set ${mapController != null}");
+    if (mapController != null) {
+      _setMapLatLngBounds();
+    }
+  }
+
+  /// This can cause crash if map ready prior to first layout
+  /// so check first if screen ready
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
-    _setMapLatLngBounds();
+    print(
+        "Mapcontroller is defined. FirstLayoutComplete =  $firstLayoutComplete");
+    if (firstLayoutComplete) {
+      _setMapLatLngBounds();
+    }
   }
 
   // Executed only when class created
@@ -46,9 +70,7 @@ class _RaspScreenState extends State<RaspScreen> {
   void initState() {
     super.initState();
     _raspDataBloc = BlocProvider.of<RaspDataBloc>(context);
-    _raspDataBloc.add(GetDefaultRaspRegion());
-    _raspDataBloc.add(LoadForecastTypes());
-    _selectedForecastTimeIndex = 0;
+    _raspDataBloc.add(GetInitialRaspSelections());
   }
 
   final _scaffoldKey = GlobalKey<ScaffoldState>();
@@ -96,22 +118,17 @@ class _RaspScreenState extends State<RaspScreen> {
   // Display GFS, NAM, ....
   Widget forecastModelDropDownList() {
     return DropdownButton<String>(
-      value: (_selectedModelDates.modelName),
+      value: (_selectedModelName),
       isExpanded: true,
-      //icon: Icon(Icons.arrow_downward),
       iconSize: 24,
       elevation: 16,
       onChanged: (String newValue) {
         setState(() {
-          _selectedModelDates = _modelDates
-              .firstWhere((modelDates) => modelDates.modelName == newValue);
-          updateForecastDates();
+          _selectedModelName = newValue;
+          _raspDataBloc.add(SelectedRaspModel(_selectedModelName));
         });
       },
-      items: _modelDates
-          .map((modelDates) => modelDates.modelName)
-          .toList()
-          .map<DropdownMenuItem<String>>((String value) {
+      items: _modelNames.map<DropdownMenuItem<String>>((String value) {
         return DropdownMenuItem<String>(
           value: value,
           child: Text(value.toUpperCase()),
@@ -128,14 +145,10 @@ class _RaspScreenState extends State<RaspScreen> {
       onChanged: (String newValue) {
         setState(() {
           _selectedForecastDate = newValue;
-          updateForecastTimesList();
+          _raspDataBloc.add(SetRaspForecastDate(_selectedForecastDate));
         });
       },
-      items: _selectedModelDates
-          .getModelDateDetailList()
-          .map((modelDateDetails) => modelDateDetails.printDate)
-          .toList()
-          .map<DropdownMenuItem<String>>((String value) {
+      items: _forecastDates.map<DropdownMenuItem<String>>((String value) {
         return DropdownMenuItem<String>(
           value: value,
           child: Text(value),
@@ -243,22 +256,18 @@ class _RaspScreenState extends State<RaspScreen> {
   Widget build(BuildContext context) {
     return BlocListener<RaspDataBloc, RaspDataState>(
         listener: (context, state) {
-      if (state is RaspRegionLoaded) {
-        _modelDates = state.region.getModelDates();
-      } else if (state is RaspModelDatesSelected) {
-        _selectedModelDates = state.modelDates;
-        updateForecastDates();
-      } else if (state is RaspForecastTypesLoaded) {
-        _forecasts = state.forecasts;
-        _selectedForecast = _forecasts.first;
+      if (state is RaspSelectionsState) {
+        RaspSelectionValues raspSelectionValues = state.raspSelectionValues;
+        _assignRaspSelectionValues(raspSelectionValues);
       } else if (state is RaspMapLatLngBounds) {
-        mapLatLngBounds = state.regionLatLngBounds;
+        _mapLatLngBounds = state.regionLatLngBounds;
       }
     }, child:
             BlocBuilder<RaspDataBloc, RaspDataState>(builder: (context, state) {
       if (state is InitialRaspDataState ||
-          _modelDates == null ||
-          _selectedModelDates == null ||
+          state is RaspDataLoadErrorState ||
+          _modelNames == null ||
+          _forecastDates == null ||
           _forecastTimes == null ||
           _forecasts == null ||
           _selectedForecast == null) {
@@ -280,47 +289,49 @@ class _RaspScreenState extends State<RaspScreen> {
     }));
   }
 
+  void _assignRaspSelectionValues(RaspSelectionValues raspSelectionValues) {
+    if (raspSelectionValues.modelNames != null) {
+      _modelNames = raspSelectionValues.modelNames;
+    }
+    if (raspSelectionValues.selectedModelName != null) {
+      _selectedModelName = raspSelectionValues.selectedModelName;
+    }
+    if (raspSelectionValues.forecastDates != null) {
+      _forecastDates = raspSelectionValues.forecastDates;
+    }
+    if (raspSelectionValues.selectedForecastDate != null) {
+      _selectedForecastDate = raspSelectionValues.selectedForecastDate;
+    }
+    if (raspSelectionValues.forecastTimes != null) {
+      _forecastTimes = raspSelectionValues.forecastTimes;
+    }
+    _selectedForecastTimeIndex = raspSelectionValues.selectedForecastTimeIndex;
+    if (raspSelectionValues.forecasts != null) {
+      _forecasts = raspSelectionValues.forecasts;
+    }
+    if (raspSelectionValues.selectedForecast != null) {
+      _selectedForecast = raspSelectionValues.selectedForecast;
+    }
+
+    if (raspSelectionValues.latLngBounds != null) {
+      _mapLatLngBounds = raspSelectionValues.latLngBounds;
+    }
+  }
+
+  // TODO fix  Unhandled Exception: PlatformException(error
+  //  , Error using newLatLngBounds(LatLngBounds, int):
+  //  Map size can't be 0. Most likely, layout has not yet occurred for the map view.
+  //  Either wait until layout has occurred or use
+  //  newLatLngBounds(LatLngBounds, int, int, int) which allows you to specify
+  //  the map's dimensions., null)
   void _setMapLatLngBounds() {
+    print("animating camera to lat/lng bounds");
     mapController?.animateCamera(
       CameraUpdate.newLatLngBounds(
-        mapLatLngBounds,
+        _mapLatLngBounds,
         8,
       ),
     );
-  }
-
-  // Dependent on having
-  void updateForecastDates() {
-    _forecastDates = _selectedModelDates
-        .getModelDateDetailList()
-        .map((modelDateDetails) => modelDateDetails.printDate)
-        .toList();
-    // stay on same date if new model has forecast for that date
-    if (!_forecastDates.contains(_selectedForecastDate)) {
-      _selectedForecastDate = _forecastDates.first;
-    }
-    updateForecastTimesList();
-  }
-
-  void getMapBounds() {
-    Model model = _selectedModelDates.getModelDateDetailList().first.model;
-    mapLatLngBounds = LatLngBounds(
-        southwest: model.getSouthWestLatLng(),
-        northeast: model.getNorthEastLatLng());
-  }
-
-  void updateForecastTimesList() {
-    _forecastTimes = _selectedModelDates
-        .getModelDateDetailList()
-        .firstWhere((modelDateDetails) =>
-            modelDateDetails.printDate == _selectedForecastDate)
-        .model
-        .times;
-    // Stay on same time if new forecastTimes has same time as previous
-    // Making reasonable assumption that times in same order across models/dates
-    if (_selectedForecastTimeIndex > _forecastTimes.length - 1) {
-      _selectedForecastTimeIndex = 0;
-    }
   }
 
   Widget getDrawer(BuildContext context) {

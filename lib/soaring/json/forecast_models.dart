@@ -64,14 +64,18 @@ class Model {
   Map<String, dynamic> toJson() => _$ModelToJson(this);
 
   // -----------  Custom code -----------------
-  LatLng getSouthWestLatLng() {
+  LatLngBounds get latLngBounds {
+    return LatLngBounds(southwest: southWestLatLng, northeast: northEastLatLng);
+  }
+
+  LatLng get southWestLatLng {
     if (corners != null && corners.length > 0 && corners[0].length > 1) {
       return new LatLng(corners[0][0], corners[0][1]);
     }
     return LatLng(0.0, 0.0);
   }
 
-  LatLng getNorthEastLatLng() {
+  LatLng get northEastLatLng {
     if (corners != null && corners.length > 1 && corners[1].length > 1) {
       return new LatLng(corners[1][0], corners[1][1]);
     }

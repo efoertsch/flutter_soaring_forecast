@@ -1,8 +1,12 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/rasp_selection_values.dart';
 import 'package:flutter_soaring_forecast/soaring/json/forecast_types.dart';
 import 'package:flutter_soaring_forecast/soaring/json/regions.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
+/// https://medium.com/flutter-community/flutter-bloc-pattern-for-dummies-like-me-c22d40f05a56
+/// Event In - State Out
+///
 @immutable
 abstract class RaspDataState {}
 
@@ -11,26 +15,14 @@ class InitialRaspDataState extends RaspDataState {
   String toString() => "IntialRaspDataState";
 }
 
-class RaspRegionsLoaded extends RaspDataState {
-  final Regions regions;
-  RaspRegionsLoaded(this.regions);
+class RaspSelectionsState extends RaspDataState {
+  final RaspSelectionValues raspSelectionValues;
+  RaspSelectionsState(this.raspSelectionValues);
 }
 
-class RaspRegionLoaded extends RaspDataState {
-  final Region region;
-  RaspRegionLoaded(this.region);
-}
-
-class RaspRegionsNotLoaded extends RaspDataState {
-  @override
-  String toString() => 'RegionsNotLoaded';
-}
-
-class RaspRegionNotLoaded extends RaspDataState {
-  final String region;
-  RaspRegionNotLoaded(this.region);
-  @override
-  String toString() => '$region could not be loaded.';
+class RaspDataLoadErrorState extends RaspDataState {
+  final String error;
+  RaspDataLoadErrorState(this.error);
 }
 
 class RaspModelDatesSelected extends RaspDataState {
