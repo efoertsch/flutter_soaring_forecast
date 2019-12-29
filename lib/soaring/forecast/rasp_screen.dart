@@ -5,7 +5,6 @@ import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_data_state.d
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/rasp_selection_values.dart';
 import 'package:flutter_soaring_forecast/soaring/json/forecast_types.dart';
 import 'package:flutter_soaring_forecast/soaring/json/regions.dart';
-import 'package:flutter_soaring_forecast/soaring/respository/repository.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -14,7 +13,6 @@ import 'bloc/rasp_data_event.dart';
 
 class RaspScreen extends StatefulWidget {
   final BuildContext repositoryContext;
-  Repository repository;
   RaspScreen({Key key, @required this.repositoryContext}) : super(key: key);
 
   @override
@@ -34,7 +32,13 @@ class _RaspScreenState extends State<RaspScreen>
   int _selectedForecastTimeIndex = 0;
   List<Forecast> _forecasts;
   Forecast _selectedForecast;
-  bool firstLayoutComplete = false;
+  bool _firstLayoutComplete = false;
+  // TODO internationalize literals
+  String _pauseAnimationLabel = "Pause";
+  String _loopAnimationLabel = "Loop";
+
+  // Start forecast display with animation running
+  bool _animationRunning = true;
 
   GoogleMapController mapController;
   // Default values - NewEngland lat/lng of course!
@@ -46,7 +50,7 @@ class _RaspScreenState extends State<RaspScreen>
   @override
   void afterFirstLayout(BuildContext context) {
     // Calling the same function "after layout" to resolve the issue.
-    firstLayoutComplete = true;
+    _firstLayoutComplete = true;
     print(
         "First layout complete. mapcontroller is set ${mapController != null}");
     if (mapController != null) {
@@ -59,8 +63,8 @@ class _RaspScreenState extends State<RaspScreen>
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
     print(
-        "Mapcontroller is defined. FirstLayoutComplete =  $firstLayoutComplete");
-    if (firstLayoutComplete) {
+        "Mapcontroller is defined. FirstLayoutComplete =  $_firstLayoutComplete");
+    if (_firstLayoutComplete) {
       _setMapLatLngBounds();
     }
   }
@@ -241,13 +245,22 @@ class _RaspScreenState extends State<RaspScreen>
           ]),
         ),
         Expanded(
-          flex: 3,
-          child: Text(
-            'Pause',
-            textAlign: TextAlign.end,
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-          ),
-        ),
+            flex: 3,
+            child: GestureDetector(
+              onTap: () {
+                setState(() {
+                  _animationRunning != _animationRunning;
+                  _raspDataBloc.add(RunAnimationEvent(_animationRunning));
+                });
+              },
+              child: Text(
+                (_animationRunning
+                    ? _pauseAnimationLabel
+                    : _loopAnimationLabel),
+                textAlign: TextAlign.end,
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+              ),
+            )),
       ],
     );
   }

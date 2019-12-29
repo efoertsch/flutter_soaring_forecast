@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:bloc/bloc.dart';
-import 'package:flutter/animation.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -32,10 +31,11 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState>
 
   List<String> _forecastTimes;
   int _selectedForecastTimeIndex = 0;
-  List<SoaringForecastImageSet> imageSets = List();
+  List<SoaringForecastImageSet> _imageSets = List();
   LatLngBounds _latLngBounds;
-  var _forecastImageAnimationController;
-  Animation<double> animation;
+  AnimationController _forecastImageAnimationController;
+  Animation<double> _forecastImageAnimation;
+  bool _runAnimation = true;
 
   RaspDataBloc({@required this.repository});
 
@@ -59,15 +59,21 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState>
     if (event is SelectedRaspModel) {
       _selectedModelname = event.modelName;
       _updateModelNamesAndTimes();
+      return;
     }
 
     if (event is SetRaspForecastDate) {
       _selectedForecastDate = event.forecastDate;
       updateForecastTimesList();
+      return;
     }
 
     if (event is LoadForecastTypes) {
       yield* _getForecastTypes();
+      return;
+    }
+    if (event is RunAnimationEvent) {
+      _updateAnimationControl(event.runAnimation);
     }
   }
 
@@ -95,6 +101,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState>
 
   Stream<RaspDataState> _getRaspRegion() async* {
     try {
+      _updateAnimationControl(false);
       await _loadRaspValuesForRegion(_region);
       // Get models for each forecast date
       await _getSelectedModelDates();
@@ -228,31 +235,33 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState>
     SoaringForecastImage soaringForecastBodyImage;
     SoaringForecastImage soaringForecastSideImage;
 
-    imageSets.clear();
+    _imageSets.clear();
     var soaringForecastImages = [];
     var futures = <Future>[];
     for (var time in _forecastTimes) {
-      // Currently only displaying the forecast image(google map overlay) and
-      // the image color scale
+      // Get forecast overlay
       imageUrl = _createImageUrl(_region.name, _selectedForecastDate,
           _selectedModelname, _selectedForecast.forecastName, time, 'body');
       soaringForecastBodyImage = SoaringForecastImage(imageUrl, time);
       soaringForecastImages.add(soaringForecastBodyImage);
 
+      // Get scale image
       imageUrl = _createImageUrl(_region.name, _selectedForecastDate,
           _selectedModelname, _selectedForecast.forecastName, time, 'side');
       soaringForecastSideImage = SoaringForecastImage(imageUrl, time);
+      soaringForecastImages.add(soaringForecastSideImage);
 
       var soaringForecastImageSet = SoaringForecastImageSet(
           localTime: time,
           bodyImage: soaringForecastBodyImage,
           sideImage: soaringForecastSideImage);
 
-      imageSets.add(soaringForecastImageSet);
+      _imageSets.add(soaringForecastImageSet);
       for (var soaringForecastImage in soaringForecastImages) {
         futures.add(_getRaspForecastImage(soaringForecastImage));
       }
       await Future.wait(futures);
+
       startImageAnimation();
     }
   }
@@ -269,24 +278,57 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState>
     return "/$regionName/$forecastDate/$model/$forecastType.${forecastTime}local.d2.$imageType.png";
   }
 
+  void _updateAnimationControl(bool runAnimation) {
+    _runAnimation = runAnimation;
+    if (_runAnimation) {
+      startImageAnimation();
+    } else {
+      if (_forecastImageAnimationController != null &&
+          _forecastImageAnimationController.isAnimating) {
+        _forecastImageAnimationController.stop();
+        _forecastImageAnimationController.dispose();
+      }
+    }
+  }
+
   void startImageAnimation() {
+    if (_forecastImageAnimationController != null &&
+        _forecastImageAnimationController.isAnimating) {
+      print("Already animating!");
+      return;
+    }
     print("Starting Image Animation");
     _forecastImageAnimationController = AnimationController(
-        duration: Duration(milliseconds: 15000), vsync: this);
-    animation = Tween<double>(begin: 0, end: _forecastTimes.length.toDouble())
-        .animate(_forecastImageAnimationController)
-          ..addListener(() {
-            print("Animation value: $animation.value");
-          });
+        value: 0,
+        duration: Duration(milliseconds: 15000),
+        lowerBound: 0,
+        upperBound: _forecastTimes.length.toDouble(),
+        vsync: this);
+    _forecastImageAnimationController.repeat();
+    _forecastImageAnimationController.addListener(imageListener());
+    _forecastImageAnimationController.forward();
   }
 
   @override
   Ticker createTicker(onTick) {
-    // TODO: implement createTicker
+    print('Creating Ticker');
     return Ticker(tickerDuration);
   }
 
   tickerDuration(Duration elapsed) {
-    print('Ticker duration');
+    print('Ticker duration:  $elapsed.inMilliseconds');
+  }
+
+  VoidCallback imageListener() {
+    _postForecastImageSet(_forecastImageAnimationController.value);
+  }
+
+  Stream<RaspDataState> _postForecastImageSet(double value) async* {
+    print("Animation value: $_forecastImageAnimationController.value");
+    var imageIndex = value.toInt();
+    if (imageIndex < _imageSets.length) {
+      print("Posting imageSet[$imageIndex]");
+      yield new RaspForecastImageDisplay(_imageSets[imageIndex]);
+    }
   }
 }

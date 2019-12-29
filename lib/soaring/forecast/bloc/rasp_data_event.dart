@@ -41,12 +41,7 @@ class LoadForecastTypes extends RaspDataEvent {
   LoadForecastTypes();
 }
 
-/// Tell bloc to retrieve the forecast for given parms
-class LoadRaspForecast extends RaspDataEvent {
-  final String regionName;
-  final String forecastModel;
-  final String forecastDate;
-  final String forecastType;
-  LoadRaspForecast(this.regionName, this.forecastModel, this.forecastDate,
-      this.forecastType);
+class RunAnimationEvent extends RaspDataEvent {
+  final bool runAnimation;
+  RunAnimationEvent(this.runAnimation);
 }

@@ -30,11 +30,12 @@ class _RaspImageTestState extends State<RaspImageTest> {
     repository = Repository(context);
     today = f.format(DateTime.now());
     _getImage();
+    super.initState();
   }
 
   _getImage() async {
     String url = Constants.RASP_BASE_URL +
-        "/NewEngland/${today}/gfs/wstar_bsratio.1500local.d2.body.png";
+        "/NewEngland/$today/gfs/wstar_bsratio.1500local.d2.body.png";
     image = await repository.getRaspForecastImage(url);
     setState(() {
       stackIndex = 1;

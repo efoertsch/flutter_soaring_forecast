@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/rasp_selection_values.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image_set.dart';
 import 'package:flutter_soaring_forecast/soaring/json/forecast_types.dart';
 import 'package:flutter_soaring_forecast/soaring/json/regions.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -44,4 +45,9 @@ class RaspMapLatLngBounds extends RaspDataState {
 class RaspMapLatLngBoundsError extends RaspDataState {
   @override
   String toString() => 'Error creating Google Map Lat/Lng bounds';
+}
+
+class RaspForecastImageDisplay extends RaspDataState {
+  final SoaringForecastImageSet soaringForecastImageSet;
+  RaspForecastImageDisplay(this.soaringForecastImageSet);
 }
