@@ -6,7 +6,6 @@
 /// 2. Modified code for generator:
 ///    a. Added @JsonSerializable() for each class (except enums) below
 ///    b. Add getters as needed for convenience
-
 import 'dart:convert';
 
 import 'package:json_annotation/json_annotation.dart';
@@ -26,7 +25,7 @@ String forecastTypesToJson(ForecastTypes data) => json.encode(data.toJson());
 
 @JsonSerializable()
 class ForecastTypes {
-  List<Forecast> forecasts;
+  List<Forecast>? forecasts;
 
   ForecastTypes({
     this.forecasts,
@@ -38,20 +37,20 @@ class ForecastTypes {
       );
 
   Map<String, dynamic> toJson() => {
-        "forecasts": List<dynamic>.from(forecasts.map((x) => x.toJson())),
+        "forecasts": List<dynamic>.from(forecasts!.map((x) => x.toJson())),
       };
 }
 
 @JsonSerializable()
 class Forecast {
   String forecastName;
-  ForecastType forecastType;
-  String forecastNameDisplay;
-  String forecastDescription;
-  ForecastCategory forecastCategory;
+  ForecastType? forecastType;
+  String? forecastNameDisplay;
+  String? forecastDescription;
+  ForecastCategory? forecastCategory;
 
   Forecast({
-    this.forecastName,
+    required this.forecastName,
     this.forecastType,
     this.forecastNameDisplay,
     this.forecastDescription,
@@ -91,7 +90,7 @@ final forecastTypeValues =
 
 class EnumValues<T> {
   Map<String, T> map;
-  Map<T, String> reverseMap;
+  Map<T, String> reverseMap = new Map();
 
   EnumValues(this.map);
 

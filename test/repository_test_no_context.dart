@@ -1,14 +1,22 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_soaring_forecast/soaring/json/regions.dart';
 import 'package:flutter_soaring_forecast/soaring/respository/repository.dart';
 import "package:flutter_test/flutter_test.dart";
+import 'package:mockito/mockito.dart';
+
+class MockBuildContext extends Mock implements BuildContext {}
 
 void main() {
-  Repository repository = Repository(null);
+  MockBuildContext _mockContext;
+
+  _mockContext = MockBuildContext();
+
+  Repository repository = Repository(_mockContext);
 
   test("Get current.json", () async {
     repository.getRegions().then(expectAsync1((regions) =>
         //expect(regions.regions.length,2)
-        print("Regions: ${regions.regions.length}")));
+        print("Regions: ${regions.regions!.length}")));
   });
 
   getPrintDatesForFirstRegion(Region region) async {
@@ -21,12 +29,12 @@ void main() {
 
   test("Get forecastModels for each printdate in region", () async {
     repository.getRegions().then(expectAsync1(
-        (regions) => getPrintDatesForFirstRegion(regions.regions[0])));
+        (regions) => getPrintDatesForFirstRegion(regions.regions![0])));
   });
 
   test("Get forecast types", () async {
     repository.getForecastTypes().then(expectAsync1(
-        (forecastTypes) => expect(forecastTypes.forecasts.length, 43)));
+        (forecastTypes) => expect(forecastTypes.forecasts!.length, 43)));
     //print(foreastTypes.toString())))
   });
 }

@@ -1,20 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_soaring_forecast/soaring/bloc/rasp_data_bloc.dart';
+import 'package:flutter_bloc/flutter_bloc.dart' hide BuildContext;
 import 'package:flutter_soaring_forecast/soaring/forecast/rasp_screen.dart';
 import 'package:flutter_soaring_forecast/soaring/respository/repository.dart';
+
+import '../forecast/bloc/rasp_data_bloc.dart';
 
 class MainScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return RepositoryProvider(
       create: (context) => Repository(context),
-      child: MyChild(),
+      child: SoaringForecast(),
     );
   }
 }
 
-class MyChild extends StatelessWidget {
+class SoaringForecast extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider<RaspDataBloc>(

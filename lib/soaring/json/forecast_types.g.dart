@@ -6,31 +6,27 @@ part of 'forecast_types.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-ForecastTypes _$ForecastTypesFromJson(Map<String, dynamic> json) {
-  return ForecastTypes(
-    forecasts: (json['forecasts'] as List)
-        ?.map((e) =>
-            e == null ? null : Forecast.fromJson(e as Map<String, dynamic>))
-        ?.toList(),
-  );
-}
+ForecastTypes _$ForecastTypesFromJson(Map<String, dynamic> json) =>
+    ForecastTypes(
+      forecasts: (json['forecasts'] as List<dynamic>?)
+          ?.map((e) => Forecast.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
 
 Map<String, dynamic> _$ForecastTypesToJson(ForecastTypes instance) =>
     <String, dynamic>{
       'forecasts': instance.forecasts,
     };
 
-Forecast _$ForecastFromJson(Map<String, dynamic> json) {
-  return Forecast(
-    forecastName: json['forecastName'] as String,
-    forecastType:
-        _$enumDecodeNullable(_$ForecastTypeEnumMap, json['forecastType']),
-    forecastNameDisplay: json['forecastNameDisplay'] as String,
-    forecastDescription: json['forecastDescription'] as String,
-    forecastCategory: _$enumDecodeNullable(
-        _$ForecastCategoryEnumMap, json['forecastCategory']),
-  );
-}
+Forecast _$ForecastFromJson(Map<String, dynamic> json) => Forecast(
+      forecastName: json['forecastName'] as String,
+      forecastType:
+          _$enumDecodeNullable(_$ForecastTypeEnumMap, json['forecastType']),
+      forecastNameDisplay: json['forecastNameDisplay'] as String?,
+      forecastDescription: json['forecastDescription'] as String?,
+      forecastCategory: _$enumDecodeNullable(
+          _$ForecastCategoryEnumMap, json['forecastCategory']),
+    );
 
 Map<String, dynamic> _$ForecastToJson(Forecast instance) => <String, dynamic>{
       'forecastName': instance.forecastName,
@@ -40,36 +36,41 @@ Map<String, dynamic> _$ForecastToJson(Forecast instance) => <String, dynamic>{
       'forecastCategory': _$ForecastCategoryEnumMap[instance.forecastCategory],
     };
 
-T _$enumDecode<T>(
-  Map<T, dynamic> enumValues,
-  dynamic source, {
-  T unknownValue,
+K _$enumDecode<K, V>(
+  Map<K, V> enumValues,
+  Object? source, {
+  K? unknownValue,
 }) {
   if (source == null) {
-    throw ArgumentError('A value must be provided. Supported values: '
-        '${enumValues.values.join(', ')}');
+    throw ArgumentError(
+      'A value must be provided. Supported values: '
+      '${enumValues.values.join(', ')}',
+    );
   }
 
-  final value = enumValues.entries
-      .singleWhere((e) => e.value == source, orElse: () => null)
-      ?.key;
-
-  if (value == null && unknownValue == null) {
-    throw ArgumentError('`$source` is not one of the supported values: '
-        '${enumValues.values.join(', ')}');
-  }
-  return value ?? unknownValue;
+  return enumValues.entries.singleWhere(
+    (e) => e.value == source,
+    orElse: () {
+      if (unknownValue == null) {
+        throw ArgumentError(
+          '`$source` is not one of the supported values: '
+          '${enumValues.values.join(', ')}',
+        );
+      }
+      return MapEntry(unknownValue, enumValues.values.first);
+    },
+  ).key;
 }
 
-T _$enumDecodeNullable<T>(
-  Map<T, dynamic> enumValues,
+K? _$enumDecodeNullable<K, V>(
+  Map<K, V> enumValues,
   dynamic source, {
-  T unknownValue,
+  K? unknownValue,
 }) {
   if (source == null) {
     return null;
   }
-  return _$enumDecode<T>(enumValues, source, unknownValue: unknownValue);
+  return _$enumDecode<K, V>(enumValues, source, unknownValue: unknownValue);
 }
 
 const _$ForecastTypeEnumMap = {

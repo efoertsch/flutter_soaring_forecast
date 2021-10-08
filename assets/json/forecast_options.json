@@ -262,35 +262,35 @@
     {
       "forecast_name": "press1000",
       "forecast_type": "full",
-      "forecast_name_display": "Vertical Velocity at 1000mb",
+      "forecast_name_display": "Vertical Velocity at 1000mb(surface)",
       "forecast_description": "Vertical velocity at a constant pressure level of 1000mb, plus wind speed/direction barbs.  [1000mb presure level is essentially Surface]  Such upward motions can result from mountain wave or BL convergence.  A white dashed straight-line represents the location of the slice used for the [Vertical Velocity Slice through Vertical Velocity Maximum] parameter since these parameters are intended to be used in conjunction.  These parameters are obtained directly from WRF model output and not from a BLIPMAP computation",
       "forecast_category":"wave"
     },
     {
       "forecast_name": "press950",
       "forecast_type": "full",
-      "forecast_name_display": "Vertical Velocity at 950mb",
+      "forecast_name_display": "Vertical Velocity at 950mb(1k ft)",
       "forecast_description": "Vertical velocity at a constant pressure level of 950mb, plus wind speed/direction barbs.  [950mb presure level is approximately 1000 ft AMSL or 300 m AMSL.]  Such upward motions can result from mountain wave or BL convergence.  A white dashed straight-line represents the location of the slice used for the [Vertical Velocity Slice through Vertical Velocity Maximum] parameter since these parameters are intended to be used in conjunction.  These parameters are obtained directly from WRF model output and not from a BLIPMAP computation",
       "forecast_category":"wave"
     },
     {
       "forecast_name": "press850",
       "forecast_type": "full",
-      "forecast_name_display": "Vertical Velocity at 850mb",
+      "forecast_name_display": "Vertical Velocity at 850mb(5K ft)",
       "forecast_description": "Vertical velocity at a constant pressure level of 850mb, plus wind speed/direction barbs.  [850mb presure level is approximately at 5000 ft AMSL or 1500 m AMSL.]  Such upward motions can result from mountain wave or BL convergence.  A white dashed straight-line represents the location of the slice used for the [Vertical Velocity Slice through Vertical Velocity Maximum] parameter since these parameters are intended to be used in conjunction.  These parameters are obtained directly from WRF model output and not from a BLIPMAP computation",
       "forecast_category":"wave"
     },
     {
       "forecast_name": "press700",
       "forecast_type": "full",
-      "forecast_name_display": "Vertical Velocity at 700mb",
+      "forecast_name_display": "Vertical Velocity at 700mb(8k ft)",
       "forecast_description": "Vertical velocity at a constant pressure level of 700mb, plus wind speed/direction barbs.  [700mb presure levels is approximately at 8000 ft AMSL or 2500 m AMSL.]  Such upward motions can result from mountain wave or BL convergence.  A white dashed straight-line represents the location of the slice used for the [Vertical Velocity Slice through Vertical Velocity Maximum] parameter since these parameters are intended to be used in conjunction.  These parameters are obtained directly from WRF model output and not from a BLIPMAP computation",
       "forecast_category":"wave"
     },
     {
       "forecast_name": "press500",
       "forecast_type": "full",
-      "forecast_name_display": "Vertical Velocity at 500mb",
+      "forecast_name_display": "Vertical Velocity at 500mb(19k ft)",
       "forecast_description": "Vertical velocity at a constant pressure level of 500mb, plus wind speed/direction barbs.  [500mb presure levels are approximately at 19000 ft AMSL or 5800 m AMSL.]  Such upward motions can result from mountain wave or BL convergence.  A white dashed straight-line represents the location of the slice used for the [Vertical Velocity Slice through Vertical Velocity Maximum] parameter since these parameters are intended to be used in conjunction.  These parameters are obtained directly from WRF model output and not from a BLIPMAP computation",
       "forecast_category":"wave"
     },

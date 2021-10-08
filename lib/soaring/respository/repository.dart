@@ -1,28 +1,38 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
+    as Constants;
+import 'package:flutter_soaring_forecast/soaring/floor/app_database.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image.dart';
 import 'package:flutter_soaring_forecast/soaring/json/forecast_models.dart';
 import 'package:flutter_soaring_forecast/soaring/json/forecast_types.dart';
 import 'package:flutter_soaring_forecast/soaring/json/rasp_api.dart';
 import 'package:flutter_soaring_forecast/soaring/json/regions.dart';
+import 'package:flutter_soaring_forecast/soaring/respository/ImageCacheManager.dart';
 
 class Repository {
   // Hmmm. How to make this only available via static gettter
-  static Repository repository;
+  static Repository? _repository;
   static Dio dio = Dio();
-  static BuildContext _context;
-  static RaspClient raspClient;
+  static late BuildContext _context;
+  static late RaspClient _raspClient;
+  static AppDatabase? _appDatabase;
+
+  bool workManager = false;
 
   Repository._();
 
   factory Repository(BuildContext context) {
-    if (repository == null) {
-      repository = Repository._();
+    if (_repository == null) {
+      _repository = Repository._();
       _context = context;
       dio.interceptors.add(LogInterceptor(responseBody: true));
       dio.options.receiveTimeout = 300000;
-      raspClient = new RaspClient(dio);
+      _raspClient = new RaspClient(dio);
     }
-    return repository;
+    return _repository!;
   }
 
   // The order of API calls to get a forecast
@@ -37,19 +47,19 @@ class Repository {
 
   ///  1. Get the list of available forecast regions (e.g. NewEngland, Mifflin) and forecast dates, etc for each region
   Future<Regions> getRegions() async {
-    return raspClient.getRegions();
+    return _raspClient.getRegions();
   }
 
   /// 2. For selected region, iterate through dates for which forecasts have
   /// been provided to find all models (gfs,nam,...) and forecast dates
   Future<Region> loadForecastModelsByDateForRegion(Region region) async {
     region.clearRegionModelDates();
-    List<String> printdates = region.printDates;
-    List<String> dates = region.dates;
-    for (int i = 0; i < region.dates.length - 1; ++i) {
+    List<String> printdates = region.printDates!;
+    List<String> dates = region.dates!;
+    for (int i = 0; i < region.dates!.length - 1; ++i) {
       try {
         ForecastModels forecastModels =
-            await raspClient.getForecastModels(region.name, dates[i]);
+            await _raspClient.getForecastModels(region.name!, dates[i]);
         region.addForecastModelsForDate(
             forecastModels, dates[i], printdates[i]);
       } catch (error, stackTrace) {
@@ -78,4 +88,60 @@ class Repository {
   dispose() {
     // TODO what do I need to do here?
   }
+
+  // ----------- Get RASP forecast images -----------------------
+  Future<SoaringForecastImage> getRaspForecastImageByUrl(
+      SoaringForecastImage soaringForecastImage) async {
+    String fullUrl = Constants.RASP_BASE_URL + soaringForecastImage.imageUrl;
+    File file = await ImageCacheManager().getSingleFile(fullUrl);
+    print("DownloadØing forecast image: $fullUrl");
+    Image image = Image.file(file);
+    soaringForecastImage.setImage(image);
+    return Future<SoaringForecastImage>.value(soaringForecastImage);
+  }
+
+  Future<Image> getRaspForecastImageByParms(
+      String regionName,
+      String forecastDate,
+      String model,
+      String forecastType,
+      String forecastTime,
+      String imageType) async {
+    return getRaspForecastImage(Constants.RASP_BASE_URL +
+        "/$regionName/$forecastDate/$model/$forecastType.$forecastTime}local.d2.$imageType.png");
+  }
+
+  getRaspForecastImage(String url) async {
+    File file = await ImageCacheManager().getSingleFile(url);
+    Image image = Image.file(file);
+    return Future<Image>.value(image);
+  }
+
+  // Set up Floor database
+  Future<AppDatabase> makeDatabaseAvailable() async {
+    if (_appDatabase == null) {
+      _appDatabase =
+          await $FloorAppDatabase.databaseBuilder('app_database.db').build();
+    }
+    return _appDatabase!;
+  }
+
+  // Handle list of airports
+  void checkIfNeedToDownloadAirports() async {
+    await makeDatabaseAvailable();
+    // 1. See how many airports in database
+    var count = await _appDatabase!.airportDao.getCountOfAirports();
+    count = (count == null) ? 0 : count;
+    print("Number of airports in database = $count");
+    // 2. if less than 200 (picking number from the air) start background process to download
+    if (count < 200) {
+      // 3. Initialize work manager
+
+      // 4. Start download
+    }
+  }
+
+// --------- Download and process airports file -------------------
+// TODO Implement in Download Manager
+
 }
