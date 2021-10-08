@@ -22,11 +22,11 @@ class ForecastModels {
   List<Model> models;
 
   ForecastModels({
-    this.models,
+    required this.models,
   });
 
   List<String> getModelNames() {
-    var modelNames = List<String>();
+    var modelNames = <String>[];
     for (Model model in models) {
       modelNames.add(model.name);
     }
@@ -54,10 +54,10 @@ class Model {
   List<List<double>> corners;
 
   Model({
-    this.center,
-    this.times,
-    this.name,
-    this.corners,
+    required this.center,
+    required this.times,
+    required this.name,
+    required this.corners,
   });
 
   factory Model.fromJson(Map<String, dynamic> json) => _$ModelFromJson(json);

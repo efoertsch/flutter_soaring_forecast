@@ -47,6 +47,11 @@ class RaspMapLatLngBoundsError extends RaspDataState {
   String toString() => 'Error creating Google Map Lat/Lng bounds';
 }
 
+class RaspForecastImageSets extends RaspDataState {
+  final List<SoaringForecastImageSet> soaringForecastImageSets;
+  RaspForecastImageSets(this.soaringForecastImageSets);
+}
+
 class RaspForecastImageDisplay extends RaspDataState {
   final SoaringForecastImageSet soaringForecastImageSet;
   RaspForecastImageDisplay(this.soaringForecastImageSet);

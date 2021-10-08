@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 class BitmapImage {
-  final String imageUrl;
+  late final String imageUrl;
   bool errorOnLoad = false;
-  Image _image;
+  Image? _image;
 
   BitmapImage(this.imageUrl);
 
@@ -20,7 +20,7 @@ class BitmapImage {
     return errorOnLoad;
   }
 
-  Image get image {
+  Image? get image {
     return _image;
   }
 

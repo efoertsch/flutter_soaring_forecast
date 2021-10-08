@@ -6,23 +6,22 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 // From https://github.com/renefloor/flutter_cache_manager
-class ImageCacheManager extends BaseCacheManager {
+class ImageCacheManager extends CacheManager {
   static const key = "ImageCache";
 
-  static ImageCacheManager _instance;
+  static ImageCacheManager? _instance;
 
   factory ImageCacheManager() {
     if (_instance == null) {
       _instance = new ImageCacheManager._();
     }
-    return _instance;
+    return _instance!;
   }
 
   ImageCacheManager._()
       : super(
-          key,
-          maxAgeCacheObject: Duration(minutes: 15),
-          maxNrOfCacheObjects: 25,
+          Config(key,
+              stalePeriod: Duration(minutes: 15), maxNrOfCacheObjects: 25),
         );
 
   Future<String> getFilePath() async {

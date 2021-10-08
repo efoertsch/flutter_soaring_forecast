@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/values/strings.dart';
 
 import 'main_screen.dart';
 
-void main() => runApp(SoaringForecastApp());
+void main() async {
+  // Avoid errors caused by flutter upgrade.
+  // Importing 'package:flutter/widgets.dart' is required.
+  WidgetsFlutterBinding.ensureInitialized();
+
+  runApp(SoaringForecastApp());
+}
 
 class SoaringForecastApp extends StatelessWidget {
   // This widget is the root of your application.

@@ -7,49 +7,54 @@ part of 'rasp_api.dart';
 // **************************************************************************
 
 class _RaspClient implements RaspClient {
-  _RaspClient(this._dio) {
-    ArgumentError.checkNotNull(_dio, '_dio');
+  _RaspClient(this._dio, {this.baseUrl}) {
+    baseUrl ??= 'https://soargbsc.net/rasp/';
   }
 
   final Dio _dio;
 
-  final String baseUrl = 'https://soargbsc.com/rasp/';
+  String? baseUrl;
 
   @override
-  getRegions() async {
+  Future<Regions> getRegions() async {
     const _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _data = <String, dynamic>{};
-    final Response<Map<String, dynamic>> _result = await _dio.request(
-        '/current.json',
-        queryParameters: queryParameters,
-        options: RequestOptions(
-            method: 'GET',
-            headers: <String, dynamic>{},
-            extra: _extra,
-            baseUrl: baseUrl),
-        data: _data);
-    final value = Regions.fromJson(_result.data);
-    return Future.value(value);
+    final _result = await _dio.fetch<Map<String, dynamic>>(
+        _setStreamType<Regions>(
+            Options(method: 'GET', headers: <String, dynamic>{}, extra: _extra)
+                .compose(_dio.options, '/current.json',
+                    queryParameters: queryParameters, data: _data)
+                .copyWith(baseUrl: baseUrl ?? _dio.options.baseUrl)));
+    final value = Regions.fromJson(_result.data!);
+    return value;
   }
 
   @override
-  getForecastModels(region, date) async {
-    ArgumentError.checkNotNull(region, 'region');
-    ArgumentError.checkNotNull(date, 'date');
+  Future<ForecastModels> getForecastModels(region, date) async {
     const _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _data = <String, dynamic>{};
-    final Response<Map<String, dynamic>> _result = await _dio.request(
-        '/$region/$date/status.json',
-        queryParameters: queryParameters,
-        options: RequestOptions(
-            method: 'GET',
-            headers: <String, dynamic>{},
-            extra: _extra,
-            baseUrl: baseUrl),
-        data: _data);
-    final value = ForecastModels.fromJson(_result.data);
-    return Future.value(value);
+    final _result = await _dio.fetch<Map<String, dynamic>>(
+        _setStreamType<ForecastModels>(
+            Options(method: 'GET', headers: <String, dynamic>{}, extra: _extra)
+                .compose(_dio.options, '/$region/$date/status.json',
+                    queryParameters: queryParameters, data: _data)
+                .copyWith(baseUrl: baseUrl ?? _dio.options.baseUrl)));
+    final value = ForecastModels.fromJson(_result.data!);
+    return value;
+  }
+
+  RequestOptions _setStreamType<T>(RequestOptions requestOptions) {
+    if (T != dynamic &&
+        !(requestOptions.responseType == ResponseType.bytes ||
+            requestOptions.responseType == ResponseType.stream)) {
+      if (T == String) {
+        requestOptions.responseType = ResponseType.plain;
+      } else {
+        requestOptions.responseType = ResponseType.json;
+      }
+    }
+    return requestOptions;
   }
 }

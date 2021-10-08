@@ -9,7 +9,7 @@ void main() {
     // be the same as the Strings we used for the Keys in step 1.
     final raspImageKey = find.byValueKey("raspImage");
     final progressIndicatorKey = find.byValueKey("progessIndicator");
-    FlutterDriver driver;
+    FlutterDriver? driver;
 
     // Connect to the Flutter driver before running any tests.
     setUpAll(() async {
@@ -19,7 +19,7 @@ void main() {
     // Close the connection to the driver after the tests have completed.
     tearDownAll(() async {
       if (driver != null) {
-        driver.close();
+        driver!.close();
       }
     });
 

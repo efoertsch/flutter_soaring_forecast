@@ -15,10 +15,10 @@ class RaspImageTest extends StatefulWidget {
 }
 
 class _RaspImageTestState extends State<RaspImageTest> {
-  Repository repository;
-  Image image;
+  Repository? repository;
+  Image? image;
   final f = new DateFormat('yyyy-MM-dd');
-  String today;
+  String? today;
 
   Key raspImageKey = Key("raspImage");
   Key progressIndicatorKey = Key("progessIndicator");
@@ -36,7 +36,7 @@ class _RaspImageTestState extends State<RaspImageTest> {
   _getImage() async {
     String url = Constants.RASP_BASE_URL +
         "/NewEngland/$today/gfs/wstar_bsratio.1500local.d2.body.png";
-    image = await repository.getRaspForecastImage(url);
+    image = await repository!.getRaspForecastImage(url);
     setState(() {
       stackIndex = 1;
       print("image found");
@@ -53,7 +53,7 @@ class _RaspImageTestState extends State<RaspImageTest> {
           primaryColor: Colors.blue,
         ),
         home: Scaffold(
-          resizeToAvoidBottomPadding: false,
+          resizeToAvoidBottomInset: false,
           appBar: new AppBar(
             title: new Text("test"),
           ),

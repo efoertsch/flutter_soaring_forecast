@@ -9,7 +9,7 @@ import 'regions.dart';
 part 'rasp_api.g.dart';
 
 //!!! Remember to run generator with any changes !!!
-//!!!  flutter pub run build_runner build        !!!
+//!!!  flutter pub run build_runner build  --delete-conflicting-outputs     !!!
 @RestApi(baseUrl: Constants.RASP_BASE_URL)
 abstract class RaspClient {
   factory RaspClient(Dio dio) = _RaspClient;
