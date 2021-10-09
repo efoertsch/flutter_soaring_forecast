@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     as Constants;
+import 'package:flutter_soaring_forecast/soaring/floor/airport.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/app_database.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image.dart';
 import 'package:flutter_soaring_forecast/soaring/json/forecast_models.dart';
@@ -11,20 +12,20 @@ import 'package:flutter_soaring_forecast/soaring/json/forecast_types.dart';
 import 'package:flutter_soaring_forecast/soaring/json/rasp_api.dart';
 import 'package:flutter_soaring_forecast/soaring/json/regions.dart';
 import 'package:flutter_soaring_forecast/soaring/respository/ImageCacheManager.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class Repository {
   // Hmmm. How to make this only available via static gettter
   static Repository? _repository;
   static Dio dio = Dio();
-  static late BuildContext _context;
+  static late BuildContext? _context;
   static late RaspClient _raspClient;
   static AppDatabase? _appDatabase;
 
-  bool workManager = false;
-
   Repository._();
 
-  factory Repository(BuildContext context) {
+  // BuildContext should only be null if repository created in WorkManager task!!!
+  factory Repository(BuildContext? context) {
     if (_repository == null) {
       _repository = Repository._();
       _context = context;
@@ -74,7 +75,7 @@ class Repository {
   Future<ForecastTypes> getForecastTypes() async {
     /// Retrieves a list of forecast types
     try {
-      final json = DefaultAssetBundle.of(_context)
+      final json = DefaultAssetBundle.of(_context!)
           .loadString('assets/json/forecast_options.json');
       // TODO - why is method hanging here in test
       ForecastTypes forecastTypes = forecastTypesFromJson(await json);
@@ -94,7 +95,7 @@ class Repository {
       SoaringForecastImage soaringForecastImage) async {
     String fullUrl = Constants.RASP_BASE_URL + soaringForecastImage.imageUrl;
     File file = await ImageCacheManager().getSingleFile(fullUrl);
-    print("DownloadØing forecast image: $fullUrl");
+    //print("Downloading forecast image: $fullUrl");
     Image image = Image.file(file);
     soaringForecastImage.setImage(image);
     return Future<SoaringForecastImage>.value(soaringForecastImage);
@@ -126,22 +127,41 @@ class Repository {
     return _appDatabase!;
   }
 
-  // Handle list of airports
-  void checkIfNeedToDownloadAirports() async {
+  Future<int> getCountOfAirports() async {
     await makeDatabaseAvailable();
-    // 1. See how many airports in database
-    var count = await _appDatabase!.airportDao.getCountOfAirports();
-    count = (count == null) ? 0 : count;
-    print("Number of airports in database = $count");
-    // 2. if less than 200 (picking number from the air) start background process to download
-    if (count < 200) {
-      // 3. Initialize work manager
-
-      // 4. Start download
-    }
+    return await _appDatabase!.airportDao.getCountOfAirports() ?? 0;
   }
 
-// --------- Download and process airports file -------------------
-// TODO Implement in Download Manager
+  Future<int?> deleteAllAirports() async {
+    await makeDatabaseAvailable();
+    return _appDatabase!.airportDao.deleteAll();
+  }
 
+  Future<List<int?>> insertAllAirports(List<Airport> airports) async {
+    await makeDatabaseAvailable();
+    return _appDatabase!.airportDao.insertAll(airports);
+  }
+
+  // ----- Shared preferences --------------------------
+  // Make sure keys are unique among calling routines!
+
+  Future<bool> saveGenericString(String key, String value) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.setString(key, value);
+  }
+
+  Future<String> getGenericString(String key, String defaultValue) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getString(key) ?? defaultValue;
+  }
+
+  Future<bool> saveGenericInt(String key, int value) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.setInt(key, value);
+  }
+
+  Future<int> getGenericInt(String key, int defaultValue) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getInt(key) ?? defaultValue;
+  }
 }
