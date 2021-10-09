@@ -4,7 +4,7 @@ import 'package:flutter_soaring_forecast/soaring/floor/task.dart';
 //TODO if any changes run  -  flutter packages pub run build_runner build
 @Entity(tableName: 'taskturnpoint', foreignKeys: [
   ForeignKey(
-    childColumns: ['task_id'],
+    childColumns: ['taskId'],
     parentColumns: ['id'],
     entity: Task,
   )
