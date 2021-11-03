@@ -55,8 +55,12 @@ class DisplayTimer {
   }
 
   void cancelTimer() {
-    _timer!.cancel();
-    print('Cancelled timer controller');
+    if (_timer != null) {
+      _timer!.cancel();
+      print('Cancelled timer controller');
+    } else {
+      print('cancelTimer called but timer already cancelled');
+    }
   }
 
   Stream<int> get stream => _controller.stream;

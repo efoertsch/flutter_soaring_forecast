@@ -302,7 +302,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
         '  incOrDec $incOrDec');
     if (incOrDec > 0) {
       _selectedForecastTimeIndex =
-          (_selectedForecastTimeIndex == _forecastTimes!.length)
+          (_selectedForecastTimeIndex == _forecastTimes!.length - 1)
               ? 0
               : _selectedForecastTimeIndex + incOrDec;
     } else {
