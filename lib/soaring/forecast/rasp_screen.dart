@@ -28,7 +28,10 @@ class RaspScreen extends StatefulWidget {
 
 //TODO - keep more data details in Bloc,
 class _RaspScreenState extends State<RaspScreen>
-    with SingleTickerProviderStateMixin, AfterLayoutMixin<RaspScreen> {
+    with
+        SingleTickerProviderStateMixin,
+        AfterLayoutMixin<RaspScreen>,
+        WidgetsBindingObserver {
   late final MapController _mapController;
   var _overlayImages = <OverlayImage>[];
   final _scaffoldKey = GlobalKey<ScaffoldState>();
@@ -38,19 +41,18 @@ class _RaspScreenState extends State<RaspScreen>
   String _pauseAnimationLabel = "Pause";
   String _loopAnimationLabel = "Loop";
 
+  // Tell map when to
   final _forecastOverlayController = StreamController<Null>.broadcast();
 
 // Start forecast display with animation running
-  bool _animationRunning = false;
-  bool _runAnimation = true;
+  bool _startAnimation = false;
+  int _currentImageIndex = 0;
+  int _lastImageIndex = 0;
 
-  int currentImageIndex = 0;
-  int lastImageIndex = 0;
-  int controllerIndex = 0;
   SoaringForecastImageSet? soaringForecastImageSet;
-  var displayTimer = DisplayTimer(Duration(seconds: 3));
-  Stream<int>? overlayPositionCounter;
-  late StreamSubscription<int> _tickerSubscription;
+  DisplayTimer? _displayTimer;
+  Stream<int>? _overlayPositionCounter;
+  StreamSubscription<int>? _tickerSubscription;
 
   //GoogleMapController? _mapController;
 // Default values - NewEngland lat/lng of course!
@@ -64,22 +66,42 @@ class _RaspScreenState extends State<RaspScreen>
     super.initState();
     _firstLayoutComplete = false;
     _mapController = MapController();
+    WidgetsBinding.instance!.addObserver(this);
   }
 
   @override
   void dispose() {
+    stopAnimation();
+    WidgetsBinding.instance!.removeObserver(this);
     super.dispose();
-    // _raspDataBloc.close();
-    _forecastOverlayController.close();
-    _tickerSubscription.cancel();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    switch (state) {
+      case AppLifecycleState.resumed:
+        print("app in resumed");
+        break;
+      case AppLifecycleState.inactive:
+        print("app in inactive");
+        stopAnimation();
+        break;
+      case AppLifecycleState.paused:
+        print("app in paused");
+        stopAnimation();
+        break;
+      case AppLifecycleState.detached:
+        print("app in detached");
+        break;
+    }
   }
 
   // Make sure first layout occurs prior to map ready otherwise crash occurs
   @override
   void afterFirstLayout(BuildContext context) {
     _firstLayoutComplete = true;
-    print("First layout complete.");
-    print('Calling series of APIs');
+    // print("First layout complete.");
+    // print('Calling series of APIs');
     BlocProvider.of<RaspDataBloc>(context).add(InitialRaspRegionEvent());
     _setMapLatLngBounds();
   }
@@ -107,14 +129,14 @@ class _RaspScreenState extends State<RaspScreen>
         }
       }, builder: (context, state) {
         //print('In forecastLayout State: $state');
-        print('Top of screen widgets. State is $state');
+        // print('Top of screen widgets. State is $state');
         if (state is RaspInitialState || state is RaspDataLoadErrorState) {
-          print('returning CircularProgressIndicator');
+          // print('returning CircularProgressIndicator');
           return Center(
             child: CircularProgressIndicator(),
           );
         }
-        print('creating/updating main screen');
+        // print('creating/updating main screen');
         return Padding(
           padding: EdgeInsets.all(8.0),
           child: Column(mainAxisAlignment: MainAxisAlignment.start, children: [
@@ -152,18 +174,19 @@ class _RaspScreenState extends State<RaspScreen>
   Widget forecastModelDropDownList() {
     return BlocBuilder<RaspDataBloc, RaspDataState>(
         buildWhen: (previous, current) {
-      print(
-          "ForecastModelDropDownList bloc buildwhen previous state: $previous current: $current");
+      // print(
+      //     "ForecastModelDropDownList bloc buildwhen previous state: $previous current: $current");
       return current is RaspInitialState || current is RaspForecastModels;
     }, builder: (context, state) {
       if (state is RaspInitialState || !(state is RaspForecastModels)) {
         return Text("Getting Forecast Models");
       }
       var raspForecastModels = state;
-      print(
-          'Creating dropdown for models. Model is ${raspForecastModels.selectedModelName}');
-      //BlocProvider.of<RaspDataBloc>(context).add(GetRaspModelDates());
+      // print(
+      //     'Creating dropdown for models. Model is ${raspForecastModels.selectedModelName}');
       return DropdownButton<String>(
+        style: TextStyle(
+            fontWeight: FontWeight.bold, color: Colors.black, fontSize: 20),
         value: (raspForecastModels.selectedModelName),
         hint: Text('Select Model'),
         isExpanded: true,
@@ -173,10 +196,6 @@ class _RaspScreenState extends State<RaspScreen>
           print('Selected model onChanged: $newValue');
           BlocProvider.of<RaspDataBloc>(context)
               .add(SelectedRaspModelEvent(newValue!));
-          // setState(() {
-          //   BlocProvider.of<RaspDataBloc>(context)
-          //       .add(SelectedRaspModel(newValue!));
-          // });
         },
         items: raspForecastModels.modelNames
             .map<DropdownMenuItem<String>>((String value) {
@@ -199,9 +218,11 @@ class _RaspScreenState extends State<RaspScreen>
         return Text("Getting Forecast Dates");
       }
       var raspForecastDates = state;
-      print(
-          'Creating dropdown for dates. Initial date is ${raspForecastDates.selectedForecastDate}');
+      // print(
+      //     'Creating dropdown for dates. Initial date is ${raspForecastDates.selectedForecastDate}');
       return DropdownButton<String>(
+        style: TextStyle(
+            fontWeight: FontWeight.bold, color: Colors.black, fontSize: 20),
         isExpanded: true,
         value: raspForecastDates.selectedForecastDate,
         onChanged: (String? newValue) {
@@ -229,6 +250,8 @@ class _RaspScreenState extends State<RaspScreen>
         return Text("Getting Forecasts");
       }
       return DropdownButton<String>(
+        style: TextStyle(
+            fontWeight: FontWeight.bold, color: Colors.black, fontSize: 20),
         isExpanded: true,
         value: state.selectedForecast.forecastNameDisplay,
         onChanged: (String? newValue) {
@@ -266,6 +289,7 @@ class _RaspScreenState extends State<RaspScreen>
                 flex: 1,
                 child: GestureDetector(
                   onTap: () {
+                    stopAnimation();
                     BlocProvider.of<RaspDataBloc>(context)
                         .add(PreviousTimeEvent());
                   },
@@ -284,7 +308,7 @@ class _RaspScreenState extends State<RaspScreen>
                 }
                 return Text(
                   state.soaringForecastImageSet.localTime + " (Local)",
-                  style: TextStyle(fontSize: 20),
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 );
               }),
             ),
@@ -292,6 +316,7 @@ class _RaspScreenState extends State<RaspScreen>
                 flex: 1,
                 child: GestureDetector(
                   onTap: () {
+                    stopAnimation();
                     BlocProvider.of<RaspDataBloc>(context).add(NextTimeEvent());
                   },
                   child: IncrDecrIconWidget.getIncIconWidget('>'),
@@ -303,13 +328,12 @@ class _RaspScreenState extends State<RaspScreen>
             child: GestureDetector(
               onTap: () {
                 setState(() {
-                  _animationRunning = !_animationRunning;
+                  _startAnimation = !_startAnimation;
+                  _startStopImageAnimation();
                 });
               },
               child: Text(
-                (_animationRunning
-                    ? _pauseAnimationLabel
-                    : _loopAnimationLabel),
+                (_startAnimation ? _pauseAnimationLabel : _loopAnimationLabel),
                 textAlign: TextAlign.end,
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
               ),
@@ -379,14 +403,15 @@ class _RaspScreenState extends State<RaspScreen>
     });
   }
 
+  // Sole purpose of this widget is to handle the forecast overlay
   Widget emptyWidgetForForecastImages() {
     return BlocBuilder<RaspDataBloc, RaspDataState>(
         buildWhen: (previous, current) {
       return current is RaspInitialState || current is RaspForecastImageSet;
     }, builder: (context, state) {
       if (state is RaspForecastImageSet) {
-        currentImageIndex = state.displayIndex;
-        lastImageIndex = state.numberImages - 1;
+        _currentImageIndex = state.displayIndex;
+        _lastImageIndex = state.numberImages - 1;
         soaringForecastImageSet = state.soaringForecastImageSet;
         updateForecastOverlay();
       }
@@ -395,25 +420,24 @@ class _RaspScreenState extends State<RaspScreen>
   }
 
   void _startStopImageAnimation() {
-    if (_animationRunning) {
-      _startRaspImageAnimation();
-    } else {
-      _tickerSubscription.pause();
-    }
-  }
-
-  void _startRaspImageAnimation() {
     //TODO timer and subscription to convoluted. Make simpler
-    if (overlayPositionCounter == null) {
-      overlayPositionCounter = displayTimer.stream.asBroadcastStream();
-      displayTimer.setStartAndLimit(currentImageIndex, lastImageIndex);
-      _tickerSubscription = overlayPositionCounter!.listen((int counter) {
+    if (_startAnimation) {
+      _displayTimer = DisplayTimer(Duration(seconds: 3));
+      _overlayPositionCounter = _displayTimer!.stream;
+      _tickerSubscription = _overlayPositionCounter!.listen((int counter) {
         BlocProvider.of<RaspDataBloc>(context).add(NextTimeEvent());
       });
+      _displayTimer!.setStartAndLimit(_currentImageIndex, _lastImageIndex);
+      _displayTimer!.startTimer();
+      print('Started timer');
     } else {
-      _tickerSubscription.pause();
-      displayTimer.setStartAndLimit(currentImageIndex, lastImageIndex);
-      _tickerSubscription.resume();
+      print('Stopping timer');
+      if (_tickerSubscription != null) {
+        _tickerSubscription!.cancel();
+        _displayTimer!.cancelTimer();
+        _displayTimer = null;
+      }
+      print('Stopped timer');
     }
   }
 
@@ -439,6 +463,13 @@ class _RaspScreenState extends State<RaspScreen>
     }
 
     _forecastOverlayController.sink.add(null);
+  }
+
+  void stopAnimation() {
+    if (_startAnimation) {
+      _startAnimation = false;
+      _startStopImageAnimation();
+    }
   }
 
 // TODO fix  Unhandled Exception: PlatformException(error

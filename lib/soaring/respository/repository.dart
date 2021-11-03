@@ -29,7 +29,7 @@ class Repository {
     if (_repository == null) {
       _repository = Repository._();
       _context = context;
-      _dio.interceptors.add(LogInterceptor(responseBody: true));
+      // _dio.interceptors.add(LogInterceptor(responseBody: true));
       _dio.options.receiveTimeout = 300000;
       _raspClient = new RaspClient(_dio);
     }
