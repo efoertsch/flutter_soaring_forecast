@@ -29,10 +29,13 @@ class AirportsDownloader {
           'Total number of US airports downloaded: $totalUSAirportsDownloaded');
       if (listOfAirports.length > 0) {
         repository.deleteAllAirports();
+        print("Deleted all airports from database");
       }
       var insertedResponse = await repository.insertAllAirports(listOfAirports);
-      var totalInserted = insertedResponse.fold<int>(
-          0, (previous, current) => previous + (current ?? 0));
+      var totalInserted = insertedResponse.fold<int>(0, (previous, current) {
+        print('airport insert result: $current');
+        return previous + (current ?? 0);
+      });
 
       print('Number airports inserted : $totalInserted');
       return (totalUSAirportsDownloaded == totalInserted && totalInserted > 0);
@@ -63,7 +66,7 @@ class AirportsDownloader {
           maybeBadRow = airport;
           listofAirports.add(airport);
         } else {
-          print('bypassing airport row:  $row.toString()}');
+          print('bypassing airport row:  $row}');
         }
         ++count;
       }
