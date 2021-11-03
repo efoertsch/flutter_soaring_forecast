@@ -1,3 +1,3 @@
 # flutter_soaring_forecast
-Flutter version of SoaringForecast
-In very early stage...
+Very early stage Flutter version of SoaringForecast (github: https://github.com/efoertsch/SoaringForecast ) Android Play Store(https://play.google.com/store/apps/details?id=org.soaringforecast.rasp )
+
