@@ -1,19 +1,25 @@
+import 'dart:async';
+
 import 'package:after_layout/after_layout.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart' hide BuildContext;
+//import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_soaring_forecast/soaring/app/app_drawer.dart';
+import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
+    as Constants;
 import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_data_state.dart';
-import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/rasp_selection_values.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast/display_ticker.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/rasp_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image_set.dart';
-import 'package:flutter_soaring_forecast/soaring/json/forecast_types.dart';
-import 'package:flutter_soaring_forecast/soaring/json/regions.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:latlong2/latlong.dart';
 
 import 'bloc/rasp_data_bloc.dart';
 import 'bloc/rasp_data_event.dart';
 
 class RaspScreen extends StatefulWidget {
   final BuildContext repositoryContext;
+
   RaspScreen({Key? key, required this.repositoryContext}) : super(key: key);
 
   @override
@@ -23,91 +29,104 @@ class RaspScreen extends StatefulWidget {
 //TODO - keep more data details in Bloc,
 class _RaspScreenState extends State<RaspScreen>
     with SingleTickerProviderStateMixin, AfterLayoutMixin<RaspScreen> {
-  late RaspDataBloc _raspDataBloc;
-  late Region _region;
-  late List<String> _modelNames;
-  late String _selectedModelName;
-  late List<String> _forecastDates;
-  late String _selectedForecastDate;
-  late List<String> _forecastTimes;
-  int _selectedForecastTimeIndex = 0;
-  late List<Forecast> _forecasts;
-  late Forecast _selectedForecast;
+  late final MapController _mapController;
+  var _overlayImages = <OverlayImage>[];
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
   bool _firstLayoutComplete = false;
+
 // TODO internationalize literals
   String _pauseAnimationLabel = "Pause";
   String _loopAnimationLabel = "Loop";
 
+  final _forecastOverlayController = StreamController<Null>.broadcast();
+
 // Start forecast display with animation running
-  bool _animationRunning = true;
-  AnimationController? _forecastImageAnimationController;
-  Animation<double>? _forecastImageAnimation;
+  bool _animationRunning = false;
   bool _runAnimation = true;
-  List<SoaringForecastImageSet>? _soaringForecastImageSets;
-  SoaringForecastImageSet? _soaringForecastImageSet;
+
+  int currentImageIndex = 0;
   int lastImageIndex = 0;
   int controllerIndex = 0;
+  SoaringForecastImageSet? soaringForecastImageSet;
+  var displayTimer = DisplayTimer(Duration(seconds: 3));
+  Stream<int>? overlayPositionCounter;
+  late StreamSubscription<int> _tickerSubscription;
 
-  GoogleMapController? _mapController;
+  //GoogleMapController? _mapController;
 // Default values - NewEngland lat/lng of course!
-  final LatLng _center = const LatLng(43.1394043, -72.0759888);
+  final LatLng _center = LatLng(43.1394043, -72.0759888);
   LatLngBounds _mapLatLngBounds = LatLngBounds(
-      southwest: LatLng(41.2665329, -73.6473083),
-      northeast: LatLng(45.0120811, -70.5046997));
+      LatLng(41.2665329, -73.6473083), LatLng(45.0120811, -70.5046997));
 
-  /// Make sure first layout occurs prior to map ready otherwise crash occurs
-  @override
-  void afterFirstLayout(BuildContext context) {
-    _firstLayoutComplete = true;
-    print(
-        "First layout complete. mapcontroller is set ${_mapController != null}");
-    if (_mapController != null) {
-      _setMapLatLngBounds();
-    }
-  }
-
-  /// This can cause crash if map ready prior to first layout
-  /// so check first if screen ready
-  void _onMapCreated(GoogleMapController controller) {
-    _mapController = controller;
-    print(
-        "Mapcontroller is defined. FirstLayoutComplete =  $_firstLayoutComplete");
-    if (_firstLayoutComplete) {
-      _setMapLatLngBounds();
-    }
-  }
-
-// Executed only when class created
+  // Executed only when class created
   @override
   void initState() {
     super.initState();
     _firstLayoutComplete = false;
-    _raspDataBloc = BlocProvider.of<RaspDataBloc>(context);
-    _raspDataBloc.add(GetInitialRaspSelections());
+    _mapController = MapController();
   }
 
-  final _scaffoldKey = GlobalKey<ScaffoldState>();
-
-  Widget _forecastLayout() {
-    return Padding(
-        padding: EdgeInsets.all(8.0),
-        child: Column(mainAxisAlignment: MainAxisAlignment.start, children: [
-          getForecastModelsAndDates(),
-          getForecastTypes(),
-          displayForecastTimes(),
-          displayGoogleMap()
-        ]));
+  @override
+  void dispose() {
+    super.dispose();
+    // _raspDataBloc.close();
+    _forecastOverlayController.close();
+    _tickerSubscription.cancel();
   }
 
-  Expanded displayGoogleMap() {
-    return Expanded(
-        child: GoogleMap(
-      onMapCreated: _onMapCreated,
-      initialCameraPosition: CameraPosition(
-        target: _center,
-        zoom: 11.0,
+  // Make sure first layout occurs prior to map ready otherwise crash occurs
+  @override
+  void afterFirstLayout(BuildContext context) {
+    _firstLayoutComplete = true;
+    print("First layout complete.");
+    print('Calling series of APIs');
+    BlocProvider.of<RaspDataBloc>(context).add(InitialRaspRegionEvent());
+    _setMapLatLngBounds();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      key: _scaffoldKey,
+      drawer: AppDrawer.getDrawer(context),
+      appBar: AppBar(
+        title: Text('RASP'),
+        actions: <Widget>[
+          IconButton(icon: Icon(Icons.list), onPressed: null),
+        ],
       ),
-    ));
+      body:
+          BlocConsumer<RaspDataBloc, RaspDataState>(listener: (context, state) {
+        if (state is RaspDataLoadErrorState) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              backgroundColor: Colors.green,
+              content: Text(state.error),
+            ),
+          );
+        }
+      }, builder: (context, state) {
+        //print('In forecastLayout State: $state');
+        print('Top of screen widgets. State is $state');
+        if (state is RaspInitialState || state is RaspDataLoadErrorState) {
+          print('returning CircularProgressIndicator');
+          return Center(
+            child: CircularProgressIndicator(),
+          );
+        }
+        print('creating/updating main screen');
+        return Padding(
+          padding: EdgeInsets.all(8.0),
+          child: Column(mainAxisAlignment: MainAxisAlignment.start, children: [
+            getForecastModelsAndDates(),
+            getForecastTypes(),
+            displayForecastTime(),
+            forecastWindow(),
+            emptyWidgetForForecastImages(),
+          ]),
+        );
+      }),
+    );
   }
 
   Widget getForecastModelsAndDates() {
@@ -117,6 +136,7 @@ class _RaspScreenState extends State<RaspScreen>
         Expanded(
           flex: 3,
           child: forecastModelDropDownList(),
+          //ForecastModelsWidget(),
         ),
         Expanded(
             flex: 7,
@@ -130,71 +150,108 @@ class _RaspScreenState extends State<RaspScreen>
 
 // Display GFS, NAM, ....
   Widget forecastModelDropDownList() {
-    return DropdownButton<String>(
-      value: (_selectedModelName),
-      isExpanded: true,
-      iconSize: 24,
-      elevation: 16,
-      onChanged: (String? newValue) {
-        setState(() {
-          _selectedModelName = newValue!;
-          _raspDataBloc.add(SelectedRaspModel(_selectedModelName));
-        });
-      },
-      items: _modelNames.map<DropdownMenuItem<String>>((String value) {
-        return DropdownMenuItem<String>(
-          value: value,
-          child: Text(value.toUpperCase()),
-        );
-      }).toList(),
-    );
+    return BlocBuilder<RaspDataBloc, RaspDataState>(
+        buildWhen: (previous, current) {
+      print(
+          "ForecastModelDropDownList bloc buildwhen previous state: $previous current: $current");
+      return current is RaspInitialState || current is RaspForecastModels;
+    }, builder: (context, state) {
+      if (state is RaspInitialState || !(state is RaspForecastModels)) {
+        return Text("Getting Forecast Models");
+      }
+      var raspForecastModels = state;
+      print(
+          'Creating dropdown for models. Model is ${raspForecastModels.selectedModelName}');
+      //BlocProvider.of<RaspDataBloc>(context).add(GetRaspModelDates());
+      return DropdownButton<String>(
+        value: (raspForecastModels.selectedModelName),
+        hint: Text('Select Model'),
+        isExpanded: true,
+        iconSize: 24,
+        elevation: 16,
+        onChanged: (String? newValue) {
+          print('Selected model onChanged: $newValue');
+          BlocProvider.of<RaspDataBloc>(context)
+              .add(SelectedRaspModelEvent(newValue!));
+          // setState(() {
+          //   BlocProvider.of<RaspDataBloc>(context)
+          //       .add(SelectedRaspModel(newValue!));
+          // });
+        },
+        items: raspForecastModels.modelNames
+            .map<DropdownMenuItem<String>>((String value) {
+          return DropdownMenuItem<String>(
+            value: value,
+            child: Text(value.toUpperCase()),
+          );
+        }).toList(),
+      );
+    });
   }
 
 // Display forecast dates for selected model (eg. GFS)
   Widget forecastDatesDropDownList() {
-    return DropdownButton<String>(
-      isExpanded: true,
-      value: _selectedForecastDate,
-      onChanged: (String? newValue) {
-        setState(() {
-          _selectedForecastDate = newValue!;
-          _raspDataBloc.add(SetRaspForecastDate(_selectedForecastDate));
-        });
-      },
-      items: _forecastDates.map<DropdownMenuItem<String>>((String value) {
-        return DropdownMenuItem<String>(
-          value: value,
-          child: Text(value),
-        );
-      }).toList(),
-    );
+    return BlocBuilder<RaspDataBloc, RaspDataState>(
+        buildWhen: (previous, current) {
+      return current is RaspInitialState || current is RaspModelDates;
+    }, builder: (context, state) {
+      if (state is RaspInitialState || !(state is RaspModelDates)) {
+        return Text("Getting Forecast Dates");
+      }
+      var raspForecastDates = state;
+      print(
+          'Creating dropdown for dates. Initial date is ${raspForecastDates.selectedForecastDate}');
+      return DropdownButton<String>(
+        isExpanded: true,
+        value: raspForecastDates.selectedForecastDate,
+        onChanged: (String? newValue) {
+          BlocProvider.of<RaspDataBloc>(context)
+              .add(SelectRaspForecastDateEvent(newValue!));
+        },
+        items: raspForecastDates.forecastDates
+            .map<DropdownMenuItem<String>>((String value) {
+          return DropdownMenuItem<String>(
+            value: value,
+            child: Text(value),
+          );
+        }).toList(),
+      );
+    });
   }
 
 // Display description of forecast types (eq. 'Thermal Updraft Velocity (W*)' for wstar)
   Widget getForecastTypes() {
-    return DropdownButton<String>(
-      isExpanded: true,
-      value: _selectedForecast.forecastNameDisplay,
-      onChanged: (String? newValue) {
-        setState(() {
-          _selectedForecast = _forecasts.firstWhere(
+    return BlocBuilder<RaspDataBloc, RaspDataState>(
+        buildWhen: (previous, current) {
+      return current is RaspInitialState || current is RaspForecasts;
+    }, builder: (context, state) {
+      if (state is RaspInitialState || !(state is RaspForecasts)) {
+        return Text("Getting Forecasts");
+      }
+      return DropdownButton<String>(
+        isExpanded: true,
+        value: state.selectedForecast.forecastNameDisplay,
+        onChanged: (String? newValue) {
+          var selectedForecast = state.forecasts.firstWhere(
               (forecast) => forecast.forecastNameDisplay == newValue);
-        });
-      },
-      items: _forecasts
-          .map((forecast) => forecast.forecastNameDisplay)
-          .toList()
-          .map<DropdownMenuItem<String>>((String? value) {
-        return DropdownMenuItem<String>(
-          value: value,
-          child: Text(value!),
-        );
-      }).toList(),
-    );
+          BlocProvider.of<RaspDataBloc>(context)
+              .add(SelectedRaspForecastEvent(selectedForecast));
+        },
+        items: state.forecasts
+            .map((forecast) => forecast.forecastNameDisplay)
+            .toList()
+            .map<DropdownMenuItem<String>>((String? value) {
+          return DropdownMenuItem<String>(
+            value: value,
+            child: Text(value!),
+          );
+        }).toList(),
+      );
+    });
   }
 
 // Display forecast time for model and date
-  Widget displayForecastTimes() {
+  Widget displayForecastTime() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
@@ -209,47 +266,35 @@ class _RaspScreenState extends State<RaspScreen>
                 flex: 1,
                 child: GestureDetector(
                   onTap: () {
-                    setState(() {
-                      if (--_selectedForecastTimeIndex < 0)
-                        _selectedForecastTimeIndex = _forecastTimes.length - 1;
-                    });
-//                final snackBar = SnackBar(content: Text("Back"));
-//                _scaffoldKey.currentState..showSnackBar(snackBar);
+                    BlocProvider.of<RaspDataBloc>(context)
+                        .add(PreviousTimeEvent());
                   },
-                  child: Text(
-                    '<',
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 30,
-                        color: Colors.blueAccent),
-                  ),
+                  child: IncrDecrIconWidget.getIncIconWidget('<'),
                 )),
             Expanded(
               flex: 6,
-              child: Text(
-                _forecastTimes[_selectedForecastTimeIndex] + " (Local)",
-                style: TextStyle(fontSize: 20),
-              ),
+              child: BlocBuilder<RaspDataBloc, RaspDataState>(
+                  buildWhen: (previous, current) {
+                return current is RaspInitialState ||
+                    current is RaspForecastImageSet;
+              }, builder: (context, state) {
+                if (state is RaspInitialState ||
+                    !(state is RaspForecastImageSet)) {
+                  return Text("Getting forecastTime");
+                }
+                return Text(
+                  state.soaringForecastImageSet.localTime + " (Local)",
+                  style: TextStyle(fontSize: 20),
+                );
+              }),
             ),
             Expanded(
                 flex: 1,
                 child: GestureDetector(
                   onTap: () {
-                    setState(() {
-                      if (++_selectedForecastTimeIndex >
-                          _forecastTimes.length - 1)
-                        _selectedForecastTimeIndex = 0;
-                    });
-//                final snackBar = SnackBar(content: Text("Forward"));
-//                _scaffoldKey.currentState..showSnackBar(snackBar);
+                    BlocProvider.of<RaspDataBloc>(context).add(NextTimeEvent());
                   },
-                  child: Text(
-                    '>',
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 30,
-                        color: Colors.blueAccent),
-                  ),
+                  child: IncrDecrIconWidget.getIncIconWidget('>'),
                 )),
           ]),
         ),
@@ -273,72 +318,127 @@ class _RaspScreenState extends State<RaspScreen>
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return BlocListener<RaspDataBloc, RaspDataState>(
-        listener: (context, state) {
-      if (state is RaspSelectionsState) {
-        RaspSelectionValues raspSelectionValues = state.raspSelectionValues;
-        _assignRaspSelectionValues(raspSelectionValues);
-      } else if (state is RaspMapLatLngBounds) {
-        _mapLatLngBounds = state.regionLatLngBounds;
-      } else if (state is RaspForecastImageSets) {
-        _startRaspImageAnimation(state.soaringForecastImageSets);
-      }
-    }, child:
-            BlocBuilder<RaspDataBloc, RaspDataState>(builder: (context, state) {
-      if (state is InitialRaspDataState ||
-          state is RaspDataLoadErrorState ||
-          _modelNames == null ||
-          _forecastDates == null ||
-          _forecastTimes == null ||
-          _forecasts == null ||
-          _selectedForecast == null) {
-        return Center(
-          child: CircularProgressIndicator(),
-        );
-      }
-
-      return Scaffold(
-          key: _scaffoldKey,
-          drawer: AppDrawer.getDrawer(context),
-          appBar: AppBar(
-            title: Text('RASP'),
-            actions: <Widget>[
-              IconButton(icon: Icon(Icons.list), onPressed: null),
-            ],
+  Widget forecastWindow() {
+    // return forecastMap();
+    return Expanded(
+      child: Stack(children: [
+        Container(
+          alignment: Alignment.center,
+          child: forecastMap(),
+        ),
+        Container(
+          alignment: Alignment.centerRight,
+          child: FractionallySizedBox(
+            widthFactor: .15,
+            child: InteractiveViewer(
+              child: forecastLegend(),
+              panEnabled: true,
+              maxScale: 4.0,
+            ),
           ),
-          body: _forecastLayout());
-    }));
+        ),
+      ]),
+    );
   }
 
-  void _assignRaspSelectionValues(RaspSelectionValues raspSelectionValues) {
-    if (raspSelectionValues.modelNames != null) {
-      _modelNames = raspSelectionValues.modelNames!;
+  Widget forecastMap() {
+    return FlutterMap(
+        mapController: _mapController,
+        options: MapOptions(
+          bounds: _mapLatLngBounds,
+          boundsOptions: FitBoundsOptions(padding: EdgeInsets.all(8.0)),
+          allowPanning: true,
+        ),
+        layers: [
+          TileLayerOptions(
+            urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+            subdomains: ['a', 'b', 'c'],
+            attributionBuilder: (_) {
+              return Text("© OpenStreetMap contributors");
+            },
+          ),
+          OverlayImageLayerOptions(
+            key: null,
+            overlayImages: _overlayImages,
+            rebuild: _forecastOverlayController.stream,
+          )
+        ]);
+  }
+
+  Widget forecastLegend() {
+    return BlocBuilder<RaspDataBloc, RaspDataState>(
+        buildWhen: (previous, current) {
+      return current is RaspInitialState || current is RaspForecastImageSet;
+    }, builder: (context, state) {
+      if (state is RaspForecastImageSet) {
+        return Image(
+            image: NetworkImage(Constants.RASP_BASE_URL +
+                state.soaringForecastImageSet.sideImage!.imageUrl));
+      }
+      return SizedBox.shrink();
+    });
+  }
+
+  Widget emptyWidgetForForecastImages() {
+    return BlocBuilder<RaspDataBloc, RaspDataState>(
+        buildWhen: (previous, current) {
+      return current is RaspInitialState || current is RaspForecastImageSet;
+    }, builder: (context, state) {
+      if (state is RaspForecastImageSet) {
+        currentImageIndex = state.displayIndex;
+        lastImageIndex = state.numberImages - 1;
+        soaringForecastImageSet = state.soaringForecastImageSet;
+        updateForecastOverlay();
+      }
+      return SizedBox.shrink();
+    });
+  }
+
+  void _startStopImageAnimation() {
+    if (_animationRunning) {
+      _startRaspImageAnimation();
+    } else {
+      _tickerSubscription.pause();
     }
-    if (raspSelectionValues.selectedModelName != null) {
-      _selectedModelName = raspSelectionValues.selectedModelName!;
+  }
+
+  void _startRaspImageAnimation() {
+    //TODO timer and subscription to convoluted. Make simpler
+    if (overlayPositionCounter == null) {
+      overlayPositionCounter = displayTimer.stream.asBroadcastStream();
+      displayTimer.setStartAndLimit(currentImageIndex, lastImageIndex);
+      _tickerSubscription = overlayPositionCounter!.listen((int counter) {
+        BlocProvider.of<RaspDataBloc>(context).add(NextTimeEvent());
+      });
+    } else {
+      _tickerSubscription.pause();
+      displayTimer.setStartAndLimit(currentImageIndex, lastImageIndex);
+      _tickerSubscription.resume();
     }
-    if (raspSelectionValues.forecastDates != null) {
-      _forecastDates = raspSelectionValues.forecastDates!;
+  }
+
+  void updateForecastOverlay() {
+    updateMapOverlay(soaringForecastImageSet);
+    print('Posting imageSet soaringForecastImageSet');
+  }
+
+  void updateMapOverlay(SoaringForecastImageSet? soaringForecastImageSet) {
+    if (_firstLayoutComplete) {
+      print(
+          "forecast overlay: " + soaringForecastImageSet!.bodyImage!.imageUrl);
     }
-    if (raspSelectionValues.selectedForecastDate != null) {
-      _selectedForecastDate = raspSelectionValues.selectedForecastDate!;
-    }
-    if (raspSelectionValues.forecastTimes != null) {
-      _forecastTimes = raspSelectionValues.forecastTimes!;
-    }
-    _selectedForecastTimeIndex = raspSelectionValues.selectedForecastTimeIndex!;
-    if (raspSelectionValues.forecasts != null) {
-      _forecasts = raspSelectionValues.forecasts!;
-    }
-    if (raspSelectionValues.selectedForecast != null) {
-      _selectedForecast = raspSelectionValues.selectedForecast!;
+    _overlayImages.clear();
+    if (soaringForecastImageSet != null) {
+      var imageUrl = soaringForecastImageSet.bodyImage!.imageUrl;
+      var raspUrl = Constants.RASP_BASE_URL + imageUrl;
+      _overlayImages.add(OverlayImage(
+          bounds: _mapLatLngBounds,
+          opacity: .5,
+          imageProvider: NetworkImage(raspUrl),
+          gaplessPlayback: true));
     }
 
-    if (raspSelectionValues.latLngBounds != null) {
-      _mapLatLngBounds = raspSelectionValues.latLngBounds!;
-    }
+    _forecastOverlayController.sink.add(null);
   }
 
 // TODO fix  Unhandled Exception: PlatformException(error
@@ -348,57 +448,47 @@ class _RaspScreenState extends State<RaspScreen>
 //  newLatLngBounds(LatLngBounds, int, int, int) which allows you to specify
 //  the map's dimensions., null)
   void _setMapLatLngBounds() {
-    print("animating camera to lat/lng bounds");
-    _mapController!.animateCamera(
-      CameraUpdate.newLatLngBounds(
-        _mapLatLngBounds,
-        8,
-      ),
-    );
+    // print("animating camera to lat/lng bounds");
+    // _mapController!.animateCamera(
+    //   CameraUpdate.newLatLngBounds(
+    //     _mapLatLngBounds,
+    //     8,
+    //   ),
+    // );
+    //_animatedMapMove()
   }
 
-  void _startRaspImageAnimation(
-      List<SoaringForecastImageSet> soaringForecastImageSets) {
-    this._soaringForecastImageSets = soaringForecastImageSets;
-    if (_forecastImageAnimationController != null &&
-        _forecastImageAnimationController!.isAnimating) {
-      print("Already animating!");
-      return;
-    }
-    print("Starting Image Animation");
-    _forecastImageAnimationController = AnimationController(
-        value: 0,
-        duration: Duration(milliseconds: 15000),
-        lowerBound: 0,
-        upperBound: _forecastTimes.length.toDouble(),
-        vsync: this);
+  void _animatedMapMove(LatLng destLocation, double destZoom) {
+    // Create some tweens. These serve to split up the transition from one location to another.
+    // In our case, we want to split the transition be<tween> our current map center and the destination.
+    final _latTween = Tween<double>(
+        begin: _mapController.center.latitude, end: destLocation.latitude);
+    final _lngTween = Tween<double>(
+        begin: _mapController.center.longitude, end: destLocation.longitude);
+    final _zoomTween = Tween<double>(begin: _mapController.zoom, end: destZoom);
 
-    _forecastImageAnimation =
-        Tween<double>(begin: 0, end: _forecastTimes.length.toDouble())
-            .animate(_forecastImageAnimationController!);
-    _forecastImageAnimationController!.addListener(() => _setMapRaspOverly());
-    _forecastImageAnimationController!
-        .repeat(period: Duration(milliseconds: 15000));
-    // _forecastImageAnimationController.forward();
-  }
+    // Create a animation controller that has a duration and a TickerProvider.
+    var controller = AnimationController(
+        duration: const Duration(milliseconds: 500), vsync: this);
+    // The animation determines what path the animation will take. You can try different Curves values, although I found
+    // fastOutSlowIn to be my favorite.
+    Animation<double> animation =
+        CurvedAnimation(parent: controller, curve: Curves.fastOutSlowIn);
 
-  _setMapRaspOverly() {
-    //print("Animation value: $_forecastImageAnimationController.value");
-    controllerIndex = _forecastImageAnimationController!.value.toInt();
-    if (controllerIndex != lastImageIndex &&
-        controllerIndex < _soaringForecastImageSets!.length &&
-        controllerIndex != lastImageIndex &&
-        _forecastTimes[controllerIndex] ==
-            _soaringForecastImageSets![controllerIndex].localTime) {
-      lastImageIndex = controllerIndex;
-      updateMapOverly(_soaringForecastImageSets![controllerIndex]);
-      print("Posting imageSet[$controllerIndex]");
-    }
-  }
+    controller.addListener(() {
+      _mapController.move(
+          LatLng(_latTween.evaluate(animation), _lngTween.evaluate(animation)),
+          _zoomTween.evaluate(animation));
+    });
 
-  void updateMapOverly(SoaringForecastImageSet soaringForecastImageSet) {
-    if (_mapController != null && _firstLayoutComplete) {
-      print("forecast overlay: " + soaringForecastImageSet.bodyImage!.imageUrl);
-    }
+    animation.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        controller.dispose();
+      } else if (status == AnimationStatus.dismissed) {
+        controller.dispose();
+      }
+    });
+
+    controller.forward();
   }
 }

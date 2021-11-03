@@ -17,7 +17,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class Repository {
   // Hmmm. How to make this only available via static gettter
   static Repository? _repository;
-  static Dio dio = Dio();
+  static Dio _dio = Dio();
   static late BuildContext? _context;
   static late RaspClient _raspClient;
   static AppDatabase? _appDatabase;
@@ -29,9 +29,9 @@ class Repository {
     if (_repository == null) {
       _repository = Repository._();
       _context = context;
-      dio.interceptors.add(LogInterceptor(responseBody: true));
-      dio.options.receiveTimeout = 300000;
-      _raspClient = new RaspClient(dio);
+      _dio.interceptors.add(LogInterceptor(responseBody: true));
+      _dio.options.receiveTimeout = 300000;
+      _raspClient = new RaspClient(_dio);
     }
     return _repository!;
   }
@@ -57,7 +57,7 @@ class Repository {
     region.clearRegionModelDates();
     List<String> printdates = region.printDates!;
     List<String> dates = region.dates!;
-    for (int i = 0; i < region.dates!.length - 1; ++i) {
+    for (int i = 0; i < region.dates!.length; ++i) {
       try {
         ForecastModels forecastModels =
             await _raspClient.getForecastModels(region.name!, dates[i]);

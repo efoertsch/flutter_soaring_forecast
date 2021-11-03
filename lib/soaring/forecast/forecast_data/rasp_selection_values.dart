@@ -1,5 +1,5 @@
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_soaring_forecast/soaring/json/forecast_types.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class RaspSelectionValues {
   List<String>? modelNames;
