@@ -9,13 +9,13 @@ import 'package:flutter_soaring_forecast/soaring/app/app_drawer.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     as Constants;
 import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_data_state.dart';
-import 'package:flutter_soaring_forecast/soaring/forecast/display_ticker.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/rasp_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image_set.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast/ui/display_ticker.dart';
 import 'package:latlong2/latlong.dart';
 
-import 'bloc/rasp_data_bloc.dart';
-import 'bloc/rasp_data_event.dart';
+import '../bloc/rasp_data_bloc.dart';
+import '../bloc/rasp_data_event.dart';
 
 class RaspScreen extends StatefulWidget {
   final BuildContext repositoryContext;
@@ -306,9 +306,16 @@ class _RaspScreenState extends State<RaspScreen>
                     !(state is RaspForecastImageSet)) {
                   return Text("Getting forecastTime");
                 }
+                var localTime = state.soaringForecastImageSet.localTime;
+                localTime = localTime.startsWith("old ")
+                    ? localTime.substring(4)
+                    : localTime;
                 return Text(
-                  state.soaringForecastImageSet.localTime + " (Local)",
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  localTime + " (Local)",
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
                 );
               }),
             ),

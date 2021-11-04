@@ -7,8 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image_set.dart';
-import 'package:flutter_soaring_forecast/soaring/json/forecast_types.dart';
-import 'package:flutter_soaring_forecast/soaring/json/regions.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast/json/forecast_types.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast/json/regions.dart';
 import 'package:flutter_soaring_forecast/soaring/respository/repository.dart';
 
 import 'rasp_bloc.dart';
@@ -286,7 +286,10 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
   /// eg. "/NewEngland/2019-12-19/gfs/wstar_bsratio.1500local.d2.body.png"
   String _createImageUrl(String regionName, String forecastDate, String model,
       String forecastType, String forecastTime, String imageType) {
-    return "/$regionName/$forecastDate/$model/$forecastType.${forecastTime}local.d2.$imageType.png";
+    var stripOld = forecastTime.startsWith("old")
+        ? forecastTime.substring(4)
+        : forecastTime;
+    return "/$regionName/$forecastDate/$model/$forecastType.${stripOld}local.d2.$imageType.png";
   }
 
   void _processNextTimeEvent(_, Emitter<RaspDataState> emit) {

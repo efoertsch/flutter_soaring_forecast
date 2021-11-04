@@ -1,5 +1,5 @@
 import 'package:floor/floor.dart';
-import 'package:flutter_soaring_forecast/soaring/floor/airport.dart';
+import 'package:flutter_soaring_forecast/soaring/floor/airport/airport.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/base_dao.dart';
 
 //TODO if any changes run  -  flutter packages pub run build_runner build

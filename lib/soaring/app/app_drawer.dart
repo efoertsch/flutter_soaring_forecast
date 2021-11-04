@@ -12,7 +12,7 @@ class AppDrawer {
         padding: EdgeInsets.zero,
         children: <Widget>[
           new SizedBox(
-            height: 120.0,
+            height: 100.0,
             child: DrawerHeader(
               child: Text(
                 'SoaringForecast',
@@ -25,11 +25,22 @@ class AppDrawer {
             ),
           ),
           ListTile(
-            title: Text('Windy'),
+              title: Text('Turnpoints'),
+              onTap: () {
+                Navigator.pushNamed(context, '/searchturnpoints');
+              }),
+          ListTile(
+            title: Text('Task List'),
             onTap: () {
 // Update the state of the app
 // ...
 // Then close the drawer
+              Navigator.pop(context);
+            },
+          ),
+          ListTile(
+            title: Text('Windy'),
+            onTap: () {
               Navigator.pop(context);
             },
           ),
@@ -74,24 +85,6 @@ class AppDrawer {
           ),
           ListTile(
             title: Text('Airport List'),
-            onTap: () {
-// Update the state of the app
-// ...
-// Then close the drawer
-              Navigator.pop(context);
-            },
-          ),
-          ListTile(
-            title: Text('Task List'),
-            onTap: () {
-// Update the state of the app
-// ...
-// Then close the drawer
-              Navigator.pop(context);
-            },
-          ),
-          ListTile(
-            title: Text('Import Turnpoints'),
             onTap: () {
 // Update the state of the app
 // ...

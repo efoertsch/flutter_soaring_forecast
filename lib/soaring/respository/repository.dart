@@ -4,13 +4,13 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     as Constants;
-import 'package:flutter_soaring_forecast/soaring/floor/airport.dart';
+import 'package:flutter_soaring_forecast/soaring/floor/airport/airport.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/app_database.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image.dart';
-import 'package:flutter_soaring_forecast/soaring/json/forecast_models.dart';
-import 'package:flutter_soaring_forecast/soaring/json/forecast_types.dart';
-import 'package:flutter_soaring_forecast/soaring/json/rasp_api.dart';
-import 'package:flutter_soaring_forecast/soaring/json/regions.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast/json/forecast_models.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast/json/forecast_types.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast/json/rasp_api.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast/json/regions.dart';
 import 'package:flutter_soaring_forecast/soaring/respository/ImageCacheManager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -141,6 +141,8 @@ class Repository {
     await makeDatabaseAvailable();
     return _appDatabase!.airportDao.insertAll(airports);
   }
+
+  // ----- Turnpoints ----------------------------------
 
   // ----- Shared preferences --------------------------
   // Make sure keys are unique among calling routines!
