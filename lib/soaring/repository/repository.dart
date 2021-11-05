@@ -6,12 +6,14 @@ import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     as Constants;
 import 'package:flutter_soaring_forecast/soaring/floor/airport/airport.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/app_database.dart';
+import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/json/forecast_models.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/json/forecast_types.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/json/rasp_api.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/json/regions.dart';
-import 'package:flutter_soaring_forecast/soaring/respository/ImageCacheManager.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/ImageCacheManager.dart';
+import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoints_downloader.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Repository {
@@ -143,6 +145,42 @@ class Repository {
   }
 
   // ----- Turnpoints ----------------------------------
+
+  Future<int?> deleteAllTurnpoints() async {
+    await makeDatabaseAvailable();
+    return _appDatabase!.turnpointDao.deleteAllTurnpoints();
+  }
+
+  Future<int> getCountOfTurnpoints() async {
+    await makeDatabaseAvailable();
+    return (await _appDatabase!.turnpointDao.getTurnpointCount()) ?? 0;
+  }
+
+  Future<int?> insertTurnpoint(Turnpoint turnpoint) async {
+    await makeDatabaseAvailable();
+    return _appDatabase!.turnpointDao.insert(turnpoint);
+  }
+
+  Future<List<Turnpoint>> getAllTurnpoints() async {
+    await makeDatabaseAvailable();
+    return _appDatabase!.turnpointDao.listAllTurnpoints();
+  }
+
+  Future<List<Turnpoint>> downloadTurnpointsFromTurnpointExchange(
+      String endUrl) async {
+    List<Turnpoint> turnpoints = [];
+    turnpoints.addAll(await TurnpointsDownloader.downloadTurnpointFile(endUrl));
+    turnpoints.forEach((turnpoint) async {
+      var id = await insertTurnpoint(turnpoint);
+      print('turnpoint id $id');
+    });
+    return turnpoints;
+  }
+
+  Future<List<int?>> insertAllTurnpoints(List<Turnpoint> turnpoints) async {
+    await makeDatabaseAvailable();
+    return _appDatabase!.turnpointDao.insertAll(turnpoints);
+  }
 
   // ----- Shared preferences --------------------------
   // Make sure keys are unique among calling routines!

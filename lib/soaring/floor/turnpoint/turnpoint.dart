@@ -1,13 +1,13 @@
 import 'package:floor/floor.dart';
 
+//TODO if any changes run  -  flutter packages pub run build_runner build
 @Entity(tableName: 'turnpoint', indices: [
-  Index(value: ['name']),
-  Index(value: ['state', 'name']),
-  Index(value: ['municipality'])
+  Index(value: ['code'], unique: true),
+  Index(value: ['title', 'code'], unique: true)
 ])
 class Turnpoint {
   @PrimaryKey(autoGenerate: true)
-  late int id;
+  late int? id;
   late String title;
   late String code;
   late String country;
@@ -38,7 +38,7 @@ class Turnpoint {
   // }
 
   Turnpoint(
-      {this.id = -1,
+      {this.id,
       this.title = "",
       this.code = "",
       this.country = "",

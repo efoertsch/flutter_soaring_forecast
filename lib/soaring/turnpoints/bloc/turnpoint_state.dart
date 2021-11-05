@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
 
 @immutable
 abstract class TurnpointState extends Equatable {}
@@ -27,11 +28,15 @@ class TurnpointsLoadErrorState extends TurnpointState {
   List<Object?> get props => [error];
 }
 
-class TurnpointSearchResults extends TurnpointState {
-  final List<String> turnpoints;
+class TurnpointsDownloadingState extends TurnpointState {
+  TurnpointsDownloadingState();
+  @override
+  List<Object?> get props => [];
+}
 
-  TurnpointSearchResults(this.turnpoints);
-
+class TurnpointSearchResultsState extends TurnpointState {
+  final List<Turnpoint> turnpoints;
+  TurnpointSearchResultsState(this.turnpoints);
   @override
   List<Object?> get props => [turnpoints];
 }

@@ -46,23 +46,27 @@ class _TurnpointSearchScreenState extends State<TurnpointSearchScreen>
               ),
             );
           }
+        }, buildWhen: (previous, current) {
+          return current is TurnpointInitialState ||
+              current is TurnpointsLoadingState ||
+              current is TurnpointsLoadErrorState ||
+              current is TurnpointsDownloadingState ||
+              current is TurnpointSearchResultsState;
         }, builder: (context, state) {
-          //print('In forecastLayout State: $state');
-          // print('Top of screen widgets. State is $state');
-          if (state is TurnpointsLoadingState ||
-              state is TurnpointsLoadErrorState) {
+          if (state is TurnpointInitialState ||
+              state is TurnpointsLoadingState ||
+              state is TurnpointsLoadErrorState ||
+              state is TurnpointsDownloadingState) {
             print('returning CircularProgressIndicator');
-            return Center(
-              child: CircularProgressIndicator(),
-            );
+            return Center(child: CircularProgressIndicator());
           }
-          // print('creating/updating main screen');
-          return Padding(
-              padding: EdgeInsets.all(8.0),
-              child:
-                  Column(mainAxisAlignment: MainAxisAlignment.start, children: [
-                Text("Search Turnpoints"),
-              ]));
+          var turnpointSearchResultsState =
+              state as TurnpointSearchResultsState;
+          return new ListView.builder(
+              itemCount: turnpointSearchResultsState.turnpoints.length,
+              itemBuilder: (BuildContext context, int index) {
+                return Text(turnpointSearchResultsState.turnpoints[index].code);
+              });
         }));
   }
 }

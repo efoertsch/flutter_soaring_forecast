@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/json/regions.dart';
-import 'package:flutter_soaring_forecast/soaring/respository/repository.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 import "package:flutter_test/flutter_test.dart";
 import 'package:mockito/mockito.dart';
 

@@ -1,6 +1,6 @@
 import 'package:csv/csv.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
-import 'package:flutter_soaring_forecast/soaring/respository/repository.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoint_utils.dart';
 import 'package:http/http.dart' as http;
 
@@ -10,7 +10,11 @@ class TurnpointsDownloader {
 
   TurnpointsDownloader({required this.repository});
 
-  downloadTurnpointFile(String turnpointUrl) {}
+  static Future<List<Turnpoint>> downloadTurnpointFile(
+      String turnpointUrl) async {
+    List<List<dynamic>> parsedTurnpoints = await getTurnpointsCSV(turnpointUrl);
+    return await convertTurnpointCsvListToTurnpoints(parsedTurnpoints);
+  }
 
   // Future<List<Turnpoint>> getTurnpoints(String turnpointUrl) async{
   //   var turnpointsList = <Turnpoint>[];

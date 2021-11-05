@@ -9,7 +9,7 @@ import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image_set.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/json/forecast_types.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/json/regions.dart';
-import 'package:flutter_soaring_forecast/soaring/respository/repository.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 
 import 'rasp_bloc.dart';
 
