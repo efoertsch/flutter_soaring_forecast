@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/airport_download/airports_downloader.dart';
+import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_data_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/ui/rasp_screen.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/bloc/turnpoint_bloc.dart';
-import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_search.dart';
+import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_list.dart';
+import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoints_search.dart';
+import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoints_view.dart';
 import 'package:flutter_soaring_forecast/soaring/values/strings.dart';
 import 'package:workmanager/workmanager.dart';
 
@@ -49,20 +52,34 @@ class SoaringForecastApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
         title: Strings.appTitle,
+        home: SoaringForecast(),
         theme: ThemeData(
           // brightness: Brightness.dark,
           primarySwatch: Colors.blue,
           primaryColor: Colors.blue,
         ),
-        initialRoute: '/',
+        initialRoute: SoaringForecast.routeName,
         routes: {
-          '/': (context) => SoaringForecast(),
-          '/searchturnpoints': (context) => TurnpointSearch(),
+          TurnpointList.routeName: (context) => TurnpointList(),
+          TurnpointSearchList.routeName: (context) => TurnpointSearchList(),
+        },
+        onGenerateRoute: (settings) {
+          if (settings.name == TurnpointView.routeName) {
+            final turnpoint = settings.arguments as Turnpoint;
+            return MaterialPageRoute(
+              builder: (context) {
+                return TurnpointView(turnpoint: turnpoint);
+              },
+            );
+          }
+          assert(false, 'Need to implement ${settings.name}');
+          return null;
         });
   }
 }
 
 class SoaringForecast extends StatelessWidget {
+  static const routeName = '/';
   @override
   Widget build(BuildContext context) {
     return BlocProvider<RaspDataBloc>(
@@ -73,13 +90,36 @@ class SoaringForecast extends StatelessWidget {
   }
 }
 
-class TurnpointSearch extends StatelessWidget {
+class TurnpointList extends StatelessWidget {
+  static const routeName = '/listTurnpoints';
   @override
   Widget build(BuildContext context) {
     return BlocProvider<TurnpointBloc>(
       create: (BuildContext context) =>
           TurnpointBloc(repository: RepositoryProvider.of<Repository>(context)),
-      child: TurnpointSearchScreen(repositoryContext: context),
+      child: TurnpointListScreen(repositoryContext: context),
     );
+  }
+}
+
+class TurnpointSearchList extends StatelessWidget {
+  static const routeName = '/turnpointSearchList';
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider<TurnpointBloc>(
+      create: (BuildContext context) =>
+          TurnpointBloc(repository: RepositoryProvider.of<Repository>(context)),
+      child: TurnpointsSearchScreen(repositoryContext: context),
+    );
+  }
+}
+
+class TurnpointView extends StatelessWidget {
+  static const routeName = '/ViewTurnpoint';
+  final Turnpoint turnpoint;
+  TurnpointView({required this.turnpoint});
+  @override
+  Widget build(BuildContext context) {
+    return TurnpointViewScreen(turnpoint: turnpoint);
   }
 }

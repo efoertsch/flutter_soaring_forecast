@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_soaring_forecast/soaring/app/main.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class AppDrawer {
@@ -27,7 +28,7 @@ class AppDrawer {
           ListTile(
               title: Text('Turnpoints'),
               onTap: () {
-                Navigator.pushNamed(context, '/searchturnpoints');
+                Navigator.pushNamed(context, TurnpointSearchList.routeName);
               }),
           ListTile(
             title: Text('Task List'),

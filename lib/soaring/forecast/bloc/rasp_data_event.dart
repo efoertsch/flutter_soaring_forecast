@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter_soaring_forecast/soaring/forecast/json/forecast_types.dart';
-import 'package:flutter_soaring_forecast/soaring/forecast/json/regions.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/rasp/regions.dart';
 
 /// https://medium.com/flutter-community/flutter-bloc-pattern-for-dummies-like-me-c22d40f05a56
 /// Event In - State Out

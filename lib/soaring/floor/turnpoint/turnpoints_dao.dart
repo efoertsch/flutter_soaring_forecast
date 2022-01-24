@@ -31,8 +31,9 @@ abstract class TurnpointDao extends BaseDao<Turnpoint> {
   @Query("Select * from turnpoint where id = :id")
   Future<Turnpoint?> getTurnpointById(int id);
 
-  @Query("Select count(*) from turnpoint")
-  Future<int?> getTurnpointCount();
+  // an integer return value from select count(*) is not currently supported
+  //@Query("Select count(*) from turnpoint")
+  //Future<int?> getTurnpointCount();
 
   @Query("Select * from turnpoint  ORDER BY id ASC LIMIT 1")
   Future<Turnpoint?> checkForAtLeastOneTurnpoint();

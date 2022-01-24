@@ -1,6 +1,7 @@
 import 'package:collection/collection.dart';
-import 'package:flutter_soaring_forecast/soaring/forecast/json/forecast_models.dart';
 import 'package:json_annotation/json_annotation.dart';
+
+import 'forecast_models.dart';
 
 part 'regions.g.dart';
 

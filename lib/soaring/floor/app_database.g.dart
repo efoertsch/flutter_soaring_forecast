@@ -102,7 +102,7 @@ class _$AppDatabase extends AppDatabase {
         await database.execute(
             'CREATE INDEX `index_airport_municipality` ON `airport` (`municipality`)');
         await database.execute(
-            'CREATE UNIQUE INDEX `index_turnpoint_code` ON `turnpoint` (`code`)');
+            'CREATE INDEX `index_turnpoint_code` ON `turnpoint` (`code`)');
         await database.execute(
             'CREATE UNIQUE INDEX `index_turnpoint_title_code` ON `turnpoint` (`title`, `code`)');
 
@@ -605,11 +605,6 @@ class _$TurnpointDao extends TurnpointDao {
             description: row['description'] as String,
             runwayWidth: row['runwayWidth'] as String),
         arguments: [id]);
-  }
-
-  @override
-  Future<int?> getTurnpointCount() async {
-    await _queryAdapter.queryNoReturn('Select count(*) from turnpoint');
   }
 
   @override

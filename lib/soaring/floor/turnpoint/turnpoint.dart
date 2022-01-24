@@ -2,7 +2,7 @@ import 'package:floor/floor.dart';
 
 //TODO if any changes run  -  flutter packages pub run build_runner build
 @Entity(tableName: 'turnpoint', indices: [
-  Index(value: ['code'], unique: true),
+  Index(value: ['code'], unique: false),
   Index(value: ['title', 'code'], unique: true)
 ])
 class Turnpoint {

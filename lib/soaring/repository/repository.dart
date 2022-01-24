@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
+import 'package:floor/floor.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     as Constants;
@@ -8,13 +10,15 @@ import 'package:flutter_soaring_forecast/soaring/floor/airport/airport.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/app_database.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image.dart';
-import 'package:flutter_soaring_forecast/soaring/forecast/json/forecast_models.dart';
-import 'package:flutter_soaring_forecast/soaring/forecast/json/forecast_types.dart';
-import 'package:flutter_soaring_forecast/soaring/forecast/json/rasp_api.dart';
-import 'package:flutter_soaring_forecast/soaring/forecast/json/regions.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/ImageCacheManager.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoints_downloader.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sqflite/sqflite.dart';
+
+import 'rasp/forecast_models.dart';
+import 'rasp/forecast_types.dart';
+import 'rasp/rasp_api.dart';
+import 'rasp/regions.dart';
 
 class Repository {
   // Hmmm. How to make this only available via static gettter
@@ -123,6 +127,7 @@ class Repository {
   // Set up Floor database
   Future<AppDatabase> makeDatabaseAvailable() async {
     if (_appDatabase == null) {
+      print('App database being created');
       _appDatabase =
           await $FloorAppDatabase.databaseBuilder('app_database.db').build();
     }
@@ -134,18 +139,20 @@ class Repository {
     return await _appDatabase!.airportDao.getCountOfAirports() ?? 0;
   }
 
+  @transaction
   Future<int?> deleteAllAirports() async {
     await makeDatabaseAvailable();
     return _appDatabase!.airportDao.deleteAll();
   }
 
+  @transaction
   Future<List<int?>> insertAllAirports(List<Airport> airports) async {
     await makeDatabaseAvailable();
     return _appDatabase!.airportDao.insertAll(airports);
   }
 
   // ----- Turnpoints ----------------------------------
-
+  @transaction
   Future<int?> deleteAllTurnpoints() async {
     await makeDatabaseAvailable();
     return _appDatabase!.turnpointDao.deleteAllTurnpoints();
@@ -153,12 +160,22 @@ class Repository {
 
   Future<int> getCountOfTurnpoints() async {
     await makeDatabaseAvailable();
-    return (await _appDatabase!.turnpointDao.getTurnpointCount()) ?? 0;
+    //int? count = await _appDatabase!.turnpointDao.getTurnpointCount();
+    int? count = Sqflite.firstIntValue(await _appDatabase!.database
+        .rawQuery('select count(*) count from turnpoint'));
+    return count ?? 0;
   }
 
+  @transaction
   Future<int?> insertTurnpoint(Turnpoint turnpoint) async {
     await makeDatabaseAvailable();
     return _appDatabase!.turnpointDao.insert(turnpoint);
+  }
+
+  @transaction
+  Future<List<int?>> insertAllTurnpoints(List<Turnpoint> turnpoints) async {
+    await makeDatabaseAvailable();
+    return _appDatabase!.turnpointDao.insertAll(turnpoints);
   }
 
   Future<List<Turnpoint>> getAllTurnpoints() async {
@@ -166,21 +183,21 @@ class Repository {
     return _appDatabase!.turnpointDao.listAllTurnpoints();
   }
 
+  Future<List<Turnpoint>> findTurnpoints(String query) async {
+    await makeDatabaseAvailable();
+    return _appDatabase!.turnpointDao.findTurnpoints('%' + query + '%');
+  }
+
   Future<List<Turnpoint>> downloadTurnpointsFromTurnpointExchange(
       String endUrl) async {
     List<Turnpoint> turnpoints = [];
     turnpoints.addAll(await TurnpointsDownloader.downloadTurnpointFile(endUrl));
-    turnpoints.forEach((turnpoint) async {
-      var id = await insertTurnpoint(turnpoint);
-      print('turnpoint id $id');
-    });
+    var ids = await insertAllTurnpoints(turnpoints);
+    print("Number turnpoints downloaded: ${ids.length}");
     return turnpoints;
   }
 
-  Future<List<int?>> insertAllTurnpoints(List<Turnpoint> turnpoints) async {
-    await makeDatabaseAvailable();
-    return _appDatabase!.turnpointDao.insertAll(turnpoints);
-  }
+  //------  Selected turnpoint files available from turnpoint exchange ------
 
   // ----- Shared preferences --------------------------
   // Make sure keys are unique among calling routines!

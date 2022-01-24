@@ -1,6 +1,10 @@
+import 'dart:ui';
+
 import 'package:collection/collection.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
 import 'package:intl/intl.dart';
+import 'package:sprintf/sprintf.dart';
 
 enum SeeYouFormat {
   WITH_WIDTH_AND_DESCRIPTION,
@@ -254,5 +258,60 @@ class TurnpointUtils {
       sb.write({QUOTE, turnpoint.description, QUOTE});
     }
     return sb.toString();
+  }
+
+  static Color getColorForTurnpointIcon(Turnpoint turnpoint) {
+    if (isGrassOrGliderAirport(turnpoint.style)) {
+      return Colors.green;
+    }
+    if (isHardSurfaceAirport(turnpoint.style)) {
+      return Colors.black;
+    } else {
+      return Colors.red;
+    }
+  }
+
+  static String getFormattedTurnpointDetails(
+      Turnpoint turnpoint, bool cupFormat) {
+    String turnpointDetails;
+    switch (turnpoint.style) {
+      case "2":
+      case "4":
+      case "5":
+        turnpointDetails = sprintf(AIRPORT_DETAILS, [
+          turnpoint.title,
+          turnpoint.code,
+          getStyleName(turnpoint.style),
+          cupFormat
+              ? getLatitudeInCupFormat(turnpoint.latitudeDeg)
+              : sprintf(TURNPOINT_LAT_DECIMAL_FORMAT, [turnpoint.latitudeDeg]),
+          cupFormat
+              ? getLongitudeInCupFormat(turnpoint.longitudeDeg)
+              : sprintf(
+                  TURNPOINT_LONG_DECIMAL_FORMAT, [turnpoint.longitudeDeg]),
+          turnpoint.elevation,
+          turnpoint.direction,
+          turnpoint.length,
+          turnpoint.runwayWidth,
+          turnpoint.frequency,
+          turnpoint.description
+        ]);
+        break;
+      default:
+        turnpointDetails = sprintf(NON_AIRPORT_DETAILS, [
+          turnpoint.title,
+          turnpoint.code,
+          getStyleName(turnpoint.style),
+          cupFormat
+              ? getLatitudeInCupFormat(turnpoint.latitudeDeg)
+              : sprintf(TURNPOINT_LAT_DECIMAL_FORMAT, turnpoint.latitudeDeg),
+          cupFormat
+              ? getLongitudeInCupFormat(turnpoint.longitudeDeg)
+              : sprintf(TURNPOINT_LONG_DECIMAL_FORMAT, turnpoint.longitudeDeg),
+          turnpoint.elevation,
+          turnpoint.description
+        ]);
+    }
+    return turnpointDetails;
   }
 }
