@@ -8,14 +8,17 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_soaring_forecast/soaring/app/app_drawer.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     as Constants;
+import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
+import 'package:flutter_soaring_forecast/soaring/app/custom_styles.dart';
+import 'package:flutter_soaring_forecast/soaring/app/main.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_data_state.dart';
-import 'package:flutter_soaring_forecast/soaring/forecast/display_ticker.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/rasp_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image_set.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast/ui/display_ticker.dart';
 import 'package:latlong2/latlong.dart';
 
-import 'bloc/rasp_data_bloc.dart';
-import 'bloc/rasp_data_event.dart';
+import '../bloc/rasp_data_bloc.dart';
+import '../bloc/rasp_data_event.dart';
 
 class RaspScreen extends StatefulWidget {
   final BuildContext repositoryContext;
@@ -113,9 +116,7 @@ class _RaspScreenState extends State<RaspScreen>
       drawer: AppDrawer.getDrawer(context),
       appBar: AppBar(
         title: Text('RASP'),
-        actions: <Widget>[
-          IconButton(icon: Icon(Icons.list), onPressed: null),
-        ],
+        actions: getRaspMenu(),
       ),
       body:
           BlocConsumer<RaspDataBloc, RaspDataState>(listener: (context, state) {
@@ -140,9 +141,9 @@ class _RaspScreenState extends State<RaspScreen>
         return Padding(
           padding: EdgeInsets.all(8.0),
           child: Column(mainAxisAlignment: MainAxisAlignment.start, children: [
-            getForecastModelsAndDates(),
-            getForecastTypes(),
-            displayForecastTime(),
+            getForecastModelsAndDates(context),
+            getForecastTypes(context),
+            displayForecastTime(context),
             forecastWindow(),
             emptyWidgetForForecastImages(),
           ]),
@@ -151,7 +152,7 @@ class _RaspScreenState extends State<RaspScreen>
     );
   }
 
-  Widget getForecastModelsAndDates() {
+  Widget getForecastModelsAndDates(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
@@ -164,7 +165,7 @@ class _RaspScreenState extends State<RaspScreen>
             flex: 7,
             child: Padding(
               padding: EdgeInsets.only(left: 16.0),
-              child: forecastDatesDropDownList(),
+              child: forecastDatesDropDownList(context),
             )),
       ],
     );
@@ -185,8 +186,7 @@ class _RaspScreenState extends State<RaspScreen>
       // print(
       //     'Creating dropdown for models. Model is ${raspForecastModels.selectedModelName}');
       return DropdownButton<String>(
-        style: TextStyle(
-            fontWeight: FontWeight.bold, color: Colors.black, fontSize: 20),
+        style: CustomStyle.bold18(context),
         value: (raspForecastModels.selectedModelName),
         hint: Text('Select Model'),
         isExpanded: true,
@@ -209,7 +209,7 @@ class _RaspScreenState extends State<RaspScreen>
   }
 
 // Display forecast dates for selected model (eg. GFS)
-  Widget forecastDatesDropDownList() {
+  Widget forecastDatesDropDownList(BuildContext context) {
     return BlocBuilder<RaspDataBloc, RaspDataState>(
         buildWhen: (previous, current) {
       return current is RaspInitialState || current is RaspModelDates;
@@ -221,8 +221,7 @@ class _RaspScreenState extends State<RaspScreen>
       // print(
       //     'Creating dropdown for dates. Initial date is ${raspForecastDates.selectedForecastDate}');
       return DropdownButton<String>(
-        style: TextStyle(
-            fontWeight: FontWeight.bold, color: Colors.black, fontSize: 20),
+        style: CustomStyle.bold18(context),
         isExpanded: true,
         value: raspForecastDates.selectedForecastDate,
         onChanged: (String? newValue) {
@@ -241,7 +240,7 @@ class _RaspScreenState extends State<RaspScreen>
   }
 
 // Display description of forecast types (eq. 'Thermal Updraft Velocity (W*)' for wstar)
-  Widget getForecastTypes() {
+  Widget getForecastTypes(BuildContext context) {
     return BlocBuilder<RaspDataBloc, RaspDataState>(
         buildWhen: (previous, current) {
       return current is RaspInitialState || current is RaspForecasts;
@@ -250,8 +249,7 @@ class _RaspScreenState extends State<RaspScreen>
         return Text("Getting Forecasts");
       }
       return DropdownButton<String>(
-        style: TextStyle(
-            fontWeight: FontWeight.bold, color: Colors.black, fontSize: 20),
+        style: CustomStyle.bold18(context),
         isExpanded: true,
         value: state.selectedForecast.forecastNameDisplay,
         onChanged: (String? newValue) {
@@ -274,7 +272,7 @@ class _RaspScreenState extends State<RaspScreen>
   }
 
 // Display forecast time for model and date
-  Widget displayForecastTime() {
+  Widget displayForecastTime(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
@@ -306,9 +304,13 @@ class _RaspScreenState extends State<RaspScreen>
                     !(state is RaspForecastImageSet)) {
                   return Text("Getting forecastTime");
                 }
+                var localTime = state.soaringForecastImageSet.localTime;
+                localTime = localTime.startsWith("old ")
+                    ? localTime.substring(4)
+                    : localTime;
                 return Text(
-                  state.soaringForecastImageSet.localTime + " (Local)",
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  localTime + " (Local)",
+                  style: CustomStyle.bold18(context),
                 );
               }),
             ),
@@ -335,7 +337,7 @@ class _RaspScreenState extends State<RaspScreen>
               child: Text(
                 (_startAnimation ? _pauseAnimationLabel : _loopAnimationLabel),
                 textAlign: TextAlign.end,
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+                style: CustomStyle.bold18(context),
               ),
             )),
       ],
@@ -521,5 +523,54 @@ class _RaspScreenState extends State<RaspScreen>
     });
 
     controller.forward();
+  }
+
+  List<Widget> getRaspMenu() {
+    return <Widget>[
+      TextButton(
+        child: const Text('SELECT TASK', style: TextStyle(color: Colors.white)),
+        onPressed: () {
+          Navigator.pushNamed(context, TaskList.routeName);
+        },
+      ),
+      RotatedBox(
+        quarterTurns: 1,
+        child: PopupMenuButton<String>(
+          onSelected: handleClick,
+          itemBuilder: (BuildContext context) {
+            return {
+              RaspMenu.clearTask,
+              RaspMenu.displayOptions,
+              RaspMenu.mapBackground,
+              RaspMenu.orderForecasts,
+              RaspMenu.opacity,
+              RaspMenu.selectRegion
+            }.map((String choice) {
+              return PopupMenuItem<String>(
+                value: choice,
+                child: Text(choice),
+              );
+            }).toList();
+          },
+        ),
+      ),
+    ];
+  }
+
+  void handleClick(String value) {
+    switch (value) {
+      case RaspMenu.clearTask:
+        break;
+      case RaspMenu.displayOptions:
+        break;
+      case RaspMenu.mapBackground:
+        break;
+      case RaspMenu.orderForecasts:
+        break;
+      case RaspMenu.opacity:
+        break;
+      case RaspMenu.selectRegion:
+        break;
+    }
   }
 }

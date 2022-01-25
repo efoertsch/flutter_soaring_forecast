@@ -1,8 +1,8 @@
 import 'package:csv/csv.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     as Constants;
-import 'package:flutter_soaring_forecast/soaring/floor/airport.dart';
-import 'package:flutter_soaring_forecast/soaring/respository/repository.dart';
+import 'package:flutter_soaring_forecast/soaring/floor/airport/airport.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 import 'package:http/http.dart' as http;
 
 enum DownloadState { not_started, downloaded, being_processed, completed }

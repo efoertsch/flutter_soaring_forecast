@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter_soaring_forecast/soaring/json/forecast_types.dart';
-import 'package:flutter_soaring_forecast/soaring/json/regions.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/rasp/regions.dart';
 
 /// https://medium.com/flutter-community/flutter-bloc-pattern-for-dummies-like-me-c22d40f05a56
 /// Event In - State Out
@@ -8,10 +8,6 @@ import 'package:flutter_soaring_forecast/soaring/json/regions.dart';
 abstract class RaspDataEvent {}
 
 // All the events that can trigger getting a rasp forecast
-
-class GetInitialRaspSelections extends RaspDataEvent {
-  GetInitialRaspSelections();
-}
 
 class InitialRaspRegionEvent extends RaspDataEvent {
   InitialRaspRegionEvent();

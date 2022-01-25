@@ -1,6 +1,7 @@
-import 'package:flutter_soaring_forecast/soaring/json/forecast_models.dart';
-import 'package:json_annotation/json_annotation.dart';
 import 'package:collection/collection.dart';
+import 'package:json_annotation/json_annotation.dart';
+
+import 'forecast_models.dart';
 
 part 'regions.g.dart';
 
@@ -141,8 +142,8 @@ class Region {
     ModelDateDetails modelDateDetails =
         ModelDateDetails(printDate, date, model);
     // See if you have already seen that model
-    ModelDates? modelDates = _modelDates.firstWhereOrNull(
-        (modelDates) => (modelDates.modelName == model.name));
+    ModelDates? modelDates = _modelDates
+        .firstWhereOrNull((modelDates) => (modelDates.modelName == model.name));
     if (modelDates == null) {
       // First time for that model so add it to the list with the date details
       _modelDates.add(ModelDates(model.name, modelDateDetails));

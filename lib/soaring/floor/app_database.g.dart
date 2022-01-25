@@ -67,6 +67,8 @@ class _$AppDatabase extends AppDatabase {
 
   TaskTurnpointDao? _taskTurnpointDaoInstance;
 
+  TurnpointDao? _turnpointDaoInstance;
+
   Future<sqflite.Database> open(String path, List<Migration> migrations,
       [Callback? callback]) async {
     final databaseOptions = sqflite.OpenDatabaseOptions(
@@ -91,12 +93,18 @@ class _$AppDatabase extends AppDatabase {
             'CREATE TABLE IF NOT EXISTS `task` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `taskName` TEXT NOT NULL, `distance` REAL NOT NULL, `taskOrder` INTEGER NOT NULL)');
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `taskturnpoint` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `taskId` INTEGER NOT NULL, `taskOrder` INTEGER NOT NULL, `title` TEXT NOT NULL, `code` TEXT NOT NULL, `latitudeDeg` REAL NOT NULL, `longitudeDeg` REAL NOT NULL, `distanceFromPriorTurnpoint` REAL NOT NULL, `distanceFromStartingPoint` REAL NOT NULL, `lastTurnpoint` INTEGER NOT NULL, FOREIGN KEY (`taskId`) REFERENCES `task` (`id`) ON UPDATE NO ACTION ON DELETE NO ACTION)');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `turnpoint` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `title` TEXT NOT NULL, `code` TEXT NOT NULL, `country` TEXT NOT NULL, `latitudeDeg` REAL NOT NULL, `longitudeDeg` REAL NOT NULL, `elevation` TEXT NOT NULL, `style` TEXT NOT NULL, `direction` TEXT NOT NULL, `length` TEXT NOT NULL, `frequency` TEXT NOT NULL, `description` TEXT NOT NULL, `runwayWidth` TEXT NOT NULL)');
         await database
             .execute('CREATE INDEX `index_airport_name` ON `airport` (`name`)');
         await database.execute(
             'CREATE INDEX `index_airport_state_name` ON `airport` (`state`, `name`)');
         await database.execute(
             'CREATE INDEX `index_airport_municipality` ON `airport` (`municipality`)');
+        await database.execute(
+            'CREATE INDEX `index_turnpoint_code` ON `turnpoint` (`code`)');
+        await database.execute(
+            'CREATE UNIQUE INDEX `index_turnpoint_title_code` ON `turnpoint` (`title`, `code`)');
 
         await callback?.onCreate?.call(database, version);
       },
@@ -118,6 +126,11 @@ class _$AppDatabase extends AppDatabase {
   TaskTurnpointDao get taskTurnpointDao {
     return _taskTurnpointDaoInstance ??=
         _$TaskTurnpointDao(database, changeListener);
+  }
+
+  @override
+  TurnpointDao get turnpointDao {
+    return _turnpointDaoInstance ??= _$TurnpointDao(database, changeListener);
   }
 }
 
@@ -284,7 +297,7 @@ class _$TaskDao extends TaskDao {
   final UpdateAdapter<Task> _taskUpdateAdapter;
 
   @override
-  Future<List<Task?>> listAllTasks() async {
+  Future<List<Task>> listAllTasks() async {
     return _queryAdapter.queryList('Select * from task order by taskOrder',
         mapper: (Map<String, Object?> row) => Task(
             id: row['id'] as int,
@@ -374,7 +387,7 @@ class _$TaskTurnpointDao extends TaskTurnpointDao {
   final UpdateAdapter<TaskTurnpoint> _taskTurnpointUpdateAdapter;
 
   @override
-  Future<List<TaskTurnpoint>?> getTaskTurnpoints(int taskId) async {
+  Future<List<TaskTurnpoint>> getTaskTurnpoints(int taskId) async {
     return _queryAdapter.queryList(
         'Select * from taskturnpoint where taskId = ?1 order by taskOrder',
         mapper: (Map<String, Object?> row) => TaskTurnpoint(
@@ -421,5 +434,230 @@ class _$TaskTurnpointDao extends TaskTurnpointDao {
   @override
   Future<void> update(TaskTurnpoint obj) async {
     await _taskTurnpointUpdateAdapter.update(obj, OnConflictStrategy.abort);
+  }
+}
+
+class _$TurnpointDao extends TurnpointDao {
+  _$TurnpointDao(this.database, this.changeListener)
+      : _queryAdapter = QueryAdapter(database),
+        _turnpointInsertionAdapter = InsertionAdapter(
+            database,
+            'turnpoint',
+            (Turnpoint item) => <String, Object?>{
+                  'id': item.id,
+                  'title': item.title,
+                  'code': item.code,
+                  'country': item.country,
+                  'latitudeDeg': item.latitudeDeg,
+                  'longitudeDeg': item.longitudeDeg,
+                  'elevation': item.elevation,
+                  'style': item.style,
+                  'direction': item.direction,
+                  'length': item.length,
+                  'frequency': item.frequency,
+                  'description': item.description,
+                  'runwayWidth': item.runwayWidth
+                }),
+        _turnpointUpdateAdapter = UpdateAdapter(
+            database,
+            'turnpoint',
+            ['id'],
+            (Turnpoint item) => <String, Object?>{
+                  'id': item.id,
+                  'title': item.title,
+                  'code': item.code,
+                  'country': item.country,
+                  'latitudeDeg': item.latitudeDeg,
+                  'longitudeDeg': item.longitudeDeg,
+                  'elevation': item.elevation,
+                  'style': item.style,
+                  'direction': item.direction,
+                  'length': item.length,
+                  'frequency': item.frequency,
+                  'description': item.description,
+                  'runwayWidth': item.runwayWidth
+                });
+
+  final sqflite.DatabaseExecutor database;
+
+  final StreamController<String> changeListener;
+
+  final QueryAdapter _queryAdapter;
+
+  final InsertionAdapter<Turnpoint> _turnpointInsertionAdapter;
+
+  final UpdateAdapter<Turnpoint> _turnpointUpdateAdapter;
+
+  @override
+  Future<List<Turnpoint>> listAllTurnpoints() async {
+    return _queryAdapter.queryList('Select * from turnpoint order by title',
+        mapper: (Map<String, Object?> row) => Turnpoint(
+            id: row['id'] as int?,
+            title: row['title'] as String,
+            code: row['code'] as String,
+            country: row['country'] as String,
+            latitudeDeg: row['latitudeDeg'] as double,
+            longitudeDeg: row['longitudeDeg'] as double,
+            elevation: row['elevation'] as String,
+            style: row['style'] as String,
+            direction: row['direction'] as String,
+            length: row['length'] as String,
+            frequency: row['frequency'] as String,
+            description: row['description'] as String,
+            runwayWidth: row['runwayWidth'] as String));
+  }
+
+  @override
+  Future<int?> deleteAllTurnpoints() async {
+    await _queryAdapter.queryNoReturn('Delete from turnpoint');
+  }
+
+  @override
+  Future<int?> deleteTurnpoint(int id) async {
+    await _queryAdapter
+        .queryNoReturn('Delete from turnpoint where id = ?1', arguments: [id]);
+  }
+
+  @override
+  Future<List<Turnpoint>> findTurnpoints(String searchTerm) async {
+    return _queryAdapter.queryList(
+        'Select * from turnpoint where title like ?1 or code like ?1  order by title, code collate nocase',
+        mapper: (Map<String, Object?> row) => Turnpoint(id: row['id'] as int?, title: row['title'] as String, code: row['code'] as String, country: row['country'] as String, latitudeDeg: row['latitudeDeg'] as double, longitudeDeg: row['longitudeDeg'] as double, elevation: row['elevation'] as String, style: row['style'] as String, direction: row['direction'] as String, length: row['length'] as String, frequency: row['frequency'] as String, description: row['description'] as String, runwayWidth: row['runwayWidth'] as String),
+        arguments: [searchTerm]);
+  }
+
+  @override
+  Future<List<Turnpoint>> selectAllTurnpointsForDownload() async {
+    return _queryAdapter.queryList('Select * from turnpoint  order by id',
+        mapper: (Map<String, Object?> row) => Turnpoint(
+            id: row['id'] as int?,
+            title: row['title'] as String,
+            code: row['code'] as String,
+            country: row['country'] as String,
+            latitudeDeg: row['latitudeDeg'] as double,
+            longitudeDeg: row['longitudeDeg'] as double,
+            elevation: row['elevation'] as String,
+            style: row['style'] as String,
+            direction: row['direction'] as String,
+            length: row['length'] as String,
+            frequency: row['frequency'] as String,
+            description: row['description'] as String,
+            runwayWidth: row['runwayWidth'] as String));
+  }
+
+  @override
+  Future<Turnpoint?> getTurnpointByCode(String code) async {
+    return _queryAdapter.query(
+        'Select * from turnpoint where code = ?1 collate nocase',
+        mapper: (Map<String, Object?> row) => Turnpoint(
+            id: row['id'] as int?,
+            title: row['title'] as String,
+            code: row['code'] as String,
+            country: row['country'] as String,
+            latitudeDeg: row['latitudeDeg'] as double,
+            longitudeDeg: row['longitudeDeg'] as double,
+            elevation: row['elevation'] as String,
+            style: row['style'] as String,
+            direction: row['direction'] as String,
+            length: row['length'] as String,
+            frequency: row['frequency'] as String,
+            description: row['description'] as String,
+            runwayWidth: row['runwayWidth'] as String),
+        arguments: [code]);
+  }
+
+  @override
+  Future<Turnpoint?> getTurnpoint(String title, String code) async {
+    return _queryAdapter.query(
+        'Select * from turnpoint where title = ?1 and code = ?2 collate nocase',
+        mapper: (Map<String, Object?> row) => Turnpoint(
+            id: row['id'] as int?,
+            title: row['title'] as String,
+            code: row['code'] as String,
+            country: row['country'] as String,
+            latitudeDeg: row['latitudeDeg'] as double,
+            longitudeDeg: row['longitudeDeg'] as double,
+            elevation: row['elevation'] as String,
+            style: row['style'] as String,
+            direction: row['direction'] as String,
+            length: row['length'] as String,
+            frequency: row['frequency'] as String,
+            description: row['description'] as String,
+            runwayWidth: row['runwayWidth'] as String),
+        arguments: [title, code]);
+  }
+
+  @override
+  Future<Turnpoint?> getTurnpointById(int id) async {
+    return _queryAdapter.query('Select * from turnpoint where id = ?1',
+        mapper: (Map<String, Object?> row) => Turnpoint(
+            id: row['id'] as int?,
+            title: row['title'] as String,
+            code: row['code'] as String,
+            country: row['country'] as String,
+            latitudeDeg: row['latitudeDeg'] as double,
+            longitudeDeg: row['longitudeDeg'] as double,
+            elevation: row['elevation'] as String,
+            style: row['style'] as String,
+            direction: row['direction'] as String,
+            length: row['length'] as String,
+            frequency: row['frequency'] as String,
+            description: row['description'] as String,
+            runwayWidth: row['runwayWidth'] as String),
+        arguments: [id]);
+  }
+
+  @override
+  Future<Turnpoint?> checkForAtLeastOneTurnpoint() async {
+    return _queryAdapter.query(
+        'Select * from turnpoint  ORDER BY id ASC LIMIT 1',
+        mapper: (Map<String, Object?> row) => Turnpoint(
+            id: row['id'] as int?,
+            title: row['title'] as String,
+            code: row['code'] as String,
+            country: row['country'] as String,
+            latitudeDeg: row['latitudeDeg'] as double,
+            longitudeDeg: row['longitudeDeg'] as double,
+            elevation: row['elevation'] as String,
+            style: row['style'] as String,
+            direction: row['direction'] as String,
+            length: row['length'] as String,
+            frequency: row['frequency'] as String,
+            description: row['description'] as String,
+            runwayWidth: row['runwayWidth'] as String));
+  }
+
+  @override
+  Future<List<Turnpoint?>> getTurnpointsInRegion(
+      double swLatitudeDeg,
+      double swLongitudeDeg,
+      double neLatitudeDeg,
+      double neLongitudeDeg) async {
+    return _queryAdapter.queryList(
+        'Select * from turnpoint where latitudeDeg between ?1 and ?3  and longitudeDeg between ?2 and ?4',
+        mapper: (Map<String, Object?> row) => Turnpoint(id: row['id'] as int?, title: row['title'] as String, code: row['code'] as String, country: row['country'] as String, latitudeDeg: row['latitudeDeg'] as double, longitudeDeg: row['longitudeDeg'] as double, elevation: row['elevation'] as String, style: row['style'] as String, direction: row['direction'] as String, length: row['length'] as String, frequency: row['frequency'] as String, description: row['description'] as String, runwayWidth: row['runwayWidth'] as String),
+        arguments: [
+          swLatitudeDeg,
+          swLongitudeDeg,
+          neLatitudeDeg,
+          neLongitudeDeg
+        ]);
+  }
+
+  @override
+  Future<int> insert(Turnpoint obj) {
+    return _turnpointInsertionAdapter.insertAndReturnId(
+        obj, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<List<int>> insertAll(List<Turnpoint> obj) {
+    return _turnpointInsertionAdapter.insertListAndReturnIds(
+        obj, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<void> update(Turnpoint obj) async {
+    await _turnpointUpdateAdapter.update(obj, OnConflictStrategy.abort);
   }
 }

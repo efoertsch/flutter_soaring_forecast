@@ -32,6 +32,8 @@ dependencies:
   url_launcher: ^6.0.12
   path_provider: ^2.0.5
   pinch_zoom: ^1.0.0
+  sprintf: ^6.0.0
+
 
   flutter_cache_manager: ^3.1.2
   intl: ^0.17.0   # used for date/time formatting
@@ -55,6 +57,7 @@ dependencies:
   mockito: ^5.0.16
   http: ^0.13.4
   workmanager: ^0.4.1
+  google_maps_flutter: ^2.1.0
 
 dev_dependencies:
 

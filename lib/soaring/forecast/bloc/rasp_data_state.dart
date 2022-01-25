@@ -1,9 +1,8 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/rasp_selection_values.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image_set.dart';
-import 'package:flutter_soaring_forecast/soaring/json/forecast_types.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
 
 /// https://medium.com/flutter-community/flutter-bloc-pattern-for-dummies-like-me-c22d40f05a56
 /// Event In - State Out
@@ -18,14 +17,6 @@ class RaspInitialState extends RaspDataState {
 
   @override
   List<Object?> get props => [state];
-}
-
-class RaspSelectionsState extends RaspDataState {
-  final RaspSelectionValues raspSelectionValues;
-  RaspSelectionsState(this.raspSelectionValues);
-
-  @override
-  List<Object?> get props => [raspSelectionValues];
 }
 
 // GFS, NAM, etc and the default (or previously saved selected model

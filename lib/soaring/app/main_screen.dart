@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart' hide BuildContext;
-import 'package:flutter_soaring_forecast/soaring/forecast/rasp_screen.dart';
-import 'package:flutter_soaring_forecast/soaring/respository/repository.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast/ui/rasp_screen.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 
 import '../forecast/bloc/rasp_data_bloc.dart';
 

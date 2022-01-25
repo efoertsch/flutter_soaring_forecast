@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_soaring_forecast/soaring/app/main.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class AppDrawer {
@@ -12,7 +13,7 @@ class AppDrawer {
         padding: EdgeInsets.zero,
         children: <Widget>[
           new SizedBox(
-            height: 120.0,
+            height: 100.0,
             child: DrawerHeader(
               child: Text(
                 'SoaringForecast',
@@ -25,11 +26,22 @@ class AppDrawer {
             ),
           ),
           ListTile(
-            title: Text('Windy'),
+              title: Text('Turnpoints'),
+              onTap: () {
+                Navigator.pushNamed(context, TurnpointSearchInAppBar.routeName);
+              }),
+          ListTile(
+            title: Text('Task List'),
             onTap: () {
 // Update the state of the app
 // ...
 // Then close the drawer
+              Navigator.pop(context);
+            },
+          ),
+          ListTile(
+            title: Text('Windy'),
+            onTap: () {
               Navigator.pop(context);
             },
           ),
@@ -74,24 +86,6 @@ class AppDrawer {
           ),
           ListTile(
             title: Text('Airport List'),
-            onTap: () {
-// Update the state of the app
-// ...
-// Then close the drawer
-              Navigator.pop(context);
-            },
-          ),
-          ListTile(
-            title: Text('Task List'),
-            onTap: () {
-// Update the state of the app
-// ...
-// Then close the drawer
-              Navigator.pop(context);
-            },
-          ),
-          ListTile(
-            title: Text('Import Turnpoints'),
             onTap: () {
 // Update the state of the app
 // ...

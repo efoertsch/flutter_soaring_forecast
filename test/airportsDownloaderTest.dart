@@ -1,5 +1,5 @@
 import 'package:flutter_soaring_forecast/soaring/airport_download/airports_downloader.dart';
-import 'package:flutter_soaring_forecast/soaring/respository/repository.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 import 'package:test/test.dart';
 
 void main() {
