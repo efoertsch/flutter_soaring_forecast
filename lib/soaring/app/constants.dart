@@ -33,6 +33,7 @@ class MapBackgroundMenu {
 }
 
 class TurnpointMenu {
+  static const String searchTurnpoints = "Search";
   static const String importTurnpoints = 'Import Turnpoints';
   static const String addTurnpoint = 'Add Turnpoint';
   static const String exportTurnpoint = 'Export Turnpoint';

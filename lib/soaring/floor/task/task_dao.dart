@@ -7,7 +7,7 @@ import 'package:flutter_soaring_forecast/soaring/floor/task/task.dart';
 @dao
 abstract class TaskDao extends BaseDao<Task> {
   @Query("Select * from task order by taskOrder")
-  Future<List<Task?>> listAllTasks();
+  Future<List<Task>> listAllTasks();
 
   @Query("Select * from task where id = :taskId")
   Future<Task?> getTask(int taskId);

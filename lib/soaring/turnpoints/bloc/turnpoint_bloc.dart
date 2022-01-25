@@ -12,11 +12,14 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
   TurnpointBloc({required this.repository}) : super(TurnpointsLoadingState()) {
     on<TurnpointListEvent>(_showAllTurnpoints);
     on<SearchTurnpointsEvent>(_searchTurnpointsEvent);
-    on<TurnpointViewEvent>(_showTurnpointView);
   }
 
   void _searchTurnpointsEvent(
       SearchTurnpointsEvent event, Emitter<TurnpointState> emit) async {
+    if (event.searchString.length < 3) {
+      emit(TurnpointSearchMessage("Enter more than 2 characters"));
+      return;
+    }
     emit(SearchingTurnpointsState());
     try {
       var turnpoints = await repository.findTurnpoints(event.searchString);
@@ -52,10 +55,5 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
   Future<List<Turnpoint>> _getTurnpointsFromTurnpointExchange(
       String filename) async {
     return await repository.downloadTurnpointsFromTurnpointExchange(filename);
-  }
-
-  void _showTurnpointView(
-      TurnpointViewEvent event, Emitter<TurnpointState> emit) {
-    emit(TurnpointViewState(event.turnpoint));
   }
 }

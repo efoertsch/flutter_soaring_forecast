@@ -297,7 +297,7 @@ class _$TaskDao extends TaskDao {
   final UpdateAdapter<Task> _taskUpdateAdapter;
 
   @override
-  Future<List<Task?>> listAllTasks() async {
+  Future<List<Task>> listAllTasks() async {
     return _queryAdapter.queryList('Select * from task order by taskOrder',
         mapper: (Map<String, Object?> row) => Task(
             id: row['id'] as int,
@@ -387,7 +387,7 @@ class _$TaskTurnpointDao extends TaskTurnpointDao {
   final UpdateAdapter<TaskTurnpoint> _taskTurnpointUpdateAdapter;
 
   @override
-  Future<List<TaskTurnpoint>?> getTaskTurnpoints(int taskId) async {
+  Future<List<TaskTurnpoint>> getTaskTurnpoints(int taskId) async {
     return _queryAdapter.queryList(
         'Select * from taskturnpoint where taskId = ?1 order by taskOrder',
         mapper: (Map<String, Object?> row) => TaskTurnpoint(

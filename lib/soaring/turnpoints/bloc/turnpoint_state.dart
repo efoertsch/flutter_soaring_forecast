@@ -37,14 +37,6 @@ class TurnpointsLoadedState extends TurnpointState {
   List<Object?> get props => [turnpoints];
 }
 
-class TurnpointViewState extends TurnpointState {
-  final Turnpoint turnpoint;
-  TurnpointViewState(this.turnpoint);
-
-  @override
-  List<Object?> get props => [turnpoint];
-}
-
 // Turnpoints Search States
 class SearchingTurnpointsState extends TurnpointState {
   @override
@@ -56,6 +48,13 @@ class TurnpointSearchErrorState extends TurnpointState {
   TurnpointSearchErrorState(String this.errorMsg);
   @override
   List<Object?> get props => [errorMsg];
+}
+
+class TurnpointSearchMessage extends TurnpointState {
+  final String msg;
+  TurnpointSearchMessage(String this.msg);
+  @override
+  List<Object?> get props => [msg];
 }
 
 class TurnpointsFoundState extends TurnpointState {

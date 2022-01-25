@@ -8,7 +8,7 @@ import '../base_dao.dart';
 abstract class TaskTurnpointDao extends BaseDao<TaskTurnpoint> {
   @Query(
       "Select * from taskturnpoint where taskId = :taskId order by taskOrder")
-  Future<List<TaskTurnpoint>?> getTaskTurnpoints(int taskId);
+  Future<List<TaskTurnpoint>> getTaskTurnpoints(int taskId);
 
   @Query("Select max(taskOrder) from taskturnpoint where taskId = :taskId")
   Future<int?> getMaxTaskOrderForTask(int taskId);

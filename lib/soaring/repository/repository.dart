@@ -8,6 +8,8 @@ import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     as Constants;
 import 'package:flutter_soaring_forecast/soaring/floor/airport/airport.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/app_database.dart';
+import 'package:flutter_soaring_forecast/soaring/floor/task/task.dart';
+import 'package:flutter_soaring_forecast/soaring/floor/taskturnpoint/task_turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/ImageCacheManager.dart';
@@ -21,7 +23,6 @@ import 'rasp/rasp_api.dart';
 import 'rasp/regions.dart';
 
 class Repository {
-  // Hmmm. How to make this only available via static gettter
   static Repository? _repository;
   static Dio _dio = Dio();
   static late BuildContext? _context;
@@ -151,6 +152,12 @@ class Repository {
     return _appDatabase!.airportDao.insertAll(airports);
   }
 
+  // ------ Tasks -------------------------------------
+  Future<List<Task>> getAllTasks() async {
+    await makeDatabaseAvailable();
+    return _appDatabase!.taskDao.listAllTasks();
+  }
+
   // ----- Turnpoints ----------------------------------
   @transaction
   Future<int?> deleteAllTurnpoints() async {
@@ -199,6 +206,17 @@ class Repository {
 
   //------  Selected turnpoint files available from turnpoint exchange ------
 
+  // ----- Task ----------------------------------------
+
+  Future<List<Task>> getAlltasks() async {
+    await makeDatabaseAvailable();
+    return _appDatabase!.taskDao.listAllTasks();
+  }
+
+  Future<List<TaskTurnpoint>> getTaskTurnpoints(int taskId) async {
+    await makeDatabaseAvailable();
+    return _appDatabase!.taskTurnpointDao.getTaskTurnpoints(taskId);
+  }
   // ----- Shared preferences --------------------------
   // Make sure keys are unique among calling routines!
 

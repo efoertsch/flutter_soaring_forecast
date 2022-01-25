@@ -50,8 +50,7 @@ class _TurnpointViewScreenState extends State<TurnpointViewScreen>
 
   Widget getWidget() {
     if (!_firstLayoutComplete) {
-      print('returning CircularProgressIndicator');
-      return Center(child: CircularProgressIndicator());
+      return CommonWidgets.buildLoading();
     }
     return Padding(
       padding: EdgeInsets.all(8.0),

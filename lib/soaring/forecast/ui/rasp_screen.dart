@@ -10,6 +10,7 @@ import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     as Constants;
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
 import 'package:flutter_soaring_forecast/soaring/app/custom_styles.dart';
+import 'package:flutter_soaring_forecast/soaring/app/main.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_data_state.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/rasp_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image_set.dart';
@@ -527,8 +528,10 @@ class _RaspScreenState extends State<RaspScreen>
   List<Widget> getRaspMenu() {
     return <Widget>[
       TextButton(
-        onPressed: () {},
         child: const Text('SELECT TASK', style: TextStyle(color: Colors.white)),
+        onPressed: () {
+          Navigator.pushNamed(context, TaskList.routeName);
+        },
       ),
       RotatedBox(
         quarterTurns: 1,

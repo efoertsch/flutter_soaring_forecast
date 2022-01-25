@@ -28,7 +28,7 @@ class AppDrawer {
           ListTile(
               title: Text('Turnpoints'),
               onTap: () {
-                Navigator.pushNamed(context, TurnpointSearchList.routeName);
+                Navigator.pushNamed(context, TurnpointSearchInAppBar.routeName);
               }),
           ListTile(
             title: Text('Task List'),

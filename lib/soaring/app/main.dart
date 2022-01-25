@@ -2,13 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/airport_download/airports_downloader.dart';
+import 'package:flutter_soaring_forecast/soaring/floor/task/task.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_data_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/ui/rasp_screen.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
+import 'package:flutter_soaring_forecast/soaring/tasks/bloc/task_bloc.dart';
+import 'package:flutter_soaring_forecast/soaring/tasks/ui/task_detail.dart';
+import 'package:flutter_soaring_forecast/soaring/tasks/ui/task_list.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/bloc/turnpoint_bloc.dart';
-import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_list.dart';
-import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoints_search.dart';
+import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_search_in_appbar.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoints_view.dart';
 import 'package:flutter_soaring_forecast/soaring/values/strings.dart';
 import 'package:workmanager/workmanager.dart';
@@ -60,8 +63,9 @@ class SoaringForecastApp extends StatelessWidget {
         ),
         initialRoute: SoaringForecast.routeName,
         routes: {
-          TurnpointList.routeName: (context) => TurnpointList(),
-          TurnpointSearchList.routeName: (context) => TurnpointSearchList(),
+          TurnpointSearchInAppBar.routeName: (context) =>
+              TurnpointSearchInAppBar(),
+          TaskList.routeName: (context) => TaskList(),
         },
         onGenerateRoute: (settings) {
           if (settings.name == TurnpointView.routeName) {
@@ -69,6 +73,14 @@ class SoaringForecastApp extends StatelessWidget {
             return MaterialPageRoute(
               builder: (context) {
                 return TurnpointView(turnpoint: turnpoint);
+              },
+            );
+          }
+          if (settings.name == TaskDetail.routeName) {
+            final task = settings.arguments as Task;
+            return MaterialPageRoute(
+              builder: (context) {
+                return TaskDetailScreen(repositoryContext: context, task: task);
               },
             );
           }
@@ -80,6 +92,7 @@ class SoaringForecastApp extends StatelessWidget {
 
 class SoaringForecast extends StatelessWidget {
   static const routeName = '/';
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider<RaspDataBloc>(
@@ -90,26 +103,15 @@ class SoaringForecast extends StatelessWidget {
   }
 }
 
-class TurnpointList extends StatelessWidget {
-  static const routeName = '/listTurnpoints';
-  @override
-  Widget build(BuildContext context) {
-    return BlocProvider<TurnpointBloc>(
-      create: (BuildContext context) =>
-          TurnpointBloc(repository: RepositoryProvider.of<Repository>(context)),
-      child: TurnpointListScreen(repositoryContext: context),
-    );
-  }
-}
+class TurnpointSearchInAppBar extends StatelessWidget {
+  static const routeName = '/turnpointSearchInAppBar';
 
-class TurnpointSearchList extends StatelessWidget {
-  static const routeName = '/turnpointSearchList';
   @override
   Widget build(BuildContext context) {
     return BlocProvider<TurnpointBloc>(
       create: (BuildContext context) =>
           TurnpointBloc(repository: RepositoryProvider.of<Repository>(context)),
-      child: TurnpointsSearchScreen(repositoryContext: context),
+      child: TurnpointsSearchInAppBarScreen(repositoryContext: context),
     );
   }
 }
@@ -117,9 +119,38 @@ class TurnpointSearchList extends StatelessWidget {
 class TurnpointView extends StatelessWidget {
   static const routeName = '/ViewTurnpoint';
   final Turnpoint turnpoint;
+
   TurnpointView({required this.turnpoint});
+
   @override
   Widget build(BuildContext context) {
     return TurnpointViewScreen(turnpoint: turnpoint);
+  }
+}
+
+class TaskList extends StatelessWidget {
+  static const routeName = '/ViewTask';
+
+  Widget build(BuildContext context) {
+    return BlocProvider<TaskBloc>(
+      create: (BuildContext context) =>
+          TaskBloc(repository: RepositoryProvider.of<Repository>(context)),
+      child: TaskListScreen(),
+    );
+  }
+}
+
+class TaskDetail extends StatelessWidget {
+  static const routeName = '/ViewTaskDetail';
+  final Task task;
+
+  TaskDetail({required this.task});
+
+  Widget build(BuildContext context) {
+    return BlocProvider<TaskBloc>(
+      create: (BuildContext context) =>
+          TaskBloc(repository: RepositoryProvider.of<Repository>(context)),
+      child: TaskDetailScreen(repositoryContext: context, task: task),
+    );
   }
 }
