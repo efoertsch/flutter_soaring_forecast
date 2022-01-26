@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_soaring_forecast/soaring/floor/task/task.dart';
+import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
 
 @immutable
 abstract class TaskEvent extends Equatable {}
@@ -13,11 +13,18 @@ class TaskListEvent extends TaskEvent {
   List<Object?> get props => [];
 }
 
-class TaskTurnpointsEvent extends TaskEvent {
-  final Task task;
-  TaskTurnpointsEvent(this.task);
+class LoadTaskTurnpointsEvent extends TaskEvent {
+  final int taskId;
+  LoadTaskTurnpointsEvent(this.taskId);
   @override
-  List<Object?> get props => [task];
+  List<Object?> get props => [taskId];
+}
+
+class TurnpointsAddedToTaskEvent extends TaskEvent {
+  final List<Turnpoint> turnpoints;
+  TurnpointsAddedToTaskEvent(this.turnpoints);
+  @override
+  List<Object?> get props => [turnpoints];
 }
 
 class SaveTaskTurnpointsEvent extends TaskEvent {

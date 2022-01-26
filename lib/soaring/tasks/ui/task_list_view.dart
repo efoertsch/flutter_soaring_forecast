@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
 import 'package:flutter_soaring_forecast/soaring/app/main.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/task/task.dart';
 
@@ -26,7 +27,7 @@ class TaskListView {
             onPressed: () => Navigator.pushNamed(
               context,
               TaskDetail.routeName,
-              arguments: tasks[index],
+              arguments: tasks[index].id,
             ),
           ),
           title: Row(
@@ -34,18 +35,12 @@ class TaskListView {
               Text(
                 tasks[index].taskName,
                 textAlign: TextAlign.left,
-                style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                    fontSize: 20),
+                style: textStyleBoldBlackFontSize20,
               ),
               Text(
                 tasks[index].distance.toStringAsFixed(1),
                 textAlign: TextAlign.left,
-                style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                    fontSize: 15),
+                style: textStyleBoldBlack87FontSize15,
               ),
             ],
           ),

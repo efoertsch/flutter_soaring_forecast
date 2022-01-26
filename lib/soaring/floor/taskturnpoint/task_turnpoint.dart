@@ -38,6 +38,7 @@ class TaskTurnpoint {
 
   TaskTurnpoint(
       {required this.taskId,
+      this.taskOrder = 0,
       required this.title,
       required this.code,
       required this.latitudeDeg,

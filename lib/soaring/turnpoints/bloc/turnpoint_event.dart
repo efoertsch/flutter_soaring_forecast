@@ -28,3 +28,11 @@ class TurnpointViewEvent extends TurnpointEvent {
   @override
   List<Object?> get props => [turnpoint];
 }
+
+class AddTurnpointToTask extends TurnpointEvent {
+  final Turnpoint turnpoint;
+  AddTurnpointToTask(this.turnpoint);
+
+  @override
+  List<Object?> get props => [turnpoint];
+}

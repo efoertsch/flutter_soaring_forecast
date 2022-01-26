@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/app/main.dart';
-import 'package:flutter_soaring_forecast/soaring/floor/task/task.dart';
 import 'package:flutter_soaring_forecast/soaring/tasks/bloc/task_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/tasks/bloc/task_event.dart';
 import 'package:flutter_soaring_forecast/soaring/tasks/bloc/task_state.dart';
@@ -62,6 +61,13 @@ class TaskListScreen extends StatelessWidget {
           return Center(child: Text("Unhandled State"));
         },
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          _goToTaskDetail(context, -1);
+        },
+        backgroundColor: Colors.green,
+        child: const Icon(Icons.add),
+      ),
     );
   }
 
@@ -71,7 +77,7 @@ class TaskListScreen extends StatelessWidget {
       barrierDismissible: false, // user must tap button!
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('AlertDialog Title'),
+          title: const Text('No Defined Tasks'),
           content: SingleChildScrollView(
             child: ListBody(
               children: const <Widget>[
@@ -90,16 +96,19 @@ class TaskListScreen extends StatelessWidget {
             TextButton(
                 child: const Text('YES'),
                 onPressed: () {
-                  final Task task = new Task();
-                  Navigator.pushNamed(
-                    context,
-                    TaskDetail.routeName,
-                    arguments: task,
-                  );
+                  _goToTaskDetail(context, -1);
                 }),
           ],
         );
       },
+    );
+  }
+
+  void _goToTaskDetail(BuildContext context, int taskId) {
+    Navigator.pushNamed(
+      context,
+      TaskDetail.routeName,
+      arguments: taskId,
     );
   }
 }

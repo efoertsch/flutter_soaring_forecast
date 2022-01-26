@@ -213,6 +213,12 @@ class Repository {
     return _appDatabase!.taskDao.listAllTasks();
   }
 
+  Future<Task> getTask(int taskId) async {
+    await makeDatabaseAvailable();
+    Task? task = await _appDatabase!.taskDao.getTask(taskId);
+    return task ?? Task();
+  }
+
   Future<List<TaskTurnpoint>> getTaskTurnpoints(int taskId) async {
     await makeDatabaseAvailable();
     return _appDatabase!.taskTurnpointDao.getTaskTurnpoints(taskId);

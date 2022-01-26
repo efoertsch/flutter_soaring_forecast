@@ -1,5 +1,9 @@
 library constants;
 
+import 'dart:ui';
+
+import 'package:flutter/material.dart';
+
 /// Hold any system wide constants
 const String BASE_URL = 'https://soargbsc.net/';
 const String RASP_BASE_URL = BASE_URL + 'rasp/';
@@ -40,3 +44,9 @@ class TurnpointMenu {
   static const String emailTurnpoint = 'Email Turnpoint';
   static const String clearTurnpointDatabase = 'Clear Turnpoint Database';
 }
+
+const textStyleBoldBlackFontSize20 =
+    TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 20);
+
+const textStyleBoldBlack87FontSize15 =
+    TextStyle(fontWeight: FontWeight.bold, color: Colors.black87, fontSize: 15);

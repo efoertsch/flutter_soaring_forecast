@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
 import 'package:flutter_soaring_forecast/soaring/app/main.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
 
@@ -37,10 +38,7 @@ class TurnpointListView {
                   child: Text(
                     turnpoints[index].code + '   ' + turnpoints[index].title,
                     textAlign: TextAlign.left,
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
-                        fontSize: 20),
+                    style: textStyleBoldBlackFontSize20,
                   ),
                 ),
                 Container(
@@ -48,10 +46,7 @@ class TurnpointListView {
                   child: Text(
                     TurnpointUtils.getStyleName(turnpoints[index].style),
                     textAlign: TextAlign.left,
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                        fontSize: 15),
+                    style: textStyleBoldBlack87FontSize15,
                   ),
                 ),
               ],

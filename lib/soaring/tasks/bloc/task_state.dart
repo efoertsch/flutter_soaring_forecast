@@ -46,11 +46,13 @@ class TasksTurnpointsLoadingState extends TaskState {
   List<Object?> get props => [];
 }
 
-class TasksTurnpointsLoadiedState extends TaskState {
+class TasksTurnpointsLoadedState extends TaskState {
+  final Task task;
   final List<TaskTurnpoint> taskTurnpoints;
-  TasksTurnpointsLoadiedState(this.taskTurnpoints);
+  TasksTurnpointsLoadedState(
+      {required this.task, required this.taskTurnpoints});
   @override
-  List<Object?> get props => [taskTurnpoints];
+  List<Object?> get props => [task, taskTurnpoints];
 }
 
 class TaskTurnpointErrorState extends TaskState {
@@ -58,4 +60,10 @@ class TaskTurnpointErrorState extends TaskState {
   TaskTurnpointErrorState(String this.errorMsg);
   @override
   List<Object?> get props => [errorMsg];
+}
+
+class TaskUpdatedState extends TaskState {
+  TaskUpdatedState();
+  @override
+  List<Object?> get props => [];
 }
