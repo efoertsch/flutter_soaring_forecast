@@ -48,5 +48,17 @@ class TurnpointMenu {
 const textStyleBoldBlackFontSize20 =
     TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 20);
 
+const textStyleBoldBlackFontSize18 =
+    TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 18);
+
+const textStyleBoldBlackFontSize16 =
+    TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 16);
+
+const textStyleBoldBlackFontSize14 =
+    TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 14);
+
 const textStyleBoldBlack87FontSize15 =
     TextStyle(fontWeight: FontWeight.bold, color: Colors.black87, fontSize: 15);
+
+const textStyleBoldBlack87FontSize14 =
+    TextStyle(fontWeight: FontWeight.bold, color: Colors.black87, fontSize: 14);

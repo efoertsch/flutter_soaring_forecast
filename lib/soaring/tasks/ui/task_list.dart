@@ -42,8 +42,8 @@ class TaskListScreen extends StatelessWidget {
           }
           if (state is TasksLoadedState) {
             if (state.tasks.length == 0) {
-              WidgetsBinding.instance?.addPostFrameCallback(
-                  (_) => _showNoTasksFoundDialog(context));
+              // WidgetsBinding.instance?.addPostFrameCallback(
+              //     (_) => _showNoTasksFoundDialog(context));
               return Center(child: Text("No Tasks Found"));
             } else {
               return TaskListView(context: context, tasks: state.tasks)
