@@ -5,18 +5,18 @@ import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart'
 import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoint_utils.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-class TurnpointViewScreen extends StatefulWidget {
+class TurnpointDetailView extends StatefulWidget {
   final Turnpoint turnpoint;
 
-  TurnpointViewScreen({Key? key, required this.turnpoint}) : super(key: key);
+  TurnpointDetailView({Key? key, required this.turnpoint}) : super(key: key);
 
   @override
-  _TurnpointViewScreenState createState() => _TurnpointViewScreenState();
+  _TurnpointDetailViewState createState() => _TurnpointDetailViewState();
 }
 
 //TODO - keep more data details in Bloc,
-class _TurnpointViewScreenState extends State<TurnpointViewScreen>
-    with AfterLayoutMixin<TurnpointViewScreen> {
+class _TurnpointDetailViewState extends State<TurnpointDetailView>
+    with AfterLayoutMixin<TurnpointDetailView> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   bool _firstLayoutComplete = false;
   GoogleMapController? mapController;

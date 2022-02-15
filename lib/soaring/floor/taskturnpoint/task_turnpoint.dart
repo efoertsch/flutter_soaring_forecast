@@ -11,35 +11,38 @@ import 'package:flutter_soaring_forecast/soaring/floor/task/task.dart';
 ])
 class TaskTurnpoint {
   @PrimaryKey(autoGenerate: true)
-  int id = -1;
-  int taskId;
+  late int? id;
+  late int? taskId;
 
   // Order in which the turnpoint is in the task
-  int taskOrder = 0;
+  late int taskOrder;
 
   // Following 2 fields refer back to same fields as in Turnpoint
   // Doing this rather than turnpoint.id due to  OnConflictStrategy.REPLACE stategy
   // used for any turnpoint updates.
-  String title = "";
-
-  String code = "";
+  late String title;
+  late String code;
 
   // For convenience store lat/long so can recalc distances w/o having to get it from turnpoint table
   // Also in case turnpoints deleted still can plot task
-  double latitudeDeg;
+  late double latitudeDeg;
+  late double longitudeDeg;
 
-  double longitudeDeg;
+  late double distanceFromPriorTurnpoint;
+  late double distanceFromStartingPoint;
 
-  double distanceFromPriorTurnpoint = 0.0;
-
-  double distanceFromStartingPoint = 0.0;
   // used for taskTurnpoint display
-  bool lastTurnpoint = false;
+  late bool lastTurnpoint;
 
   TaskTurnpoint(
-      {required this.taskId,
-      required this.title,
-      required this.code,
-      required this.latitudeDeg,
-      required this.longitudeDeg});
+      {this.id,
+      this.taskId = 0,
+      this.taskOrder = 0,
+      this.title = "",
+      this.code = "",
+      this.latitudeDeg = 0,
+      this.longitudeDeg = 0,
+      this.distanceFromPriorTurnpoint = 0.0,
+      this.distanceFromStartingPoint = 0.0,
+      this.lastTurnpoint = false});
 }

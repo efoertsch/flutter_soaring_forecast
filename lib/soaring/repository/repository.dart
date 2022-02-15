@@ -204,6 +204,12 @@ class Repository {
     return turnpoints;
   }
 
+  Future<Turnpoint?> getTurnpoint(
+      @required String title, @required String code) async {
+    await makeDatabaseAvailable();
+    return _appDatabase!.turnpointDao.getTurnpoint(title, code);
+  }
+
   //------  Selected turnpoint files available from turnpoint exchange ------
 
   // ----- Task ----------------------------------------
@@ -213,10 +219,39 @@ class Repository {
     return _appDatabase!.taskDao.listAllTasks();
   }
 
+  Future<Task> getTask(int taskId) async {
+    await makeDatabaseAvailable();
+    Task? task = await _appDatabase!.taskDao.getTask(taskId);
+    return task ?? Task();
+  }
+
+  Future<int?> saveTask(Task task) async {
+    await makeDatabaseAvailable();
+    return _appDatabase!.taskDao.insert(task);
+  }
+
+  Future<int> updateTask(Task task) async {
+    await makeDatabaseAvailable();
+    return _appDatabase!.taskDao.update(task);
+  }
+
+  // ----- Task Turnpoints----------------------------------------
+
   Future<List<TaskTurnpoint>> getTaskTurnpoints(int taskId) async {
     await makeDatabaseAvailable();
     return _appDatabase!.taskTurnpointDao.getTaskTurnpoints(taskId);
   }
+
+  Future<int?> insertTaskTurnpoint(TaskTurnpoint taskTurnpoint) async {
+    await makeDatabaseAvailable();
+    return _appDatabase!.taskTurnpointDao.insert(taskTurnpoint);
+  }
+
+  Future<int?> updateTaskTurnpoint(TaskTurnpoint taskTurnpoint) async {
+    await makeDatabaseAvailable();
+    return _appDatabase!.taskTurnpointDao.update(taskTurnpoint);
+  }
+
   // ----- Shared preferences --------------------------
   // Make sure keys are unique among calling routines!
 

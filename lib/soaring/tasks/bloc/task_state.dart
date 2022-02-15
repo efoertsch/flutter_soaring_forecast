@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/task/task.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/taskturnpoint/task_turnpoint.dart';
+import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
 
 @immutable
 abstract class TaskState extends Equatable {}
@@ -46,11 +47,13 @@ class TasksTurnpointsLoadingState extends TaskState {
   List<Object?> get props => [];
 }
 
-class TasksTurnpointsLoadiedState extends TaskState {
+class TasksTurnpointsLoadedState extends TaskState {
+  final Task task;
   final List<TaskTurnpoint> taskTurnpoints;
-  TasksTurnpointsLoadiedState(this.taskTurnpoints);
+  TasksTurnpointsLoadedState(
+      {required this.task, required this.taskTurnpoints});
   @override
-  List<Object?> get props => [taskTurnpoints];
+  List<Object?> get props => [task, taskTurnpoints];
 }
 
 class TaskTurnpointErrorState extends TaskState {
@@ -58,4 +61,24 @@ class TaskTurnpointErrorState extends TaskState {
   TaskTurnpointErrorState(String this.errorMsg);
   @override
   List<Object?> get props => [errorMsg];
+}
+
+class TaskModifiedState extends TaskState {
+  TaskModifiedState();
+  @override
+  List<Object?> get props => [];
+}
+
+class TaskSavedState extends TaskState {
+  TaskSavedState();
+  @override
+  List<Object?> get props => [];
+}
+
+// Turnpoint based on TaskTurnpoint
+class TurnpointFoundState extends TaskState {
+  final Turnpoint turnpoint;
+  TurnpointFoundState(this.turnpoint);
+  @override
+  List<Object?> get props => [turnpoint];
 }

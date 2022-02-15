@@ -5,9 +5,9 @@ abstract class BaseDao<T> {
   @Insert(onConflict: OnConflictStrategy.replace)
   Future<int?> insert(T obj);
 
-  @Insert()
+  @Insert(onConflict: OnConflictStrategy.replace)
   Future<List<int?>> insertAll(List<T> obj);
 
   @Update()
-  Future<void> update(T obj);
+  Future<int> update(T obj);
 }

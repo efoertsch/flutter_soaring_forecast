@@ -1,5 +1,9 @@
 library constants;
 
+import 'dart:ui';
+
+import 'package:flutter/material.dart';
+
 /// Hold any system wide constants
 const String BASE_URL = 'https://soargbsc.net/';
 const String RASP_BASE_URL = BASE_URL + 'rasp/';
@@ -40,3 +44,33 @@ class TurnpointMenu {
   static const String emailTurnpoint = 'Email Turnpoint';
   static const String clearTurnpointDatabase = 'Clear Turnpoint Database';
 }
+
+const textStyleBoldBlackFontSize20 =
+    TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 20);
+
+const textStyleBlackFontSize20 = TextStyle(color: Colors.black, fontSize: 20);
+
+const textStyleBoldBlackFontSize18 =
+    TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 18);
+
+const textStyleBoldBlackFontSize16 =
+    TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 16);
+
+const textStyleBlackFontSize16 = TextStyle(color: Colors.black, fontSize: 16);
+
+const textStyleBoldBlackFontSize14 =
+    TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 14);
+
+const textStyleBlackFontSize14 = TextStyle(color: Colors.black, fontSize: 14);
+
+const textStyleBoldBlack87FontSize15 =
+    TextStyle(fontWeight: FontWeight.bold, color: Colors.black87, fontSize: 15);
+
+const textStyleBlack87FontSize15 =
+    TextStyle(color: Colors.black87, fontSize: 15);
+
+const textStyleBoldBlack87FontSize14 =
+    TextStyle(fontWeight: FontWeight.bold, color: Colors.black87, fontSize: 14);
+
+const textStyleBlack87FontSize14 =
+    TextStyle(color: Colors.black87, fontSize: 14);

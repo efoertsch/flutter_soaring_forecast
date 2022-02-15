@@ -90,9 +90,9 @@ class _$AppDatabase extends AppDatabase {
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `airport` (`ident` TEXT NOT NULL, `type` TEXT NOT NULL, `name` TEXT NOT NULL, `latitudeDeg` REAL NOT NULL, `longitudeDeg` REAL NOT NULL, `elevationFt` INTEGER NOT NULL, `state` TEXT NOT NULL, `municipality` TEXT NOT NULL, PRIMARY KEY (`ident`))');
         await database.execute(
-            'CREATE TABLE IF NOT EXISTS `task` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `taskName` TEXT NOT NULL, `distance` REAL NOT NULL, `taskOrder` INTEGER NOT NULL)');
+            'CREATE TABLE IF NOT EXISTS `task` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `taskName` TEXT NOT NULL, `distance` REAL NOT NULL, `taskOrder` INTEGER NOT NULL)');
         await database.execute(
-            'CREATE TABLE IF NOT EXISTS `taskturnpoint` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `taskId` INTEGER NOT NULL, `taskOrder` INTEGER NOT NULL, `title` TEXT NOT NULL, `code` TEXT NOT NULL, `latitudeDeg` REAL NOT NULL, `longitudeDeg` REAL NOT NULL, `distanceFromPriorTurnpoint` REAL NOT NULL, `distanceFromStartingPoint` REAL NOT NULL, `lastTurnpoint` INTEGER NOT NULL, FOREIGN KEY (`taskId`) REFERENCES `task` (`id`) ON UPDATE NO ACTION ON DELETE NO ACTION)');
+            'CREATE TABLE IF NOT EXISTS `taskturnpoint` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `taskId` INTEGER, `taskOrder` INTEGER NOT NULL, `title` TEXT NOT NULL, `code` TEXT NOT NULL, `latitudeDeg` REAL NOT NULL, `longitudeDeg` REAL NOT NULL, `distanceFromPriorTurnpoint` REAL NOT NULL, `distanceFromStartingPoint` REAL NOT NULL, `lastTurnpoint` INTEGER NOT NULL, FOREIGN KEY (`taskId`) REFERENCES `task` (`id`) ON UPDATE NO ACTION ON DELETE NO ACTION)');
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `turnpoint` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `title` TEXT NOT NULL, `code` TEXT NOT NULL, `country` TEXT NOT NULL, `latitudeDeg` REAL NOT NULL, `longitudeDeg` REAL NOT NULL, `elevation` TEXT NOT NULL, `style` TEXT NOT NULL, `direction` TEXT NOT NULL, `length` TEXT NOT NULL, `frequency` TEXT NOT NULL, `description` TEXT NOT NULL, `runwayWidth` TEXT NOT NULL)');
         await database
@@ -254,12 +254,13 @@ class _$AirportDao extends AirportDao {
   @override
   Future<List<int>> insertAll(List<Airport> obj) {
     return _airportInsertionAdapter.insertListAndReturnIds(
-        obj, OnConflictStrategy.abort);
+        obj, OnConflictStrategy.replace);
   }
 
   @override
-  Future<void> update(Airport obj) async {
-    await _airportUpdateAdapter.update(obj, OnConflictStrategy.abort);
+  Future<int> update(Airport obj) {
+    return _airportUpdateAdapter.updateAndReturnChangedRows(
+        obj, OnConflictStrategy.abort);
   }
 }
 
@@ -300,7 +301,7 @@ class _$TaskDao extends TaskDao {
   Future<List<Task>> listAllTasks() async {
     return _queryAdapter.queryList('Select * from task order by taskOrder',
         mapper: (Map<String, Object?> row) => Task(
-            id: row['id'] as int,
+            id: row['id'] as int?,
             taskName: row['taskName'] as String,
             distance: row['distance'] as double,
             taskOrder: row['taskOrder'] as int));
@@ -310,7 +311,7 @@ class _$TaskDao extends TaskDao {
   Future<Task?> getTask(int taskId) async {
     return _queryAdapter.query('Select * from task where id = ?1',
         mapper: (Map<String, Object?> row) => Task(
-            id: row['id'] as int,
+            id: row['id'] as int?,
             taskName: row['taskName'] as String,
             distance: row['distance'] as double,
             taskOrder: row['taskOrder'] as int),
@@ -332,12 +333,13 @@ class _$TaskDao extends TaskDao {
   @override
   Future<List<int>> insertAll(List<Task> obj) {
     return _taskInsertionAdapter.insertListAndReturnIds(
-        obj, OnConflictStrategy.abort);
+        obj, OnConflictStrategy.replace);
   }
 
   @override
-  Future<void> update(Task obj) async {
-    await _taskUpdateAdapter.update(obj, OnConflictStrategy.abort);
+  Future<int> update(Task obj) {
+    return _taskUpdateAdapter.updateAndReturnChangedRows(
+        obj, OnConflictStrategy.abort);
   }
 }
 
@@ -391,11 +393,18 @@ class _$TaskTurnpointDao extends TaskTurnpointDao {
     return _queryAdapter.queryList(
         'Select * from taskturnpoint where taskId = ?1 order by taskOrder',
         mapper: (Map<String, Object?> row) => TaskTurnpoint(
-            taskId: row['taskId'] as int,
+            id: row['id'] as int?,
+            taskId: row['taskId'] as int?,
+            taskOrder: row['taskOrder'] as int,
             title: row['title'] as String,
             code: row['code'] as String,
             latitudeDeg: row['latitudeDeg'] as double,
-            longitudeDeg: row['longitudeDeg'] as double),
+            longitudeDeg: row['longitudeDeg'] as double,
+            distanceFromPriorTurnpoint:
+                row['distanceFromPriorTurnpoint'] as double,
+            distanceFromStartingPoint:
+                row['distanceFromStartingPoint'] as double,
+            lastTurnpoint: (row['lastTurnpoint'] as int) != 0),
         arguments: [taskId]);
   }
 
@@ -428,12 +437,13 @@ class _$TaskTurnpointDao extends TaskTurnpointDao {
   @override
   Future<List<int>> insertAll(List<TaskTurnpoint> obj) {
     return _taskTurnpointInsertionAdapter.insertListAndReturnIds(
-        obj, OnConflictStrategy.abort);
+        obj, OnConflictStrategy.replace);
   }
 
   @override
-  Future<void> update(TaskTurnpoint obj) async {
-    await _taskTurnpointUpdateAdapter.update(obj, OnConflictStrategy.abort);
+  Future<int> update(TaskTurnpoint obj) {
+    return _taskTurnpointUpdateAdapter.updateAndReturnChangedRows(
+        obj, OnConflictStrategy.abort);
   }
 }
 
@@ -653,11 +663,12 @@ class _$TurnpointDao extends TurnpointDao {
   @override
   Future<List<int>> insertAll(List<Turnpoint> obj) {
     return _turnpointInsertionAdapter.insertListAndReturnIds(
-        obj, OnConflictStrategy.abort);
+        obj, OnConflictStrategy.replace);
   }
 
   @override
-  Future<void> update(Turnpoint obj) async {
-    await _turnpointUpdateAdapter.update(obj, OnConflictStrategy.abort);
+  Future<int> update(Turnpoint obj) {
+    return _turnpointUpdateAdapter.updateAndReturnChangedRows(
+        obj, OnConflictStrategy.abort);
   }
 }
