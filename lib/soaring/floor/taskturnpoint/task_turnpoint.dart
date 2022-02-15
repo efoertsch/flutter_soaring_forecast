@@ -11,8 +11,8 @@ import 'package:flutter_soaring_forecast/soaring/floor/task/task.dart';
 ])
 class TaskTurnpoint {
   @PrimaryKey(autoGenerate: true)
-  late int? id;
-  late int? taskId;
+  late int id;
+  late int taskId;
 
   // Order in which the turnpoint is in the task
   late int taskOrder;
@@ -35,7 +35,7 @@ class TaskTurnpoint {
   late bool lastTurnpoint;
 
   TaskTurnpoint(
-      {this.id,
+      {this.id = 0,
       this.taskId = 0,
       this.taskOrder = 0,
       this.title = "",

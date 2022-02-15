@@ -97,11 +97,7 @@ class TaskListScreen extends StatelessWidget {
             visualDensity: VisualDensity(horizontal: 0, vertical: -4),
             trailing: IconButton(
               icon: Icon(Icons.edit),
-              onPressed: () => Navigator.pushNamed(
-                context,
-                TaskDetail.routeName,
-                arguments: tasks[index].id,
-              ),
+              onPressed: () => _goToTaskDetail(context, tasks[index].id),
             ),
             title: Container(
               child: GestureDetector(
@@ -169,7 +165,7 @@ class TaskListScreen extends StatelessWidget {
             TextButton(
                 child: const Text('YES'),
                 onPressed: () {
-                  _goToTaskDetail(context, -1);
+                  _goToTaskDetail(context, 0);
                 }),
           ],
         );

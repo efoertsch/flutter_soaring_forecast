@@ -33,6 +33,7 @@ dependencies:
   path_provider: ^2.0.5
   pinch_zoom: ^1.0.0
   sprintf: ^6.0.0
+  drag_and_drop_lists: ^0.3.2+2
 
 
   flutter_cache_manager: ^3.1.2

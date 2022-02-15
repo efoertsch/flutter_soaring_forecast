@@ -47,3 +47,11 @@ class DisplayTaskTurnpointEvent extends TaskEvent {
   @override
   List<Object?> get props => [taskTurnpoint];
 }
+
+class SwitchOrderOfTaskTurnpointsEvent extends TaskEvent {
+  final int oldIndex;
+  final int newIndex;
+  SwitchOrderOfTaskTurnpointsEvent(this.oldIndex, this.newIndex);
+  @override
+  List<Object?> get props => [oldIndex, newIndex];
+}
