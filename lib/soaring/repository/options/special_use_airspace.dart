@@ -141,20 +141,20 @@ class Geometry {
     if (json['coordinates'] != null) {
       coordinates = <LatLng>[];
       json['coordinates'].forEach((v) {
-        coordinates!.add(LatLng(v[0], v[1]));
+        coordinates!.add(LatLng.fromJson(v)!);
       });
     }
   }
 }
 
-@JsonSerializable()
-class Coordinates {
-  Coordinates(lat, long);
-
-  Coordinates.fromJson(Map<String, dynamic> json) {}
-
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    return data;
-  }
-}
+// @JsonSerializable()
+// class Coordinates {
+//   Coordinates(lat, long);
+//
+//   Coordinates.fromJson(Map<String, dynamic> json) {}
+//
+//   Map<String, dynamic> toJson() {
+//     final Map<String, dynamic> data = new Map<String, dynamic>();
+//     return data;
+//   }
+// }

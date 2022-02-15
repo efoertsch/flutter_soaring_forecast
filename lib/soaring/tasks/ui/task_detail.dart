@@ -1,4 +1,7 @@
 import 'package:after_layout/after_layout.dart';
+import 'package:drag_and_drop_lists/drag_and_drop_item.dart';
+import 'package:drag_and_drop_lists/drag_and_drop_list.dart';
+import 'package:drag_and_drop_lists/drag_and_drop_lists.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
@@ -24,6 +27,8 @@ class TaskDetailScreen extends StatefulWidget {
 
 class _TaskDetailScreenState extends State<TaskDetailScreen>
     with AfterLayoutMixin<TaskDetailScreen> {
+  List<DragAndDropList> _taskTurnpointDragAndDropList = [];
+
   @override
   void afterFirstLayout(BuildContext context) {
     setState(() {
@@ -75,22 +80,18 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
           return CommonWidgets.buildLoading();
         }
         if (state is TasksTurnpointsLoadedState) {
-          return Stack(
-            children: [
-              Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.max,
-                  children: [
-                    _taskTitle(state.task),
-                    _taskDistance(state.task),
-                    _turnpointsLabel(),
-                    _taskTurnpointsListView(state.taskTurnpoints),
-                    _spacerBetweenListandTurnpointsButton(),
-                  ]),
-              _addTurnpointsButton(),
-            ],
-          );
+          return Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.max,
+              children: [
+                _taskTitle(state.task),
+                _taskDistance(state.task),
+                _turnpointsLabel(),
+                _taskTurnpointsListView(state.taskTurnpoints),
+                _spacerBetweenListandTurnpointsButton(),
+                _addTurnpointsButton(),
+              ]);
         }
         return Center(child: Text("Unhandled State"));
       }),
@@ -122,15 +123,22 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
             child: Text('Task:', style: Theme.of(context).textTheme.subtitle1)),
         Expanded(
           child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: TextFormField(
-                initialValue: task.taskName,
-                style: Theme.of(context).textTheme.subtitle1,
-                onChanged: (text) {
+              padding: const EdgeInsets.all(8.0),
+              child: TextField(
+                controller: TextEditingController()..text = task.taskName,
+                onChanged: (text) => {
                   BlocProvider.of<TaskBloc>(context)
-                      .add(TaskNamedChangedEvent(text));
-                }),
-          ),
+                      .add(TaskNamedChangedEvent(text))
+                },
+              )
+              // child: TextFormField(
+              //     initialValue: task.taskName,
+              //     style: Theme.of(context).textTheme.subtitle1,
+              //     onChanged: (text) {
+              //       BlocProvider.of<TaskBloc>(context)
+              //           .add(TaskNamedChangedEvent(text));
+              //     }),
+              ),
         ),
       ]),
     );
@@ -163,30 +171,71 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
   }
 
   Widget _taskTurnpointsListView(List<TaskTurnpoint> taskTurnpoints) {
+    _taskTurnpointDragAndDropList.clear();
+    List<DragAndDropItem> taskTurnpointDragAndDropItems = [];
+    taskTurnpoints.forEach((taskTurnpoint) {
+      taskTurnpointDragAndDropItems
+          .add(_createTaskTurnpointItem(taskTurnpoint));
+    });
+    _taskTurnpointDragAndDropList
+        .add(DragAndDropList(children: taskTurnpointDragAndDropItems));
     return Expanded(
       flex: 15,
       child: Align(
         alignment: Alignment.topLeft,
-        child: Padding(
-          padding: const EdgeInsets.only(bottom: 16.0),
-          child: ListView.separated(
-            scrollDirection: Axis.vertical,
-            itemCount: taskTurnpoints.length,
-            shrinkWrap: false,
-            itemBuilder: (BuildContext context, int index) {
-              return ListTile(
-                dense: false,
-                contentPadding: EdgeInsets.symmetric(horizontal: 8.0),
-                visualDensity: VisualDensity(horizontal: 0, vertical: -4),
-                leading: IconButton(
+        child: DragAndDropLists(
+          children: _taskTurnpointDragAndDropList,
+          onItemReorder: _onItemReorder,
+          onListReorder: _onListReorder,
+        ),
+      ),
+    );
+  }
+
+  _onItemReorder(
+      int oldItemIndex, int oldListIndex, int newItemIndex, int newListIndex) {
+    // setState(() {
+    //   var movedItem = _taskTurnpointDragAndDropList[oldListIndex]
+    //       .children
+    //       .removeAt(oldItemIndex);
+    //   _taskTurnpointDragAndDropList[newListIndex]
+    //       .children
+    //       .insert(newItemIndex, movedItem);
+    // });
+    BlocProvider.of<TaskBloc>(context)
+        .add(SwitchOrderOfTaskTurnpointsEvent(oldItemIndex, newItemIndex));
+  }
+
+  _onListReorder(int oldListIndex, int newListIndex) {
+    setState(() {
+      var movedList = _taskTurnpointDragAndDropList.removeAt(oldListIndex);
+      _taskTurnpointDragAndDropList.insert(newListIndex, movedList);
+    });
+  }
+
+  DragAndDropItem _createTaskTurnpointItem(taskTurnpoint) {
+    return DragAndDropItem(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.max,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Align(
+                alignment: Alignment.centerLeft,
+                child: IconButton(
                     icon: Icon(Icons.location_searching),
                     color: Colors.blue,
-                    //TurnpointUtils.getColorForTurnpointIcon(taskTurnpoints[index].code),
                     onPressed: () {
-                      displayTaskTurnpoint(context, taskTurnpoints[index]);
+                      displayTaskTurnpoint(context, taskTurnpoint);
                     }),
-                title: TextButton(
-                  onPressed: () => print('clicked text'),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 8.0, right: 16.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.start,
@@ -195,30 +244,39 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            taskTurnpoints[index].title,
-                            textAlign: TextAlign.left,
-                            style: textStyleBoldBlackFontSize16,
+                          Expanded(
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                taskTurnpoint.title,
+                                textAlign: TextAlign.left,
+                                style: textStyleBoldBlackFontSize16,
+                              ),
+                            ),
                           ),
-                          Text(
-                            taskTurnpoints[index].taskOrder == 0
-                                ? 'Start'
-                                : (taskTurnpoints[index].lastTurnpoint
-                                    ? 'Finish'
-                                    : ''),
-                            textAlign: TextAlign.left,
-                            style: textStyleBoldBlack87FontSize14,
+                          Expanded(
+                            child: Align(
+                              alignment: Alignment.centerRight,
+                              child: Text(
+                                taskTurnpoint.taskOrder == 0
+                                    ? 'Start'
+                                    : (taskTurnpoint.lastTurnpoint
+                                        ? 'Finish'
+                                        : ''),
+                                textAlign: TextAlign.right,
+                                style: textStyleBoldBlack87FontSize14,
+                              ),
+                            ),
                           ),
                         ],
                       ),
                       Visibility(
-                        visible: taskTurnpoints[index].taskOrder != 0,
+                        visible: taskTurnpoint.taskOrder != 0,
                         child: Padding(
                           padding: const EdgeInsets.only(left: 8.0, top: 4.0),
                           child: Text(
                             'From prior point: ' +
-                                taskTurnpoints[index]
-                                    .distanceFromPriorTurnpoint
+                                taskTurnpoint.distanceFromPriorTurnpoint
                                     .toStringAsFixed(1) +
                                 'km',
                             textAlign: TextAlign.left,
@@ -227,13 +285,12 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
                         ),
                       ),
                       Visibility(
-                        visible: taskTurnpoints[index].taskOrder != 0,
+                        visible: taskTurnpoint.taskOrder != 0,
                         child: Padding(
                           padding: const EdgeInsets.only(left: 8.0, top: 4.0),
                           child: Text(
                             'From start: ' +
-                                taskTurnpoints[index]
-                                    .distanceFromStartingPoint
+                                taskTurnpoint.distanceFromStartingPoint
                                     .toStringAsFixed(1) +
                                 'km',
                             textAlign: TextAlign.left,
@@ -244,13 +301,16 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
                     ],
                   ),
                 ),
-              );
-            },
-            separatorBuilder: (context, index) {
-              return Divider();
-            },
+              ),
+            ],
           ),
-        ),
+          Padding(
+            padding: const EdgeInsets.only(left: 8.0, right: 8.0),
+            child: Divider(
+              thickness: 2,
+            ),
+          ),
+        ],
       ),
     );
   }

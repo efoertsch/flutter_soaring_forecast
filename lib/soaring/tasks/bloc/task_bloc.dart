@@ -22,6 +22,7 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
     on<TurnpointsAddedToTaskEvent>(_addTurnpointsToTask);
     on<SaveTaskTurnpointsEvent>(_saveTask);
     on<DisplayTaskTurnpointEvent>(_displayTaskTurnpoint);
+    on<SwitchOrderOfTaskTurnpointsEvent>(_switchOrderOfTaskTurnpoints);
   }
 
   void _displayTaskTurnpoint(
@@ -68,26 +69,13 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
   void _addTurnpointsToTask(
       TurnpointsAddedToTaskEvent event, Emitter<TaskState> emit) {
     final turnpoints = event.turnpoints;
-    try {
-      turnpoints.forEach((turnpoint) {
-        _addTurnpointToTask(turnpoint);
-      });
-      if (taskTurnpoints.length > 0) {
-        currentTask.distance = (taskTurnpoints.length > 0)
-            ? taskTurnpoints.last.distanceFromStartingPoint
-            : 0;
-      }
-      _checkForTaskTItle();
-      emit(TasksTurnpointsLoadedState(
-          task: currentTask, taskTurnpoints: taskTurnpoints));
-      emit(TaskModifiedState());
-    } catch (e) {
-      emit(TaskErrorState(e.toString()));
-    }
+    turnpoints.forEach((turnpoint) {
+      _addTurnpointToTask(turnpoint);
+    });
+    _updateTaskDetails(emit);
   }
 
   _addTurnpointToTask(Turnpoint turnpoint) {
-    TaskTurnpoint priorTaskTurnpoint;
     final taskTurnpoint = TaskTurnpoint(
         taskId: currentTask.id,
         taskOrder: taskTurnpoints.length,
@@ -95,20 +83,56 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
         code: turnpoint.code,
         latitudeDeg: turnpoint.latitudeDeg,
         longitudeDeg: turnpoint.longitudeDeg);
-    if (taskTurnpoints.length != 0) {
-      priorTaskTurnpoint = taskTurnpoints[taskTurnpoints.length - 1];
-      priorTaskTurnpoint.lastTurnpoint = false;
-      double dist = calculateDistance(
-          priorTaskTurnpoint.latitudeDeg,
-          priorTaskTurnpoint.longitudeDeg,
-          taskTurnpoint.latitudeDeg,
-          taskTurnpoint.longitudeDeg);
-      taskTurnpoint.distanceFromPriorTurnpoint = dist;
-      taskTurnpoint.distanceFromStartingPoint =
-          priorTaskTurnpoint.distanceFromStartingPoint + dist;
-      taskTurnpoint.lastTurnpoint = true;
-    }
     taskTurnpoints.add(taskTurnpoint);
+  }
+
+  void _switchOrderOfTaskTurnpoints(
+      SwitchOrderOfTaskTurnpointsEvent event, Emitter<TaskState> emit) {
+    if (event.oldIndex <= taskTurnpoints.length &&
+        event.newIndex <= taskTurnpoints.length) {
+      var taskTurnpoint = taskTurnpoints[event.oldIndex];
+      taskTurnpoints.removeAt(event.oldIndex);
+      taskTurnpoints.insert(event.newIndex, taskTurnpoint);
+      _updateTaskDetails(emit);
+    }
+  }
+
+  void _updateTaskDetails(Emitter<TaskState> emit) {
+    _calculateDistances();
+    _createTaskName();
+    emit(TasksTurnpointsLoadedState(
+        task: currentTask, taskTurnpoints: taskTurnpoints));
+    emit(TaskModifiedState());
+  }
+
+  void _calculateDistances() {
+    int taskLength = 0;
+    TaskTurnpoint? priorTaskTurnpoint;
+    for (int i = 0; i < taskTurnpoints.length; i++) {
+      if (i == 0) {
+        priorTaskTurnpoint = taskTurnpoints[0];
+        priorTaskTurnpoint.distanceFromPriorTurnpoint = 0;
+        priorTaskTurnpoint.distanceFromStartingPoint = 0;
+        priorTaskTurnpoint.taskOrder = 0;
+        priorTaskTurnpoint.lastTurnpoint = false;
+      } else {
+        TaskTurnpoint currentTaskTurnpoint = taskTurnpoints[i];
+        double dist = calculateDistance(
+            priorTaskTurnpoint!.latitudeDeg,
+            priorTaskTurnpoint.longitudeDeg,
+            currentTaskTurnpoint.latitudeDeg,
+            currentTaskTurnpoint.longitudeDeg);
+        currentTaskTurnpoint.distanceFromPriorTurnpoint = dist;
+        currentTaskTurnpoint.distanceFromStartingPoint =
+            priorTaskTurnpoint.distanceFromStartingPoint + dist;
+        currentTaskTurnpoint.taskOrder = i;
+        currentTaskTurnpoint.lastTurnpoint = i == taskTurnpoints.length - 1;
+        priorTaskTurnpoint = currentTaskTurnpoint;
+      }
+    }
+    currentTask.distance = (taskTurnpoints.length > 0)
+        ? taskTurnpoints.last.distanceFromStartingPoint
+        : 0;
   }
 
   double calculateDistance(lat1, lon1, lat2, lon2) {
@@ -127,14 +151,14 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
 
   // Save task and task turnpoints
   void _saveTask(SaveTaskTurnpointsEvent event, Emitter<TaskState> emit) async {
-    _checkForTaskTItle();
+    _checkForTaskName();
 
-    if (currentTask.id == null) {
+    if (currentTask.id == 0) {
       int? taskId = await repository.saveTask(currentTask);
       if (taskId == null) {
         emit(TaskErrorState('Oops. For some reason the task was not saved'));
       }
-      currentTask.id = taskId;
+      currentTask.id = taskId!;
     } else {
       int rowUpdated = await repository.updateTask(currentTask);
       if (rowUpdated != 1) {
@@ -147,18 +171,20 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
     taskTurnpoints.forEach((taskTurnpoint) async {
       taskTurnpoint.taskId = currentTask.id;
       taskTurnpoint.taskOrder = i++;
-      if (taskTurnpoint.id == null) {
+      if (taskTurnpoint.id == 0) {
         turnpointId = await repository.insertTaskTurnpoint(taskTurnpoint);
         if (turnpointId == null) {
           emit(TaskErrorState(
               'Oops. For some reason the task turnpoint was not saved'));
+          return;
         }
-        taskTurnpoint.id = turnpointId;
+        taskTurnpoint.id = turnpointId!;
       } else {
         int? updatedRow = await repository.updateTaskTurnpoint(taskTurnpoint);
         if (updatedRow == null || updatedRow <= 0) {
           emit(TaskErrorState(
               'Oops. For some reason the task turnpoint was not updated'));
+          return;
         }
       }
     });
@@ -167,19 +193,23 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
         task: currentTask, taskTurnpoints: taskTurnpoints));
   }
 
-  void _checkForTaskTItle() {
+  void _checkForTaskName() {
     if (currentTask.taskName.isEmpty) {
-      StringBuffer defaultTaskName = StringBuffer();
-      String shortName = "";
-      taskTurnpoints.forEach((taskTurnpoint) {
-        shortName = taskTurnpoint.title.length >= 3
-            ? taskTurnpoint.title.substring(0, 3)
-            : taskTurnpoint.title;
-        defaultTaskName
-            .write(defaultTaskName.isEmpty ? shortName : '-' + shortName);
-      });
-      currentTask.taskName = defaultTaskName.toString();
+      _createTaskName();
     }
     ;
+  }
+
+  void _createTaskName() {
+    StringBuffer defaultTaskName = StringBuffer();
+    String shortName = "";
+    taskTurnpoints.forEach((taskTurnpoint) {
+      shortName = taskTurnpoint.title.length >= 3
+          ? taskTurnpoint.title.substring(0, 3)
+          : taskTurnpoint.title;
+      defaultTaskName
+          .write(defaultTaskName.isEmpty ? shortName : '-' + shortName);
+    });
+    currentTask.taskName = defaultTaskName.toString();
   }
 }
