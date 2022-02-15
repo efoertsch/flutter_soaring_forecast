@@ -11,10 +11,12 @@ import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
 import 'package:flutter_soaring_forecast/soaring/app/custom_styles.dart';
 import 'package:flutter_soaring_forecast/soaring/app/main.dart';
+import 'package:flutter_soaring_forecast/soaring/floor/task/task.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_data_state.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/rasp_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image_set.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/ui/display_ticker.dart';
+import 'package:flutter_soaring_forecast/soaring/tasks/ui/task_list.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../bloc/rasp_data_bloc.dart';
@@ -58,7 +60,7 @@ class _RaspScreenState extends State<RaspScreen>
   StreamSubscription<int>? _tickerSubscription;
 
   //GoogleMapController? _mapController;
-// Default values - NewEngland lat/lng of course!
+  //Default values - NewEngland lat/lng of course!
   final LatLng _center = LatLng(43.1394043, -72.0759888);
   LatLngBounds _mapLatLngBounds = LatLngBounds(
       LatLng(41.2665329, -73.6473083), LatLng(45.0120811, -70.5046997));
@@ -530,31 +532,36 @@ class _RaspScreenState extends State<RaspScreen>
       TextButton(
         child: const Text('SELECT TASK', style: TextStyle(color: Colors.white)),
         onPressed: () {
-          Navigator.pushNamed(context, TaskList.routeName);
+          _selectTask();
         },
       ),
-      RotatedBox(
-        quarterTurns: 1,
-        child: PopupMenuButton<String>(
-          onSelected: handleClick,
-          itemBuilder: (BuildContext context) {
-            return {
-              RaspMenu.clearTask,
-              RaspMenu.displayOptions,
-              RaspMenu.mapBackground,
-              RaspMenu.orderForecasts,
-              RaspMenu.opacity,
-              RaspMenu.selectRegion
-            }.map((String choice) {
-              return PopupMenuItem<String>(
-                value: choice,
-                child: Text(choice),
-              );
-            }).toList();
-          },
-        ),
+      PopupMenuButton<String>(
+        onSelected: handleClick,
+        itemBuilder: (BuildContext context) {
+          return {
+            RaspMenu.clearTask,
+            RaspMenu.displayOptions,
+            RaspMenu.mapBackground,
+            RaspMenu.orderForecasts,
+            RaspMenu.opacity,
+            RaspMenu.selectRegion
+          }.map((String choice) {
+            return PopupMenuItem<String>(
+              value: choice,
+              child: Text(choice),
+            );
+          }).toList();
+        },
       ),
     ];
+  }
+
+  _selectTask() async {
+    final result = await Navigator.pushNamed(context, TaskList.routeName,
+        arguments: TaskListScreen.SELECT_TASK_OPTION);
+    if (result != null && result is Task) {
+      print('Draw task for ' + result.taskName);
+    }
   }
 
   void handleClick(String value) {

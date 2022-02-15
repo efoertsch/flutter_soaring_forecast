@@ -21,22 +21,6 @@ class Turnpoint {
   late String description;
   late String runwayWidth;
 
-  // Turnpoint.getEmpty() {
-  //   this.id = -1;
-  //   this.title = "";
-  //   this.code = "";
-  //   this.country = "";
-  //   this.latitudeDeg = 0;
-  //   this.longitudeDeg = 0;
-  //   this.elevation = "";
-  //   this.style = "0";
-  //   this.direction = "";
-  //   this.length = "";
-  //   this.frequency = "";
-  //   this.description = "";
-  //   this.runwayWidth = "";
-  // }
-
   Turnpoint(
       {this.id,
       this.title = "",

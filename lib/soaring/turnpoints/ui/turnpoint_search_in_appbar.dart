@@ -15,6 +15,7 @@ class TurnpointsSearchInAppBarScreen extends StatefulWidget {
   final String? viewOption;
   static const String TASK_TURNPOINT_OPTION = 'TaskTurnpointOption';
   final List<Turnpoint> turnpointsForTask = [];
+  String _searchString = "";
 
   TurnpointsSearchInAppBarScreen({Key? key, String? this.viewOption = null})
       : super(key: key);
@@ -109,6 +110,7 @@ class _TurnpointsSearchInAppBarScreenState
       color: Colors.white,
       child: TextField(
         onSubmitted: (searchString) {
+          widget._searchString = searchString;
           BlocProvider.of<TurnpointBloc>(context)
               .add(SearchTurnpointsEvent(searchString));
         },
@@ -145,7 +147,9 @@ class _TurnpointsSearchInAppBarScreenState
             onPressed: () {
               if (widget.viewOption ==
                   TurnpointsSearchInAppBarScreen.TASK_TURNPOINT_OPTION) {
+                widget._searchString = "";
                 widget.turnpointsForTask.add(turnpoints[index]);
+                ScaffoldMessenger.of(context).removeCurrentSnackBar();
                 ScaffoldMessenger.of(context).showSnackBar(
                     CommonWidgets.getSnackBarForMessage(
                         turnpoints[index].title + ' added to task '));
@@ -253,6 +257,7 @@ class _TurnpointsSearchInAppBarScreenState
   Future<bool> _onWillPop() async {
     if (widget.viewOption ==
         TurnpointsSearchInAppBarScreen.TASK_TURNPOINT_OPTION) {
+      ScaffoldMessenger.of(context).removeCurrentSnackBar();
       Navigator.of(context).pop(widget.turnpointsForTask);
     } else {
       Navigator.of(context).pop();

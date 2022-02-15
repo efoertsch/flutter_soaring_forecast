@@ -14,6 +14,7 @@ import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_search_
 
 class TaskDetailScreen extends StatefulWidget {
   final int taskId;
+  bool displaySaveButton = false;
 
   TaskDetailScreen({Key? key, required this.taskId}) : super(key: key);
 
@@ -34,75 +35,101 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: Text('Task Detail'),
-          leading: CommonWidgets.backArrowToHomeScreen(),
-          actions: <Widget>[
-            IconButton(icon: Icon(Icons.list), onPressed: null),
-          ],
-        ),
-        body: BlocConsumer<TaskBloc, TaskState>(listener: (context, state) {
-          if (state is TaskShortMessageState) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                backgroundColor: Colors.green,
-                content: Text(state.shortMsg),
-              ),
-            );
-          }
-          if (state is TaskErrorState) {
-            CommonWidgets.showErrorDialog(
-                context, 'Task Error', state.errorMsg);
-          }
-        }, buildWhen: (previous, current) {
-          return current is TasksLoadingState ||
-              current is TasksTurnpointsLoadedState;
-        }, builder: (context, state) {
-          if (state is TasksLoadingState) {
-            return CommonWidgets.buildLoading();
-          }
-          if (state is TasksTurnpointsLoadedState) {
-            return Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _taskTitle(state.task),
-                  _taskDistance(state.task),
-                  _turnpointsLabel(),
-                  _taskTurnpointsListView(state.taskTurnpoints),
-                ]);
-          }
-          return Center(child: Text("Unhandled State"));
-        }),
-        bottomSheet: _addTurnpointsButton());
+      appBar: AppBar(
+        title: Text('Task Detail'),
+        leading: CommonWidgets.backArrowToHomeScreen(),
+        actions: <Widget>[
+          IconButton(icon: Icon(Icons.list), onPressed: null),
+        ],
+      ),
+      body: BlocConsumer<TaskBloc, TaskState>(listener: (context, state) {
+        if (state is TaskShortMessageState) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              backgroundColor: Colors.green,
+              content: Text(state.shortMsg),
+            ),
+          );
+        }
+        if (state is TaskErrorState) {
+          CommonWidgets.showErrorDialog(context, 'Task Error', state.errorMsg);
+        }
+        if (state is TaskModifiedState) {
+          setState(() {
+            widget.displaySaveButton = true;
+          });
+        }
+        if (state is TaskSavedState) {
+          setState(() {
+            widget.displaySaveButton = false;
+          });
+        }
+        if (state is TurnpointFoundState) {
+          displayTurnpointView(context, state);
+        }
+      }, buildWhen: (previous, current) {
+        return current is TasksLoadingState ||
+            current is TasksTurnpointsLoadedState;
+      }, builder: (context, state) {
+        if (state is TasksLoadingState) {
+          return CommonWidgets.buildLoading();
+        }
+        if (state is TasksTurnpointsLoadedState) {
+          return Stack(
+            children: [
+              Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.max,
+                  children: [
+                    _taskTitle(state.task),
+                    _taskDistance(state.task),
+                    _turnpointsLabel(),
+                    _taskTurnpointsListView(state.taskTurnpoints),
+                    _spacerBetweenListandTurnpointsButton(),
+                  ]),
+              _addTurnpointsButton(),
+            ],
+          );
+        }
+        return Center(child: Text("Unhandled State"));
+      }),
+      floatingActionButton: _displayFloatingActionButton(context),
+    );
   }
 
-  Widget _turnpointsLabel() {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: Text(
-          'Turnpoints:',
-          style: Theme.of(context).textTheme.subtitle1,
-        ),
+  Visibility _displayFloatingActionButton(BuildContext context) {
+    return Visibility(
+      visible: widget.displaySaveButton,
+      child: FloatingActionButton(
+        backgroundColor: Colors.green,
+        child: const Icon(Icons.update),
+        onPressed: () {
+          BlocProvider.of<TaskBloc>(context).add(SaveTaskTurnpointsEvent());
+          widget.displaySaveButton = false;
+        },
       ),
     );
   }
 
   Widget _taskTitle(Task task) {
-    return Flexible(
+    return Expanded(
+      flex: 2,
       child: Row(mainAxisAlignment: MainAxisAlignment.start, children: [
         Padding(
-            padding: const EdgeInsets.all(8.0),
+            padding: const EdgeInsets.only(
+                left: 8.0, top: 16.0, right: 8.0, bottom: 8.0),
             child: Text('Task:', style: Theme.of(context).textTheme.subtitle1)),
         Expanded(
           child: Padding(
             padding: const EdgeInsets.all(8.0),
             child: TextFormField(
-              style: Theme.of(context).textTheme.subtitle1,
-            ),
+                initialValue: task.taskName,
+                style: Theme.of(context).textTheme.subtitle1,
+                onChanged: (text) {
+                  BlocProvider.of<TaskBloc>(context)
+                      .add(TaskNamedChangedEvent(text));
+                }),
           ),
         ),
       ]),
@@ -110,78 +137,138 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
   }
 
   Widget _taskDistance(Task task) {
-    return Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Text('Distance: ' + task.distance.toStringAsFixed(1) + 'km',
-            style: Theme.of(context).textTheme.subtitle1));
+    return Flexible(
+      flex: 2,
+      child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Text('Distance: ' + task.distance.toStringAsFixed(1) + 'km',
+              style: Theme.of(context).textTheme.subtitle1)),
+    );
   }
 
-  Widget _taskTurnpointsListView(List<TaskTurnpoint> taskTurnpoints) {
+  Widget _turnpointsLabel() {
     return Flexible(
-      child: ListView.separated(
-        shrinkWrap: true,
-        scrollDirection: Axis.vertical,
-        itemCount: taskTurnpoints.length,
-        itemBuilder: (BuildContext context, int index) {
-          return ListTile(
-            dense: true,
-            contentPadding: EdgeInsets.symmetric(horizontal: 8.0),
-            visualDensity: VisualDensity(horizontal: 0, vertical: -4),
-            leading: IconButton(
-                icon: Icon(Icons.location_searching),
-                color: Colors.blue,
-                //TurnpointUtils.getColorForTurnpointIcon(taskTurnpoints[index].code),
-                onPressed: () => print('Implement code to display turnpoint ')
-                //   Navigator.pushNamed(
-                // context,
-                // TurnpointView.routeName,
-                // arguments: taskTurnpoints[index],
-                ),
-            title: TextButton(
-              onPressed: () => print('clicked text'),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(
-                          taskTurnpoints[index].title,
-                          textAlign: TextAlign.left,
-                          style: textStyleBoldBlackFontSize16,
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(
-                          taskTurnpoints[index].taskOrder == 0
-                              ? 'Start'
-                              : (taskTurnpoints[index].lastTurnpoint
-                                  ? 'Finish'
-                                  : ''),
-                          textAlign: TextAlign.left,
-                          style: textStyleBoldBlack87FontSize14,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-        separatorBuilder: (context, index) {
-          return Divider();
-        },
+      flex: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Align(
+          alignment: Alignment.topLeft,
+          child: Text(
+            'Turnpoints:',
+            style: Theme.of(context).textTheme.subtitle1,
+          ),
+        ),
       ),
     );
   }
 
+  Widget _taskTurnpointsListView(List<TaskTurnpoint> taskTurnpoints) {
+    return Expanded(
+      flex: 15,
+      child: Align(
+        alignment: Alignment.topLeft,
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 16.0),
+          child: ListView.separated(
+            scrollDirection: Axis.vertical,
+            itemCount: taskTurnpoints.length,
+            shrinkWrap: false,
+            itemBuilder: (BuildContext context, int index) {
+              return ListTile(
+                dense: false,
+                contentPadding: EdgeInsets.symmetric(horizontal: 8.0),
+                visualDensity: VisualDensity(horizontal: 0, vertical: -4),
+                leading: IconButton(
+                    icon: Icon(Icons.location_searching),
+                    color: Colors.blue,
+                    //TurnpointUtils.getColorForTurnpointIcon(taskTurnpoints[index].code),
+                    onPressed: () {
+                      displayTaskTurnpoint(context, taskTurnpoints[index]);
+                    }),
+                title: TextButton(
+                  onPressed: () => print('clicked text'),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.max,
+                    children: <Widget>[
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            taskTurnpoints[index].title,
+                            textAlign: TextAlign.left,
+                            style: textStyleBoldBlackFontSize16,
+                          ),
+                          Text(
+                            taskTurnpoints[index].taskOrder == 0
+                                ? 'Start'
+                                : (taskTurnpoints[index].lastTurnpoint
+                                    ? 'Finish'
+                                    : ''),
+                            textAlign: TextAlign.left,
+                            style: textStyleBoldBlack87FontSize14,
+                          ),
+                        ],
+                      ),
+                      Visibility(
+                        visible: taskTurnpoints[index].taskOrder != 0,
+                        child: Padding(
+                          padding: const EdgeInsets.only(left: 8.0, top: 4.0),
+                          child: Text(
+                            'From prior point: ' +
+                                taskTurnpoints[index]
+                                    .distanceFromPriorTurnpoint
+                                    .toStringAsFixed(1) +
+                                'km',
+                            textAlign: TextAlign.left,
+                            style: textStyleBoldBlack87FontSize14,
+                          ),
+                        ),
+                      ),
+                      Visibility(
+                        visible: taskTurnpoints[index].taskOrder != 0,
+                        child: Padding(
+                          padding: const EdgeInsets.only(left: 8.0, top: 4.0),
+                          child: Text(
+                            'From start: ' +
+                                taskTurnpoints[index]
+                                    .distanceFromStartingPoint
+                                    .toStringAsFixed(1) +
+                                'km',
+                            textAlign: TextAlign.left,
+                            style: textStyleBoldBlack87FontSize14,
+                          ),
+                        ),
+                      )
+                    ],
+                  ),
+                ),
+              );
+            },
+            separatorBuilder: (context, index) {
+              return Divider();
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _spacerBetweenListandTurnpointsButton() {
+    return Spacer();
+  }
+
+  void displayTaskTurnpoint(BuildContext context, TaskTurnpoint taskTurnpoint) {
+    BlocProvider.of<TaskBloc>(context)
+        .add(DisplayTaskTurnpointEvent(taskTurnpoint));
+  }
+
   Widget _addTurnpointsButton() {
     return Padding(
-        padding: const EdgeInsets.all(8.0),
+      padding: const EdgeInsets.all(8.0),
+      child: Align(
+        alignment: FractionalOffset.bottomCenter,
         child: ElevatedButton(
           style: ElevatedButton.styleFrom(
             minimumSize: Size(double.infinity,
@@ -199,7 +286,9 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
               fontSize: Theme.of(context).textTheme.subtitle1?.fontSize,
             ),
           ),
-        ));
+        ),
+      ),
+    );
   }
 
   void _getTurnpointsForTask() async {
@@ -212,5 +301,14 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
       BlocProvider.of<TaskBloc>(context)
           .add(TurnpointsAddedToTaskEvent(result as List<Turnpoint>));
     }
+  }
+
+  void displayTurnpointView(
+      BuildContext context, TurnpointFoundState state) async {
+    final result = await Navigator.pushNamed(
+      context,
+      TurnpointView.routeName,
+      arguments: state.turnpoint,
+    );
   }
 }

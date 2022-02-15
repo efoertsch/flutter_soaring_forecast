@@ -61,12 +61,20 @@ class SoaringForecastApp extends StatelessWidget {
           primaryColor: Colors.blue,
         ),
         initialRoute: SoaringForecast.routeName,
-        routes: {
-          TurnpointSearchInAppBar.routeName: (context) =>
-              TurnpointSearchInAppBar(),
-          TaskList.routeName: (context) => TaskList(),
-        },
+        // routes: {
+        //   TurnpointSearchInAppBar.routeName: (context) =>
+        //       TurnpointSearchInAppBar(),
+        //   TaskList.routeName: (context) => TaskList(),
+        // },
         onGenerateRoute: (settings) {
+          if (settings.name == TaskList.routeName) {
+            final option = settings.arguments as String;
+            return MaterialPageRoute(
+              builder: (context) {
+                return TaskList(viewOption: option);
+              },
+            );
+          }
           if (settings.name == TurnpointView.routeName) {
             final turnpoint = settings.arguments as Turnpoint;
             return MaterialPageRoute(
@@ -154,12 +162,15 @@ class TurnpointView extends StatelessWidget {
 
 class TaskList extends StatelessWidget {
   static const routeName = '/ViewTask';
+  final String? viewOption;
+
+  TaskList({this.viewOption});
 
   Widget build(BuildContext context) {
     return BlocProvider<TaskBloc>(
       create: (BuildContext context) =>
           TaskBloc(repository: RepositoryProvider.of<Repository>(context)),
-      child: TaskListScreen(),
+      child: TaskListScreen(viewOption: viewOption),
     );
   }
 }

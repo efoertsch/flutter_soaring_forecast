@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/task/task.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/taskturnpoint/task_turnpoint.dart';
+import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
 
 @immutable
 abstract class TaskState extends Equatable {}
@@ -62,8 +63,22 @@ class TaskTurnpointErrorState extends TaskState {
   List<Object?> get props => [errorMsg];
 }
 
-class TaskUpdatedState extends TaskState {
-  TaskUpdatedState();
+class TaskModifiedState extends TaskState {
+  TaskModifiedState();
   @override
   List<Object?> get props => [];
+}
+
+class TaskSavedState extends TaskState {
+  TaskSavedState();
+  @override
+  List<Object?> get props => [];
+}
+
+// Turnpoint based on TaskTurnpoint
+class TurnpointFoundState extends TaskState {
+  final Turnpoint turnpoint;
+  TurnpointFoundState(this.turnpoint);
+  @override
+  List<Object?> get props => [turnpoint];
 }
