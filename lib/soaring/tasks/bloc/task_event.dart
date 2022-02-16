@@ -55,3 +55,17 @@ class SwitchOrderOfTaskTurnpointsEvent extends TaskEvent {
   @override
   List<Object?> get props => [oldIndex, newIndex];
 }
+
+class SwipeDeletedTaskTurnpointEvent extends TaskEvent {
+  final int index;
+  SwipeDeletedTaskTurnpointEvent(this.index);
+  @override
+  List<Object?> get props => [index];
+}
+
+class AddBackTaskTurnpointEvent extends TaskEvent {
+  final TaskTurnpoint taskTurnpoint;
+  AddBackTaskTurnpointEvent(this.taskTurnpoint);
+  @override
+  List<Object?> get props => [taskTurnpoint];
+}

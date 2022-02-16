@@ -1,7 +1,5 @@
 library constants;
 
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 
 /// Hold any system wide constants

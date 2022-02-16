@@ -204,7 +204,7 @@ class TurnpointUtils {
   }
 
   static bool isLandable(String style) {
-    return style != null && style.indexOf("[2345]") > 0;
+    return style.indexOf("[2345]") > 0;
   }
 
   static bool isGrassOrGliderAirport(String style) {

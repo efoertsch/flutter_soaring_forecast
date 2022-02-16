@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 
 class CustomStyle {
   static TextStyle bold18(BuildContext context) {

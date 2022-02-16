@@ -4,13 +4,13 @@ import 'package:floor/floor.dart';
 @Entity(tableName: 'task')
 class Task {
   @PrimaryKey(autoGenerate: true)
-  late int id;
+  late int? id;
   late String taskName;
   late double distance = 0.0; //In Kilometers
   late int taskOrder;
 
   Task({
-    this.id = 0,
+    this.id,
     this.taskName = "",
     this.distance = 0.0,
     this.taskOrder = 0,
