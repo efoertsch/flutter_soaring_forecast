@@ -252,6 +252,12 @@ class Repository {
     return _appDatabase!.taskTurnpointDao.update(taskTurnpoint);
   }
 
+  Future<int?> deleteTaskTurnpointsAbove(int taskId, int index) async {
+    await makeDatabaseAvailable();
+    return _appDatabase!.taskTurnpointDao
+        .deleteAnyTaskTurnpointsOver(taskId, index);
+  }
+
   // ----- Shared preferences --------------------------
   // Make sure keys are unique among calling routines!
 

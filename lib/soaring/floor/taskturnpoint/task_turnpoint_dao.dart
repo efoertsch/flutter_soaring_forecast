@@ -18,4 +18,8 @@ abstract class TaskTurnpointDao extends BaseDao<TaskTurnpoint> {
 
   @Query("Delete from taskturnpoint where id = :id ")
   Future<int?> deleteTaskTurnpoint(int id);
+
+  @Query(
+      "Delete from taskturnpoint where taskId = :taskId and taskOrder > :taskOrder ")
+  Future<int?> deleteAnyTaskTurnpointsOver(int taskId, int taskOrder);
 }

@@ -73,7 +73,7 @@ class TaskListScreen extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          _goToTaskDetail(context, 0);
+          _goToTaskDetail(context, -1);
         },
         backgroundColor: Colors.green,
         child: const Icon(Icons.add),
@@ -97,7 +97,7 @@ class TaskListScreen extends StatelessWidget {
             visualDensity: VisualDensity(horizontal: 0, vertical: -4),
             trailing: IconButton(
               icon: Icon(Icons.edit),
-              onPressed: () => _goToTaskDetail(context, tasks[index].id),
+              onPressed: () => _goToTaskDetail(context, tasks[index].id!),
             ),
             title: Container(
               child: GestureDetector(
@@ -165,7 +165,7 @@ class TaskListScreen extends StatelessWidget {
             TextButton(
                 child: const Text('YES'),
                 onPressed: () {
-                  _goToTaskDetail(context, 0);
+                  _goToTaskDetail(context, -1);
                 }),
           ],
         );

@@ -99,20 +99,6 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
     );
   }
 
-  Visibility _displayFloatingActionButton(BuildContext context) {
-    return Visibility(
-      visible: widget.displaySaveButton,
-      child: FloatingActionButton(
-        backgroundColor: Colors.green,
-        child: const Icon(Icons.update),
-        onPressed: () {
-          BlocProvider.of<TaskBloc>(context).add(SaveTaskTurnpointsEvent());
-          widget.displaySaveButton = false;
-        },
-      ),
-    );
-  }
-
   Widget _taskTitle(Task task) {
     return Expanded(
       flex: 2,
@@ -213,104 +199,121 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
     });
   }
 
-  DragAndDropItem _createTaskTurnpointItem(taskTurnpoint) {
+  DragAndDropItem _createTaskTurnpointItem(TaskTurnpoint taskTurnpoint) {
     return DragAndDropItem(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.max,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Align(
-                alignment: Alignment.centerLeft,
-                child: IconButton(
-                    icon: Icon(Icons.location_searching),
-                    color: Colors.blue,
-                    onPressed: () {
-                      displayTaskTurnpoint(context, taskTurnpoint);
-                    }),
-              ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 8.0, right: 16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.max,
-                    children: <Widget>[
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Align(
-                              alignment: Alignment.centerLeft,
-                              child: Text(
-                                taskTurnpoint.title,
-                                textAlign: TextAlign.left,
-                                style: textStyleBoldBlackFontSize16,
+      child: Dismissible(
+        key: UniqueKey(),
+        onDismissed: (direction) {
+          BlocProvider.of<TaskBloc>(context)
+              .add(SwipeDeletedTaskTurnpointEvent(taskTurnpoint.taskOrder));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Removed ${taskTurnpoint.title}'),
+            action: SnackBarAction(
+              label: 'Undo',
+              onPressed: () {
+                BlocProvider.of<TaskBloc>(context)
+                    .add(AddBackTaskTurnpointEvent(taskTurnpoint));
+              },
+            ),
+          ));
+        },
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.max,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: IconButton(
+                      icon: Icon(Icons.location_searching),
+                      color: Colors.blue,
+                      onPressed: () {
+                        displayTaskTurnpoint(context, taskTurnpoint);
+                      }),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 8.0, right: 16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.max,
+                      children: <Widget>[
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Align(
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  taskTurnpoint.title,
+                                  textAlign: TextAlign.left,
+                                  style: textStyleBoldBlackFontSize16,
+                                ),
                               ),
                             ),
-                          ),
-                          Expanded(
-                            child: Align(
-                              alignment: Alignment.centerRight,
-                              child: Text(
-                                taskTurnpoint.taskOrder == 0
-                                    ? 'Start'
-                                    : (taskTurnpoint.lastTurnpoint
-                                        ? 'Finish'
-                                        : ''),
-                                textAlign: TextAlign.right,
-                                style: textStyleBoldBlack87FontSize14,
+                            Expanded(
+                              child: Align(
+                                alignment: Alignment.centerRight,
+                                child: Text(
+                                  taskTurnpoint.taskOrder == 0
+                                      ? 'Start'
+                                      : (taskTurnpoint.lastTurnpoint
+                                          ? 'Finish'
+                                          : ''),
+                                  textAlign: TextAlign.right,
+                                  style: textStyleBoldBlack87FontSize14,
+                                ),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                      Visibility(
-                        visible: taskTurnpoint.taskOrder != 0,
-                        child: Padding(
-                          padding: const EdgeInsets.only(left: 8.0, top: 4.0),
-                          child: Text(
-                            'From prior point: ' +
-                                taskTurnpoint.distanceFromPriorTurnpoint
-                                    .toStringAsFixed(1) +
-                                'km',
-                            textAlign: TextAlign.left,
-                            style: textStyleBoldBlack87FontSize14,
+                          ],
+                        ),
+                        Visibility(
+                          visible: taskTurnpoint.taskOrder != 0,
+                          child: Padding(
+                            padding: const EdgeInsets.only(left: 8.0, top: 4.0),
+                            child: Text(
+                              'From prior point: ' +
+                                  taskTurnpoint.distanceFromPriorTurnpoint
+                                      .toStringAsFixed(1) +
+                                  'km',
+                              textAlign: TextAlign.left,
+                              style: textStyleBoldBlack87FontSize14,
+                            ),
                           ),
                         ),
-                      ),
-                      Visibility(
-                        visible: taskTurnpoint.taskOrder != 0,
-                        child: Padding(
-                          padding: const EdgeInsets.only(left: 8.0, top: 4.0),
-                          child: Text(
-                            'From start: ' +
-                                taskTurnpoint.distanceFromStartingPoint
-                                    .toStringAsFixed(1) +
-                                'km',
-                            textAlign: TextAlign.left,
-                            style: textStyleBoldBlack87FontSize14,
+                        Visibility(
+                          visible: taskTurnpoint.taskOrder != 0,
+                          child: Padding(
+                            padding: const EdgeInsets.only(left: 8.0, top: 4.0),
+                            child: Text(
+                              'From start: ' +
+                                  taskTurnpoint.distanceFromStartingPoint
+                                      .toStringAsFixed(1) +
+                                  'km',
+                              textAlign: TextAlign.left,
+                              style: textStyleBoldBlack87FontSize14,
+                            ),
                           ),
-                        ),
-                      )
-                    ],
+                        )
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
-          Padding(
-            padding: const EdgeInsets.only(left: 8.0, right: 8.0),
-            child: Divider(
-              thickness: 2,
+              ],
             ),
-          ),
-        ],
+            Padding(
+              padding: const EdgeInsets.only(left: 8.0, right: 8.0),
+              child: Divider(
+                thickness: 2,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -326,7 +329,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
 
   Widget _addTurnpointsButton() {
     return Padding(
-      padding: const EdgeInsets.all(8.0),
+      padding: const EdgeInsets.only(left: 8.0, top: 8.0, right: 8.0),
       child: Align(
         alignment: FractionalOffset.bottomCenter,
         child: ElevatedButton(
@@ -351,6 +354,20 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
     );
   }
 
+  Visibility _displayFloatingActionButton(BuildContext context) {
+    return Visibility(
+      visible: widget.displaySaveButton,
+      child: FloatingActionButton(
+        backgroundColor: Colors.green,
+        child: const Icon(Icons.update),
+        onPressed: () {
+          BlocProvider.of<TaskBloc>(context).add(SaveTaskTurnpointsEvent());
+          widget.displaySaveButton = false;
+        },
+      ),
+    );
+  }
+
   void _getTurnpointsForTask() async {
     final result = await Navigator.pushNamed(
       context,
@@ -359,7 +376,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
     );
     if (result is List<Turnpoint>) {
       BlocProvider.of<TaskBloc>(context)
-          .add(TurnpointsAddedToTaskEvent(result as List<Turnpoint>));
+          .add(TurnpointsAddedToTaskEvent(result));
     }
   }
 

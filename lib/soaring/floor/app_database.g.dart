@@ -429,6 +429,13 @@ class _$TaskTurnpointDao extends TaskTurnpointDao {
   }
 
   @override
+  Future<int?> deleteAnyTaskTurnpointsOver(int taskId, int index) async {
+    await _queryAdapter.queryNoReturn(
+        'Delete from taskturnpoint where taskId = ?1 and taskOrder > ?2',
+        arguments: [taskId, index]);
+  }
+
+  @override
   Future<int> insert(TaskTurnpoint obj) {
     return _taskTurnpointInsertionAdapter.insertAndReturnId(
         obj, OnConflictStrategy.replace);

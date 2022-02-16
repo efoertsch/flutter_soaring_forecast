@@ -23,6 +23,8 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
     on<SaveTaskTurnpointsEvent>(_saveTask);
     on<DisplayTaskTurnpointEvent>(_displayTaskTurnpoint);
     on<SwitchOrderOfTaskTurnpointsEvent>(_switchOrderOfTaskTurnpoints);
+    on<SwipeDeletedTaskTurnpointEvent>(_removeTaskTurnpointFromTask);
+    on<AddBackTaskTurnpointEvent>(_addBackTaskTurnpoint);
   }
 
   void _displayTaskTurnpoint(
@@ -52,7 +54,7 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
       LoadTaskTurnpointsEvent event, Emitter<TaskState> emit) async {
     taskTurnpoints.clear();
     emit(TasksTurnpointsLoadingState());
-    if (event.taskId == 0) {
+    if (event.taskId == -1) {
       currentTask = Task();
     } else {
       try {
@@ -97,6 +99,18 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
     }
   }
 
+  void _removeTaskTurnpointFromTask(
+      SwipeDeletedTaskTurnpointEvent event, Emitter<TaskState> emit) {
+    taskTurnpoints.removeAt(event.index);
+    _updateTaskDetails(emit);
+  }
+
+  void _addBackTaskTurnpoint(
+      AddBackTaskTurnpointEvent event, Emitter<TaskState> emit) {
+    taskTurnpoints.insert(event.taskTurnpoint.taskOrder, event.taskTurnpoint);
+    _updateTaskDetails(emit);
+  }
+
   void _updateTaskDetails(Emitter<TaskState> emit) {
     _calculateDistances();
     _createTaskName();
@@ -106,7 +120,6 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
   }
 
   void _calculateDistances() {
-    int taskLength = 0;
     TaskTurnpoint? priorTaskTurnpoint;
     for (int i = 0; i < taskTurnpoints.length; i++) {
       if (i == 0) {
@@ -151,9 +164,11 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
 
   // Save task and task turnpoints
   void _saveTask(SaveTaskTurnpointsEvent event, Emitter<TaskState> emit) async {
+    bool isTaskUpdate = true;
     _checkForTaskName();
 
-    if (currentTask.id == 0) {
+    if (currentTask.id == null) {
+      isTaskUpdate = false;
       int? taskId = await repository.saveTask(currentTask);
       if (taskId == null) {
         emit(TaskErrorState('Oops. For some reason the task was not saved'));
@@ -165,20 +180,22 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
         emit(TaskErrorState('Oops. For some reason the task was not updated.'));
       }
     }
-    int i = 0;
+    int taskOrder = 0;
     int? turnpointId;
 
-    taskTurnpoints.forEach((taskTurnpoint) async {
-      taskTurnpoint.taskId = currentTask.id;
-      taskTurnpoint.taskOrder = i++;
-      if (taskTurnpoint.id == 0) {
+    for (taskOrder = 0; taskOrder < taskTurnpoints.length; taskOrder++) {
+      // taskTurnpoints.forEach((taskTurnpoint) {
+      TaskTurnpoint taskTurnpoint = taskTurnpoints[taskOrder];
+      taskTurnpoint.taskId = currentTask.id!;
+      taskTurnpoint.taskOrder = taskOrder;
+      if (taskTurnpoint.id == null) {
         turnpointId = await repository.insertTaskTurnpoint(taskTurnpoint);
         if (turnpointId == null) {
           emit(TaskErrorState(
               'Oops. For some reason the task turnpoint was not saved'));
           return;
         }
-        taskTurnpoint.id = turnpointId!;
+        taskTurnpoint.id = turnpointId;
       } else {
         int? updatedRow = await repository.updateTaskTurnpoint(taskTurnpoint);
         if (updatedRow == null || updatedRow <= 0) {
@@ -187,7 +204,14 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
           return;
         }
       }
-    });
+    }
+    ;
+
+    //if update make sure to delete any  turnpoints no longer in task
+    if (isTaskUpdate) {
+      await repository.deleteTaskTurnpointsAbove(currentTask.id!, --taskOrder);
+    }
+
     emit(TaskSavedState());
     emit(TasksTurnpointsLoadedState(
         task: currentTask, taskTurnpoints: taskTurnpoints));
