@@ -11,7 +11,6 @@ import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
 import 'package:flutter_soaring_forecast/soaring/app/custom_styles.dart';
 import 'package:flutter_soaring_forecast/soaring/app/main.dart';
-import 'package:flutter_soaring_forecast/soaring/floor/task/task.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_data_state.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/rasp_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image_set.dart';
@@ -19,6 +18,7 @@ import 'package:flutter_soaring_forecast/soaring/forecast/ui/display_ticker.dart
 import 'package:flutter_soaring_forecast/soaring/tasks/ui/task_list.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../floor/taskturnpoint/task_turnpoint.dart';
 import '../bloc/rasp_data_bloc.dart';
 import '../bloc/rasp_data_event.dart';
 
@@ -39,6 +39,7 @@ class _RaspScreenState extends State<RaspScreen>
         WidgetsBindingObserver {
   late final MapController _mapController;
   var _overlayImages = <OverlayImage>[];
+  var _taskTurnpointsLatLng = <LatLng>[];
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   bool _firstLayoutComplete = false;
 
@@ -62,6 +63,8 @@ class _RaspScreenState extends State<RaspScreen>
 
   Animation<double>? _opacityAnimation;
   AnimationController? _mapOpacityController;
+
+  List<Polyline> _polyLines = <Polyline>[];
 
   //GoogleMapController? _mapController;
   //Default values - NewEngland lat/lng of course!
@@ -111,7 +114,7 @@ class _RaspScreenState extends State<RaspScreen>
     _firstLayoutComplete = true;
     // print("First layout complete.");
     // print('Calling series of APIs');
-    BlocProvider.of<RaspDataBloc>(context).add(InitialRaspRegionEvent());
+    fireEvent(context, InitialRaspRegionEvent());
     _setMapLatLngBounds();
   }
 
@@ -153,6 +156,7 @@ class _RaspScreenState extends State<RaspScreen>
             displayForecastTime(context),
             forecastWindow(),
             emptyWidgetForForecastImages(),
+            taskTurnpointsPolyLine(),
           ]),
         )
         // }),
@@ -195,8 +199,7 @@ class _RaspScreenState extends State<RaspScreen>
           elevation: 16,
           onChanged: (String? newValue) {
             print('Selected model onChanged: $newValue');
-            BlocProvider.of<RaspDataBloc>(context)
-                .add(SelectedRaspModelEvent(newValue!));
+            fireEvent(context, SelectedRaspModelEvent(newValue!));
           },
           items: state.modelNames.map<DropdownMenuItem<String>>((String value) {
             return DropdownMenuItem<String>(
@@ -224,8 +227,7 @@ class _RaspScreenState extends State<RaspScreen>
           isExpanded: true,
           value: state.selectedForecastDate,
           onChanged: (String? newValue) {
-            BlocProvider.of<RaspDataBloc>(context)
-                .add(SelectRaspForecastDateEvent(newValue!));
+            fireEvent(context, SelectRaspForecastDateEvent(newValue!));
           },
           items:
               state.forecastDates.map<DropdownMenuItem<String>>((String value) {
@@ -256,8 +258,7 @@ class _RaspScreenState extends State<RaspScreen>
           onChanged: (String? newValue) {
             var selectedForecast = state.forecasts.firstWhere(
                 (forecast) => forecast.forecastNameDisplay == newValue);
-            BlocProvider.of<RaspDataBloc>(context)
-                .add(SelectedRaspForecastEvent(selectedForecast));
+            fireEvent(context, SelectedRaspForecastEvent(selectedForecast));
           },
           items: state.forecasts
               .map((forecast) => forecast.forecastNameDisplay)
@@ -293,8 +294,7 @@ class _RaspScreenState extends State<RaspScreen>
                 child: GestureDetector(
                   onTap: () {
                     stopAnimation();
-                    BlocProvider.of<RaspDataBloc>(context)
-                        .add(PreviousTimeEvent());
+                    fireEvent(context, PreviousTimeEvent());
                   },
                   child: IncrDecrIconWidget.getIncIconWidget('<'),
                 )),
@@ -325,7 +325,7 @@ class _RaspScreenState extends State<RaspScreen>
                 child: GestureDetector(
                   onTap: () {
                     stopAnimation();
-                    BlocProvider.of<RaspDataBloc>(context).add(NextTimeEvent());
+                    fireEvent(context, NextTimeEvent());
                   },
                   child: IncrDecrIconWidget.getIncIconWidget('>'),
                 )),
@@ -350,6 +350,10 @@ class _RaspScreenState extends State<RaspScreen>
             )),
       ],
     );
+  }
+
+  void fireEvent(BuildContext context, RaspDataEvent event) {
+    BlocProvider.of<RaspDataBloc>(context).add(event);
   }
 
   Widget forecastWindow() {
@@ -396,7 +400,10 @@ class _RaspScreenState extends State<RaspScreen>
             key: null,
             overlayImages: _overlayImages,
             rebuild: _forecastOverlayController.stream,
-          )
+          ),
+          PolylineLayerOptions(
+            polylines: _polyLines,
+          ),
         ]);
   }
 
@@ -434,13 +441,38 @@ class _RaspScreenState extends State<RaspScreen>
     });
   }
 
+  // Sole purpose of this widget is to handle the forecast overlay
+  Widget taskTurnpointsPolyLine() {
+    return BlocBuilder<RaspDataBloc, RaspDataState>(
+        buildWhen: (previous, current) {
+      return current is RaspInitialState || current is RaspTaskTurnpoints;
+    }, builder: (context, state) {
+      print('got task turnpoints ');
+      if (state is RaspTaskTurnpoints) {
+        List<TaskTurnpoint> taskTurnpoints = state.taskTurnpoints;
+        _polyLines.clear();
+        List<LatLng> points = <LatLng>[];
+        for (var taskTurnpoint in taskTurnpoints) {
+          points.add(
+              LatLng(taskTurnpoint.latitudeDeg, taskTurnpoint.longitudeDeg));
+        }
+        _polyLines.add(Polyline(
+          points: points,
+          strokeWidth: 2.0,
+          color: Colors.red,
+        ));
+      }
+      return SizedBox.shrink();
+    });
+  }
+
   void _startStopImageAnimation() {
     //TODO timer and subscription to convoluted. Make simpler
     if (_startImageAnimation) {
       _displayTimer = DisplayTimer(Duration(seconds: 3));
       _overlayPositionCounter = _displayTimer!.stream;
       _tickerSubscription = _overlayPositionCounter!.listen((int counter) {
-        BlocProvider.of<RaspDataBloc>(context).add(NextTimeEvent());
+        fireEvent(context, NextTimeEvent());
       });
       _displayTimer!.setStartAndLimit(_currentImageIndex, _lastImageIndex);
       _displayTimer!.startTimer();
@@ -622,8 +654,9 @@ class _RaspScreenState extends State<RaspScreen>
   _selectTask() async {
     final result = await Navigator.pushNamed(context, TaskList.routeName,
         arguments: TaskListScreen.SELECT_TASK_OPTION);
-    if (result != null && result is Task) {
-      print('Draw task for ' + result.taskName);
+    if (result != null && result is int && result > -1) {
+      print('Draw task for ' + result.toString());
+      fireEvent(context, GetTaskTurnpointsEvent(result));
     }
   }
 

@@ -152,12 +152,6 @@ class Repository {
     return _appDatabase!.airportDao.insertAll(airports);
   }
 
-  // ------ Tasks -------------------------------------
-  Future<List<Task>> getAllTasks() async {
-    await makeDatabaseAvailable();
-    return _appDatabase!.taskDao.listAllTasks();
-  }
-
   // ----- Turnpoints ----------------------------------
   @transaction
   Future<int?> deleteAllTurnpoints() async {
@@ -232,6 +226,14 @@ class Repository {
   Future<int> updateTask(Task task) async {
     await makeDatabaseAvailable();
     return _appDatabase!.taskDao.update(task);
+  }
+
+  Future<int> getCurrentTaskId() async {
+    return getGenericInt("CURRENT_TASK_ID", -1);
+  }
+
+  void setCurrentTaskId(int taskId) async {
+    saveGenericInt("CURRENT_TASK_ID",-1);
   }
 
   // ----- Task Turnpoints----------------------------------------

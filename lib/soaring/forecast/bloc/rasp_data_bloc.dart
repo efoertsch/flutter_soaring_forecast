@@ -5,8 +5,6 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 //import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
-    as Constants;
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image_set.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
@@ -45,6 +43,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     on<NextTimeEvent>(_processNextTimeEvent);
     on<PreviousTimeEvent>(_processPreviousTimeEvent);
     on<SelectedRaspForecastEvent>(_processSelectedForecastEvent);
+    on<GetTaskTurnpointsEvent>(_getTaskTurnpoints);
   }
 
   void _processInitialRaspRegionEvent(
@@ -263,20 +262,20 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     }
     //Start getting images to try to make initial UI animation smoother
     // Start at first image to be displayed
-    for (int i = _selectedForecastTimeIndex; i < _imageSets.length; ++i) {
-      futures.add(Future<NetworkImage>.value(NetworkImage(
-          Constants.RASP_BASE_URL + _imageSets[i].bodyImage!.imageUrl)));
-      futures.add(Future<NetworkImage>.value(NetworkImage(
-          Constants.RASP_BASE_URL + _imageSets[i].sideImage!.imageUrl)));
-    }
-    for (int i = 0; i < _selectedForecastTimeIndex; ++i) {
-      futures.add(Future<NetworkImage>.value(NetworkImage(
-          Constants.RASP_BASE_URL + _imageSets[i].bodyImage!.imageUrl)));
-      futures.add(Future<NetworkImage>.value(NetworkImage(
-          Constants.RASP_BASE_URL + _imageSets[i].sideImage!.imageUrl)));
-    }
-    //unawaited(Future.wait(futures));
-    getImagesAheadOfTime(futures);
+    // for (int i = _selectedForecastTimeIndex; i < _imageSets.length; ++i) {
+    //   futures.add(Future<NetworkImage>.value(NetworkImage(
+    //       Constants.RASP_BASE_URL + _imageSets[i].bodyImage!.imageUrl)));
+    //   futures.add(Future<NetworkImage>.value(NetworkImage(
+    //       Constants.RASP_BASE_URL + _imageSets[i].sideImage!.imageUrl)));
+    // }
+    // for (int i = 0; i < _selectedForecastTimeIndex; ++i) {
+    //   futures.add(Future<NetworkImage>.value(NetworkImage(
+    //       Constants.RASP_BASE_URL + _imageSets[i].bodyImage!.imageUrl)));
+    //   futures.add(Future<NetworkImage>.value(NetworkImage(
+    //       Constants.RASP_BASE_URL + _imageSets[i].sideImage!.imageUrl)));
+    // }
+    // //unawaited(Future.wait(futures));
+    // getImagesAheadOfTime(futures);
   }
 
   void getImagesAheadOfTime(List<Future> imageFutures) async {
@@ -327,5 +326,10 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
 
     emit(RaspForecastImageSet(_imageSets[_selectedForecastTimeIndex],
         _selectedForecastTimeIndex, _imageSets.length));
+  }
+
+  void _getTaskTurnpoints(
+      GetTaskTurnpointsEvent event, Emitter<RaspDataState> emit) async {
+    emit(RaspTaskTurnpoints(await repository.getTaskTurnpoints(event.taskId)));
   }
 }

@@ -99,35 +99,38 @@ class TaskListScreen extends StatelessWidget {
               icon: Icon(Icons.edit),
               onPressed: () => _goToTaskDetail(context, tasks[index].id!),
             ),
-            title: Container(
-              child: GestureDetector(
+            title: Material(
+              color: Colors.white.withOpacity(0.0),
+              child: InkWell(
                 onTap: () {
                   if (viewOption == TaskListScreen.SELECT_TASK_OPTION) {
-                    Navigator.of(context).pop(tasks[index]);
+                    Navigator.of(context).pop(tasks[index].id);
                   }
                 },
-                child: Column(
-                  children: [
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        tasks[index].taskName,
-                        textAlign: TextAlign.left,
-                        style: textStyleBlackFontSize20,
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Align(
+                child: Container(
+                  child: Column(
+                    children: [
+                      Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          tasks[index].distance.toStringAsFixed(1) + 'km',
+                          tasks[index].taskName,
                           textAlign: TextAlign.left,
-                          style: textStyleBlack87FontSize15,
+                          style: textStyleBlackFontSize20,
                         ),
                       ),
-                    ),
-                  ],
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            tasks[index].distance.toStringAsFixed(1) + 'km',
+                            textAlign: TextAlign.left,
+                            style: textStyleBlack87FontSize15,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
