@@ -204,8 +204,7 @@ class Repository {
     return turnpoints;
   }
 
-  Future<Turnpoint?> getTurnpoint(
-      @required String title, @required String code) async {
+  Future<Turnpoint?> getTurnpoint(String title, String code) async {
     await makeDatabaseAvailable();
     return _appDatabase!.turnpointDao.getTurnpoint(title, code);
   }
