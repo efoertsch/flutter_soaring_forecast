@@ -5,6 +5,8 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 //import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
+    as Constants;
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image_set.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
@@ -25,7 +27,8 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
   List<String>? _forecastDates; // array of dates like  2019-12-19
   String? _selectedForecastDate; // selected date  2019-12-19
   List<String>? _forecastTimes;
-  int _selectedForecastTimeIndex = 0;
+  int _selectedForecastTimeIndex = 4; // start at to 1300 forecast
+  int _startingForecastTimeIndex = 4;
 
   List<Forecast>? _forecasts;
   Forecast? _selectedForecast;
@@ -34,18 +37,6 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
   AnimationController? _forecastImageAnimationController;
   Animation<double>? _forecastImageAnimation;
   bool _runAnimation = true;
-
-  List<String> defaultTimes = [
-    '1000',
-    '1100',
-    '1200',
-    '1300',
-    '1400',
-    '1500',
-    '1600',
-    '1700',
-    '1800'
-  ];
 
   RaspDataBloc({required this.repository}) : super(RaspInitialState()) {
     on<InitialRaspRegionEvent>(_processInitialRaspRegionEvent);
@@ -270,11 +261,30 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
 
       _imageSets.add(soaringForecastImageSet);
     }
-    // Get images later
-    // for (var soaringForecastImage in soaringForecastImages) {
-    //   futures.add(_getRaspForecastImage(soaringForecastImage));
-    // }
-    // await Future.wait(futures);
+    //Start getting images to try to make initial UI animation smoother
+    // Start at first image to be displayed
+    for (int i = _selectedForecastTimeIndex; i < _imageSets.length; ++i) {
+      futures.add(Future<NetworkImage>.value(NetworkImage(
+          Constants.RASP_BASE_URL + _imageSets[i].bodyImage!.imageUrl)));
+      futures.add(Future<NetworkImage>.value(NetworkImage(
+          Constants.RASP_BASE_URL + _imageSets[i].sideImage!.imageUrl)));
+    }
+    for (int i = 0; i < _selectedForecastTimeIndex; ++i) {
+      futures.add(Future<NetworkImage>.value(NetworkImage(
+          Constants.RASP_BASE_URL + _imageSets[i].bodyImage!.imageUrl)));
+      futures.add(Future<NetworkImage>.value(NetworkImage(
+          Constants.RASP_BASE_URL + _imageSets[i].sideImage!.imageUrl)));
+    }
+    //unawaited(Future.wait(futures));
+    getImagesAheadOfTime(futures);
+  }
+
+  void getImagesAheadOfTime(List<Future> imageFutures) async {
+    for (var imageFuture in imageFutures) {
+      await imageFuture.then((resp) {
+        print("Image future complete");
+      });
+    }
   }
 
   Future<SoaringForecastImage> _getRaspForecastImage(
