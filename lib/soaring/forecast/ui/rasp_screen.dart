@@ -64,13 +64,21 @@ class _RaspScreenState extends State<RaspScreen>
   Animation<double>? _opacityAnimation;
   AnimationController? _mapOpacityController;
 
-  List<Polyline> _polyLines = <Polyline>[];
+  List<Polyline> _taskTurnpointCourse = <Polyline>[];
+  List<Marker> _taskTurnpointMarkers = <Marker>[];
 
   //GoogleMapController? _mapController;
   //Default values - NewEngland lat/lng of course!
   final LatLng _center = LatLng(43.1394043, -72.0759888);
   LatLngBounds _mapLatLngBounds = LatLngBounds(
       LatLng(41.2665329, -73.6473083), LatLng(45.0120811, -70.5046997));
+
+  /// Use to center task route in googleMap frame
+  LatLng? southwest;
+  double swLat = 0;
+  double swLong = 0;
+  double neLat = 0;
+  double neLong = 0;
 
   // Executed only when class created
   @override
@@ -156,7 +164,7 @@ class _RaspScreenState extends State<RaspScreen>
             displayForecastTime(context),
             forecastWindow(),
             emptyWidgetForForecastImages(),
-            taskTurnpointsPolyLine(),
+            displayTaskLineAndMarkers(),
           ]),
         )
         // }),
@@ -402,8 +410,11 @@ class _RaspScreenState extends State<RaspScreen>
             rebuild: _forecastOverlayController.stream,
           ),
           PolylineLayerOptions(
-            polylines: _polyLines,
+            polylines: _taskTurnpointCourse,
           ),
+          MarkerLayerOptions(
+            markers: _taskTurnpointMarkers,
+          )
         ]);
   }
 
@@ -442,28 +453,63 @@ class _RaspScreenState extends State<RaspScreen>
   }
 
   // Sole purpose of this widget is to handle the forecast overlay
-  Widget taskTurnpointsPolyLine() {
+  Widget displayTaskLineAndMarkers() {
     return BlocBuilder<RaspDataBloc, RaspDataState>(
         buildWhen: (previous, current) {
       return current is RaspInitialState || current is RaspTaskTurnpoints;
     }, builder: (context, state) {
-      print('got task turnpoints ');
       if (state is RaspTaskTurnpoints) {
         List<TaskTurnpoint> taskTurnpoints = state.taskTurnpoints;
-        _polyLines.clear();
+        print('number of task turnpoints ${taskTurnpoints.length.toString()} ');
+        clearTaskFromMap();
         List<LatLng> points = <LatLng>[];
+        List<Marker> turnpointMarkers = <Marker>[];
         for (var taskTurnpoint in taskTurnpoints) {
-          points.add(
-              LatLng(taskTurnpoint.latitudeDeg, taskTurnpoint.longitudeDeg));
+          print('adding taskturnpoint: ${taskTurnpoint.title}');
+          var turnpointLatLng =
+              LatLng(taskTurnpoint.latitudeDeg, taskTurnpoint.longitudeDeg);
+          points.add(turnpointLatLng);
+          _taskTurnpointMarkers.add(Marker(
+              width: 80.0,
+              height: 30.0,
+              point: turnpointLatLng,
+              builder: (context) => getTaskTurnpointMarker(taskTurnpoint)));
+          updateMapLatLngCorner(turnpointLatLng);
         }
-        _polyLines.add(Polyline(
+        _taskTurnpointCourse.add(Polyline(
           points: points,
           strokeWidth: 2.0,
           color: Colors.red,
         ));
+        LatLng southwest = new LatLng(swLat, swLong);
+        LatLng northeast = new LatLng(neLat, neLong);
+        var centerZoom = _mapController
+            .centerZoomFitBounds(LatLngBounds(southwest, northeast));
       }
       return SizedBox.shrink();
     });
+  }
+
+  Container getTaskTurnpointMarker(TaskTurnpoint taskTurnpoint) {
+    return Container(
+        color: Colors.white,
+        child: Column(children: [
+          Expanded(
+            child: Text(taskTurnpoint.title, textAlign: TextAlign.center),
+          ),
+          Expanded(
+            child: Text(
+                '${taskTurnpoint.distanceFromPriorTurnpoint.toStringAsFixed(0)} '
+                '/ ${taskTurnpoint.distanceFromStartingPoint.toStringAsFixed(0)} km',
+                textAlign: TextAlign.center),
+          ),
+        ]));
+  }
+
+  void clearTaskFromMap() {
+    _taskTurnpointCourse.clear();
+    _taskTurnpointMarkers.clear();
+    southwest = null;
   }
 
   void _startStopImageAnimation() {
@@ -663,6 +709,7 @@ class _RaspScreenState extends State<RaspScreen>
   void handleClick(String value) {
     switch (value) {
       case RaspMenu.clearTask:
+        fireEvent(context, ClearTaskEvent());
         break;
       case RaspMenu.displayOptions:
         break;
@@ -674,6 +721,29 @@ class _RaspScreenState extends State<RaspScreen>
         break;
       case RaspMenu.selectRegion:
         break;
+    }
+  }
+
+  void updateMapLatLngCorner(LatLng latLng) {
+    if (southwest == null) {
+      southwest = latLng;
+      swLat = latLng.latitude;
+      swLong = latLng.longitude;
+
+      neLat = latLng.latitude;
+      neLong = latLng.longitude;
+    }
+    if (latLng.latitude < swLat) {
+      swLat = latLng.latitude;
+    }
+    if (latLng.longitude < swLong) {
+      swLong = latLng.longitude;
+    }
+    if (latLng.latitude > neLat) {
+      neLat = latLng.latitude;
+    }
+    if (latLng.longitude > neLong) {
+      neLong = latLng.longitude;
     }
   }
 }

@@ -1,5 +1,5 @@
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:json_annotation/json_annotation.dart';
+import 'package:latlong2/latlong.dart';
 
 // used https://jsontodart.com to generate JSON
 // data from https://soargbsc.com/soaringforecast/sterling7_sua.geojson but deleted all but 1 feather and most of

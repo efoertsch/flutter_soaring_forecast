@@ -5,6 +5,7 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 //import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_soaring_forecast/soaring/floor/taskturnpoint/task_turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image_set.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
@@ -44,6 +45,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     on<PreviousTimeEvent>(_processPreviousTimeEvent);
     on<SelectedRaspForecastEvent>(_processSelectedForecastEvent);
     on<GetTaskTurnpointsEvent>(_getTaskTurnpoints);
+    on<ClearTaskEvent>(_clearTask);
   }
 
   void _processInitialRaspRegionEvent(
@@ -65,15 +67,11 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
         // need to get all dates before you can generate the list of models
         _setRegionModelNames();
         _emitRaspModels(emit);
-        // await Future.delayed(Duration(microseconds: 1));
         _emitRaspModelDates(emit);
-        // await Future.delayed(Duration(microseconds: 1));
         _emitRaspLatLngBounds(emit);
-
-        // await Future.delayed(Duration(microseconds: 1));
-        // create URL's to get forecast overlays
         _getForecastImages();
         _emitRaspImageSet(emit);
+        _showTaskIfSelected(emit);
       }
     } catch (_) {
       emit(RaspDataLoadErrorState("Error getting regions."));
@@ -328,8 +326,20 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
         _selectedForecastTimeIndex, _imageSets.length));
   }
 
+  void _showTaskIfSelected(Emitter<RaspDataState> emit) async {
+    var taskId = await repository.getCurrentTaskId();
+    if (taskId > -1) {
+      emit(RaspTaskTurnpoints(await repository.getTaskTurnpoints(taskId)));
+    }
+  }
+
   void _getTaskTurnpoints(
       GetTaskTurnpointsEvent event, Emitter<RaspDataState> emit) async {
     emit(RaspTaskTurnpoints(await repository.getTaskTurnpoints(event.taskId)));
+  }
+
+  FutureOr<void> _clearTask(ClearTaskEvent event, Emitter<RaspDataState> emit) {
+    repository.setCurrentTaskId(-1);
+    emit(RaspTaskTurnpoints(<TaskTurnpoint>[]));
   }
 }

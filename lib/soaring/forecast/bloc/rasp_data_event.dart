@@ -68,3 +68,8 @@ class GetTaskTurnpointsEvent extends RaspDataEvent {
   final int taskId;
   GetTaskTurnpointsEvent(this.taskId);
 }
+
+// Ask bloc to get the task turnpoints for plotting on map
+class ClearTaskEvent extends RaspDataEvent {
+  ClearTaskEvent();
+}

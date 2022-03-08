@@ -47,7 +47,7 @@ dependencies:
   shared_preferences:
 
   flutter_map: any # or the latest version on Pub
-  # google_maps_flutter: ^2.0.10
+  google_maps_flutter: ^2.1.0 # used for overhead view of turnpoints
 
   flutter:
     sdk: flutter
@@ -58,7 +58,7 @@ dependencies:
   mockito: ^5.0.16
   http: ^0.13.4
   workmanager: ^0.4.1
-  google_maps_flutter: ^2.1.0
+
 
 dev_dependencies:
 

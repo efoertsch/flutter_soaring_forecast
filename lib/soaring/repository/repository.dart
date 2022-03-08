@@ -228,12 +228,14 @@ class Repository {
     return _appDatabase!.taskDao.update(task);
   }
 
+  // -1 is no task defined
   Future<int> getCurrentTaskId() async {
     return getGenericInt("CURRENT_TASK_ID", -1);
   }
 
+  // Set to -1 to clear task
   void setCurrentTaskId(int taskId) async {
-    saveGenericInt("CURRENT_TASK_ID",-1);
+    saveGenericInt("CURRENT_TASK_ID", taskId);
   }
 
   // ----- Task Turnpoints----------------------------------------
