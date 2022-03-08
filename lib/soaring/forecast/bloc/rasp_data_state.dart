@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_soaring_forecast/soaring/floor/taskturnpoint/task_turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image_set.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
 
@@ -110,4 +111,12 @@ class RaspForecastImageDisplay extends RaspDataState {
 
   @override
   List<Object?> get props => [soaringForecastImageSet];
+}
+
+class RaspTaskTurnpoints extends RaspDataState {
+  final List<TaskTurnpoint> taskTurnpoints;
+  RaspTaskTurnpoints(this.taskTurnpoints);
+
+  @override
+  List<Object?> get props => [taskTurnpoints];
 }

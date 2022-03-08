@@ -11,7 +11,6 @@ import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
 import 'package:flutter_soaring_forecast/soaring/app/custom_styles.dart';
 import 'package:flutter_soaring_forecast/soaring/app/main.dart';
-import 'package:flutter_soaring_forecast/soaring/floor/task/task.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_data_state.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/rasp_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image_set.dart';
@@ -19,6 +18,7 @@ import 'package:flutter_soaring_forecast/soaring/forecast/ui/display_ticker.dart
 import 'package:flutter_soaring_forecast/soaring/tasks/ui/task_list.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../floor/taskturnpoint/task_turnpoint.dart';
 import '../bloc/rasp_data_bloc.dart';
 import '../bloc/rasp_data_event.dart';
 
@@ -39,6 +39,7 @@ class _RaspScreenState extends State<RaspScreen>
         WidgetsBindingObserver {
   late final MapController _mapController;
   var _overlayImages = <OverlayImage>[];
+  var _taskTurnpointsLatLng = <LatLng>[];
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   bool _firstLayoutComplete = false;
 
@@ -63,11 +64,21 @@ class _RaspScreenState extends State<RaspScreen>
   Animation<double>? _opacityAnimation;
   AnimationController? _mapOpacityController;
 
+  List<Polyline> _taskTurnpointCourse = <Polyline>[];
+  List<Marker> _taskTurnpointMarkers = <Marker>[];
+
   //GoogleMapController? _mapController;
   //Default values - NewEngland lat/lng of course!
   final LatLng _center = LatLng(43.1394043, -72.0759888);
   LatLngBounds _mapLatLngBounds = LatLngBounds(
       LatLng(41.2665329, -73.6473083), LatLng(45.0120811, -70.5046997));
+
+  /// Use to center task route in googleMap frame
+  LatLng? southwest;
+  double swLat = 0;
+  double swLong = 0;
+  double neLat = 0;
+  double neLong = 0;
 
   // Executed only when class created
   @override
@@ -111,7 +122,7 @@ class _RaspScreenState extends State<RaspScreen>
     _firstLayoutComplete = true;
     // print("First layout complete.");
     // print('Calling series of APIs');
-    BlocProvider.of<RaspDataBloc>(context).add(InitialRaspRegionEvent());
+    fireEvent(context, InitialRaspRegionEvent());
     _setMapLatLngBounds();
   }
 
@@ -153,6 +164,7 @@ class _RaspScreenState extends State<RaspScreen>
             displayForecastTime(context),
             forecastWindow(),
             emptyWidgetForForecastImages(),
+            displayTaskLineAndMarkers(),
           ]),
         )
         // }),
@@ -195,8 +207,7 @@ class _RaspScreenState extends State<RaspScreen>
           elevation: 16,
           onChanged: (String? newValue) {
             print('Selected model onChanged: $newValue');
-            BlocProvider.of<RaspDataBloc>(context)
-                .add(SelectedRaspModelEvent(newValue!));
+            fireEvent(context, SelectedRaspModelEvent(newValue!));
           },
           items: state.modelNames.map<DropdownMenuItem<String>>((String value) {
             return DropdownMenuItem<String>(
@@ -224,8 +235,7 @@ class _RaspScreenState extends State<RaspScreen>
           isExpanded: true,
           value: state.selectedForecastDate,
           onChanged: (String? newValue) {
-            BlocProvider.of<RaspDataBloc>(context)
-                .add(SelectRaspForecastDateEvent(newValue!));
+            fireEvent(context, SelectRaspForecastDateEvent(newValue!));
           },
           items:
               state.forecastDates.map<DropdownMenuItem<String>>((String value) {
@@ -256,8 +266,7 @@ class _RaspScreenState extends State<RaspScreen>
           onChanged: (String? newValue) {
             var selectedForecast = state.forecasts.firstWhere(
                 (forecast) => forecast.forecastNameDisplay == newValue);
-            BlocProvider.of<RaspDataBloc>(context)
-                .add(SelectedRaspForecastEvent(selectedForecast));
+            fireEvent(context, SelectedRaspForecastEvent(selectedForecast));
           },
           items: state.forecasts
               .map((forecast) => forecast.forecastNameDisplay)
@@ -293,8 +302,7 @@ class _RaspScreenState extends State<RaspScreen>
                 child: GestureDetector(
                   onTap: () {
                     stopAnimation();
-                    BlocProvider.of<RaspDataBloc>(context)
-                        .add(PreviousTimeEvent());
+                    fireEvent(context, PreviousTimeEvent());
                   },
                   child: IncrDecrIconWidget.getIncIconWidget('<'),
                 )),
@@ -325,7 +333,7 @@ class _RaspScreenState extends State<RaspScreen>
                 child: GestureDetector(
                   onTap: () {
                     stopAnimation();
-                    BlocProvider.of<RaspDataBloc>(context).add(NextTimeEvent());
+                    fireEvent(context, NextTimeEvent());
                   },
                   child: IncrDecrIconWidget.getIncIconWidget('>'),
                 )),
@@ -350,6 +358,10 @@ class _RaspScreenState extends State<RaspScreen>
             )),
       ],
     );
+  }
+
+  void fireEvent(BuildContext context, RaspDataEvent event) {
+    BlocProvider.of<RaspDataBloc>(context).add(event);
   }
 
   Widget forecastWindow() {
@@ -396,6 +408,12 @@ class _RaspScreenState extends State<RaspScreen>
             key: null,
             overlayImages: _overlayImages,
             rebuild: _forecastOverlayController.stream,
+          ),
+          PolylineLayerOptions(
+            polylines: _taskTurnpointCourse,
+          ),
+          MarkerLayerOptions(
+            markers: _taskTurnpointMarkers,
           )
         ]);
   }
@@ -434,13 +452,73 @@ class _RaspScreenState extends State<RaspScreen>
     });
   }
 
+  // Sole purpose of this widget is to handle the forecast overlay
+  Widget displayTaskLineAndMarkers() {
+    return BlocBuilder<RaspDataBloc, RaspDataState>(
+        buildWhen: (previous, current) {
+      return current is RaspInitialState || current is RaspTaskTurnpoints;
+    }, builder: (context, state) {
+      if (state is RaspTaskTurnpoints) {
+        List<TaskTurnpoint> taskTurnpoints = state.taskTurnpoints;
+        print('number of task turnpoints ${taskTurnpoints.length.toString()} ');
+        clearTaskFromMap();
+        List<LatLng> points = <LatLng>[];
+        List<Marker> turnpointMarkers = <Marker>[];
+        for (var taskTurnpoint in taskTurnpoints) {
+          print('adding taskturnpoint: ${taskTurnpoint.title}');
+          var turnpointLatLng =
+              LatLng(taskTurnpoint.latitudeDeg, taskTurnpoint.longitudeDeg);
+          points.add(turnpointLatLng);
+          _taskTurnpointMarkers.add(Marker(
+              width: 80.0,
+              height: 30.0,
+              point: turnpointLatLng,
+              builder: (context) => getTaskTurnpointMarker(taskTurnpoint)));
+          updateMapLatLngCorner(turnpointLatLng);
+        }
+        _taskTurnpointCourse.add(Polyline(
+          points: points,
+          strokeWidth: 2.0,
+          color: Colors.red,
+        ));
+        LatLng southwest = new LatLng(swLat, swLong);
+        LatLng northeast = new LatLng(neLat, neLong);
+        var centerZoom = _mapController
+            .centerZoomFitBounds(LatLngBounds(southwest, northeast));
+      }
+      return SizedBox.shrink();
+    });
+  }
+
+  Container getTaskTurnpointMarker(TaskTurnpoint taskTurnpoint) {
+    return Container(
+        color: Colors.white,
+        child: Column(children: [
+          Expanded(
+            child: Text(taskTurnpoint.title, textAlign: TextAlign.center),
+          ),
+          Expanded(
+            child: Text(
+                '${taskTurnpoint.distanceFromPriorTurnpoint.toStringAsFixed(0)} '
+                '/ ${taskTurnpoint.distanceFromStartingPoint.toStringAsFixed(0)} km',
+                textAlign: TextAlign.center),
+          ),
+        ]));
+  }
+
+  void clearTaskFromMap() {
+    _taskTurnpointCourse.clear();
+    _taskTurnpointMarkers.clear();
+    southwest = null;
+  }
+
   void _startStopImageAnimation() {
     //TODO timer and subscription to convoluted. Make simpler
     if (_startImageAnimation) {
       _displayTimer = DisplayTimer(Duration(seconds: 3));
       _overlayPositionCounter = _displayTimer!.stream;
       _tickerSubscription = _overlayPositionCounter!.listen((int counter) {
-        BlocProvider.of<RaspDataBloc>(context).add(NextTimeEvent());
+        fireEvent(context, NextTimeEvent());
       });
       _displayTimer!.setStartAndLimit(_currentImageIndex, _lastImageIndex);
       _displayTimer!.startTimer();
@@ -622,14 +700,16 @@ class _RaspScreenState extends State<RaspScreen>
   _selectTask() async {
     final result = await Navigator.pushNamed(context, TaskList.routeName,
         arguments: TaskListScreen.SELECT_TASK_OPTION);
-    if (result != null && result is Task) {
-      print('Draw task for ' + result.taskName);
+    if (result != null && result is int && result > -1) {
+      print('Draw task for ' + result.toString());
+      fireEvent(context, GetTaskTurnpointsEvent(result));
     }
   }
 
   void handleClick(String value) {
     switch (value) {
       case RaspMenu.clearTask:
+        fireEvent(context, ClearTaskEvent());
         break;
       case RaspMenu.displayOptions:
         break;
@@ -641,6 +721,29 @@ class _RaspScreenState extends State<RaspScreen>
         break;
       case RaspMenu.selectRegion:
         break;
+    }
+  }
+
+  void updateMapLatLngCorner(LatLng latLng) {
+    if (southwest == null) {
+      southwest = latLng;
+      swLat = latLng.latitude;
+      swLong = latLng.longitude;
+
+      neLat = latLng.latitude;
+      neLong = latLng.longitude;
+    }
+    if (latLng.latitude < swLat) {
+      swLat = latLng.latitude;
+    }
+    if (latLng.longitude < swLong) {
+      swLong = latLng.longitude;
+    }
+    if (latLng.latitude > neLat) {
+      neLat = latLng.latitude;
+    }
+    if (latLng.longitude > neLong) {
+      neLong = latLng.longitude;
     }
   }
 }
