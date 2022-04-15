@@ -3,9 +3,9 @@ import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
-//import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/taskturnpoint/task_turnpoint.dart';
+import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image_set.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
@@ -44,8 +44,10 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     on<NextTimeEvent>(_processNextTimeEvent);
     on<PreviousTimeEvent>(_processPreviousTimeEvent);
     on<SelectedRaspForecastEvent>(_processSelectedForecastEvent);
-    on<GetTaskTurnpointsEvent>(_getTaskTurnpoints);
+    on<GetTaskTurnpointsEvent>(_getTurnpointsForTaskId);
     on<ClearTaskEvent>(_clearTask);
+    on<MapReadyEvent>(_checkForPreviouslySelectedTask);
+    on<DisplayTaskTurnpointEvent>(_displayTaskTurnpoint);
   }
 
   void _processInitialRaspRegionEvent(
@@ -71,7 +73,6 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
         _emitRaspLatLngBounds(emit);
         _getForecastImages();
         _emitRaspImageSet(emit);
-        _showTaskIfSelected(emit);
       }
     } catch (_) {
       emit(RaspDataLoadErrorState("Error getting regions."));
@@ -326,20 +327,54 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
         _selectedForecastTimeIndex, _imageSets.length));
   }
 
+  void _clearTask(ClearTaskEvent event, Emitter<RaspDataState> emit) async {
+    repository.setCurrentTaskId(-1);
+    emit(RaspTaskTurnpoints(<TaskTurnpoint>[]));
+  }
+
   void _showTaskIfSelected(Emitter<RaspDataState> emit) async {
     var taskId = await repository.getCurrentTaskId();
+    _emitTaskTurnpoints(emit, taskId);
+  }
+
+  void _checkForPreviouslySelectedTask(
+      MapReadyEvent event, Emitter<RaspDataState> emit) async {
+    var taskId = await repository.getCurrentTaskId();
+    await _emitTaskTurnpoints(emit, taskId);
+  }
+
+  void _getTurnpointsForTaskId(
+      GetTaskTurnpointsEvent event, Emitter<RaspDataState> emit) async {
+    repository.setCurrentTaskId(event.taskId);
+    await _emitTaskTurnpoints(emit, event.taskId);
+  }
+
+  FutureOr<void> _emitTaskTurnpoints(
+      Emitter<RaspDataState> emit, int taskId) async {
     if (taskId > -1) {
-      emit(RaspTaskTurnpoints(await repository.getTaskTurnpoints(taskId)));
+      final List<TaskTurnpoint> taskTurnpoints =
+          await _addTaskTurnpointDetails(taskId);
+      print('emitting taskturnpoints');
+      emit(RaspTaskTurnpoints(taskTurnpoints));
     }
   }
 
-  void _getTaskTurnpoints(
-      GetTaskTurnpointsEvent event, Emitter<RaspDataState> emit) async {
-    emit(RaspTaskTurnpoints(await repository.getTaskTurnpoints(event.taskId)));
+  Future<List<TaskTurnpoint>> _addTaskTurnpointDetails(int taskId) async {
+    List<TaskTurnpoint> taskTurnpoints =
+        await repository.getTaskTurnpoints(taskId);
+    return taskTurnpoints;
   }
 
-  FutureOr<void> _clearTask(ClearTaskEvent event, Emitter<RaspDataState> emit) {
-    repository.setCurrentTaskId(-1);
-    emit(RaspTaskTurnpoints(<TaskTurnpoint>[]));
+  void _displayTaskTurnpoint(
+      DisplayTaskTurnpointEvent event, Emitter<RaspDataState> emit) async {
+    // emit(TasksLoadingState()); // if used need to resend event to redisplay task
+    Turnpoint? turnpoint = await repository.getTurnpoint(
+        event.taskTurnpoint.title, event.taskTurnpoint.code);
+    if (turnpoint != null) {
+      emit(TurnpointFoundState(turnpoint));
+    } else {
+      emit(RaspDataLoadErrorState(
+          "Oops. Turnpoint not found based on TaskTurnpoint"));
+    }
   }
 }

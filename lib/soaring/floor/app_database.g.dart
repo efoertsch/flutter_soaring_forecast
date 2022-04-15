@@ -90,9 +90,9 @@ class _$AppDatabase extends AppDatabase {
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `airport` (`ident` TEXT NOT NULL, `type` TEXT NOT NULL, `name` TEXT NOT NULL, `latitudeDeg` REAL NOT NULL, `longitudeDeg` REAL NOT NULL, `elevationFt` INTEGER NOT NULL, `state` TEXT NOT NULL, `municipality` TEXT NOT NULL, PRIMARY KEY (`ident`))');
         await database.execute(
-            'CREATE TABLE IF NOT EXISTS `task` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `taskName` TEXT NOT NULL, `distance` REAL NOT NULL, `taskOrder` INTEGER NOT NULL)');
+            'CREATE TABLE IF NOT EXISTS `task` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `taskName` TEXT NOT NULL, `distance` REAL NOT NULL, `taskOrder` INTEGER NOT NULL)');
         await database.execute(
-            'CREATE TABLE IF NOT EXISTS `taskturnpoint` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `taskId` INTEGER NOT NULL, `taskOrder` INTEGER NOT NULL, `title` TEXT NOT NULL, `code` TEXT NOT NULL, `latitudeDeg` REAL NOT NULL, `longitudeDeg` REAL NOT NULL, `distanceFromPriorTurnpoint` REAL NOT NULL, `distanceFromStartingPoint` REAL NOT NULL, `lastTurnpoint` INTEGER NOT NULL, FOREIGN KEY (`taskId`) REFERENCES `task` (`id`) ON UPDATE NO ACTION ON DELETE NO ACTION)');
+            'CREATE TABLE IF NOT EXISTS `taskturnpoint` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `taskId` INTEGER, `taskOrder` INTEGER NOT NULL, `title` TEXT NOT NULL, `code` TEXT NOT NULL, `latitudeDeg` REAL NOT NULL, `longitudeDeg` REAL NOT NULL, `distanceFromPriorTurnpoint` REAL NOT NULL, `distanceFromStartingPoint` REAL NOT NULL, `lastTurnpoint` INTEGER NOT NULL, FOREIGN KEY (`taskId`) REFERENCES `task` (`id`) ON UPDATE NO ACTION ON DELETE NO ACTION)');
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `turnpoint` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `title` TEXT NOT NULL, `code` TEXT NOT NULL, `country` TEXT NOT NULL, `latitudeDeg` REAL NOT NULL, `longitudeDeg` REAL NOT NULL, `elevation` TEXT NOT NULL, `style` TEXT NOT NULL, `direction` TEXT NOT NULL, `length` TEXT NOT NULL, `frequency` TEXT NOT NULL, `description` TEXT NOT NULL, `runwayWidth` TEXT NOT NULL)');
         await database
@@ -301,7 +301,7 @@ class _$TaskDao extends TaskDao {
   Future<List<Task>> listAllTasks() async {
     return _queryAdapter.queryList('Select * from task order by taskOrder',
         mapper: (Map<String, Object?> row) => Task(
-            id: row['id'] as int,
+            id: row['id'] as int?,
             taskName: row['taskName'] as String,
             distance: row['distance'] as double,
             taskOrder: row['taskOrder'] as int));
@@ -311,7 +311,7 @@ class _$TaskDao extends TaskDao {
   Future<Task?> getTask(int taskId) async {
     return _queryAdapter.query('Select * from task where id = ?1',
         mapper: (Map<String, Object?> row) => Task(
-            id: row['id'] as int,
+            id: row['id'] as int?,
             taskName: row['taskName'] as String,
             distance: row['distance'] as double,
             taskOrder: row['taskOrder'] as int),
@@ -393,8 +393,8 @@ class _$TaskTurnpointDao extends TaskTurnpointDao {
     return _queryAdapter.queryList(
         'Select * from taskturnpoint where taskId = ?1 order by taskOrder',
         mapper: (Map<String, Object?> row) => TaskTurnpoint(
-            id: row['id'] as int,
-            taskId: row['taskId'] as int,
+            id: row['id'] as int?,
+            taskId: row['taskId'] as int?,
             taskOrder: row['taskOrder'] as int,
             title: row['title'] as String,
             code: row['code'] as String,
@@ -429,10 +429,10 @@ class _$TaskTurnpointDao extends TaskTurnpointDao {
   }
 
   @override
-  Future<int?> deleteAnyTaskTurnpointsOver(int taskId, int index) async {
+  Future<int?> deleteAnyTaskTurnpointsOver(int taskId, int taskOrder) async {
     await _queryAdapter.queryNoReturn(
         'Delete from taskturnpoint where taskId = ?1 and taskOrder > ?2',
-        arguments: [taskId, index]);
+        arguments: [taskId, taskOrder]);
   }
 
   @override
