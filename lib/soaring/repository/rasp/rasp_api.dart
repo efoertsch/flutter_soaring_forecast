@@ -39,4 +39,16 @@ abstract class RaspClient {
 //      @Path("forecastParameter") String forecastParameter,
 //      @Path("forecastTime") String forecastTime,
 //      @Path("bitmapType") String bitmapType);
+
+  // Got error when puting Content-type in @Headers annotation
+  @POST("/cgi/get_rasp_blipspot.cgi")
+  Future<HttpResponse> getLatLongPointForecast(
+      @Header("Content-Type") String contentType,
+      @Field("region") String region,
+      @Field("date") String date,
+      @Field("model") String model,
+      @Field("time") String time,
+      @Field("lat") String lat,
+      @Field("lon") String lon,
+      @Field("param") String forecastType);
 }

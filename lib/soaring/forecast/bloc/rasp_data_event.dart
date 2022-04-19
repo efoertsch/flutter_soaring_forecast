@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter_soaring_forecast/soaring/floor/taskturnpoint/task_turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/regions.dart';
+import 'package:latlong2/latlong.dart';
 
 /// https://medium.com/flutter-community/flutter-bloc-pattern-for-dummies-like-me-c22d40f05a56
 /// Event In - State Out
@@ -69,7 +71,25 @@ class GetTaskTurnpointsEvent extends RaspDataEvent {
   GetTaskTurnpointsEvent(this.taskId);
 }
 
-// Ask bloc to get the task turnpoints for plotting on map
+// clear task/turnpoints from map
 class ClearTaskEvent extends RaspDataEvent {
   ClearTaskEvent();
+}
+
+class MapReadyEvent extends RaspDataEvent {
+  MapReadyEvent();
+}
+
+class DisplayTaskTurnpointEvent extends RaspDataEvent {
+  final TaskTurnpoint taskTurnpoint;
+  DisplayTaskTurnpointEvent(this.taskTurnpoint);
+  @override
+  List<Object?> get props => [taskTurnpoint];
+}
+
+class DisplayLocalForecastEvent extends RaspDataEvent {
+  final LatLng latLng;
+  DisplayLocalForecastEvent(this.latLng);
+  @override
+  List<Object?> get props => [latLng];
 }
