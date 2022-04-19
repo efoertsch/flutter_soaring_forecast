@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/taskturnpoint/task_turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/LatLngForecast.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image_set.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
@@ -48,6 +49,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     on<ClearTaskEvent>(_clearTask);
     on<MapReadyEvent>(_checkForPreviouslySelectedTask);
     on<DisplayTaskTurnpointEvent>(_displayTaskTurnpoint);
+    on<DisplayLocalForecastEvent>(_displayLocalForecast);
   }
 
   void _processInitialRaspRegionEvent(
@@ -375,6 +377,42 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     } else {
       emit(RaspDataLoadErrorState(
           "Oops. Turnpoint not found based on TaskTurnpoint"));
+    }
+  }
+
+  void _displayLocalForecast(
+      DisplayLocalForecastEvent event, Emitter<RaspDataState> emit) async {
+    String latLngForecastParms;
+    switch (_selectedForecast!.forecastCategory) {
+      case ForecastCategory.WAVE:
+        latLngForecastParms =
+            "press1000 press1000wspd press1000wdir press950 press950wspd press950wdir press850 press850wspd press850wdir" +
+                " press700 press700wspd press700wdir press500 press500wspd press500wdir";
+        break;
+      default:
+        latLngForecastParms =
+            "wstar bsratio zsfclcldif zsfclcl zblcldif zblcl  sfcwind0spd sfcwind0dir sfcwindspd sfcwinddir blwindspd blwinddir bltopwindspd bltopwinddir";
+    }
+    try {
+      final httpResponse = await repository.getLatLngForecast(
+          _region!.name!,
+          _selectedForecastDate!,
+          _selectedModelname!,
+          _imageSets[_selectedForecastTimeIndex].localTime,
+          event.latLng.latitude.toString(),
+          event.latLng.longitude.toString(),
+          latLngForecastParms);
+      if (httpResponse.response.statusCode! >= 200 &&
+          httpResponse.response.statusCode! < 300) {
+        print('LatLngForecast text ${httpResponse.response.data.toString()}');
+        emit(LatLngForecastState(LatLngForecast(
+            latLng: event.latLng,
+            forecastText: httpResponse.response.data.toString())));
+      }
+    } catch (e) {
+      emit(RaspDataLoadErrorState(
+          "Oops. An error occurred getting the location forecast"));
+      print(e.toString());
     }
   }
 }

@@ -14,6 +14,7 @@ import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart'
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/ImageCacheManager.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoints_downloader.dart';
+import 'package:retrofit/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -38,6 +39,7 @@ class Repository {
       _context = context;
       // _dio.interceptors.add(LogInterceptor(responseBody: true));
       _dio.options.receiveTimeout = 300000;
+      _dio.options.followRedirects = true;
       _raspClient = new RaspClient(_dio);
     }
     return _repository!;
@@ -93,6 +95,25 @@ class Repository {
     }
   }
 
+  /**
+   * Get point forecast for specific lat/long
+   *
+   * @param region       - e.g. NewEngland
+   * @param date    - eg 2022-04-17
+   * @param model        - e.g. GFS
+   * @param time   - eg 1200
+   * @param lat
+   * @param lon
+   * @param forecastType - a space separated list of forecast types
+   * @return
+   */
+  Future<HttpResponse> getLatLngForecast(String region, String date,
+      String model, String time, String lat, String lon, String forecastType) {
+    final String contentType = "application/x-www-form-urlencoded";
+    return _raspClient.getLatLongPointForecast(
+        contentType, region, date, model, time, lat, lon, forecastType);
+  }
+
   dispose() {
     // TODO what do I need to do here?
   }
@@ -125,6 +146,7 @@ class Repository {
     return Future<Image>.value(image);
   }
 
+  //--------  Floor -----------------------------------------------------------------------
   // Set up Floor database
   Future<AppDatabase> makeDatabaseAvailable() async {
     if (_appDatabase == null) {

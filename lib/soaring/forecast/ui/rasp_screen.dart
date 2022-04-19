@@ -12,6 +12,7 @@ import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
 import 'package:flutter_soaring_forecast/soaring/app/custom_styles.dart';
 import 'package:flutter_soaring_forecast/soaring/app/main.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_data_state.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/LatLngForecast.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/rasp_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image_set.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/ui/display_ticker.dart';
@@ -65,7 +66,7 @@ class _RaspScreenState extends State<RaspScreen>
   AnimationController? _mapOpacityController;
 
   List<Polyline> _taskTurnpointCourse = <Polyline>[];
-  List<Marker> _taskTurnpointMarkers = <Marker>[];
+  List<Marker> _mapMarkers = <Marker>[];
 
   //Default values - NewEngland lat/lng of course!
   final LatLng _center = LatLng(43.1394043, -72.0759888);
@@ -145,7 +146,7 @@ class _RaspScreenState extends State<RaspScreen>
             forecastWindow(),
             emptyWidgetForForecastImages(),
             widgetForSnackBarMessages(),
-            displayTaskLineAndMarkers(),
+            displayMarkersAndLines(),
           ]),
         )
         // }),
@@ -376,6 +377,8 @@ class _RaspScreenState extends State<RaspScreen>
           bounds: _mapLatLngBounds,
           boundsOptions: FitBoundsOptions(padding: EdgeInsets.all(8.0)),
           allowPanning: true,
+          onTap: (tapPosition, latlng) => print(latlng.toString()),
+          onLongPress: (longPressPostion, latLng) => _getLocalForecast(latLng),
         ),
         layers: [
           TileLayerOptions(
@@ -394,7 +397,7 @@ class _RaspScreenState extends State<RaspScreen>
             polylines: _taskTurnpointCourse,
           ),
           MarkerLayerOptions(
-            markers: _taskTurnpointMarkers,
+            markers: _mapMarkers,
           )
         ]);
   }
@@ -456,11 +459,13 @@ class _RaspScreenState extends State<RaspScreen>
     });
   }
 
-  // Sole purpose of this widget is to handle the forecast overlay
-  Widget displayTaskLineAndMarkers() {
+  // Create any markers and task lines
+  Widget displayMarkersAndLines() {
     return BlocBuilder<RaspDataBloc, RaspDataState>(
         buildWhen: (previous, current) {
-      return current is RaspInitialState || current is RaspTaskTurnpoints;
+      return current is RaspInitialState ||
+          current is RaspTaskTurnpoints ||
+          current is LatLngForecastState;
     }, builder: (context, state) {
       if (state is RaspTaskTurnpoints) {
         List<TaskTurnpoint> taskTurnpoints = state.taskTurnpoints;
@@ -472,11 +477,11 @@ class _RaspScreenState extends State<RaspScreen>
           var turnpointLatLng =
               LatLng(taskTurnpoint.latitudeDeg, taskTurnpoint.longitudeDeg);
           points.add(turnpointLatLng);
-          _taskTurnpointMarkers.add(Marker(
+          _mapMarkers.add(Marker(
               width: 80.0,
               height: 40.0,
               point: turnpointLatLng,
-              builder: (context) => getTaskTurnpointMarker(taskTurnpoint),
+              builder: (context) => _getTaskTurnpointMarker(taskTurnpoint),
               anchorPos: AnchorPos.align(AnchorAlign.top)));
           updateMapLatLngCorner(turnpointLatLng);
         }
@@ -488,15 +493,26 @@ class _RaspScreenState extends State<RaspScreen>
         LatLng southwest = new LatLng(swLat, swLong);
         LatLng northeast = new LatLng(neLat, neLong);
         //_mapLatLngBounds = LatLngBounds(southwest, northeast);
+
       }
+      if (state is LatLngForecastState) {
+        final latLngForecast = state.latLngForecast;
+        _mapMarkers.add(Marker(
+            width: 160.0,
+            height: 160.0,
+            point: latLngForecast.latLng,
+            builder: (context) => _getLatLngForecastMarker(latLngForecast),
+            anchorPos: AnchorPos.align(AnchorAlign.top)));
+      }
+      _forecastOverlayController.sink.add(null);
       return SizedBox.shrink();
     });
   }
 
-  Widget getTaskTurnpointMarker(TaskTurnpoint taskTurnpoint) {
+  Widget _getTaskTurnpointMarker(TaskTurnpoint taskTurnpoint) {
     return InkWell(
       onTap: () {
-        getTurnpoint(taskTurnpoint);
+        _sendEvent(DisplayTaskTurnpointEvent(taskTurnpoint));
       },
       child: Container(
           color: Colors.white,
@@ -525,9 +541,35 @@ class _RaspScreenState extends State<RaspScreen>
     );
   }
 
+  Widget _getLatLngForecastMarker(LatLngForecast latLngForecast) {
+    return InkWell(
+      onTap: () {
+        print("add logic to remove forecast");
+      },
+      child: Container(
+          color: Colors.white,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                flex: 2,
+                child: Text(latLngForecast.getForecastText(),
+                    textAlign: TextAlign.center),
+              ),
+              Expanded(
+                flex: 1,
+                child:
+                    Icon(Icons.arrow_drop_down_outlined, color: Colors.white),
+              )
+            ],
+          )),
+    );
+  }
+
   void clearTaskFromMap() {
     _taskTurnpointCourse.clear();
-    _taskTurnpointMarkers.clear();
+    _mapMarkers.clear();
     southwest = null;
   }
 
@@ -764,11 +806,6 @@ class _RaspScreenState extends State<RaspScreen>
     }
   }
 
-  void getTurnpoint(TaskTurnpoint taskTurnpoint) {
-    BlocProvider.of<RaspDataBloc>(context)
-        .add(DisplayTaskTurnpointEvent(taskTurnpoint));
-  }
-
   void displayTurnpointView(
       BuildContext context, TurnpointFoundState state) async {
     final result = await Navigator.pushNamed(
@@ -776,5 +813,15 @@ class _RaspScreenState extends State<RaspScreen>
       TurnpointView.routeName,
       arguments: state.turnpoint,
     );
+  }
+
+  void _sendEvent(RaspDataEvent event) {
+    BlocProvider.of<RaspDataBloc>(context).add(event);
+  }
+
+  _getLocalForecast(LatLng latLng) {
+    _startImageAnimation = false;
+    _startStopImageAnimation();
+    _sendEvent(DisplayLocalForecastEvent(latLng));
   }
 }

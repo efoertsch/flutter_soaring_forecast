@@ -3,8 +3,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/taskturnpoint/task_turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/LatLngForecast.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image_set.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
+
+import '../forecast_data/LatLngForecast.dart';
 
 /// https://medium.com/flutter-community/flutter-bloc-pattern-for-dummies-like-me-c22d40f05a56
 /// Event In - State Out
@@ -128,4 +131,11 @@ class TurnpointFoundState extends RaspDataState {
   TurnpointFoundState(this.turnpoint);
   @override
   List<Object?> get props => [turnpoint];
+}
+
+class LatLngForecastState extends RaspDataState {
+  final LatLngForecast latLngForecast;
+  LatLngForecastState(this.latLngForecast);
+  @override
+  List<Object?> get props => [latLngForecast];
 }
