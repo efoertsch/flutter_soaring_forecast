@@ -492,6 +492,9 @@ class _RaspScreenState extends State<RaspScreen>
         ));
         LatLng southwest = new LatLng(swLat, swLong);
         LatLng northeast = new LatLng(neLat, neLong);
+        _mapController.fitBounds(LatLngBounds(southwest, northeast),
+            options: FitBoundsOptions(
+                padding: EdgeInsets.only(left: 15.0, right: 15.0)));
         //_mapLatLngBounds = LatLngBounds(southwest, northeast);
 
       }
