@@ -50,6 +50,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     on<MapReadyEvent>(_checkForPreviouslySelectedTask);
     on<DisplayTaskTurnpointEvent>(_displayTaskTurnpoint);
     on<DisplayLocalForecastEvent>(_displayLocalForecast);
+    on<RemoveLocalForecastEvent>(_removeLatLngForecast);
   }
 
   void _processInitialRaspRegionEvent(
@@ -405,7 +406,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
       if (httpResponse.response.statusCode! >= 200 &&
           httpResponse.response.statusCode! < 300) {
         print('LatLngForecast text ${httpResponse.response.data.toString()}');
-        emit(LatLngForecastState(LatLngForecast(
+        emit(LocalForecastState(LatLngForecast(
             latLng: event.latLng,
             forecastText: httpResponse.response.data.toString())));
       }
@@ -414,5 +415,10 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
           "Oops. An error occurred getting the location forecast"));
       print(e.toString());
     }
+  }
+
+  void _removeLatLngForecast(
+      RemoveLocalForecastEvent event, Emitter<RaspDataState> emit) {
+    emit(RemoveLocalForecastState());
   }
 }

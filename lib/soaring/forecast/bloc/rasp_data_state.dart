@@ -133,9 +133,15 @@ class TurnpointFoundState extends RaspDataState {
   List<Object?> get props => [turnpoint];
 }
 
-class LatLngForecastState extends RaspDataState {
+class LocalForecastState extends RaspDataState {
   final LatLngForecast latLngForecast;
-  LatLngForecastState(this.latLngForecast);
+  LocalForecastState(this.latLngForecast);
   @override
   List<Object?> get props => [latLngForecast];
+}
+
+class RemoveLocalForecastState extends RaspDataState {
+  RemoveLocalForecastState();
+  @override
+  List<Object?> get props => [];
 }
