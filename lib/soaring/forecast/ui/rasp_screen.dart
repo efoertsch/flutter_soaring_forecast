@@ -67,6 +67,7 @@ class _RaspScreenState extends State<RaspScreen>
 
   List<Polyline> _taskTurnpointCourse = <Polyline>[];
   List<Marker> _mapMarkers = <Marker>[];
+  Marker? _latLngMarker;
 
   //Default values - NewEngland lat/lng of course!
   final LatLng _center = LatLng(43.1394043, -72.0759888);
@@ -144,9 +145,9 @@ class _RaspScreenState extends State<RaspScreen>
             getForecastTypes(context),
             displayForecastTime(context),
             forecastWindow(),
-            emptyWidgetForForecastImages(),
+            //emptyWidgetForForecastImages(),
             widgetForSnackBarMessages(),
-            displayMarkersAndLines(),
+            //displayMarkersAndLines(),
           ]),
         )
         // }),
@@ -370,38 +371,6 @@ class _RaspScreenState extends State<RaspScreen>
     );
   }
 
-  Widget forecastMap() {
-    return FlutterMap(
-        mapController: _mapController,
-        options: MapOptions(
-          bounds: _mapLatLngBounds,
-          boundsOptions: FitBoundsOptions(padding: EdgeInsets.all(8.0)),
-          allowPanning: true,
-          onTap: (tapPosition, latlng) => print(latlng.toString()),
-          onLongPress: (longPressPostion, latLng) => _getLocalForecast(latLng),
-        ),
-        layers: [
-          TileLayerOptions(
-            urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-            subdomains: ['a', 'b', 'c'],
-            attributionBuilder: (_) {
-              return Text("© OpenStreetMap contributors");
-            },
-          ),
-          OverlayImageLayerOptions(
-            key: null,
-            overlayImages: _overlayImages,
-            rebuild: _forecastOverlayController.stream,
-          ),
-          PolylineLayerOptions(
-            polylines: _taskTurnpointCourse,
-          ),
-          MarkerLayerOptions(
-            markers: _mapMarkers,
-          )
-        ]);
-  }
-
   Widget forecastLegend() {
     return BlocBuilder<RaspDataBloc, RaspDataState>(
         buildWhen: (previous, current) {
@@ -419,11 +388,14 @@ class _RaspScreenState extends State<RaspScreen>
     });
   }
 
-  // Sole purpose of this widget is to handle the forecast overlay
-  Widget emptyWidgetForForecastImages() {
+  Widget forecastMap() {
     return BlocBuilder<RaspDataBloc, RaspDataState>(
         buildWhen: (previous, current) {
-      return current is RaspInitialState || current is RaspForecastImageSet;
+      return current is RaspInitialState ||
+          current is RaspForecastImageSet ||
+          current is RaspTaskTurnpoints ||
+          current is LocalForecastState ||
+          current is RemoveLocalForecastState;
     }, builder: (context, state) {
       print('creating/updating ForecastImages');
       if (state is RaspForecastImageSet) {
@@ -432,41 +404,6 @@ class _RaspScreenState extends State<RaspScreen>
         soaringForecastImageSet = state.soaringForecastImageSet;
         updateForecastOverlay();
       }
-      return SizedBox.shrink();
-    });
-  }
-
-  Widget widgetForSnackBarMessages() {
-    return BlocConsumer<RaspDataBloc, RaspDataState>(
-        listener: (context, state) {
-      if (state is RaspDataLoadErrorState) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: Colors.green,
-            content: Text(state.error),
-          ),
-        );
-      }
-      if (state is TurnpointFoundState) {
-        displayTurnpointView(context, state);
-      }
-    }, builder: (context, state) {
-      if (state is RaspDataLoadErrorState) {
-        return SizedBox.shrink();
-      } else {
-        return SizedBox.shrink();
-      }
-    });
-  }
-
-  // Create any markers and task lines
-  Widget displayMarkersAndLines() {
-    return BlocBuilder<RaspDataBloc, RaspDataState>(
-        buildWhen: (previous, current) {
-      return current is RaspInitialState ||
-          current is RaspTaskTurnpoints ||
-          current is LatLngForecastState;
-    }, builder: (context, state) {
       if (state is RaspTaskTurnpoints) {
         List<TaskTurnpoint> taskTurnpoints = state.taskTurnpoints;
         print('number of task turnpoints ${taskTurnpoints.length.toString()} ');
@@ -498,19 +435,150 @@ class _RaspScreenState extends State<RaspScreen>
         //_mapLatLngBounds = LatLngBounds(southwest, northeast);
 
       }
-      if (state is LatLngForecastState) {
+      if (state is LocalForecastState) {
         final latLngForecast = state.latLngForecast;
-        _mapMarkers.add(Marker(
-            width: 160.0,
-            height: 160.0,
-            point: latLngForecast.latLng,
-            builder: (context) => _getLatLngForecastMarker(latLngForecast),
-            anchorPos: AnchorPos.align(AnchorAlign.top)));
+        _latLngMarker = Marker(
+          width: 160.0,
+          height: 160.0,
+          point: latLngForecast.latLng,
+          builder: (context) => _getLatLngForecastMarker(latLngForecast),
+          anchorPos: AnchorPos.align(AnchorAlign.top),
+        );
+        _mapMarkers.add(_latLngMarker!);
       }
-      _forecastOverlayController.sink.add(null);
-      return SizedBox.shrink();
+
+      if (state is RemoveLocalForecastState) {
+        if (_latLngMarker != null) {
+          _mapMarkers.remove(_latLngMarker);
+          _latLngMarker = null;
+        }
+      }
+
+      return FlutterMap(
+          mapController: _mapController,
+          options: MapOptions(
+            bounds: _mapLatLngBounds,
+            boundsOptions: FitBoundsOptions(padding: EdgeInsets.all(8.0)),
+            allowPanning: true,
+            onTap: (tapPosition, latlng) => print(latlng.toString()),
+            onLongPress: (longPressPostion, latLng) =>
+                _getLocalForecast(latLng),
+          ),
+          layers: [
+            TileLayerOptions(
+              urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+              subdomains: ['a', 'b', 'c'],
+              attributionBuilder: (_) {
+                return Text("© OpenStreetMap contributors");
+              },
+            ),
+            OverlayImageLayerOptions(
+              key: null,
+              overlayImages: _overlayImages,
+              rebuild: _forecastOverlayController.stream,
+            ),
+            PolylineLayerOptions(
+              polylines: _taskTurnpointCourse,
+            ),
+            MarkerLayerOptions(
+              markers: _mapMarkers,
+            )
+          ]);
     });
   }
+
+  // Sole purpose of this widget is to handle the forecast overlay
+  // Widget emptyWidgetForForecastImages() {
+  //   return BlocBuilder<RaspDataBloc, RaspDataState>(
+  //       buildWhen: (previous, current) {
+  //     return current is RaspInitialState || current is RaspForecastImageSet;
+  //   }, builder: (context, state) {
+  //     print('creating/updating ForecastImages');
+  //     if (state is RaspForecastImageSet) {
+  //       _currentImageIndex = state.displayIndex;
+  //       _lastImageIndex = state.numberImages - 1;
+  //       soaringForecastImageSet = state.soaringForecastImageSet;
+  //       updateForecastOverlay();
+  //     }
+  //     return SizedBox.shrink();
+  //   });
+  // }
+
+  Widget widgetForSnackBarMessages() {
+    return BlocConsumer<RaspDataBloc, RaspDataState>(
+        listener: (context, state) {
+      if (state is RaspDataLoadErrorState) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.green,
+            content: Text(state.error),
+          ),
+        );
+      }
+      if (state is TurnpointFoundState) {
+        displayTurnpointView(context, state);
+      }
+    }, builder: (context, state) {
+      if (state is RaspDataLoadErrorState) {
+        return SizedBox.shrink();
+      } else {
+        return SizedBox.shrink();
+      }
+    });
+  }
+
+  // Create any markers and task lines
+  // Widget displayMarkersAndLines() {
+  //   return BlocBuilder<RaspDataBloc, RaspDataState>(
+  //       buildWhen: (previous, current) {
+  //     return current is RaspInitialState ||
+  //         current is RaspTaskTurnpoints ||
+  //         current is LatLngForecastState;
+  //   }, builder: (context, state) {
+  //     if (state is RaspTaskTurnpoints) {
+  //       List<TaskTurnpoint> taskTurnpoints = state.taskTurnpoints;
+  //       print('number of task turnpoints ${taskTurnpoints.length.toString()} ');
+  //       clearTaskFromMap();
+  //       List<LatLng> points = <LatLng>[];
+  //       for (var taskTurnpoint in taskTurnpoints) {
+  //         print('adding taskturnpoint: ${taskTurnpoint.title}');
+  //         var turnpointLatLng =
+  //             LatLng(taskTurnpoint.latitudeDeg, taskTurnpoint.longitudeDeg);
+  //         points.add(turnpointLatLng);
+  //         _mapMarkers.add(Marker(
+  //             width: 80.0,
+  //             height: 40.0,
+  //             point: turnpointLatLng,
+  //             builder: (context) => _getTaskTurnpointMarker(taskTurnpoint),
+  //             anchorPos: AnchorPos.align(AnchorAlign.top)));
+  //         updateMapLatLngCorner(turnpointLatLng);
+  //       }
+  //       _taskTurnpointCourse.add(Polyline(
+  //         points: points,
+  //         strokeWidth: 2.0,
+  //         color: Colors.red,
+  //       ));
+  //       LatLng southwest = new LatLng(swLat, swLong);
+  //       LatLng northeast = new LatLng(neLat, neLong);
+  //       _mapController.fitBounds(LatLngBounds(southwest, northeast),
+  //           options: FitBoundsOptions(
+  //               padding: EdgeInsets.only(left: 15.0, right: 15.0)));
+  //       //_mapLatLngBounds = LatLngBounds(southwest, northeast);
+  //
+  //     }
+  //     if (state is LatLngForecastState) {
+  //       final latLngForecast = state.latLngForecast;
+  //       _mapMarkers.add(Marker(
+  //           width: 160.0,
+  //           height: 160.0,
+  //           point: latLngForecast.latLng,
+  //           builder: (context) => _getLatLngForecastMarker(latLngForecast),
+  //           anchorPos: AnchorPos.align(AnchorAlign.top)));
+  //     }
+  //     _forecastOverlayController.sink.add(null);
+  //     return SizedBox.shrink();
+  //   });
+  // }
 
   Widget _getTaskTurnpointMarker(TaskTurnpoint taskTurnpoint) {
     return InkWell(
@@ -545,28 +613,27 @@ class _RaspScreenState extends State<RaspScreen>
   }
 
   Widget _getLatLngForecastMarker(LatLngForecast latLngForecast) {
-    return InkWell(
-      onTap: () {
-        print("add logic to remove forecast");
-      },
-      child: Container(
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
           color: Colors.white,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(
-                flex: 2,
-                child: Text(latLngForecast.getForecastText(),
-                    textAlign: TextAlign.center),
-              ),
-              Expanded(
-                flex: 1,
-                child:
-                    Icon(Icons.arrow_drop_down_outlined, color: Colors.white),
-              )
-            ],
-          )),
+          constraints: BoxConstraints(maxHeight: 200),
+          child: TextFormField(
+              readOnly: true,
+              initialValue: latLngForecast.getForecastText(),
+              textAlign: TextAlign.center,
+              style: TextStyle(backgroundColor: Colors.white),
+              maxLines: 5,
+              minLines: 5,
+              onTap: () {
+                _sendEvent(RemoveLocalForecastEvent());
+              }),
+        ),
+        Icon(Icons.arrow_drop_down, color: Colors.white),
+      ],
     );
   }
 

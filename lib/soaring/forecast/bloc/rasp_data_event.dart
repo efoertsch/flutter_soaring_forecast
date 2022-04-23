@@ -93,3 +93,9 @@ class DisplayLocalForecastEvent extends RaspDataEvent {
   @override
   List<Object?> get props => [latLng];
 }
+
+class RemoveLocalForecastEvent extends RaspDataEvent {
+  RemoveLocalForecastEvent();
+  @override
+  List<Object?> get props => [];
+}
