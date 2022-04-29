@@ -28,12 +28,13 @@ class AppDrawer {
           ListTile(
               title: Text('Turnpoints'),
               onTap: () {
-                Navigator.pushNamed(context, TurnpointSearchInAppBar.routeName);
+                Navigator.popAndPushNamed(
+                    context, TurnpointSearchInAppBar.routeName);
               }),
           ListTile(
             title: Text('Task List'),
             onTap: () {
-              Navigator.pushNamed(context, TaskList.routeName);
+              Navigator.popAndPushNamed(context, TaskList.routeName);
             },
           ),
           ListTile(
@@ -45,12 +46,14 @@ class AppDrawer {
           ListTile(
             title: Text('SkySight'),
             onTap: () {
+              Navigator.pop(context);
               _launchWebBrowser("https://skysight.io/");
             },
           ),
           ListTile(
             title: Text('Dr Jacks'),
             onTap: () {
+              Navigator.pop(context);
               _launchWebBrowser("http://www.drjack.info/BLIP/univiewer.html");
             },
           ),

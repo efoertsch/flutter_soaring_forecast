@@ -97,7 +97,48 @@ class CommonWidgets {
     return buttonWidgets;
   }
 
-  static SnackBar getSnackBarForMessage(String msg){
+  static showTwoButtonAlertDialog(BuildContext context, String alertMsg,
+      {String title = "AlertDialog",
+      String cancelButtonText = "Cancel",
+      String continueButtonText = "OK",
+      final Function? cancelButtonFunction,
+      final Function? continueButtonFunction}) {
+    // set up the buttons
+    Widget cancelButton = TextButton(
+        child: Text(cancelButtonText),
+        onPressed: () {
+          if (cancelButtonFunction != null) {
+            cancelButtonFunction();
+          }
+        });
+    Widget continueButton = TextButton(
+        child: Text(continueButtonText),
+        onPressed: () {
+          if (continueButtonFunction != null) {
+            continueButtonFunction();
+          }
+        });
+
+    // set up the AlertDialog
+    AlertDialog alert = AlertDialog(
+      title: Text(title),
+      content: Text(alertMsg),
+      actions: [
+        cancelButton,
+        continueButton,
+      ],
+    );
+
+    // show the dialog
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return alert;
+      },
+    );
+  }
+
+  static SnackBar getSnackBarForMessage(String msg) {
     return SnackBar(content: Text(msg));
   }
 }

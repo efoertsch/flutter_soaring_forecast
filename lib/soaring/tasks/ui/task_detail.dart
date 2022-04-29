@@ -230,7 +230,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
                       icon: Icon(Icons.location_searching),
                       color: Colors.blue,
                       onPressed: () {
-                        displayTaskTurnpoint(context, taskTurnpoint);
+                        _displayTaskTurnpoint(context, taskTurnpoint);
                       }),
                 ),
                 Expanded(
@@ -320,7 +320,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
     return Spacer();
   }
 
-  void displayTaskTurnpoint(BuildContext context, TaskTurnpoint taskTurnpoint) {
+  void _displayTaskTurnpoint(
+      BuildContext context, TaskTurnpoint taskTurnpoint) {
     BlocProvider.of<TaskBloc>(context)
         .add(DisplayTaskTurnpointEvent(taskTurnpoint));
   }

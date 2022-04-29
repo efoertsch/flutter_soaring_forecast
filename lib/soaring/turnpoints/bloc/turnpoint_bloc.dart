@@ -1,17 +1,24 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/options/turnpoint_regions.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/bloc/turnpoint_event.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/bloc/turnpoint_state.dart';
 
 class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
   final Repository repository;
+  final List<TurnpointFile> turnpointFiles = [];
 
   //TurnpointState get initialState => TurnpointsLoadingState();
 
-  TurnpointBloc({required this.repository}) : super(TurnpointsLoadingState()) {
+  TurnpointBloc({required this.repository}) : super(TurnpointsInitialState()) {
     on<TurnpointListEvent>(_showAllTurnpoints);
     on<SearchTurnpointsEvent>(_searchTurnpointsEvent);
+    on<GetTurnpointFileNamesEvent>(_getListOfTurnpointExchangeFiles);
+    on<LoadTurnpointFileEvent>(_loadTurnpointFileFromTurnpointExchange);
+    on<DeleteAllTurnpointsEvent>(_deleteAllTurnpoints);
   }
 
   void _searchTurnpointsEvent(
@@ -23,7 +30,7 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
     emit(SearchingTurnpointsState());
     try {
       var turnpoints = await repository.findTurnpoints(event.searchString);
-      emit(TurnpointsFoundState(turnpoints));
+      emit(TurnpointsLoadedState(turnpoints));
     } catch (e) {
       emit(TurnpointSearchErrorState(e.toString()));
     }
@@ -31,29 +38,66 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
 
   void _showAllTurnpoints(
       TurnpointListEvent event, Emitter<TurnpointState> emit) async {
-    emit(TurnpointsLoadingState());
+    await _loadAllTurnpoints(emit);
+  }
+
+  FutureOr<void> _loadAllTurnpoints(Emitter<TurnpointState> emit) async {
+    emit(TurnpointsInitialState());
     List<Turnpoint> turnpoints = [];
     try {
-      var turnpointCount = await repository.getCountOfTurnpoints();
-      if (turnpointCount == 0) {
-        // TODO return state to see if want to import turnpoints
-        turnpoints = await _addSterlingTurnpoints();
-      } else {
-        turnpoints.addAll(await repository.getAllTurnpoints());
-      }
+      turnpoints.addAll(await repository.getAllTurnpoints());
       emit(TurnpointsLoadedState(turnpoints));
     } catch (e) {
       emit(TurnpointErrorState(e.toString()));
     }
   }
 
-  Future<List<Turnpoint>> _addSterlingTurnpoints() async {
-    return _getTurnpointsFromTurnpointExchange(
-        'Sterling/Sterling, Massachusetts 2021 SeeYou.cup.txt');
+  void _getListOfTurnpointExchangeFiles(
+      GetTurnpointFileNamesEvent event, Emitter<TurnpointState> emit) async {
+    await _loadTurnpointFileNames(emit);
+  }
+
+  Future<void> _loadTurnpointFileNames(Emitter<TurnpointState> emit) async {
+    try {
+      turnpointFiles.clear();
+      turnpointFiles
+          .addAll(await repository.getListOfTurnpointExchangeRegionFiles());
+      emit(TurnpointFilesFoundState(turnpointFiles));
+    } catch (e) {
+      print(e.toString());
+      emit(TurnpointErrorState(e.toString()));
+    }
   }
 
   Future<List<Turnpoint>> _getTurnpointsFromTurnpointExchange(
-      String filename) async {
-    return await repository.downloadTurnpointsFromTurnpointExchange(filename);
+      TurnpointFile turnpointfile) async {
+    return await repository.downloadTurnpointsFromTurnpointExchange(
+        turnpointfile.location + "/" + turnpointfile.filename);
+  }
+
+  void _loadTurnpointFileFromTurnpointExchange(
+      LoadTurnpointFileEvent event, Emitter<TurnpointState> emit) async {
+    emit(TurnpointsInitialState());
+    try {
+      List<Turnpoint> turnpoints =
+          await _getTurnpointsFromTurnpointExchange(event.turnpointFile);
+      emit(
+          TurnpointShortMessageState("${turnpoints.length} turnpoints loaded"));
+      emit(TurnpointFilesFoundState(turnpointFiles));
+    } catch (e) {
+      print(e.toString());
+      emit(TurnpointErrorState(e.toString()));
+    }
+  }
+
+  void _deleteAllTurnpoints(
+      DeleteAllTurnpointsEvent event, Emitter<TurnpointState> emit) async {
+    try {
+      await repository.deleteAllTurnpoints();
+      await _loadAllTurnpoints(emit);
+    } catch (e) {
+      print(e.toString());
+      emit(TurnpointErrorState(e.toString()));
+    }
   }
 }

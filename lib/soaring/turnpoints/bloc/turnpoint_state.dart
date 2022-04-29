@@ -1,11 +1,12 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/options/turnpoint_regions.dart';
 
 @immutable
 abstract class TurnpointState extends Equatable {}
 
-class TurnpointsLoadingState extends TurnpointState {
+class TurnpointsInitialState extends TurnpointState {
   @override
   List<Object?> get props => [];
 }
@@ -57,9 +58,18 @@ class TurnpointSearchMessage extends TurnpointState {
   List<Object?> get props => [msg];
 }
 
-class TurnpointsFoundState extends TurnpointState {
-  final List<Turnpoint> turnpoints;
-  TurnpointsFoundState(this.turnpoints);
+// For turnpoint file download/import
+class TurnpointFileLoadingState extends TurnpointState {
+  TurnpointFileLoadingState();
   @override
-  List<Object?> get props => [turnpoints];
+  List<Object?> get props => [];
+}
+
+//----------------------------------------------------------------
+// For loading turnpoint file names
+class TurnpointFilesFoundState extends TurnpointState {
+  final List<TurnpointFile> turnpointFiles;
+  TurnpointFilesFoundState(this.turnpointFiles);
+  @override
+  List<Object?> get props => [turnpointFiles];
 }

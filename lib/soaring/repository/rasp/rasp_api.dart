@@ -21,26 +21,16 @@ abstract class RaspClient {
   Future<ForecastModels> getForecastModels(
       @Path("region") String region, @Path("date") String date);
 
-//  /*
-//   * @param region - NewEngland
-//   * @param yyyymmddDate - 2018-03-31
-//   * @param forecastType - gfs
-//   * @param forecastParameter - wstar_bsratio
-//   * @param forecastTime - 1500
-//   * @param bitmapType - body
-//   * @return something like NewEngland/2018-03-31/gfs/wstar_bsratio.1500local.d2.body.png
-//   */
-//  @GET(
-//      "/{region}/{date}/{forecastType}/{forecastParameter}.{forecastTime}local.d2.{bitmapType}.png")
-//  Future<Stream> getForecastOverlays(
-//      @Path("region") String region,
-//      @Path("date") String date,
-//      @Path("forecastType") String forecastType,
-//      @Path("forecastParameter") String forecastParameter,
-//      @Path("forecastTime") String forecastTime,
-//      @Path("bitmapType") String bitmapType);
-
-  // Got error when puting Content-type in @Headers annotation
+  /*
+  * @param region - NewEngland
+  * @param yyyymmddDate - 2018-03-31
+  * @param forecastType - gfs
+  * @param forecastParameter - wstar_bsratio
+  * @param forecastTime - 1500
+  * @param bitmapType - body
+  * @return something like NewEngland/2018-03-31/gfs/wstar_bsratio.1500local.d2.body.png
+  */
+  // Got error when putting Content-type in @Headers annotation
   @POST("/cgi/get_rasp_blipspot.cgi")
   Future<HttpResponse> getLatLongPointForecast(
       @Header("Content-Type") String contentType,

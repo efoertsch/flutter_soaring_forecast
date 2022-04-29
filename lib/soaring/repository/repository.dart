@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
+import 'package:dio_logging_interceptor/dio_logging_interceptor.dart';
 import 'package:floor/floor.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
@@ -13,6 +15,8 @@ import 'package:flutter_soaring_forecast/soaring/floor/taskturnpoint/task_turnpo
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/ImageCacheManager.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/options/rasp_options_api.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/options/turnpoint_regions.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoints_downloader.dart';
 import 'package:retrofit/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -28,6 +32,7 @@ class Repository {
   static Dio _dio = Dio();
   static late BuildContext? _context;
   static late RaspClient _raspClient;
+  static late RaspOptionsClient _raspOptionsClient;
   static AppDatabase? _appDatabase;
 
   Repository._();
@@ -40,7 +45,14 @@ class Repository {
       // _dio.interceptors.add(LogInterceptor(responseBody: true));
       _dio.options.receiveTimeout = 300000;
       _dio.options.followRedirects = true;
-      _raspClient = new RaspClient(_dio);
+      _dio.interceptors.add(
+        DioLoggingInterceptor(
+          level: Level.body,
+          compact: false,
+        ),
+      );
+      _raspClient = RaspClient(_dio);
+      _raspOptionsClient = RaspOptionsClient(_dio);
     }
     return _repository!;
   }
@@ -211,6 +223,23 @@ class Repository {
     return _appDatabase!.turnpointDao.findTurnpoints('%' + query + '%');
   }
 
+  //------  Selected turnpoint files available from turnpoint exchange ------
+  Future<List<TurnpointFile>> getListOfTurnpointExchangeRegionFiles() async {
+    List<TurnpointRegion> turnpointRegionList = [];
+    var stringJson = await _raspOptionsClient.getTurnpointRegions();
+    TurnpointRegions turnpointRegions =
+        TurnpointRegions.fromJson(jsonDecode(stringJson));
+    if (turnpointRegions != null) {
+      turnpointRegionList.addAll(turnpointRegions.turnpointRegions!);
+    }
+    String selectedRegion =
+        await getGenericString("SOARING_FORECAST_REGION", "NewEngland");
+    return turnpointRegionList
+        .firstWhere((region) => region.region == selectedRegion)
+        .turnpointFiles;
+  }
+
+  // eg from https://soaringweb.org/TP/Sterling/Sterling,%20Massachusetts%202021%20SeeYou.cup
   Future<List<Turnpoint>> downloadTurnpointsFromTurnpointExchange(
       String endUrl) async {
     List<Turnpoint> turnpoints = [];
@@ -224,8 +253,6 @@ class Repository {
     await makeDatabaseAvailable();
     return _appDatabase!.turnpointDao.getTurnpoint(title, code);
   }
-
-  //------  Selected turnpoint files available from turnpoint exchange ------
 
   // ----- Task ----------------------------------------
 
