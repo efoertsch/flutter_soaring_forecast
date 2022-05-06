@@ -59,18 +59,21 @@ class CommonWidgets {
       context: context,
       barrierDismissible: false, // user must tap button!
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(title),
-          content: SingleChildScrollView(
-            child: ListBody(
-              children: <Widget>[Text(msg)],
+        return WillPopScope(
+          onWillPop: () async => false,
+          child: AlertDialog(
+            title: Text(title),
+            content: SingleChildScrollView(
+              child: ListBody(
+                children: <Widget>[Text(msg)],
+              ),
             ),
+            actions: composeDialogButtons(
+                button1Text: button1Text,
+                button1Function: button1Function,
+                button2Text: button2Text,
+                button2Function: button2Function),
           ),
-          actions: composeDialogButtons(
-              button1Text: button1Text,
-              button1Function: button1Function,
-              button2Text: button2Text,
-              button2Function: button2Function),
         );
       },
     );
@@ -132,8 +135,9 @@ class CommonWidgets {
     // show the dialog
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (BuildContext context) {
-        return alert;
+        return WillPopScope(onWillPop: () async => false, child: alert);
       },
     );
   }

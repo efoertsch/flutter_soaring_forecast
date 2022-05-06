@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:dio_logging_interceptor/dio_logging_interceptor.dart';
 import 'package:floor/floor.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     as Constants;
@@ -223,6 +224,32 @@ class Repository {
     return _appDatabase!.turnpointDao.findTurnpoints('%' + query + '%');
   }
 
+  // Download a file to the downloads directory
+  // from https://fluttercorner.com/how-to-download-file-from-url-and-save-in-local-storage-in-flutter/
+  Future<String> downloadFile(String url, String fileName, String dir) async {
+    HttpClient httpClient = new HttpClient();
+    File file;
+    String filePath = '';
+    String myUrl = '';
+
+    try {
+      myUrl = url + '/' + fileName;
+      var request = await httpClient.getUrl(Uri.parse(myUrl));
+      var response = await request.close();
+      if (response.statusCode == 200) {
+        var bytes = await consolidateHttpClientResponseBytes(response);
+        filePath = '$dir/$fileName';
+        file = File(filePath);
+        await file.writeAsBytes(bytes);
+      } else
+        filePath = 'Error code: ' + response.statusCode.toString();
+    } catch (ex) {
+      filePath = 'Can not fetch url';
+    }
+
+    return filePath;
+  }
+
   //------  Selected turnpoint files available from turnpoint exchange ------
   Future<List<TurnpointFile>> getListOfTurnpointExchangeRegionFiles() async {
     List<TurnpointRegion> turnpointRegionList = [];
@@ -255,6 +282,11 @@ class Repository {
   }
 
   // ----- Task ----------------------------------------
+
+  Future<int?> getCountOfTasks() async {
+    await makeDatabaseAvailable();
+    return _appDatabase!.taskDao.getNumberOfTasks();
+  }
 
   Future<List<Task>> getAlltasks() async {
     await makeDatabaseAvailable();
@@ -289,25 +321,24 @@ class Repository {
 
   // ----- Task Turnpoints----------------------------------------
 
-  Future<List<TaskTurnpoint>> getTaskTurnpoints(int taskId) async {
+  Future<List<TaskTurnpoint>> getTaskTurnpoints(final int taskId) async {
     await makeDatabaseAvailable();
     return _appDatabase!.taskTurnpointDao.getTaskTurnpoints(taskId);
   }
 
-  Future<int?> insertTaskTurnpoint(TaskTurnpoint taskTurnpoint) async {
+  Future<int?> insertTaskTurnpoint(final TaskTurnpoint taskTurnpoint) async {
     await makeDatabaseAvailable();
     return _appDatabase!.taskTurnpointDao.insert(taskTurnpoint);
   }
 
-  Future<int?> updateTaskTurnpoint(TaskTurnpoint taskTurnpoint) async {
+  Future<int?> updateTaskTurnpoint(final TaskTurnpoint taskTurnpoint) async {
     await makeDatabaseAvailable();
     return _appDatabase!.taskTurnpointDao.update(taskTurnpoint);
   }
 
-  Future<int?> deleteTaskTurnpointsAbove(int taskId, int index) async {
+  Future<int?> deleteTaskTurnpoint(final int taskTurnpointId) async {
     await makeDatabaseAvailable();
-    return _appDatabase!.taskTurnpointDao
-        .deleteAnyTaskTurnpointsOver(taskId, index);
+    return _appDatabase!.taskTurnpointDao.deleteTaskTurnpoint(taskTurnpointId);
   }
 
   // ----- Shared preferences --------------------------

@@ -1,4 +1,3 @@
-import 'package:cupertino_will_pop_scope/cupertino_will_pop_scope.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/airport_download/airports_downloader.dart';
@@ -11,6 +10,7 @@ import 'package:flutter_soaring_forecast/soaring/tasks/bloc/task_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/tasks/ui/task_detail.dart';
 import 'package:flutter_soaring_forecast/soaring/tasks/ui/task_list.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/bloc/turnpoint_bloc.dart';
+import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/custom_see_you_import.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/see_you_import.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_detail_view.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_search_in_appbar.dart';
@@ -36,40 +36,10 @@ void main() async {
   //         true // If enabled it will post a notification whenever the task is running. Handy for debugging tasks
   //     );
   //Workmanager().registerOneOffTask("1", "airportsDownload");
-  runApp(App());
+  runApp(RepositorySetup());
 }
 
-// from https://github.com/PiN73/cupertino_back_gesture/blob/master/example/lib/main.dart
-class App extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    // wrap widgets tree with [BackGestureWidthTheme]
-    // to apply it to all descendants
-    return MaterialApp(
-      //to get iOS swipe right to return data to prior scree
-      // https://pub.dev/packages/cupertino_will_pop_scope
-      theme: ThemeData(
-        // force iOS behaviour on Android (for testing)
-        // (or toggle platform via Flutter Inspector)
-        // platform: TargetPlatform.iOS,
-
-        // specify page transitions for each platform
-        pageTransitionsTheme: PageTransitionsTheme(
-          builders: {
-            // for Android - default page transition
-            TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
-
-            // for iOS - one which considers ancestor BackGestureWidthTheme
-            TargetPlatform.iOS: CupertinoWillPopScopePageTransionsBuilder(),
-          },
-        ),
-      ),
-      home: MainScreen(),
-    );
-  }
-}
-
-class MainScreen extends StatelessWidget {
+class RepositorySetup extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return RepositoryProvider(
@@ -85,12 +55,31 @@ class SoaringForecastApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+        // theme: ThemeData(
+        //   // force iOS behaviour on Android (for testing)
+        //   // (or toggle platform via Flutter Inspector)
+        //   // platform: TargetPlatform.iOS,
+        //
+        //   // specify page transitions for each platform
+        //   pageTransitionsTheme: PageTransitionsTheme(
+        //     builders: {
+        //       // for Android - default page transition
+        //       TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
+        //
+        //       // for iOS - one which considers ancestor BackGestureWidthTheme
+        //       TargetPlatform.iOS: CupertinoWillPopScopePageTransionsBuilder(),
+        //     },
+        //   ),
+        // ),
         title: Strings.appTitle,
         home: SoaringForecast(),
         initialRoute: SoaringForecast.routeName,
         onGenerateRoute: (settings) {
           if (settings.name == TaskList.routeName) {
-            final option = settings.arguments as String;
+            var option = null;
+            if (settings.arguments != null) {
+              option = settings.arguments as String;
+            }
             return CustomMaterialPageRoute(
               builder: (context) {
                 return TaskList(viewOption: option);
@@ -139,6 +128,15 @@ class SoaringForecastApp extends StatelessWidget {
             return CustomMaterialPageRoute(
               builder: (context) {
                 return TurnpointFileImport();
+              },
+              settings: settings,
+            );
+          }
+
+          if (settings.name == CustomTurnpointFileImport.routeName) {
+            return CustomMaterialPageRoute(
+              builder: (context) {
+                return CustomTurnpointFileImport();
               },
               settings: settings,
             );
@@ -209,6 +207,21 @@ class TurnpointFileImport extends StatelessWidget {
   }
 }
 
+class CustomTurnpointFileImport extends StatelessWidget {
+  static const routeName = '/customTurnpointImport';
+
+  CustomTurnpointFileImport();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider<TurnpointBloc>(
+      create: (BuildContext context) =>
+          TurnpointBloc(repository: RepositoryProvider.of<Repository>(context)),
+      child: CustomSeeYouImportScreen(),
+    );
+  }
+}
+
 class TurnpointView extends StatelessWidget {
   static const routeName = '/ViewTurnpoint';
   final Turnpoint turnpoint;
@@ -227,7 +240,7 @@ class TaskList extends StatelessWidget {
   static const routeName = '/ViewTask';
   final String? viewOption;
 
-  TaskList({this.viewOption});
+  TaskList({this.viewOption = null});
 
   Widget build(BuildContext context) {
     return BlocProvider<TaskBloc>(

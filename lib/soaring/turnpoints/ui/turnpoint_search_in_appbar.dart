@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:after_layout/after_layout.dart';
 import 'package:cupertino_will_pop_scope/cupertino_will_pop_scope.dart';
 import 'package:flutter/material.dart';
@@ -41,70 +43,87 @@ class _TurnpointsSearchInAppBarScreenState
 
   @override
   Widget build(BuildContext context) {
-    return ConditionalWillPopScope(
-      onWillPop: _onWillPop,
-      shouldAddCallback: true,
-      child: Scaffold(
-          key: _scaffoldKey,
-          appBar: getAppBar(),
-          body: BlocConsumer<TurnpointBloc, TurnpointState>(
-              listener: (context, state) {
-            if (state is TurnpointShortMessageState) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  backgroundColor: Colors.green,
-                  content: Text(state.shortMsg),
-                ),
-              );
-            }
-          }, builder: (context, state) {
-            if (state is TurnpointsInitialState) {
-              return CommonWidgets.buildLoading();
-            }
+    if (Platform.isAndroid) {
+      return ConditionalWillPopScope(
+        onWillPop: _onWillPop,
+        shouldAddCallback: true,
+        child: _buildScaffold(context),
+      );
+    } else {
+      //iOS
+      return GestureDetector(
+        onHorizontalDragUpdate: (details) {
+          if (details.delta.direction >= 0) {
+            _onWillPop();
+          }
+        },
+        child: _buildScaffold(context),
+      );
+    }
+    ;
+  }
 
-            if (state is SearchingTurnpointsState) {
-              return CommonWidgets.buildLoading();
-            }
-
-            if (state is TurnpointsLoadedState) {
-              if (state.turnpoints.isEmpty) {
-                WidgetsBinding.instance?.addPostFrameCallback(
-                    (_) => CommonWidgets.showTwoButtonAlertDialog(
-                          context,
-                          "No turnpoints found. Would you like to add some?",
-                          title: "No Turnpoints",
-                          cancelButtonFunction: _cancel,
-                          continueButtonFunction: _goToSeeYouImport,
-                        ));
-                return Center(
-                  child: Text('No turnpoints found.'),
-                );
-              }
-              return _getTurnpointListView(
-                  context: context, turnpoints: state.turnpoints);
-            }
-
-            if (state is TurnpointErrorState) {
-              WidgetsBinding.instance?.addPostFrameCallback((_) =>
-                  CommonWidgets.showErrorDialog(
-                      context, 'Turnpoints Error', state.errorMsg));
-            }
-            if (state is TurnpointSearchMessage) {
-              return Center(
-                child: Text(state.msg),
-              );
-            }
-            if (state is TurnpointSearchErrorState) {
-              return Center(
-                child: Text(
-                    'Oops. Error occurred searching the turnpoint database.'),
-              );
-            }
-            return Center(
-              child: Text('Hmmm. Undefined state.'),
+  Scaffold _buildScaffold(BuildContext context) {
+    return Scaffold(
+        key: _scaffoldKey,
+        appBar: getAppBar(),
+        body: BlocConsumer<TurnpointBloc, TurnpointState>(
+            listener: (context, state) {
+          if (state is TurnpointShortMessageState) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                backgroundColor: Colors.green,
+                content: Text(state.shortMsg),
+              ),
             );
-          })),
-    );
+          }
+        }, builder: (context, state) {
+          if (state is TurnpointsInitialState) {
+            return CommonWidgets.buildLoading();
+          }
+
+          if (state is SearchingTurnpointsState) {
+            return CommonWidgets.buildLoading();
+          }
+
+          if (state is TurnpointsLoadedState) {
+            if (state.turnpoints.isEmpty) {
+              WidgetsBinding.instance?.addPostFrameCallback(
+                  (_) => CommonWidgets.showTwoButtonAlertDialog(
+                        context,
+                        "No turnpoints found. Would you like to add some?",
+                        title: "No Turnpoints",
+                        cancelButtonFunction: _cancel,
+                        continueButtonFunction: _goToSeeYouImport,
+                      ));
+              return Center(
+                child: Text('No turnpoints found.'),
+              );
+            }
+            return _getTurnpointListView(
+                context: context, turnpoints: state.turnpoints);
+          }
+
+          if (state is TurnpointErrorState) {
+            WidgetsBinding.instance?.addPostFrameCallback((_) =>
+                CommonWidgets.showErrorDialog(
+                    context, 'Turnpoints Error', state.errorMsg));
+          }
+          if (state is TurnpointSearchMessage) {
+            return Center(
+              child: Text(state.msg),
+            );
+          }
+          if (state is TurnpointSearchErrorState) {
+            return Center(
+              child: Text(
+                  'Oops. Error occurred searching the turnpoint database.'),
+            );
+          }
+          return Center(
+            child: Text('Hmmm. Undefined state.'),
+          );
+        }));
   }
 
   AppBar getAppBar() {
@@ -285,7 +304,8 @@ class _TurnpointsSearchInAppBarScreenState
 
   _goToSeeYouImport() async {
     Navigator.of(context, rootNavigator: true).pop();
-    await Navigator.pushNamed(context, TurnpointFileImport.routeName);
+    var object =
+        await Navigator.pushNamed(context, TurnpointFileImport.routeName);
     BlocProvider.of<TurnpointBloc>(context).add(TurnpointListEvent());
   }
 

@@ -19,6 +19,7 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
     on<GetTurnpointFileNamesEvent>(_getListOfTurnpointExchangeFiles);
     on<LoadTurnpointFileEvent>(_loadTurnpointFileFromTurnpointExchange);
     on<DeleteAllTurnpointsEvent>(_deleteAllTurnpoints);
+    on<GetCustomImportFileNamesEvent>(_getCustomImportFileNames);
   }
 
   void _searchTurnpointsEvent(
@@ -100,4 +101,7 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
       emit(TurnpointErrorState(e.toString()));
     }
   }
+
+  FutureOr<void> _getCustomImportFileNames(
+      GetCustomImportFileNamesEvent event, Emitter<TurnpointState> emit) {}
 }

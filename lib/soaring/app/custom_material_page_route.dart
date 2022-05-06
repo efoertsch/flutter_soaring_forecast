@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 class CustomMaterialPageRoute extends MaterialPageRoute {
   @protected
   bool get hasScopedWillPopCallback {
-    return false;
+    return true; // needed to set to true for ios gesture detector to be called
+    // when swiping right to go back a screen
   }
 
   CustomMaterialPageRoute({

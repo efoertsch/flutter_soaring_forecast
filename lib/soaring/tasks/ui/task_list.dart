@@ -1,3 +1,4 @@
+import 'package:drag_and_drop_lists/drag_and_drop_lists.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
@@ -11,11 +12,13 @@ import 'package:flutter_soaring_forecast/soaring/tasks/bloc/task_state.dart';
 class TaskListScreen extends StatelessWidget {
   final String? viewOption;
   static const String SELECT_TASK_OPTION = 'SELECT_TASK_OPTION';
+  late final BuildContext _context;
 
   TaskListScreen({Key? key, String? this.viewOption = null}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    _context = context;
     BlocProvider.of<TaskBloc>(context).add(TaskListEvent());
     return Scaffold(
       appBar: AppBar(
@@ -87,58 +90,96 @@ class TaskListScreen extends StatelessWidget {
         child: Text('No tasks found'),
       );
     }
+    List<DragAndDropList> taskDragAndDropList = [];
+    List<DragAndDropItem> taskDragAndDropItems = [];
+    tasks.forEach((task) {
+      taskDragAndDropItems.add(_createTaskItem(task));
+    });
+    taskDragAndDropList.add(DragAndDropList(children: taskDragAndDropItems));
     return Expanded(
-      child: ListView.separated(
-        itemCount: tasks.length,
-        itemBuilder: (BuildContext context, int index) {
-          return ListTile(
-            dense: true,
-            contentPadding: EdgeInsets.symmetric(horizontal: 8.0),
-            visualDensity: VisualDensity(horizontal: 0, vertical: -4),
-            trailing: IconButton(
-              icon: Icon(Icons.edit),
-              onPressed: () => _goToTaskDetail(context, tasks[index].id!),
+      flex: 15,
+      child: Align(
+        alignment: Alignment.topLeft,
+        child: DragAndDropLists(
+          children: taskDragAndDropList,
+          onItemReorder: _onItemReorder,
+          onListReorder: _onListReorder,
+        ),
+      ),
+    );
+  }
+
+  _onItemReorder(
+      int oldItemIndex, int oldListIndex, int newItemIndex, int newListIndex) {
+    BlocProvider.of<TaskBloc>(_context)
+        .add(SwitchOrderOfTasksEvent(oldItemIndex, newItemIndex));
+  }
+
+  _onListReorder(int oldListIndex, int newListIndex) {
+    // don't have more that 1 list so no reorder
+  }
+
+  DragAndDropItem _createTaskItem(Task task) {
+    return DragAndDropItem(
+      child: Dismissible(
+        key: UniqueKey(),
+        onDismissed: (direction) {
+          BlocProvider.of<TaskBloc>(_context)
+              .add(SwipeDeletedTaskEvent(task.taskOrder));
+          ScaffoldMessenger.of(_context).showSnackBar(SnackBar(
+            content: Text('Removed ${task.taskName}'),
+            action: SnackBarAction(
+              label: 'Undo',
+              onPressed: () {
+                BlocProvider.of<TaskBloc>(_context).add(AddBackTaskEvent(task));
+              },
             ),
-            title: Material(
-              color: Colors.white.withOpacity(0.0),
-              child: InkWell(
-                onTap: () {
-                  if (viewOption == TaskListScreen.SELECT_TASK_OPTION) {
-                    Navigator.of(context).pop(tasks[index].id);
-                  }
-                },
-                child: Container(
-                  child: Column(
-                    children: [
-                      Align(
+          ));
+        },
+        child: ListTile(
+          dense: true,
+          contentPadding: EdgeInsets.symmetric(horizontal: 8.0),
+          visualDensity: VisualDensity(horizontal: 0, vertical: -4),
+          trailing: IconButton(
+            icon: Icon(Icons.edit),
+            onPressed: () => _goToTaskDetail(_context, task.id!),
+          ),
+          title: Material(
+            color: Colors.white.withOpacity(0.0),
+            child: InkWell(
+              onTap: () {
+                if (viewOption == TaskListScreen.SELECT_TASK_OPTION) {
+                  Navigator.of(_context).pop(task.id);
+                }
+              },
+              child: Container(
+                child: Column(
+                  children: [
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        task.taskName,
+                        textAlign: TextAlign.left,
+                        style: textStyleBlackFontSize20,
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          tasks[index].taskName,
+                          task.distance.toStringAsFixed(1) + 'km',
                           textAlign: TextAlign.left,
-                          style: textStyleBlackFontSize20,
+                          style: textStyleBlack87FontSize15,
                         ),
                       ),
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            tasks[index].distance.toStringAsFixed(1) + 'km',
-                            textAlign: TextAlign.left,
-                            style: textStyleBlack87FontSize15,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
-          );
-        },
-        separatorBuilder: (context, index) {
-          return Divider();
-        },
+          ),
+        ),
       ),
     );
   }

@@ -57,3 +57,8 @@ class DeleteAllTurnpointsEvent extends TurnpointEvent {
   @override
   List<Object?> get props => [];
 }
+
+class GetCustomImportFileNamesEvent extends TurnpointEvent {
+  @override
+  List<Object?> get props => [];
+}

@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_soaring_forecast/soaring/floor/task/task.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/taskturnpoint/task_turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
 
@@ -12,6 +13,31 @@ class TaskListEvent extends TaskEvent {
   TaskListEvent();
   @override
   List<Object?> get props => [];
+}
+
+// for when a task is moved up or down in the task list
+class SwitchOrderOfTasksEvent extends TaskEvent {
+  final int oldIndex;
+  final int newIndex;
+  SwitchOrderOfTasksEvent(this.oldIndex, this.newIndex);
+  @override
+  List<Object?> get props => [oldIndex, newIndex];
+}
+
+// For when a task is swiped to delete it from the task list
+class SwipeDeletedTaskEvent extends TaskEvent {
+  final int index;
+  SwipeDeletedTaskEvent(this.index);
+  @override
+  List<Object?> get props => [index];
+}
+
+// For when task is undeleted
+class AddBackTaskEvent extends TaskEvent {
+  final Task task;
+  AddBackTaskEvent(this.task);
+  @override
+  List<Object?> get props => [task];
 }
 
 class LoadTaskTurnpointsEvent extends TaskEvent {
