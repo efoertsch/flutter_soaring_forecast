@@ -15,6 +15,8 @@ abstract class TaskDao extends BaseDao<Task> {
   @Query("Delete from task where id = :taskId")
   Future<int?> deleteTask(int taskId);
 
-  @Query("Select coalesce(count(*),0) from task")
-  Future<int?> getNumberOfTasks();
+  // Current version of floor can't return count() so using rawQuery
+  // (See repository)
+  // @Query("Select count(*) from task")
+  // Future<int?> getNumberOfTasks();
 }

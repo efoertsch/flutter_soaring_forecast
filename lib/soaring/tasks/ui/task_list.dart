@@ -136,27 +136,23 @@ class TaskListScreen extends StatelessWidget {
             ),
           ));
         },
-        child: ListTile(
-          dense: true,
-          contentPadding: EdgeInsets.symmetric(horizontal: 8.0),
-          visualDensity: VisualDensity(horizontal: 0, vertical: -4),
-          trailing: IconButton(
-            icon: Icon(Icons.edit),
-            onPressed: () => _goToTaskDetail(_context, task.id!),
-          ),
-          title: Material(
-            color: Colors.white.withOpacity(0.0),
-            child: InkWell(
-              onTap: () {
-                if (viewOption == TaskListScreen.SELECT_TASK_OPTION) {
-                  Navigator.of(_context).pop(task.id);
-                }
-              },
-              child: Container(
+        child:
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+          Expanded(
+            flex: 10,
+            child: Material(
+              color: Colors.white.withOpacity(0.0),
+              child: InkWell(
+                onTap: () {
+                  if (viewOption == TaskListScreen.SELECT_TASK_OPTION) {
+                    Navigator.of(_context).pop(task.id);
+                  }
+                },
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Align(
-                      alignment: Alignment.centerLeft,
+                    Padding(
+                      padding: const EdgeInsets.only(left: 8.0, top: 16.0),
                       child: Text(
                         task.taskName,
                         textAlign: TextAlign.left,
@@ -164,14 +160,11 @@ class TaskListScreen extends StatelessWidget {
                       ),
                     ),
                     Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          task.distance.toStringAsFixed(1) + 'km',
-                          textAlign: TextAlign.left,
-                          style: textStyleBlack87FontSize15,
-                        ),
+                      padding: const EdgeInsets.only(left: 16.0),
+                      child: Text(
+                        task.distance.toStringAsFixed(1) + 'km',
+                        textAlign: TextAlign.left,
+                        style: textStyleBlack87FontSize15,
                       ),
                     ),
                   ],
@@ -179,7 +172,17 @@ class TaskListScreen extends StatelessWidget {
               ),
             ),
           ),
-        ),
+          Padding(
+            padding: const EdgeInsets.only(left: 8.0, right: 8.0),
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: IconButton(
+                icon: Icon(Icons.edit),
+                onPressed: () => _goToTaskDetail(_context, task.id!),
+              ),
+            ),
+          ),
+        ]),
       ),
     );
   }

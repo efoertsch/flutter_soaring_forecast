@@ -285,7 +285,9 @@ class Repository {
 
   Future<int?> getCountOfTasks() async {
     await makeDatabaseAvailable();
-    return _appDatabase!.taskDao.getNumberOfTasks();
+    int? count = Sqflite.firstIntValue(await _appDatabase!.database
+        .rawQuery('select count(*) count from task'));
+    return count ?? 0;
   }
 
   Future<List<Task>> getAlltasks() async {
@@ -307,6 +309,11 @@ class Repository {
   Future<int> updateTask(Task task) async {
     await makeDatabaseAvailable();
     return _appDatabase!.taskDao.update(task);
+  }
+
+  Future<int?> deleteTask(int taskId) async {
+    await makeDatabaseAvailable();
+    return _appDatabase!.taskDao.deleteTask(taskId);
   }
 
   // -1 is no task defined

@@ -12,7 +12,6 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
   final Repository repository;
   Task currentTask = Task();
   List<Task> _tasks = [];
-  List<Task> _deletedTasks = [];
   List<TaskTurnpoint> _taskTurnpoints = [];
   List<TaskTurnpoint> _deletedTaskTurnpoints = [];
 
@@ -48,7 +47,6 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
   void _showAllTasks(TaskListEvent event, Emitter<TaskState> emit) async {
     emit(TasksLoadingState());
     _tasks.clear();
-    _deletedTasks.clear();
     try {
       _tasks.addAll(await repository.getAlltasks());
       List<Task> tasksForState = [];
@@ -71,14 +69,14 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
 
   void _removeTaskFromTaskList(
       SwipeDeletedTaskEvent event, Emitter<TaskState> emit) {
-    _deletedTasks.add(_tasks[event.index]);
+    Task task = _tasks[event.index];
+    repository.deleteTask(task.id!);
     _tasks.removeAt(event.index);
     _updateTaskList(emit);
   }
 
   void _addBackTaskToList(AddBackTaskEvent event, Emitter<TaskState> emit) {
     _tasks.insert(event.task.taskOrder, event.task);
-    _deletedTasks.remove(event.task);
     _updateTaskList(emit);
   }
 
@@ -222,8 +220,8 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
 
     if (currentTask.id == null) {
       isTaskUpdate = false;
-      int taskNumber = await repository.getCountOfTasks() ?? 0;
-      currentTask.taskOrder = taskNumber;
+      int? taskNumber = await repository.getCountOfTasks();
+      currentTask.taskOrder = taskNumber!;
       int? taskId = await repository.saveTask(currentTask);
       if (taskId == null) {
         emit(TaskErrorState('Oops. For some reason the task was not saved'));
