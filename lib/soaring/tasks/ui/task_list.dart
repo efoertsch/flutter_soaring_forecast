@@ -136,53 +136,65 @@ class TaskListScreen extends StatelessWidget {
             ),
           ));
         },
-        child:
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Expanded(
-            flex: 10,
-            child: Material(
-              color: Colors.white.withOpacity(0.0),
-              child: InkWell(
-                onTap: () {
-                  if (viewOption == TaskListScreen.SELECT_TASK_OPTION) {
-                    Navigator.of(_context).pop(task.id);
-                  }
-                },
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(left: 8.0, top: 16.0),
-                      child: Text(
-                        task.taskName,
-                        textAlign: TextAlign.left,
-                        style: textStyleBlackFontSize20,
+        child: Padding(
+          padding: const EdgeInsets.only(top: 8.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                Expanded(
+                  flex: 10,
+                  child: Material(
+                    color: Colors.white.withOpacity(0.0),
+                    child: InkWell(
+                      onTap: () {
+                        if (viewOption == TaskListScreen.SELECT_TASK_OPTION) {
+                          Navigator.of(_context).pop(task.id);
+                        }
+                      },
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(left: 8.0),
+                            child: Text(
+                              task.taskName,
+                              textAlign: TextAlign.left,
+                              style: textStyleBlackFontSize20,
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(left: 16.0),
+                            child: Text(
+                              task.distance.toStringAsFixed(1) + 'km',
+                              textAlign: TextAlign.left,
+                              style: textStyleBlack87FontSize15,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.only(left: 16.0),
-                      child: Text(
-                        task.distance.toStringAsFixed(1) + 'km',
-                        textAlign: TextAlign.left,
-                        style: textStyleBlack87FontSize15,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
+                Padding(
+                  padding: const EdgeInsets.only(left: 8.0, right: 8.0),
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: IconButton(
+                      icon: Icon(Icons.edit),
+                      onPressed: () => _goToTaskDetail(_context, task.id!),
+                    ),
+                  ),
+                ),
+              ]),
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: const Divider(
+                    height: 2, thickness: 2, color: Colors.black12),
+              )
+            ],
           ),
-          Padding(
-            padding: const EdgeInsets.only(left: 8.0, right: 8.0),
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: IconButton(
-                icon: Icon(Icons.edit),
-                onPressed: () => _goToTaskDetail(_context, task.id!),
-              ),
-            ),
-          ),
-        ]),
+        ),
       ),
     );
   }
