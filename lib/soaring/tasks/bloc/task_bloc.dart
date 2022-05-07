@@ -11,12 +11,17 @@ import 'package:flutter_soaring_forecast/soaring/tasks/bloc/task_state.dart';
 class TaskBloc extends Bloc<TaskEvent, TaskState> {
   final Repository repository;
   Task currentTask = Task();
-  List<TaskTurnpoint> taskTurnpoints = [];
+  List<Task> _tasks = [];
+  List<TaskTurnpoint> _taskTurnpoints = [];
+  List<TaskTurnpoint> _deletedTaskTurnpoints = [];
 
 //TaskState get initialState => TasksLoadingState();
 
   TaskBloc({required this.repository}) : super(TasksLoadingState()) {
     on<TaskListEvent>(_showAllTasks);
+    on<SwitchOrderOfTasksEvent>(_switchOrderOfTasks);
+    on<SwipeDeletedTaskEvent>(_removeTaskFromTaskList);
+    on<AddBackTaskEvent>(_addBackTaskToList);
     on<TaskNamedChangedEvent>(_updateTaskName);
     on<LoadTaskTurnpointsEvent>(_showTaskTurnpoints);
     on<TurnpointsAddedToTaskEvent>(_addTurnpointsToTask);
@@ -41,10 +46,52 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
 
   void _showAllTasks(TaskListEvent event, Emitter<TaskState> emit) async {
     emit(TasksLoadingState());
-    List<Task> tasks = [];
+    _tasks.clear();
     try {
-      tasks.addAll(await repository.getAlltasks());
-      emit(TasksLoadedState(tasks));
+      _tasks.addAll(await repository.getAlltasks());
+      List<Task> tasksForState = [];
+      tasksForState.addAll(_tasks);
+      emit(TasksLoadedState(tasksForState));
+    } catch (e) {
+      emit(TaskErrorState(e.toString()));
+    }
+  }
+
+  void _switchOrderOfTasks(
+      SwitchOrderOfTasksEvent event, Emitter<TaskState> emit) {
+    if (event.oldIndex <= _tasks.length && event.newIndex <= _tasks.length) {
+      var task = _tasks[event.oldIndex];
+      _tasks.removeAt(event.oldIndex);
+      _tasks.insert(event.newIndex, task);
+      _updateTaskList(emit);
+    }
+  }
+
+  void _removeTaskFromTaskList(
+      SwipeDeletedTaskEvent event, Emitter<TaskState> emit) {
+    Task task = _tasks[event.index];
+    repository.deleteTask(task.id!);
+    _tasks.removeAt(event.index);
+    _updateTaskList(emit);
+  }
+
+  void _addBackTaskToList(AddBackTaskEvent event, Emitter<TaskState> emit) {
+    _tasks.insert(event.task.taskOrder, event.task);
+    _updateTaskList(emit);
+  }
+
+  void _updateTaskList(Emitter<TaskState> emit) async {
+    List<Task> tasksForState = [];
+    try {
+      int index = 0;
+      _tasks.forEach((task) {
+        task.taskOrder = index++;
+        tasksForState.add(task);
+      });
+      _tasks.forEach((task) async {
+        await repository.updateTask(task);
+      });
+      emit(TasksLoadedState(tasksForState));
     } catch (e) {
       emit(TaskErrorState(e.toString()));
     }
@@ -52,20 +99,22 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
 
   void _showTaskTurnpoints(
       LoadTaskTurnpointsEvent event, Emitter<TaskState> emit) async {
-    taskTurnpoints.clear();
+    _taskTurnpoints.clear();
+    _deletedTaskTurnpoints.clear();
     emit(TasksTurnpointsLoadingState());
     if (event.taskId == -1) {
       currentTask = Task();
     } else {
       try {
         currentTask = await repository.getTask(event.taskId);
-        taskTurnpoints.addAll(await repository.getTaskTurnpoints(event.taskId));
+        _taskTurnpoints
+            .addAll(await repository.getTaskTurnpoints(event.taskId));
       } catch (e) {
         emit(TaskErrorState(e.toString()));
       }
     }
     emit(TasksTurnpointsLoadedState(
-        task: currentTask, taskTurnpoints: taskTurnpoints));
+        task: currentTask, taskTurnpoints: _taskTurnpoints));
   }
 
   void _addTurnpointsToTask(
@@ -80,34 +129,36 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
   _addTurnpointToTask(Turnpoint turnpoint) {
     final taskTurnpoint = TaskTurnpoint(
         taskId: currentTask.id,
-        taskOrder: taskTurnpoints.length,
+        taskOrder: _taskTurnpoints.length,
         title: turnpoint.title,
         code: turnpoint.code,
         latitudeDeg: turnpoint.latitudeDeg,
         longitudeDeg: turnpoint.longitudeDeg);
-    taskTurnpoints.add(taskTurnpoint);
+    _taskTurnpoints.add(taskTurnpoint);
   }
 
   void _switchOrderOfTaskTurnpoints(
       SwitchOrderOfTaskTurnpointsEvent event, Emitter<TaskState> emit) {
-    if (event.oldIndex <= taskTurnpoints.length &&
-        event.newIndex <= taskTurnpoints.length) {
-      var taskTurnpoint = taskTurnpoints[event.oldIndex];
-      taskTurnpoints.removeAt(event.oldIndex);
-      taskTurnpoints.insert(event.newIndex, taskTurnpoint);
+    if (event.oldIndex <= _taskTurnpoints.length &&
+        event.newIndex <= _taskTurnpoints.length) {
+      var taskTurnpoint = _taskTurnpoints[event.oldIndex];
+      _taskTurnpoints.removeAt(event.oldIndex);
+      _taskTurnpoints.insert(event.newIndex, taskTurnpoint);
       _updateTaskDetails(emit);
     }
   }
 
   void _removeTaskTurnpointFromTask(
       SwipeDeletedTaskTurnpointEvent event, Emitter<TaskState> emit) {
-    taskTurnpoints.removeAt(event.index);
+    _deletedTaskTurnpoints.add(_taskTurnpoints[event.index]);
+    _taskTurnpoints.removeAt(event.index);
     _updateTaskDetails(emit);
   }
 
   void _addBackTaskTurnpoint(
       AddBackTaskTurnpointEvent event, Emitter<TaskState> emit) {
-    taskTurnpoints.insert(event.taskTurnpoint.taskOrder, event.taskTurnpoint);
+    _taskTurnpoints.insert(event.taskTurnpoint.taskOrder, event.taskTurnpoint);
+    _deletedTaskTurnpoints.remove(event.taskTurnpoint);
     _updateTaskDetails(emit);
   }
 
@@ -115,21 +166,21 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
     _calculateDistances();
     _createTaskName();
     emit(TasksTurnpointsLoadedState(
-        task: currentTask, taskTurnpoints: taskTurnpoints));
+        task: currentTask, taskTurnpoints: _taskTurnpoints));
     emit(TaskModifiedState());
   }
 
   void _calculateDistances() {
     TaskTurnpoint? priorTaskTurnpoint;
-    for (int i = 0; i < taskTurnpoints.length; i++) {
+    for (int i = 0; i < _taskTurnpoints.length; i++) {
       if (i == 0) {
-        priorTaskTurnpoint = taskTurnpoints[0];
+        priorTaskTurnpoint = _taskTurnpoints[0];
         priorTaskTurnpoint.distanceFromPriorTurnpoint = 0;
         priorTaskTurnpoint.distanceFromStartingPoint = 0;
         priorTaskTurnpoint.taskOrder = 0;
         priorTaskTurnpoint.lastTurnpoint = false;
       } else {
-        TaskTurnpoint currentTaskTurnpoint = taskTurnpoints[i];
+        TaskTurnpoint currentTaskTurnpoint = _taskTurnpoints[i];
         double dist = calculateDistance(
             priorTaskTurnpoint!.latitudeDeg,
             priorTaskTurnpoint.longitudeDeg,
@@ -139,12 +190,12 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
         currentTaskTurnpoint.distanceFromStartingPoint =
             priorTaskTurnpoint.distanceFromStartingPoint + dist;
         currentTaskTurnpoint.taskOrder = i;
-        currentTaskTurnpoint.lastTurnpoint = i == taskTurnpoints.length - 1;
+        currentTaskTurnpoint.lastTurnpoint = i == _taskTurnpoints.length - 1;
         priorTaskTurnpoint = currentTaskTurnpoint;
       }
     }
-    currentTask.distance = (taskTurnpoints.length > 0)
-        ? taskTurnpoints.last.distanceFromStartingPoint
+    currentTask.distance = (_taskTurnpoints.length > 0)
+        ? _taskTurnpoints.last.distanceFromStartingPoint
         : 0;
   }
 
@@ -169,6 +220,8 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
 
     if (currentTask.id == null) {
       isTaskUpdate = false;
+      int? taskNumber = await repository.getCountOfTasks();
+      currentTask.taskOrder = taskNumber!;
       int? taskId = await repository.saveTask(currentTask);
       if (taskId == null) {
         emit(TaskErrorState('Oops. For some reason the task was not saved'));
@@ -180,14 +233,15 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
         emit(TaskErrorState('Oops. For some reason the task was not updated.'));
       }
     }
-    int taskOrder = 0;
     int? turnpointId;
 
-    for (taskOrder = 0; taskOrder < taskTurnpoints.length; taskOrder++) {
+    for (int turnpointOrder = 0;
+        turnpointOrder < _taskTurnpoints.length;
+        turnpointOrder++) {
       // taskTurnpoints.forEach((taskTurnpoint) {
-      TaskTurnpoint taskTurnpoint = taskTurnpoints[taskOrder];
+      TaskTurnpoint taskTurnpoint = _taskTurnpoints[turnpointOrder];
       taskTurnpoint.taskId = currentTask.id!;
-      taskTurnpoint.taskOrder = taskOrder;
+      taskTurnpoint.taskOrder = turnpointOrder;
       if (taskTurnpoint.id == null) {
         turnpointId = await repository.insertTaskTurnpoint(taskTurnpoint);
         if (turnpointId == null) {
@@ -205,16 +259,17 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
         }
       }
     }
-    ;
 
     //if update make sure to delete any  turnpoints no longer in task
     if (isTaskUpdate) {
-      await repository.deleteTaskTurnpointsAbove(currentTask.id!, --taskOrder);
+      _deletedTaskTurnpoints.forEach((taskTurnpoint) async {
+        await repository.deleteTaskTurnpoint(taskTurnpoint.id!);
+      });
     }
 
     emit(TaskSavedState());
     emit(TasksTurnpointsLoadedState(
-        task: currentTask, taskTurnpoints: taskTurnpoints));
+        task: currentTask, taskTurnpoints: _taskTurnpoints));
   }
 
   void _checkForTaskName() {
@@ -227,9 +282,9 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
   void _createTaskName() {
     StringBuffer defaultTaskName = StringBuffer();
     String shortName = "";
-    taskTurnpoints.forEach((taskTurnpoint) {
-      shortName = taskTurnpoint.title.length >= 3
-          ? taskTurnpoint.title.substring(0, 3)
+    _taskTurnpoints.forEach((taskTurnpoint) {
+      shortName = taskTurnpoint.title.length >= 4
+          ? taskTurnpoint.title.substring(0, 4)
           : taskTurnpoint.title;
       defaultTaskName
           .write(defaultTaskName.isEmpty ? shortName : '-' + shortName);

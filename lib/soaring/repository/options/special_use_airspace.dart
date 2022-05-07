@@ -141,7 +141,7 @@ class Geometry {
     if (json['coordinates'] != null) {
       coordinates = <LatLng>[];
       json['coordinates'].forEach((v) {
-        coordinates!.add(LatLng.fromJson(v)!);
+        coordinates!.add(LatLng.fromJson(v));
       });
     }
   }

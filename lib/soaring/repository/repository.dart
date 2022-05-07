@@ -1,8 +1,11 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
+import 'package:dio_logging_interceptor/dio_logging_interceptor.dart';
 import 'package:floor/floor.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     as Constants;
@@ -13,6 +16,8 @@ import 'package:flutter_soaring_forecast/soaring/floor/taskturnpoint/task_turnpo
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/ImageCacheManager.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/options/rasp_options_api.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/options/turnpoint_regions.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoints_downloader.dart';
 import 'package:retrofit/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -28,6 +33,7 @@ class Repository {
   static Dio _dio = Dio();
   static late BuildContext? _context;
   static late RaspClient _raspClient;
+  static late RaspOptionsClient _raspOptionsClient;
   static AppDatabase? _appDatabase;
 
   Repository._();
@@ -40,7 +46,14 @@ class Repository {
       // _dio.interceptors.add(LogInterceptor(responseBody: true));
       _dio.options.receiveTimeout = 300000;
       _dio.options.followRedirects = true;
-      _raspClient = new RaspClient(_dio);
+      _dio.interceptors.add(
+        DioLoggingInterceptor(
+          level: Level.body,
+          compact: false,
+        ),
+      );
+      _raspClient = RaspClient(_dio);
+      _raspOptionsClient = RaspOptionsClient(_dio);
     }
     return _repository!;
   }
@@ -211,6 +224,49 @@ class Repository {
     return _appDatabase!.turnpointDao.findTurnpoints('%' + query + '%');
   }
 
+  // Download a file to the downloads directory
+  // from https://fluttercorner.com/how-to-download-file-from-url-and-save-in-local-storage-in-flutter/
+  Future<String> downloadFile(String url, String fileName, String dir) async {
+    HttpClient httpClient = new HttpClient();
+    File file;
+    String filePath = '';
+    String myUrl = '';
+
+    try {
+      myUrl = url + '/' + fileName;
+      var request = await httpClient.getUrl(Uri.parse(myUrl));
+      var response = await request.close();
+      if (response.statusCode == 200) {
+        var bytes = await consolidateHttpClientResponseBytes(response);
+        filePath = '$dir/$fileName';
+        file = File(filePath);
+        await file.writeAsBytes(bytes);
+      } else
+        filePath = 'Error code: ' + response.statusCode.toString();
+    } catch (ex) {
+      filePath = 'Can not fetch url';
+    }
+
+    return filePath;
+  }
+
+  //------  Selected turnpoint files available from turnpoint exchange ------
+  Future<List<TurnpointFile>> getListOfTurnpointExchangeRegionFiles() async {
+    List<TurnpointRegion> turnpointRegionList = [];
+    var stringJson = await _raspOptionsClient.getTurnpointRegions();
+    TurnpointRegions turnpointRegions =
+        TurnpointRegions.fromJson(jsonDecode(stringJson));
+    if (turnpointRegions != null) {
+      turnpointRegionList.addAll(turnpointRegions.turnpointRegions!);
+    }
+    String selectedRegion =
+        await getGenericString("SOARING_FORECAST_REGION", "NewEngland");
+    return turnpointRegionList
+        .firstWhere((region) => region.region == selectedRegion)
+        .turnpointFiles;
+  }
+
+  // eg from https://soaringweb.org/TP/Sterling/Sterling,%20Massachusetts%202021%20SeeYou.cup
   Future<List<Turnpoint>> downloadTurnpointsFromTurnpointExchange(
       String endUrl) async {
     List<Turnpoint> turnpoints = [];
@@ -225,9 +281,14 @@ class Repository {
     return _appDatabase!.turnpointDao.getTurnpoint(title, code);
   }
 
-  //------  Selected turnpoint files available from turnpoint exchange ------
-
   // ----- Task ----------------------------------------
+
+  Future<int?> getCountOfTasks() async {
+    await makeDatabaseAvailable();
+    int? count = Sqflite.firstIntValue(await _appDatabase!.database
+        .rawQuery('select count(*) count from task'));
+    return count ?? 0;
+  }
 
   Future<List<Task>> getAlltasks() async {
     await makeDatabaseAvailable();
@@ -250,6 +311,11 @@ class Repository {
     return _appDatabase!.taskDao.update(task);
   }
 
+  Future<int?> deleteTask(int taskId) async {
+    await makeDatabaseAvailable();
+    return _appDatabase!.taskDao.deleteTask(taskId);
+  }
+
   // -1 is no task defined
   Future<int> getCurrentTaskId() async {
     return getGenericInt("CURRENT_TASK_ID", -1);
@@ -262,25 +328,24 @@ class Repository {
 
   // ----- Task Turnpoints----------------------------------------
 
-  Future<List<TaskTurnpoint>> getTaskTurnpoints(int taskId) async {
+  Future<List<TaskTurnpoint>> getTaskTurnpoints(final int taskId) async {
     await makeDatabaseAvailable();
     return _appDatabase!.taskTurnpointDao.getTaskTurnpoints(taskId);
   }
 
-  Future<int?> insertTaskTurnpoint(TaskTurnpoint taskTurnpoint) async {
+  Future<int?> insertTaskTurnpoint(final TaskTurnpoint taskTurnpoint) async {
     await makeDatabaseAvailable();
     return _appDatabase!.taskTurnpointDao.insert(taskTurnpoint);
   }
 
-  Future<int?> updateTaskTurnpoint(TaskTurnpoint taskTurnpoint) async {
+  Future<int?> updateTaskTurnpoint(final TaskTurnpoint taskTurnpoint) async {
     await makeDatabaseAvailable();
     return _appDatabase!.taskTurnpointDao.update(taskTurnpoint);
   }
 
-  Future<int?> deleteTaskTurnpointsAbove(int taskId, int index) async {
+  Future<int?> deleteTaskTurnpoint(final int taskTurnpointId) async {
     await makeDatabaseAvailable();
-    return _appDatabase!.taskTurnpointDao
-        .deleteAnyTaskTurnpointsOver(taskId, index);
+    return _appDatabase!.taskTurnpointDao.deleteTaskTurnpoint(taskTurnpointId);
   }
 
   // ----- Shared preferences --------------------------

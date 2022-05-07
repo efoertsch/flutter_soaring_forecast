@@ -59,18 +59,21 @@ class CommonWidgets {
       context: context,
       barrierDismissible: false, // user must tap button!
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(title),
-          content: SingleChildScrollView(
-            child: ListBody(
-              children: <Widget>[Text(msg)],
+        return WillPopScope(
+          onWillPop: () async => false,
+          child: AlertDialog(
+            title: Text(title),
+            content: SingleChildScrollView(
+              child: ListBody(
+                children: <Widget>[Text(msg)],
+              ),
             ),
+            actions: composeDialogButtons(
+                button1Text: button1Text,
+                button1Function: button1Function,
+                button2Text: button2Text,
+                button2Function: button2Function),
           ),
-          actions: composeDialogButtons(
-              button1Text: button1Text,
-              button1Function: button1Function,
-              button2Text: button2Text,
-              button2Function: button2Function),
         );
       },
     );
@@ -97,7 +100,49 @@ class CommonWidgets {
     return buttonWidgets;
   }
 
-  static SnackBar getSnackBarForMessage(String msg){
+  static showTwoButtonAlertDialog(BuildContext context, String alertMsg,
+      {String title = "AlertDialog",
+      String cancelButtonText = "Cancel",
+      String continueButtonText = "OK",
+      final Function? cancelButtonFunction,
+      final Function? continueButtonFunction}) {
+    // set up the buttons
+    Widget cancelButton = TextButton(
+        child: Text(cancelButtonText),
+        onPressed: () {
+          if (cancelButtonFunction != null) {
+            cancelButtonFunction();
+          }
+        });
+    Widget continueButton = TextButton(
+        child: Text(continueButtonText),
+        onPressed: () {
+          if (continueButtonFunction != null) {
+            continueButtonFunction();
+          }
+        });
+
+    // set up the AlertDialog
+    AlertDialog alert = AlertDialog(
+      title: Text(title),
+      content: Text(alertMsg),
+      actions: [
+        cancelButton,
+        continueButton,
+      ],
+    );
+
+    // show the dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return WillPopScope(onWillPop: () async => false, child: alert);
+      },
+    );
+  }
+
+  static SnackBar getSnackBarForMessage(String msg) {
     return SnackBar(content: Text(msg));
   }
 }

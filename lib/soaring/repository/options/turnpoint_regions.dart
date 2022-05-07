@@ -1,5 +1,7 @@
 import 'package:json_annotation/json_annotation.dart';
 
+// Not the best field naming here
+// used https://javiercbk.github.io/json_to_dart/ to generate
 @JsonSerializable()
 class TurnpointRegions {
   late List<TurnpointRegion>? turnpointRegions;

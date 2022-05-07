@@ -42,6 +42,7 @@ class TurnpointMenu {
   static const String exportTurnpoint = 'Export Turnpoint';
   static const String emailTurnpoint = 'Email Turnpoint';
   static const String clearTurnpointDatabase = 'Clear Turnpoint Database';
+  static const String customImport = 'Custom Import';
 }
 
 const textStyleBoldBlackFontSize20 =

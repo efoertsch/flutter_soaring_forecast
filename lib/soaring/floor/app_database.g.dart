@@ -325,6 +325,11 @@ class _$TaskDao extends TaskDao {
   }
 
   @override
+  Future<int?> getNumberOfTasks() async {
+    await _queryAdapter.queryNoReturn('Select count(*) from task');
+  }
+
+  @override
   Future<int> insert(Task obj) {
     return _taskInsertionAdapter.insertAndReturnId(
         obj, OnConflictStrategy.replace);
@@ -426,13 +431,6 @@ class _$TaskTurnpointDao extends TaskTurnpointDao {
   Future<int?> deleteTaskTurnpoint(int id) async {
     await _queryAdapter.queryNoReturn('Delete from taskturnpoint where id = ?1',
         arguments: [id]);
-  }
-
-  @override
-  Future<int?> deleteAnyTaskTurnpointsOver(int taskId, int taskOrder) async {
-    await _queryAdapter.queryNoReturn(
-        'Delete from taskturnpoint where taskId = ?1 and taskOrder > ?2',
-        arguments: [taskId, taskOrder]);
   }
 
   @override

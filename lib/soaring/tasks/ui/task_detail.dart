@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:after_layout/after_layout.dart';
 import 'package:drag_and_drop_lists/drag_and_drop_lists.dart';
 import 'package:flutter/material.dart';
@@ -37,6 +39,22 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
 
   @override
   Widget build(BuildContext context) {
+    if (Platform.isAndroid) {
+      return _buildScaffold(context);
+    } else {
+      //iOS
+      return GestureDetector(
+        onHorizontalDragUpdate: (details) {
+          if (details.delta.direction >= 0) {
+            Navigator.of(context).pop();
+          }
+        },
+        child: _buildScaffold(context),
+      );
+    }
+  }
+
+  Scaffold _buildScaffold(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text('Task Detail'),
@@ -230,7 +248,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
                       icon: Icon(Icons.location_searching),
                       color: Colors.blue,
                       onPressed: () {
-                        displayTaskTurnpoint(context, taskTurnpoint);
+                        _displayTaskTurnpoint(context, taskTurnpoint);
                       }),
                 ),
                 Expanded(
@@ -320,7 +338,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
     return Spacer();
   }
 
-  void displayTaskTurnpoint(BuildContext context, TaskTurnpoint taskTurnpoint) {
+  void _displayTaskTurnpoint(
+      BuildContext context, TaskTurnpoint taskTurnpoint) {
     BlocProvider.of<TaskBloc>(context)
         .add(DisplayTaskTurnpointEvent(taskTurnpoint));
   }

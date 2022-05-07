@@ -8,7 +8,9 @@ import 'package:http/http.dart' as http;
 
 class TurnpointsDownloader {
   late Repository repository;
-  static const TURNPOINTS_URL = "http://soaringweb.org/TP/";
+  static const TURNPOINTS_URL = "https://soaringweb.org/TP/";
+  static const TURNPOINT_EXCHANGE_LIST =
+      TURNPOINTS_URL + "/soaringforecast/turnpoint_regions.json";
 
   TurnpointsDownloader({required this.repository});
 
@@ -32,9 +34,13 @@ class TurnpointsDownloader {
     if (response.statusCode == 200) {
       // If the server did return a 200 OK response,
       // then parse the CSV.
+      var body = response.body;
+      if (body.indexOf('\r\n') == -1) {
+        body = body.replaceAll('\n', '\r\n');
+      }
       List<List<dynamic>> rowsAsListOfValues = const CsvToListConverter(
         eol: '\r\n',
-      ).convert(response.body);
+      ).convert(body);
       // for (var row in rowsAsListOfValues) {
       //   for (var value in row) {
       //     print(value);

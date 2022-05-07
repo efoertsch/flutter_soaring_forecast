@@ -1,3 +1,14 @@
+# Custom added
+.gradle/
+analysis_options.yaml
+android/app/src/main/res/drawable-v21/
+android/app/src/main/res/values-night/
+lib/generated_plugin_registrant.dart
+local.properties
+web/
+
+
+# Below lists are what I think A.S. defaulted for flutter (or at least I don't recall updating
 # Miscellaneous
 *.class
 *.log
