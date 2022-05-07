@@ -13,6 +13,7 @@ import 'package:flutter_soaring_forecast/soaring/turnpoints/bloc/turnpoint_bloc.
 import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/custom_see_you_import.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/see_you_import.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_detail_view.dart';
+import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_edit_view.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_search_in_appbar.dart';
 import 'package:flutter_soaring_forecast/soaring/values/strings.dart';
 import 'package:workmanager/workmanager.dart';
@@ -96,6 +97,16 @@ class SoaringForecastApp extends StatelessWidget {
               settings: settings,
             );
           }
+          if (settings.name == TurnpointEdit.routeName) {
+            final turnpoint = settings.arguments as Turnpoint;
+            return CustomMaterialPageRoute(
+              builder: (context) {
+                return TurnpointEditView(turnpoint: turnpoint);
+              },
+              settings: settings,
+            );
+          }
+
           if (settings.name == TaskDetail.routeName) {
             final taskId = settings.arguments as int;
             return CustomMaterialPageRoute(
@@ -171,7 +182,7 @@ class TurnpointSearchInAppBar extends StatelessWidget {
     return BlocProvider<TurnpointBloc>(
       create: (BuildContext context) =>
           TurnpointBloc(repository: RepositoryProvider.of<Repository>(context)),
-      child: TurnpointsSearchInAppBarScreen(),
+      child: TurnpointsSearch(),
     );
   }
 }
@@ -187,7 +198,7 @@ class TurnpointsForTask extends StatelessWidget {
     return BlocProvider<TurnpointBloc>(
       create: (BuildContext context) =>
           TurnpointBloc(repository: RepositoryProvider.of<Repository>(context)),
-      child: TurnpointsSearchInAppBarScreen(viewOption: viewOption),
+      child: TurnpointsSearch(viewOption: viewOption),
     );
   }
 }
@@ -231,6 +242,18 @@ class TurnpointView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return TurnpointDetailView(turnpoint: turnpoint);
+  }
+}
+
+class TurnpointEdit extends StatelessWidget {
+  static const routeName = '/editTurnpoint';
+  final Turnpoint turnpoint;
+
+  TurnpointEdit({required this.turnpoint});
+
+  @override
+  Widget build(BuildContext context) {
+    return TurnpointEditView(turnpoint: turnpoint);
   }
 }
 

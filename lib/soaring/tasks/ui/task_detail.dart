@@ -389,7 +389,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
     final result = await Navigator.pushNamed(
       context,
       TurnpointsForTask.routeName,
-      arguments: TurnpointsSearchInAppBarScreen.TASK_TURNPOINT_OPTION,
+      arguments: TurnpointsSearch.TASK_TURNPOINT_OPTION,
     );
     if (result is List<Turnpoint>) {
       BlocProvider.of<TaskBloc>(context)

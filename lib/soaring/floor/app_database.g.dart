@@ -325,11 +325,6 @@ class _$TaskDao extends TaskDao {
   }
 
   @override
-  Future<int?> getNumberOfTasks() async {
-    await _queryAdapter.queryNoReturn('Select count(*) from task');
-  }
-
-  @override
   Future<int> insert(Task obj) {
     return _taskInsertionAdapter.insertAndReturnId(
         obj, OnConflictStrategy.replace);

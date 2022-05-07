@@ -6,6 +6,7 @@ import 'package:flutter_soaring_forecast/soaring/repository/options/turnpoint_re
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/bloc/turnpoint_event.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/bloc/turnpoint_state.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
   final Repository repository;
@@ -19,7 +20,7 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
     on<GetTurnpointFileNamesEvent>(_getListOfTurnpointExchangeFiles);
     on<LoadTurnpointFileEvent>(_loadTurnpointFileFromTurnpointExchange);
     on<DeleteAllTurnpointsEvent>(_deleteAllTurnpoints);
-    on<GetCustomImportFileNamesEvent>(_getCustomImportFileNames);
+    //on<GetCustomImportFileNamesEvent>(_getCustomImportFileNames);
   }
 
   void _searchTurnpointsEvent(
@@ -102,6 +103,26 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
     }
   }
 
-  FutureOr<void> _getCustomImportFileNames(
-      GetCustomImportFileNamesEvent event, Emitter<TurnpointState> emit) {}
+  // FutureOr<void> _getCustomImportFileNames(GetCustomImportFileNamesEvent event,
+  //     Emitter<TurnpointState> emit) async {
+  //   var ok = await _checkPermissionToDownloadsDir();
+  //   if (ok) {
+  //     List<File> = await repository.getCupFilesInDownloadsDirectory();
+  //   }
+  // }
+
+  Future<bool> _checkPermissionToDownloadsDir() async {
+    var status = await Permission.storage.status;
+    if (status.isGranted) {
+      return true;
+    }
+    if (status.isDenied) {
+      // We didn't ask for permission yet or the permission has been denied before but not permanently.
+      return await Permission.storage.request().isGranted;
+    }
+    if (status.isPermanentlyDenied) {
+      openAppSettings();
+    }
+    return false;
+  }
 }

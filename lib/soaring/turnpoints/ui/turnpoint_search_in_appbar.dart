@@ -14,24 +14,22 @@ import 'package:flutter_soaring_forecast/soaring/turnpoints/bloc/turnpoint_state
 
 import '../turnpoint_utils.dart';
 
-class TurnpointsSearchInAppBarScreen extends StatefulWidget {
+class TurnpointsSearch extends StatefulWidget {
   final String? viewOption;
   static const String TASK_TURNPOINT_OPTION = 'TaskTurnpointOption';
   final List<Turnpoint> turnpointsForTask = [];
   String _searchString = "";
   bool _hasChanges = false;
 
-  TurnpointsSearchInAppBarScreen({Key? key, String? this.viewOption = null})
+  TurnpointsSearch({Key? key, String? this.viewOption = null})
       : super(key: key);
 
   @override
-  State<TurnpointsSearchInAppBarScreen> createState() =>
-      _TurnpointsSearchInAppBarScreenState();
+  State<TurnpointsSearch> createState() => _TurnpointsSearchState();
 }
 
-class _TurnpointsSearchInAppBarScreenState
-    extends State<TurnpointsSearchInAppBarScreen>
-    with AfterLayoutMixin<TurnpointsSearchInAppBarScreen> {
+class _TurnpointsSearchState extends State<TurnpointsSearch>
+    with AfterLayoutMixin<TurnpointsSearch> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   bool typing = false;
 
@@ -174,8 +172,7 @@ class _TurnpointsSearchInAppBarScreenState
           ),
           title: TextButton(
             onPressed: () {
-              if (widget.viewOption ==
-                  TurnpointsSearchInAppBarScreen.TASK_TURNPOINT_OPTION) {
+              if (widget.viewOption == TurnpointsSearch.TASK_TURNPOINT_OPTION) {
                 widget._searchString = "";
                 widget._hasChanges = true;
                 widget.turnpointsForTask.add(turnpoints[index]);
@@ -183,6 +180,9 @@ class _TurnpointsSearchInAppBarScreenState
                 ScaffoldMessenger.of(context).showSnackBar(
                     CommonWidgets.getSnackBarForMessage(
                         turnpoints[index].title + ' added to task '));
+              } else {
+                Navigator.pushNamed(context, TurnpointEdit.routeName,
+                    arguments: turnpoints[index]);
               }
             },
             child: Column(
@@ -248,9 +248,9 @@ class _TurnpointsSearchInAppBarScreenState
           onSelected: handleClick,
           itemBuilder: (BuildContext context) {
             return {
-              TurnpointMenu.importTurnpoints,
+              //TurnpointMenu.importTurnpoints,
               TurnpointMenu.addTurnpoint,
-              TurnpointMenu.exportTurnpoint,
+              //TurnpointMenu.exportTurnpoint,
               TurnpointMenu.emailTurnpoint,
               TurnpointMenu.clearTurnpointDatabase
             }.map((String choice) {
@@ -292,8 +292,7 @@ class _TurnpointsSearchInAppBarScreenState
   }
 
   Future<bool> _onWillPop() async {
-    if (widget.viewOption ==
-        TurnpointsSearchInAppBarScreen.TASK_TURNPOINT_OPTION) {
+    if (widget.viewOption == TurnpointsSearch.TASK_TURNPOINT_OPTION) {
       ScaffoldMessenger.of(context).removeCurrentSnackBar();
       Navigator.of(context).pop(widget.turnpointsForTask);
     } else {

@@ -18,6 +18,7 @@ import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_
 import 'package:flutter_soaring_forecast/soaring/repository/ImageCacheManager.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/rasp_options_api.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/turnpoint_regions.dart';
+import 'package:flutter_soaring_forecast/soaring/turnpoints/cup/cup_styles.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoints_downloader.dart';
 import 'package:retrofit/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -280,6 +281,36 @@ class Repository {
     await makeDatabaseAvailable();
     return _appDatabase!.turnpointDao.getTurnpoint(title, code);
   }
+
+  /// Get the types of valid cup styles
+  /// Note we use a customized list held locally.
+  Future<CupStyles> getCupStyles() async {
+    try {
+      final json = DefaultAssetBundle.of(_context!)
+          .loadString('assets/json/turnpoint_styles.json');
+      // TODO - why is method hanging here in test
+      CupStyles cupStyles = cupStylesFromJson(await json);
+      return Future<CupStyles>.value(cupStyles);
+    } catch (error, stackTrace) {
+      print(stackTrace);
+      return Future<CupStyles>.value(null);
+    }
+  }
+  //
+  // Future<List<File>> getCupFilesInDownloadsDirectory() async {
+  //   List<File> cupFiles = []
+  //   if (Platform.isAndroid) {
+  //     final Directory directory = Directory('/storage/emulated/0/Download');
+  //     if (!await directory.exists()) {
+  //       directory = await getExternalStorageDirectory();
+  //     }
+  //   }
+  //   if (Platform.isIOS){
+  //
+  //   }
+  //   return cupFiles;
+  //
+  // }
 
   // ----- Task ----------------------------------------
 

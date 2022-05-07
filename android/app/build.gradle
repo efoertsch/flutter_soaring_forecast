@@ -63,16 +63,17 @@ dependencies {
 
     // Added following to try to resolve compile problem when webview added to project
     implementation "androidx.versionedparcelable:versionedparcelable:1.1.1"
-    implementation "androidx.lifecycle:lifecycle-runtime:2.3.1"
-    implementation "androidx.core:core:1.6.0"
+    implementation "androidx.lifecycle:lifecycle-runtime:2.4.1"
+    implementation "androidx.core:core:1.7.0"
     implementation "androidx.drawerlayout:drawerlayout:1.1.1"
-    implementation "androidx.lifecycle:lifecycle-viewmodel:2.3.1"
+    implementation "androidx.lifecycle:lifecycle-viewmodel:2.4.1"
     implementation "androidx.legacy:legacy-support-core-ui:1.0.0"
-    implementation "androidx.fragment:fragment:1.3.6"
+    implementation "androidx.fragment:fragment:1.4.1"
+    implementation 'androidx.work:work-runtime-ktx:2.7.1'
 
     // These were added by flutter on project creation
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
-    testImplementation 'junit:junit:4.12'
+    testImplementation 'junit:junit:4.123.2'
     androidTestImplementation 'androidx.test:runner:1.4.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
 }

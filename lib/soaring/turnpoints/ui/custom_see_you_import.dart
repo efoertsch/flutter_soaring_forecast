@@ -8,6 +8,8 @@ import 'package:flutter_soaring_forecast/soaring/turnpoints/bloc/turnpoint_state
 
 import '../../app/constants.dart';
 
+//TODO implement once you can get to Downloads directory and/or implement equivalent logic
+// (current libraries don't support read/write access to download directory
 class CustomSeeYouImportScreen extends StatefulWidget {
   CustomSeeYouImportScreen({Key? key}) : super(key: key);
 
