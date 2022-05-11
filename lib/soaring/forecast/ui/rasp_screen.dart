@@ -138,17 +138,20 @@ class _RaspScreenState extends State<RaspScreen>
           title: Text('RASP'),
           actions: getRaspMenu(),
         ),
-        body: Padding(
-          padding: EdgeInsets.all(8.0),
-          child: Column(mainAxisAlignment: MainAxisAlignment.start, children: [
-            getForecastModelsAndDates(context),
-            getForecastTypes(context),
-            displayForecastTime(context),
-            forecastWindow(),
-            //emptyWidgetForForecastImages(),
-            widgetForSnackBarMessages(),
-            //displayMarkersAndLines(),
-          ]),
+        body: SafeArea(
+          child: Padding(
+            padding: EdgeInsets.all(8.0),
+            child:
+                Column(mainAxisAlignment: MainAxisAlignment.start, children: [
+              getForecastModelsAndDates(context),
+              getForecastTypes(context),
+              displayForecastTime(context),
+              forecastWindow(),
+              //emptyWidgetForForecastImages(),
+              widgetForSnackBarMessages(),
+              //displayMarkersAndLines(),
+            ]),
+          ),
         )
         // }),
         );
@@ -807,6 +810,7 @@ class _RaspScreenState extends State<RaspScreen>
       ),
       PopupMenuButton<String>(
         onSelected: handleClick,
+        icon: Icon(Icons.more_vert),
         itemBuilder: (BuildContext context) {
           return {
             RaspMenu.clearTask,

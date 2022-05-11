@@ -45,6 +45,27 @@ class TurnpointMenu {
   static const String customImport = 'Custom Import';
 }
 
+class TurnpointEditMenu {
+  static const String toggleLatLongFormat = "Toggle lat/lng format";
+  static const String airNav = "AIRNAV";
+}
+
+class TurnpointEditText {
+  static const String waypointName = 'Waypoint Name';
+  static const String waypointCode = 'Waypoint Code';
+  static const String countryCode = 'Country Code';
+  static const String latitudeDecimalDegrees = 'Latitude (-)dd.ddddd';
+  static const String latitudeDecimalMinutes = 'Latitude DDMM.mmm(N|S)';
+  static const String longitudeDecimalDegrees = 'Longitude (-)ddd.ddddd';
+  static const String longitudeDecimalMinutes = 'Longitude DDDMM.mmm(W|E)';
+  static const String elevation = 'Elevation ending in ft or m';
+  static const String runwayDirection = 'Runway direction - 3 digit number';
+  static const String runwayLength = 'Runway length - ending in ft or m';
+  static const String runwayWidth = 'Runway width';
+  static const String airportFrequency = 'Airport Frequency nnn.nn(0|5)';
+  static const String description = 'Description';
+}
+
 const textStyleBoldBlackFontSize20 =
     TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 20);
 

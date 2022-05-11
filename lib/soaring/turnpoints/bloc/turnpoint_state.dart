@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/turnpoint_regions.dart';
+import 'package:flutter_soaring_forecast/soaring/turnpoints/cup/cup_styles.dart';
 
 @immutable
 abstract class TurnpointState extends Equatable {}
@@ -33,9 +34,10 @@ class TurnpointsDownloadingState extends TurnpointState {
 
 class TurnpointsLoadedState extends TurnpointState {
   final List<Turnpoint> turnpoints;
-  TurnpointsLoadedState(this.turnpoints);
+  final List<Style> cupStyles;
+  TurnpointsLoadedState(this.turnpoints, this.cupStyles);
   @override
-  List<Object?> get props => [turnpoints];
+  List<Object?> get props => [turnpoints, cupStyles];
 }
 
 // Turnpoints Search States
@@ -61,6 +63,13 @@ class TurnpointSearchMessage extends TurnpointState {
 // For turnpoint file download/import
 class TurnpointFileLoadingState extends TurnpointState {
   TurnpointFileLoadingState();
+  @override
+  List<Object?> get props => [];
+}
+
+class TurnpointCupStyles extends TurnpointState {
+  List<Style> cupStyles;
+  TurnpointCupStyles(this.cupStyles);
   @override
   List<Object?> get props => [];
 }

@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
+import 'package:flutter_soaring_forecast/soaring/turnpoints/cup/cup_styles.dart';
 import 'package:intl/intl.dart';
 import 'package:sprintf/sprintf.dart';
 
@@ -24,6 +25,7 @@ class TurnpointUtils {
   static NumberFormat longitudeFormat = NumberFormat("00000.000");
   static const String QUOTE = "\"";
   static const String COMMA = ",";
+  static final List<Style> _cupStyles = [];
 
 // Besides determining the input file format, also used for exporting turnpoints to a file
   static const WITH_WIDTH_AND_DESCRIPTION_LABELS = [
@@ -160,47 +162,43 @@ class TurnpointUtils {
     return SeeYouFormat.NOT_DEFINED;
   }
 
-  static String getStyleName(String style) {
-    switch (style) {
-      case "0":
-        return "Unknown";
-      case "1":
-        return "Waypoint";
-      case "2":
-        return "Airfield with grass surface runway";
-      case "3":
-        return "Outlanding";
-      case "4":
-        return "Gliding airfield";
-      case "5":
-        return "Airfield with solid surface runway";
-      case "6":
-        return "Mountain Pass";
-      case "7":
-        return "Mountain Top";
-      case "8":
-        return "Transmitter Mast";
-      case "9":
-        return "VOR";
-      case "10":
-        return "NDB";
-      case "11":
-        return "Cooling Tower";
-      case "12":
-        return "Dam";
-      case "13":
-        return "Tunnel";
-      case "14":
-        return "Bridge";
-      case "15":
-        return "Power Plant";
-      case "16":
-        return "Castle";
-      case "17":
-        return "Intersection";
-      default:
-        return "Unknown";
-    }
+  /// Bit of a hack.
+  /// _cupStyles must be set earlier (by bloc call loading them)
+  /// before use in these util functions.
+  static String getStyleFromStyleDescription(
+      List<Style> cupStyles, String styleDesription) {
+    return cupStyles
+        .firstWhere((cupStyle) => cupStyle.description == styleDesription,
+            orElse: () => Style(style: '0', description: "Unknown"))
+        .style;
+  }
+
+  /// Bit of a hack.
+  /// _cupStyles must be set earlier (by bloc call loading them)
+  /// before use in these util functions.
+  static String getStyleDescriptionFromStyle(
+      List<Style> cupStyles, String style) {
+    return cupStyles
+        .firstWhere((cupStyle) => cupStyle.style == style,
+            orElse: () => Style(style: '0', description: "Unknown"))
+        .description;
+  }
+
+  static void setCupStyles(List<Style> listOfCupStyles) {
+    _cupStyles.clear();
+    _cupStyles.addAll(listOfCupStyles);
+  }
+
+  /// Bit of a hack.
+  /// _cupStyles must be set earlier (by bloc call loading them)
+  /// before use in these util functions.
+  static List<Style> getCupStyles() {
+    return _cupStyles;
+  }
+
+  // Note that whatever calls this must first call setCupStyles
+  static String getStyleName(String styleNumber) {
+    return getStyleDescriptionFromStyle(_cupStyles, styleNumber);
   }
 
   static bool isLandable(String style) {

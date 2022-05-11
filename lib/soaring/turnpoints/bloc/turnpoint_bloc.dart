@@ -6,11 +6,14 @@ import 'package:flutter_soaring_forecast/soaring/repository/options/turnpoint_re
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/bloc/turnpoint_event.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/bloc/turnpoint_state.dart';
+import 'package:flutter_soaring_forecast/soaring/turnpoints/cup/cup_styles.dart';
+import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoint_utils.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
   final Repository repository;
   final List<TurnpointFile> turnpointFiles = [];
+  final List<Style> cupStyles = [];
 
   //TurnpointState get initialState => TurnpointsLoadingState();
 
@@ -32,10 +35,18 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
     emit(SearchingTurnpointsState());
     try {
       var turnpoints = await repository.findTurnpoints(event.searchString);
-      emit(TurnpointsLoadedState(turnpoints));
+      if (TurnpointUtils.getCupStyles().isEmpty) {
+        final List<Style> cupStyles = await _getCupStyles();
+        TurnpointUtils.setCupStyles(cupStyles);
+      }
+      emit(TurnpointsLoadedState(turnpoints, TurnpointUtils.getCupStyles()));
     } catch (e) {
       emit(TurnpointSearchErrorState(e.toString()));
     }
+  }
+
+  Future<List<Style>> _getCupStyles() async {
+    return await repository.getCupStyles();
   }
 
   void _showAllTurnpoints(
@@ -48,7 +59,11 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
     List<Turnpoint> turnpoints = [];
     try {
       turnpoints.addAll(await repository.getAllTurnpoints());
-      emit(TurnpointsLoadedState(turnpoints));
+      if (TurnpointUtils.getCupStyles().isEmpty) {
+        final List<Style> cupStyles = await _getCupStyles();
+        TurnpointUtils.setCupStyles(cupStyles);
+      }
+      emit(TurnpointsLoadedState(turnpoints, TurnpointUtils.getCupStyles()));
     } catch (e) {
       emit(TurnpointErrorState(e.toString()));
     }

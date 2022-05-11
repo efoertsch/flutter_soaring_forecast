@@ -5,18 +5,18 @@ import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart'
 import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoint_utils.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-class TurnpointDetailView extends StatefulWidget {
+class TurnpointOverheadView extends StatefulWidget {
   final Turnpoint turnpoint;
 
-  TurnpointDetailView({Key? key, required this.turnpoint}) : super(key: key);
+  TurnpointOverheadView({Key? key, required this.turnpoint}) : super(key: key);
 
   @override
-  _TurnpointDetailViewState createState() => _TurnpointDetailViewState();
+  _TurnpointOverheadViewState createState() => _TurnpointOverheadViewState();
 }
 
 //TODO - keep more data details in Bloc,
-class _TurnpointDetailViewState extends State<TurnpointDetailView>
-    with AfterLayoutMixin<TurnpointDetailView> {
+class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
+    with AfterLayoutMixin<TurnpointOverheadView> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   bool _firstLayoutComplete = false;
   GoogleMapController? mapController;
@@ -35,16 +35,18 @@ class _TurnpointDetailViewState extends State<TurnpointDetailView>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      key: _scaffoldKey,
-      appBar: AppBar(
-        title: Text('View Turnpoint'),
-        leading: CommonWidgets.backArrowToHomeScreen(),
-        actions: <Widget>[
-          IconButton(icon: Icon(Icons.list), onPressed: null),
-        ],
+    return SafeArea(
+      child: Scaffold(
+        key: _scaffoldKey,
+        appBar: AppBar(
+          title: Text('View Turnpoint'),
+          leading: CommonWidgets.backArrowToHomeScreen(),
+          actions: <Widget>[
+            IconButton(icon: Icon(Icons.list), onPressed: null),
+          ],
+        ),
+        body: getWidget(),
       ),
-      body: getWidget(),
     );
   }
 

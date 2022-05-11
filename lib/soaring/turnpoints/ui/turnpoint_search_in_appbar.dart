@@ -11,6 +11,7 @@ import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart'
 import 'package:flutter_soaring_forecast/soaring/turnpoints/bloc/turnpoint_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/bloc/turnpoint_event.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/bloc/turnpoint_state.dart';
+import 'package:flutter_soaring_forecast/soaring/turnpoints/cup/cup_styles.dart';
 
 import '../turnpoint_utils.dart';
 
@@ -99,7 +100,9 @@ class _TurnpointsSearchState extends State<TurnpointsSearch>
               );
             }
             return _getTurnpointListView(
-                context: context, turnpoints: state.turnpoints);
+                context: context,
+                turnpoints: state.turnpoints,
+                cupStyles: state.cupStyles);
           }
 
           if (state is TurnpointErrorState) {
@@ -153,7 +156,9 @@ class _TurnpointsSearchState extends State<TurnpointsSearch>
   }
 
   Widget _getTurnpointListView(
-      {required BuildContext context, required List<Turnpoint> turnpoints}) {
+      {required BuildContext context,
+      required List<Turnpoint> turnpoints,
+      required List<Style> cupStyles}) {
     return ListView.separated(
       itemCount: turnpoints.length,
       itemBuilder: (BuildContext context, int index) {
@@ -199,7 +204,8 @@ class _TurnpointsSearchState extends State<TurnpointsSearch>
                 Container(
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    TurnpointUtils.getStyleName(turnpoints[index].style),
+                    TurnpointUtils.getStyleDescriptionFromStyle(
+                        cupStyles, turnpoints[index].style),
                     textAlign: TextAlign.left,
                     style: textStyleBoldBlack87FontSize15,
                   ),

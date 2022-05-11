@@ -284,18 +284,19 @@ class Repository {
 
   /// Get the types of valid cup styles
   /// Note we use a customized list held locally.
-  Future<CupStyles> getCupStyles() async {
+  Future<List<Style>> getCupStyles() async {
+    final List<Style> cupListStyles = [];
     try {
       final json = DefaultAssetBundle.of(_context!)
           .loadString('assets/json/turnpoint_styles.json');
-      // TODO - why is method hanging here in test
       CupStyles cupStyles = cupStylesFromJson(await json);
-      return Future<CupStyles>.value(cupStyles);
+      cupListStyles.addAll(cupStyles.styles);
     } catch (error, stackTrace) {
       print(stackTrace);
-      return Future<CupStyles>.value(null);
     }
+    return Future<List<Style>>.value(cupListStyles);
   }
+
   //
   // Future<List<File>> getCupFilesInDownloadsDirectory() async {
   //   List<File> cupFiles = []

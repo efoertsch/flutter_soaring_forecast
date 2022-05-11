@@ -97,11 +97,12 @@ class SoaringForecastApp extends StatelessWidget {
               settings: settings,
             );
           }
+
           if (settings.name == TurnpointEdit.routeName) {
             final turnpoint = settings.arguments as Turnpoint;
             return CustomMaterialPageRoute(
               builder: (context) {
-                return TurnpointEditView(turnpoint: turnpoint);
+                return TurnpointEdit(turnpoint: turnpoint);
               },
               settings: settings,
             );
@@ -241,7 +242,7 @@ class TurnpointView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TurnpointDetailView(turnpoint: turnpoint);
+    return TurnpointOverheadView(turnpoint: turnpoint);
   }
 }
 
@@ -253,7 +254,10 @@ class TurnpointEdit extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TurnpointEditView(turnpoint: turnpoint);
+    return BlocProvider<TurnpointBloc>(
+        create: (BuildContext context) => TurnpointBloc(
+            repository: RepositoryProvider.of<Repository>(context)),
+        child: TurnpointEditView(turnpoint: turnpoint));
   }
 }
 
