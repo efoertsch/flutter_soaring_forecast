@@ -35,4 +35,21 @@ class Turnpoint {
       this.frequency = "",
       this.description = "",
       this.runwayWidth = ""});
+
+  clone() {
+    return Turnpoint(
+        id: id,
+        title: title,
+        code: code,
+        country: country,
+        latitudeDeg: latitudeDeg,
+        longitudeDeg: longitudeDeg,
+        elevation: elevation,
+        style: style,
+        direction: direction,
+        length: length,
+        frequency: frequency,
+        description: description,
+        runwayWidth: runwayWidth);
+  }
 }

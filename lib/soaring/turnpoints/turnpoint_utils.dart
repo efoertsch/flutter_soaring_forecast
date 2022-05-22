@@ -27,6 +27,18 @@ class TurnpointUtils {
   static const String COMMA = ",";
   static final List<Style> _cupStyles = [];
 
+  static final latitudeCupRegex =
+      RegExp("(9000\\.000|[0-8][0-9][0-5][0-9]\\.[0-9]{3})[NS]");
+  static final longitudeCupRegex = RegExp(
+      "(18000\\.000|(([0-1][0-7])|([0][0-9]))[0-9][0-5][0-9]\\.[0-9]{3})[EW]");
+  static final elevationRegex =
+      RegExp("([0-9]{1,4}(\\.[0-9])?|(\\.[0-9]))(m|ft)");
+  static final directionRegex =
+      RegExp("(360|(3[0-5][0-9])|([12][0-9][0-9])|(0[0-9][0-9]))");
+  static final lengthRegex = RegExp("([0-9]{1,5}((\\.[0-9])?))(m|ft)");
+  static final widthRegex = RegExp("([0-9]{1,3})(m|ft)");
+  static final frequencyRegex = RegExp("1[1-3][0-9]\\.[0-9][0-9](0|5)");
+
 // Besides determining the input file format, also used for exporting turnpoints to a file
   static const WITH_WIDTH_AND_DESCRIPTION_LABELS = [
     "name",

@@ -7,24 +7,29 @@ import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
 import 'package:flutter_soaring_forecast/soaring/app/custom_styles.dart';
 import 'package:flutter_soaring_forecast/soaring/app/main.dart';
+import 'package:flutter_soaring_forecast/soaring/app/web_mixin.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/bloc/turnpoint_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/bloc/turnpoint_event.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/bloc/turnpoint_state.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/cup/cup_styles.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoint_utils.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class TurnpointEditView extends StatefulWidget {
   final Turnpoint turnpoint;
+  late final Turnpoint modifiableTurnpoint;
 
-  TurnpointEditView({Key? key, required this.turnpoint}) : super(key: key);
+  TurnpointEditView({Key? key, required this.turnpoint}) : super(key: key) {
+    modifiableTurnpoint = turnpoint.clone();
+  }
 
   @override
   State<TurnpointEditView> createState() => _TurnpointEditViewState();
 }
 
 class _TurnpointEditViewState extends State<TurnpointEditView> {
+  final _formKey = GlobalKey<FormState>();
+
   bool isReadOnly = true;
   bool isDecimalDegreesFormat = true;
   List<Style> cupStyles = [];
@@ -57,209 +62,245 @@ class _TurnpointEditViewState extends State<TurnpointEditView> {
         leading: CommonWidgets.backArrowToHomeScreen(),
         actions: _getMenu(),
       ),
-      body: getDisplayWidget(),
+      body: _getBodyWidget(),
       bottomNavigationBar: null,
     );
   }
 
-  Widget getDisplayWidget() {
+  Widget _getBodyWidget() {
     return SafeArea(
-      child: ListView(children: [
-        Padding(
-          padding: const EdgeInsets.only(top: 16.0, left: 8, right: 8),
-          child: TextFormField(
-            readOnly: isReadOnly,
-            initialValue: widget.turnpoint.title,
-            decoration: InputDecoration(
-              border: OutlineInputBorder(),
-              hintText: TurnpointEditText.waypointName,
-              labelText: TurnpointEditText.waypointName,
+      child: Form(
+        key: _formKey,
+        child: ListView(children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 16.0, left: 8, right: 8),
+            child: TextFormField(
+              readOnly: isReadOnly,
+              initialValue: widget.modifiableTurnpoint.title,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(),
+                hintText: TurnpointEditText.waypointName,
+                labelText: TurnpointEditText.waypointName,
+              ),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please enter waypoint title';
+                }
+                return null;
+              },
+              onChanged: (text) {
+                if (text != widget.modifiableTurnpoint.title) {
+                  widget.modifiableTurnpoint.title = text;
+                }
+              },
             ),
-            onChanged: (text) {
-              widget.turnpoint.title = text;
-            },
           ),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: TextFormField(
-            readOnly: isReadOnly,
-            initialValue: widget.turnpoint.code,
-            decoration: InputDecoration(
-              border: OutlineInputBorder(),
-              hintText: TurnpointEditText.waypointCode,
-              labelText: TurnpointEditText.waypointCode,
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextFormField(
+              readOnly:
+                  isReadOnly || widget.modifiableTurnpoint.code.isNotEmpty,
+              initialValue: widget.modifiableTurnpoint.code,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(),
+                hintText: TurnpointEditText.waypointCode,
+                labelText: TurnpointEditText.waypointCode,
+              ),
+              autovalidateMode: AutovalidateMode.onUserInteraction,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'A turnpoint code is required';
+                }
+                return null;
+              },
+              onChanged: (text) {
+                if (text != widget.modifiableTurnpoint.code) {
+                  widget.modifiableTurnpoint.code = text;
+                }
+              },
             ),
-            onChanged: (text) {
-              widget.turnpoint.code = text;
-            },
           ),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: TextFormField(
-            readOnly: isReadOnly,
-            initialValue: (widget.turnpoint.country),
-            decoration: InputDecoration(
-              border: OutlineInputBorder(),
-              hintText: TurnpointEditText.countryCode,
-              labelText: TurnpointEditText.countryCode,
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextFormField(
+              readOnly: isReadOnly,
+              initialValue: (widget.turnpoint.country),
+              decoration: InputDecoration(
+                border: OutlineInputBorder(),
+                hintText: TurnpointEditText.countryCode,
+                labelText: TurnpointEditText.countryCode,
+              ),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'A turnpoint code is required';
+                }
+                return null;
+              },
+              onChanged: (text) {
+                widget.modifiableTurnpoint.country = text;
+              },
             ),
-            onChanged: (text) {
-              widget.turnpoint.country = text;
-            },
           ),
-        ),
-        Row(mainAxisSize: MainAxisSize.min, children: [
-          Expanded(
-            child: Column(mainAxisSize: MainAxisSize.min, children: [
-              Padding(
+          Row(mainAxisSize: MainAxisSize.min, children: [
+            Expanded(
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: TextFormField(
+                    readOnly: isReadOnly,
+                    initialValue: isDecimalDegreesFormat
+                        ? widget.modifiableTurnpoint.latitudeDeg
+                            .toStringAsFixed(5)
+                        : TurnpointUtils.getLatitudeInCupFormat(
+                            widget.turnpoint.latitudeDeg),
+                    decoration: InputDecoration(
+                        border: OutlineInputBorder(),
+                        hintText: isDecimalDegreesFormat
+                            ? TurnpointEditText.latitudeDecimalDegrees
+                            : TurnpointEditText.latitudeDecimalMinutes,
+                        labelText: isDecimalDegreesFormat
+                            ? TurnpointEditText.latitudeDecimalDegrees
+                            : TurnpointEditText.latitudeDecimalMinutes),
+                    onChanged: (text) {
+                      widget.modifiableTurnpoint.latitudeDeg =
+                          double.parse(text);
+                    },
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: TextFormField(
+                    readOnly: isReadOnly,
+                    initialValue: isDecimalDegreesFormat
+                        ? widget.modifiableTurnpoint.longitudeDeg
+                            .toStringAsFixed(5)
+                        : TurnpointUtils.getLongitudeInCupFormat(
+                            widget.turnpoint.longitudeDeg),
+                    decoration: InputDecoration(
+                        border: OutlineInputBorder(),
+                        hintText: isDecimalDegreesFormat
+                            ? TurnpointEditText.longitudeDecimalDegrees
+                            : TurnpointEditText.longitudeDecimalMinutes,
+                        labelText: isDecimalDegreesFormat
+                            ? TurnpointEditText.longitudeDecimalDegrees
+                            : TurnpointEditText.longitudeDecimalMinutes),
+                    onChanged: (text) {
+                      widget.modifiableTurnpoint.latitudeDeg =
+                          double.parse(text);
+                    },
+                  ),
+                ),
+              ]),
+            ),
+            Expanded(
+              child: Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: TextFormField(
-                  readOnly: isReadOnly,
-                  initialValue: widget.turnpoint.latitudeDeg.toStringAsFixed(5),
-                  decoration: InputDecoration(
-                      border: OutlineInputBorder(),
-                      hintText: isDecimalDegreesFormat
-                          ? TurnpointEditText.latitudeDecimalDegrees
-                          : TurnpointEditText.latitudeDecimalMinutes,
-                      labelText: isDecimalDegreesFormat
-                          ? TurnpointEditText.latitudeDecimalDegrees
-                          : TurnpointEditText.latitudeDecimalMinutes),
-                  onChanged: (text) {
-                    widget.turnpoint.latitudeDeg = double.parse(text);
-                  },
+                child: IconButton(
+                  icon: Icon(Icons.location_searching),
+                  color:
+                      TurnpointUtils.getColorForTurnpointIcon(widget.turnpoint),
+                  onPressed: () => Navigator.pushNamed(
+                    context,
+                    TurnpointView.routeName,
+                    arguments: widget.modifiableTurnpoint,
+                  ),
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: TextFormField(
-                  readOnly: isReadOnly,
-                  initialValue:
-                      widget.turnpoint.longitudeDeg.toStringAsFixed(5),
-                  decoration: InputDecoration(
-                      border: OutlineInputBorder(),
-                      hintText: isDecimalDegreesFormat
-                          ? TurnpointEditText.longitudeDecimalDegrees
-                          : TurnpointEditText.longitudeDecimalMinutes,
-                      labelText: isDecimalDegreesFormat
-                          ? TurnpointEditText.longitudeDecimalDegrees
-                          : TurnpointEditText.longitudeDecimalMinutes),
-                  onChanged: (text) {
-                    widget.turnpoint.latitudeDeg = double.parse(text);
-                  },
-                ),
+            ),
+          ]),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextFormField(
+              readOnly: isReadOnly,
+              initialValue: widget.modifiableTurnpoint.elevation,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(),
+                hintText: TurnpointEditText.elevation,
+                labelText: TurnpointEditText.elevation,
               ),
-            ]),
+              onChanged: (text) {
+                widget.modifiableTurnpoint.elevation = text;
+              },
+            ),
           ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: IconButton(
-                icon: Icon(Icons.location_searching),
-                color:
-                    TurnpointUtils.getColorForTurnpointIcon(widget.turnpoint),
-                onPressed: () => Navigator.pushNamed(
-                  context,
-                  TurnpointView.routeName,
-                  arguments: widget.turnpoint,
-                ),
+          getCupStyleList(),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextFormField(
+              readOnly: isReadOnly,
+              initialValue: widget.modifiableTurnpoint.direction,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(),
+                hintText: TurnpointEditText.runwayDirection,
+                labelText: TurnpointEditText.runwayDirection,
               ),
+              onChanged: (text) {
+                widget.modifiableTurnpoint.direction = text;
+              },
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextFormField(
+              readOnly: isReadOnly,
+              initialValue: widget.modifiableTurnpoint.length,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(),
+                hintText: TurnpointEditText.runwayLength,
+                labelText: TurnpointEditText.runwayLength,
+              ),
+              onChanged: (text) {
+                widget.modifiableTurnpoint.length = text;
+              },
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextFormField(
+              readOnly: isReadOnly,
+              initialValue: widget.modifiableTurnpoint.runwayWidth,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(),
+                hintText: TurnpointEditText.runwayWidth,
+                labelText: TurnpointEditText.runwayWidth,
+              ),
+              onChanged: (text) {
+                widget.modifiableTurnpoint.runwayWidth = text;
+              },
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextFormField(
+              readOnly: isReadOnly,
+              initialValue: widget.modifiableTurnpoint.frequency,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(),
+                hintText: TurnpointEditText.airportFrequency,
+                labelText: TurnpointEditText.airportFrequency,
+              ),
+              onChanged: (text) {
+                widget.modifiableTurnpoint.frequency = text;
+              },
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextFormField(
+              readOnly: isReadOnly,
+              initialValue: widget.modifiableTurnpoint.description,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(),
+                hintText: TurnpointEditText.description,
+                labelText: TurnpointEditText.description,
+              ),
+              onChanged: (text) {
+                widget.modifiableTurnpoint.description = text;
+              },
             ),
           ),
         ]),
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: TextFormField(
-            readOnly: isReadOnly,
-            initialValue: widget.turnpoint.elevation,
-            decoration: InputDecoration(
-              border: OutlineInputBorder(),
-              hintText: TurnpointEditText.elevation,
-              labelText: TurnpointEditText.elevation,
-            ),
-            onChanged: (text) {
-              widget.turnpoint.elevation = text;
-            },
-          ),
-        ),
-        getCupStyleList(),
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: TextFormField(
-            readOnly: isReadOnly,
-            initialValue: widget.turnpoint.direction,
-            decoration: InputDecoration(
-              border: OutlineInputBorder(),
-              hintText: TurnpointEditText.runwayDirection,
-              labelText: TurnpointEditText.runwayDirection,
-            ),
-            onChanged: (text) {
-              widget.turnpoint.direction = text;
-            },
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: TextFormField(
-            readOnly: isReadOnly,
-            initialValue: widget.turnpoint.length,
-            decoration: InputDecoration(
-              border: OutlineInputBorder(),
-              hintText: TurnpointEditText.runwayLength,
-              labelText: TurnpointEditText.runwayLength,
-            ),
-            onChanged: (text) {
-              widget.turnpoint.length = text;
-            },
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: TextFormField(
-            readOnly: isReadOnly,
-            initialValue: widget.turnpoint.runwayWidth,
-            decoration: InputDecoration(
-              border: OutlineInputBorder(),
-              hintText: TurnpointEditText.runwayWidth,
-              labelText: TurnpointEditText.runwayWidth,
-            ),
-            onChanged: (text) {
-              widget.turnpoint.runwayWidth = text;
-            },
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: TextFormField(
-            readOnly: isReadOnly,
-            initialValue: widget.turnpoint.frequency,
-            decoration: InputDecoration(
-              border: OutlineInputBorder(),
-              hintText: TurnpointEditText.airportFrequency,
-              labelText: TurnpointEditText.airportFrequency,
-            ),
-            onChanged: (text) {
-              widget.turnpoint.frequency = text;
-            },
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: TextFormField(
-            readOnly: isReadOnly,
-            initialValue: widget.turnpoint.description,
-            decoration: InputDecoration(
-              border: OutlineInputBorder(),
-              hintText: TurnpointEditText.description,
-              labelText: TurnpointEditText.description,
-            ),
-            onChanged: (text) {
-              widget.turnpoint.description = text;
-            },
-          ),
-        ),
-      ]),
+      ),
     );
   }
 
@@ -274,18 +315,18 @@ class _TurnpointEditViewState extends State<TurnpointEditView> {
         return DropdownButton<String>(
           style: CustomStyle.bold18(context),
           value: TurnpointUtils.getStyleDescriptionFromStyle(
-              state.cupStyles, widget.turnpoint.style),
+              state.cupStyles, widget.modifiableTurnpoint.style),
           hint: Text('Select turnpoint type'),
           isExpanded: true,
           iconSize: 24,
           elevation: 16,
           onChanged: (String? description) {
             if (description != null) {
-              widget.turnpoint.style =
+              widget.modifiableTurnpoint.style =
                   TurnpointUtils.getStyleFromStyleDescription(
                       state.cupStyles, description);
             } else {
-              widget.turnpoint.style = '0';
+              widget.modifiableTurnpoint.style = '0';
             }
             // _sendEvent(context, );
           },
@@ -310,18 +351,30 @@ class _TurnpointEditViewState extends State<TurnpointEditView> {
 
   List<Widget> _getMenu() {
     return <Widget>[
-      IconButton(
-        icon: Icon(Icons.edit),
-        color: Colors.white,
-        onPressed: () => setState(() {
-          isReadOnly = !isReadOnly;
-          ScaffoldMessenger.of(context).removeCurrentSnackBar();
-          ScaffoldMessenger.of(context).showSnackBar(
-              CommonWidgets.getSnackBarForMessage(isReadOnly
-                  ? "Turnpoint in readonly mode."
-                  : "Turnpoint in edit mode."));
-        }),
-      ),
+      isReadOnly
+          ? IconButton(
+              icon: Icon(Icons.edit),
+              color: Colors.white,
+              onPressed: () => setState(() {
+                isReadOnly = !isReadOnly;
+                ScaffoldMessenger.of(context).removeCurrentSnackBar();
+                ScaffoldMessenger.of(context).showSnackBar(
+                    CommonWidgets.getSnackBarForMessage(isReadOnly
+                        ? "Turnpoint in readonly mode."
+                        : "Turnpoint in edit mode."));
+              }),
+            )
+          : TextButton(
+              onPressed: () {
+                if (_formKey.currentState!.validate()) {
+                  print('Save/update turnpoint');
+                }
+              },
+              child: Text(
+                TurnpointEditMenu.save,
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
       PopupMenuButton<String>(
         onSelected: handleClick,
         icon: Icon(Icons.more_vert),
@@ -343,21 +396,15 @@ class _TurnpointEditViewState extends State<TurnpointEditView> {
   void handleClick(String value) {
     switch (value) {
       case TurnpointEditMenu.toggleLatLongFormat:
-        isDecimalDegreesFormat = !isDecimalDegreesFormat;
+        setState(() {
+          isDecimalDegreesFormat = !isDecimalDegreesFormat;
+        });
+
         break;
       case TurnpointEditMenu.airNav:
-        _launchWebBrowser(
-            "www.airnav.com", "/airport/" + widget.turnpoint.code);
+        launchWebBrowser(
+            "www.airnav.com", "/airport/" + widget.modifiableTurnpoint.code);
         break;
-    }
-  }
-
-  static void _launchWebBrowser(String base, String path) async {
-    final uri = Uri.https(base, path);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    } else {
-      throw 'Could not launch $uri';
     }
   }
 

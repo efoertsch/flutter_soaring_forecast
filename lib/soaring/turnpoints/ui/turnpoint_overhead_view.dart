@@ -1,6 +1,8 @@
 import 'package:after_layout/after_layout.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
+import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
+import 'package:flutter_soaring_forecast/soaring/app/web_mixin.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoint_utils.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -20,6 +22,8 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   bool _firstLayoutComplete = false;
   GoogleMapController? mapController;
+  bool isDecimalDegreesFormat = true;
+  bool isReadOnly = false;
 
 // Make sure first layout occurs prior to map ready otherwise crash occurs
   @override
@@ -41,9 +45,7 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
         appBar: AppBar(
           title: Text('View Turnpoint'),
           leading: CommonWidgets.backArrowToHomeScreen(),
-          actions: <Widget>[
-            IconButton(icon: Icon(Icons.list), onPressed: null),
-          ],
+          actions: _getMenu(),
         ),
         body: getWidget(),
       ),
@@ -60,7 +62,7 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
         mainAxisAlignment: MainAxisAlignment.start,
         children: <Widget>[
           Text(TurnpointUtils.getFormattedTurnpointDetails(
-              widget.turnpoint, false)),
+              widget.turnpoint, isDecimalDegreesFormat)),
           forecastMap(),
           closeButton(),
         ],
@@ -106,5 +108,58 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
       markerId: MarkerId(turnpoint.code),
       position: LatLng(turnpoint.latitudeDeg, turnpoint.longitudeDeg),
     );
+  }
+
+  List<Widget> _getMenu() {
+    return <Widget>[
+      TextButton(
+        onPressed: () {
+          launchWebBrowser(
+              "www.airnav.com", "/airport/" + widget.turnpoint.code);
+        },
+        child: Text(
+          TurnpointEditMenu.airNav,
+          style: TextStyle(color: Colors.white),
+        ),
+      ),
+      PopupMenuButton<String>(
+        onSelected: handleClick,
+        icon: Icon(Icons.more_vert),
+        itemBuilder: (BuildContext context) {
+          return {
+            TurnpointEditMenu.toggleLatLongFormat,
+            TurnpointEditMenu.dragMarker,
+          }.map((String choice) {
+            return PopupMenuItem<String>(
+              value: choice,
+              child: Text(choice),
+            );
+          }).toList();
+        },
+      ),
+    ];
+  }
+
+  List getMenuOptions() {
+    List<String> optionList = [];
+    optionList.add(TurnpointEditMenu.toggleLatLongFormat);
+    if (isReadOnly) {
+      optionList.add(TurnpointEditMenu.dragMarker);
+    }
+    return optionList;
+  }
+
+  void handleClick(String value) {
+    switch (value) {
+      case TurnpointEditMenu.toggleLatLongFormat:
+        setState(() {
+          isDecimalDegreesFormat = !isDecimalDegreesFormat;
+        });
+        break;
+      case TurnpointEditMenu.dragMarker:
+        //TODO drag marker logic
+        print("Implement drag marker logic");
+        break;
+    }
   }
 }

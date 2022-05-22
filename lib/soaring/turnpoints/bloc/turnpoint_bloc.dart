@@ -23,6 +23,7 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
     on<GetTurnpointFileNamesEvent>(_getListOfTurnpointExchangeFiles);
     on<LoadTurnpointFileEvent>(_loadTurnpointFileFromTurnpointExchange);
     on<DeleteAllTurnpointsEvent>(_deleteAllTurnpoints);
+    on<CheckIfDuplicateTurnpointCodeEvent>(_checkIfDuplicateTurnpointCode);
     //on<GetCustomImportFileNamesEvent>(_getCustomImportFileNames);
   }
 
@@ -139,5 +140,15 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
       openAppSettings();
     }
     return false;
+  }
+
+  void _checkIfDuplicateTurnpointCode(CheckIfDuplicateTurnpointCodeEvent event,
+      Emitter<TurnpointState> emit) async {
+    Turnpoint? turnpoint =
+        await repository.getTurnpointByCode(event.turnpointCode);
+    if (turnpoint != null) {
+      emit(TurnpointDuplicateCode());
+      emit(TurnpointErrorState("Duplicate turnpoint code"));
+    }
   }
 }

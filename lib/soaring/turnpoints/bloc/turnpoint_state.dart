@@ -74,6 +74,11 @@ class TurnpointCupStyles extends TurnpointState {
   List<Object?> get props => [];
 }
 
+class TurnpointDuplicateCode extends TurnpointState {
+  @override
+  List<Object?> get props => [];
+}
+
 //----------------------------------------------------------------
 // For loading turnpoint file names
 class TurnpointFilesFoundState extends TurnpointState {

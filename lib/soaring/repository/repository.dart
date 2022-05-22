@@ -251,6 +251,11 @@ class Repository {
     return filePath;
   }
 
+  Future<Turnpoint?> getTurnpointByCode(String code) async {
+    await makeDatabaseAvailable();
+    return _appDatabase!.turnpointDao.getTurnpointByCode(code);
+  }
+
   //------  Selected turnpoint files available from turnpoint exchange ------
   Future<List<TurnpointFile>> getListOfTurnpointExchangeRegionFiles() async {
     List<TurnpointRegion> turnpointRegionList = [];

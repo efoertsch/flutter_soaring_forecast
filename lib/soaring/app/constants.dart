@@ -8,6 +8,7 @@ const String BASE_URL = 'https://www.soargbsc.net/';
 const String RASP_BASE_URL = BASE_URL + 'rasp/';
 const String RASP_OPTIONS_BASE_URL = 'https://soargbsc.com/soaringforecast/';
 const String AIRPORT_URL = 'http://ourairports.com/data/airports.csv';
+
 enum ImageTypes { body, head, side, foot }
 
 const String APP_DATABASE = 'app_database.db'; // Floor database name
@@ -46,8 +47,10 @@ class TurnpointMenu {
 }
 
 class TurnpointEditMenu {
+  static const String save = "SAVE";
   static const String toggleLatLongFormat = "Toggle lat/lng format";
   static const String airNav = "AIRNAV";
+  static const String dragMarker = "Drag Marker";
 }
 
 class TurnpointEditText {
