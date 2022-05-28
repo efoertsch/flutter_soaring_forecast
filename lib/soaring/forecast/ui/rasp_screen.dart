@@ -17,6 +17,7 @@ import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/rasp_wid
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image_set.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/ui/display_ticker.dart';
 import 'package:flutter_soaring_forecast/soaring/tasks/ui/task_list.dart';
+import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_overhead_view.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../floor/taskturnpoint/task_turnpoint.dart';
@@ -885,7 +886,7 @@ class _RaspScreenState extends State<RaspScreen>
     final result = await Navigator.pushNamed(
       context,
       TurnpointView.routeName,
-      arguments: state.turnpoint,
+      arguments: TurnpointOverHeadArgs(turnpoint: state.turnpoint),
     );
   }
 

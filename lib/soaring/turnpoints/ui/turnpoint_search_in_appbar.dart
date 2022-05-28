@@ -12,6 +12,7 @@ import 'package:flutter_soaring_forecast/soaring/turnpoints/bloc/turnpoint_bloc.
 import 'package:flutter_soaring_forecast/soaring/turnpoints/bloc/turnpoint_event.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/bloc/turnpoint_state.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/cup/cup_styles.dart';
+import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_overhead_view.dart';
 
 import '../turnpoint_utils.dart';
 
@@ -172,7 +173,7 @@ class _TurnpointsSearchState extends State<TurnpointsSearch>
             onPressed: () => Navigator.pushNamed(
               context,
               TurnpointView.routeName,
-              arguments: turnpoints[index],
+              arguments: TurnpointOverHeadArgs(turnpoint: turnpoints[index]),
             ),
           ),
           title: TextButton(

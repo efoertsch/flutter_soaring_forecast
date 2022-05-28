@@ -1,3 +1,4 @@
+import 'package:equatable/equatable.dart';
 import 'package:floor/floor.dart';
 
 //TODO if any changes run  -  flutter packages pub run build_runner build
@@ -5,7 +6,7 @@ import 'package:floor/floor.dart';
   Index(value: ['code'], unique: false),
   Index(value: ['title', 'code'], unique: true)
 ])
-class Turnpoint {
+class Turnpoint extends Equatable {
   @PrimaryKey(autoGenerate: true)
   late int? id;
   late String title;
@@ -52,4 +53,22 @@ class Turnpoint {
         description: description,
         runwayWidth: runwayWidth);
   }
+
+  @override
+  // TODO: implement props
+  List<Object?> get props => [
+        id,
+        title,
+        code,
+        country,
+        latitudeDeg,
+        longitudeDeg,
+        elevation,
+        style,
+        direction,
+        length,
+        frequency,
+        description,
+        runwayWidth
+      ];
 }

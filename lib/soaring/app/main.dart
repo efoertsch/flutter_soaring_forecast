@@ -89,10 +89,12 @@ class SoaringForecastApp extends StatelessWidget {
             );
           }
           if (settings.name == TurnpointView.routeName) {
-            final turnpoint = settings.arguments as Turnpoint;
+            final turnpointOverheadArgs =
+                settings.arguments as TurnpointOverHeadArgs;
             return CustomMaterialPageRoute(
               builder: (context) {
-                return TurnpointView(turnpoint: turnpoint);
+                return TurnpointView(
+                    turnpointOverHeadArgs: turnpointOverheadArgs);
               },
               settings: settings,
             );
@@ -236,13 +238,13 @@ class CustomTurnpointFileImport extends StatelessWidget {
 
 class TurnpointView extends StatelessWidget {
   static const routeName = '/ViewTurnpoint';
-  final Turnpoint turnpoint;
+  final TurnpointOverHeadArgs turnpointOverHeadArgs;
 
-  TurnpointView({required this.turnpoint});
+  TurnpointView({required this.turnpointOverHeadArgs});
 
   @override
   Widget build(BuildContext context) {
-    return TurnpointOverheadView(turnpoint: turnpoint);
+    return TurnpointOverheadView(turnpointOverHeadArgs: turnpointOverHeadArgs);
   }
 }
 

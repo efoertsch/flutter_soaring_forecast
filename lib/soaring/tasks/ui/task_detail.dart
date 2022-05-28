@@ -13,6 +13,7 @@ import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart'
 import 'package:flutter_soaring_forecast/soaring/tasks/bloc/task_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/tasks/bloc/task_event.dart';
 import 'package:flutter_soaring_forecast/soaring/tasks/bloc/task_state.dart';
+import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_overhead_view.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_search_in_appbar.dart';
 
 class TaskDetailScreen extends StatefulWidget {
@@ -402,7 +403,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
     final result = await Navigator.pushNamed(
       context,
       TurnpointView.routeName,
-      arguments: state.turnpoint,
+      arguments: TurnpointOverHeadArgs(turnpoint: state.turnpoint),
     );
   }
 }

@@ -24,6 +24,7 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
     on<LoadTurnpointFileEvent>(_loadTurnpointFileFromTurnpointExchange);
     on<DeleteAllTurnpointsEvent>(_deleteAllTurnpoints);
     on<CheckIfDuplicateTurnpointCodeEvent>(_checkIfDuplicateTurnpointCode);
+    on<CupStylesEvent>(_getAllCupStyles);
     //on<GetCustomImportFileNamesEvent>(_getCustomImportFileNames);
   }
 
@@ -150,5 +151,9 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
       emit(TurnpointDuplicateCode());
       emit(TurnpointErrorState("Duplicate turnpoint code"));
     }
+  }
+
+  void _getAllCupStyles(CupStylesEvent event, Emitter<TurnpointState> emit) {
+    emit(TurnpointCupStyles(TurnpointUtils.getCupStyles()));
   }
 }

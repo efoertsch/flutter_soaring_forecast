@@ -7,10 +7,20 @@ import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart'
 import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoint_utils.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-class TurnpointOverheadView extends StatefulWidget {
-  final Turnpoint turnpoint;
+class TurnpointOverHeadArgs {
+  Turnpoint turnpoint;
+  bool isReadOnly;
+  bool isDecimalDegreesFormat;
+  TurnpointOverHeadArgs(
+      {required this.turnpoint,
+      this.isReadOnly = true,
+      this.isDecimalDegreesFormat = true});
+}
 
-  TurnpointOverheadView({Key? key, required this.turnpoint}) : super(key: key);
+class TurnpointOverheadView extends StatefulWidget {
+  final TurnpointOverHeadArgs turnpointOverHeadArgs;
+
+  TurnpointOverheadView({required this.turnpointOverHeadArgs}) : super();
 
   @override
   _TurnpointOverheadViewState createState() => _TurnpointOverheadViewState();
@@ -62,7 +72,7 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
         mainAxisAlignment: MainAxisAlignment.start,
         children: <Widget>[
           Text(TurnpointUtils.getFormattedTurnpointDetails(
-              widget.turnpoint, isDecimalDegreesFormat)),
+              widget.turnpointOverHeadArgs.turnpoint, isDecimalDegreesFormat)),
           forecastMap(),
           closeButton(),
         ],
@@ -76,8 +86,8 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
         onMapCreated: _onMapCreated,
         mapType: MapType.satellite,
         initialCameraPosition: CameraPosition(
-          target: LatLng(
-              widget.turnpoint.latitudeDeg, widget.turnpoint.longitudeDeg),
+          target: LatLng(widget.turnpointOverHeadArgs.turnpoint.latitudeDeg,
+              widget.turnpointOverHeadArgs.turnpoint.longitudeDeg),
           zoom: 14.0,
         ),
         markers: Set<Marker>.of({getTurnpointMarker()}),
@@ -103,7 +113,7 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
   }
 
   Marker getTurnpointMarker() {
-    Turnpoint turnpoint = widget.turnpoint;
+    Turnpoint turnpoint = widget.turnpointOverHeadArgs.turnpoint;
     return Marker(
       markerId: MarkerId(turnpoint.code),
       position: LatLng(turnpoint.latitudeDeg, turnpoint.longitudeDeg),
@@ -114,8 +124,8 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
     return <Widget>[
       TextButton(
         onPressed: () {
-          launchWebBrowser(
-              "www.airnav.com", "/airport/" + widget.turnpoint.code);
+          launchWebBrowser("www.airnav.com",
+              "/airport/" + widget.turnpointOverHeadArgs.turnpoint.code);
         },
         child: Text(
           TurnpointEditMenu.airNav,

@@ -38,6 +38,8 @@ class TurnpointUtils {
   static final lengthRegex = RegExp("([0-9]{1,5}((\\.[0-9])?))(m|ft)");
   static final widthRegex = RegExp("([0-9]{1,3})(m|ft)");
   static final frequencyRegex = RegExp("1[1-3][0-9]\\.[0-9][0-9](0|5)");
+  static final landableRegex = RegExp("[2-5]");
+  static final airportRegex = RegExp("[245]");
 
 // Besides determining the input file format, also used for exporting turnpoints to a file
   static const WITH_WIDTH_AND_DESCRIPTION_LABELS = [
@@ -120,6 +122,44 @@ class TurnpointUtils {
     return turnpoint;
   }
 
+  static bool validateLatitude(String latitude, bool isDecimalDegreesFormat) {
+    return isDecimalDegreesFormat
+        ? validateLatitudeInDecimalDegrees(latitude)
+        : validateLatitudeInCupFormat(latitude);
+  }
+
+  // Validate latitude in decimal degrees format
+  static bool validateLatitudeInDecimalDegrees(String latitude) {
+    try {
+      final decimalLatitude = double.parse(latitude);
+      return (decimalLatitude >= -90 && decimalLatitude <= 90);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Validate latitude in decimal minutes (cup) format
+  static bool validateLatitudeInCupFormat(String cupLatitude) {
+    return latitudeCupRegex.hasMatch(cupLatitude);
+  }
+
+  static bool validateLongitude(String longitude, bool isDecimalDegreesFormat) {
+    return isDecimalDegreesFormat
+        ? validateLongitudeInDecimalDegrees(longitude)
+        : validateLongitudeInCupFormat(longitude);
+  }
+
+  static double convertLatitudeToDouble(
+      String longitude, bool isDecimalDegreesFormat) {
+    try {
+      return isDecimalDegreesFormat
+          ? double.parse(longitude)
+          : convertToLong(longitude);
+    } catch (e) {
+      return 0;
+    }
+  }
+
   ///
   ///@param latitudeString is a field of length 9 (1 based), where 1-2 characters are degrees
   ///                       , 3-4 characters are minutes, 5 decimal point
@@ -137,6 +177,21 @@ class TurnpointUtils {
             (double.parse(latitudeString.substring(2, 4)) / 60) +
             (double.parse(latitudeString.substring(4, 8)) / 60)) *
         (latitudeString.endsWith("N") ? 1 : -1);
+  }
+
+  // Validate latitude in decimal degrees format
+  static bool validateLongitudeInDecimalDegrees(String longitude) {
+    try {
+      final decimalLongitude = double.parse(longitude);
+      return (decimalLongitude >= -180 && decimalLongitude <= -180);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Validate latitude in decimal minutes (cup) format
+  static bool validateLongitudeInCupFormat(String cupLongitude) {
+    return longitudeCupRegex.hasMatch(cupLongitude);
   }
 
   ///
@@ -214,7 +269,7 @@ class TurnpointUtils {
   }
 
   static bool isLandable(String style) {
-    return style.indexOf("[2345]") > 0;
+    return landableRegex.hasMatch(style);
   }
 
   static bool isGrassOrGliderAirport(String style) {
@@ -226,7 +281,7 @@ class TurnpointUtils {
   }
 
   static bool isAirport(String? style) {
-    return style != null && style.indexOf("[245]") > 0;
+    return style != null && airportRegex.hasMatch(style);
   }
 
   static String getLatitudeInCupFormat(double lat) {
@@ -323,5 +378,14 @@ class TurnpointUtils {
         ]);
     }
     return turnpointDetails;
+  }
+
+  //TODO - convert string for doublE
+  static double parseLatitudeValue(String value, bool isDecimalDegreesFormat) {
+    return isDecimalDegreesFormat ? double.parse(value) : convertToLat(value);
+  }
+
+  static double parseLongitudeValue(String value, bool isDecimalDegreesFormat) {
+    return isDecimalDegreesFormat ? double.parse(value) : convertToLong(value);
   }
 }

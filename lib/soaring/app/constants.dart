@@ -48,6 +48,7 @@ class TurnpointMenu {
 
 class TurnpointEditMenu {
   static const String save = "SAVE";
+  static const String reset = "Reset";
   static const String toggleLatLongFormat = "Toggle lat/lng format";
   static const String airNav = "AIRNAV";
   static const String dragMarker = "Drag Marker";
@@ -67,6 +68,7 @@ class TurnpointEditText {
   static const String runwayWidth = 'Runway width';
   static const String airportFrequency = 'Airport Frequency nnn.nn(0|5)';
   static const String description = 'Description';
+  static const String turnpointType = "Turnpoint Type";
 }
 
 const textStyleBoldBlackFontSize20 =

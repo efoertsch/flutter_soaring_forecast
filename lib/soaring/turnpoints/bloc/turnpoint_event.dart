@@ -70,3 +70,8 @@ class CheckIfDuplicateTurnpointCodeEvent extends TurnpointEvent {
   @override
   List<Object?> get props => [];
 }
+
+class CupStylesEvent extends TurnpointEvent {
+  @override
+  List<Object?> get props => [];
+}
