@@ -287,6 +287,16 @@ class Repository {
     return _appDatabase!.turnpointDao.getTurnpoint(title, code);
   }
 
+  Future<int?>  saveTurnpoint(Turnpoint turnpoint) async {
+    await makeDatabaseAvailable();
+    return _appDatabase!.turnpointDao.insert(turnpoint);
+
+  }
+  Future<int?>  updateTurnpoint(Turnpoint turnpoint) async {
+    await makeDatabaseAvailable();
+    return _appDatabase!.turnpointDao.update(turnpoint);
+  }
+
   /// Get the types of valid cup styles
   /// Note we use a customized list held locally.
   Future<List<Style>> getCupStyles() async {
@@ -407,4 +417,6 @@ class Repository {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.getInt(key) ?? defaultValue;
   }
+
+
 }

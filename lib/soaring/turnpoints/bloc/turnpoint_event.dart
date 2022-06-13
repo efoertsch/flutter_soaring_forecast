@@ -10,12 +10,14 @@ abstract class TurnpointEvent extends Equatable {}
 
 class TurnpointListEvent extends TurnpointEvent {
   TurnpointListEvent();
+
   @override
   List<Object?> get props => [];
 }
 
 class SearchTurnpointsEvent extends TurnpointEvent {
   final String searchString;
+
   SearchTurnpointsEvent(this.searchString);
 
   @override
@@ -24,6 +26,7 @@ class SearchTurnpointsEvent extends TurnpointEvent {
 
 class TurnpointViewEvent extends TurnpointEvent {
   final Turnpoint turnpoint;
+
   TurnpointViewEvent(this.turnpoint);
 
   @override
@@ -32,6 +35,7 @@ class TurnpointViewEvent extends TurnpointEvent {
 
 class AddTurnpointToTask extends TurnpointEvent {
   final Turnpoint turnpoint;
+
   AddTurnpointToTask(this.turnpoint);
 
   @override
@@ -41,6 +45,7 @@ class AddTurnpointToTask extends TurnpointEvent {
 // For getting list of files from soargbsc.com/soaringforecast/turnpoint_regions.json
 class GetTurnpointFileNamesEvent extends TurnpointEvent {
   GetTurnpointFileNamesEvent();
+
   @override
   List<Object?> get props => [];
 }
@@ -48,7 +53,9 @@ class GetTurnpointFileNamesEvent extends TurnpointEvent {
 // For getting list of files from soargbsc.com/soaringforecast/turnpoint_regions.json
 class LoadTurnpointFileEvent extends TurnpointEvent {
   late final TurnpointFile turnpointFile;
+
   LoadTurnpointFileEvent(this.turnpointFile);
+
   @override
   List<Object?> get props => [turnpointFile];
 }
@@ -65,6 +72,7 @@ class GetCustomImportFileNamesEvent extends TurnpointEvent {
 
 class CheckIfDuplicateTurnpointCodeEvent extends TurnpointEvent {
   late final String turnpointCode;
+
   CheckIfDuplicateTurnpointCodeEvent(this.turnpointCode);
 
   @override
@@ -74,4 +82,13 @@ class CheckIfDuplicateTurnpointCodeEvent extends TurnpointEvent {
 class CupStylesEvent extends TurnpointEvent {
   @override
   List<Object?> get props => [];
+}
+
+class SaveTurnpointEvent extends TurnpointEvent {
+  late final Turnpoint turnpoint ;
+
+  SaveTurnpointEvent(this.turnpoint );
+
+  @override
+  List<Object?> get props => [turnpoint];
 }

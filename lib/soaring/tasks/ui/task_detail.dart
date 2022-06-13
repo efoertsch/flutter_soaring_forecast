@@ -45,6 +45,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
     } else {
       //iOS
       return GestureDetector(
+        behavior: HitTestBehavior.deferToChild,
         onHorizontalDragUpdate: (details) {
           if (details.delta.direction >= 0) {
             Navigator.of(context).pop();
@@ -126,22 +127,15 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
             child: Text('Task:', style: Theme.of(context).textTheme.subtitle1)),
         Expanded(
           child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: TextField(
-                controller: TextEditingController()..text = task.taskName,
-                onChanged: (text) => {
-                  BlocProvider.of<TaskBloc>(context)
-                      .add(TaskNamedChangedEvent(text))
-                },
-              )
-              // child: TextFormField(
-              //     initialValue: task.taskName,
-              //     style: Theme.of(context).textTheme.subtitle1,
-              //     onChanged: (text) {
-              //       BlocProvider.of<TaskBloc>(context)
-              //           .add(TaskNamedChangedEvent(text));
-              //     }),
-              ),
+            padding: const EdgeInsets.all(8.0),
+            child: TextField(
+              controller: TextEditingController()..text = task.taskName,
+              onChanged: (text) => {
+                BlocProvider.of<TaskBloc>(context)
+                    .add(TaskNamedChangedEvent(text))
+              },
+            ),
+          ),
         ),
       ]),
     );
@@ -197,14 +191,6 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
 
   _onItemReorder(
       int oldItemIndex, int oldListIndex, int newItemIndex, int newListIndex) {
-    // setState(() {
-    //   var movedItem = _taskTurnpointDragAndDropList[oldListIndex]
-    //       .children
-    //       .removeAt(oldItemIndex);
-    //   _taskTurnpointDragAndDropList[newListIndex]
-    //       .children
-    //       .insert(newItemIndex, movedItem);
-    // });
     BlocProvider.of<TaskBloc>(context)
         .add(SwitchOrderOfTaskTurnpointsEvent(oldItemIndex, newItemIndex));
   }

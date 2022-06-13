@@ -25,6 +25,7 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
     on<DeleteAllTurnpointsEvent>(_deleteAllTurnpoints);
     on<CheckIfDuplicateTurnpointCodeEvent>(_checkIfDuplicateTurnpointCode);
     on<CupStylesEvent>(_getAllCupStyles);
+    on<SaveTurnpointEvent>(_saveTurnpoint);
     //on<GetCustomImportFileNamesEvent>(_getCustomImportFileNames);
   }
 
@@ -155,5 +156,22 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
 
   void _getAllCupStyles(CupStylesEvent event, Emitter<TurnpointState> emit) {
     emit(TurnpointCupStyles(TurnpointUtils.getCupStyles()));
+  }
+
+  FutureOr<int?> _saveTurnpoint(
+      SaveTurnpointEvent event, Emitter<TurnpointState> emit) async {
+    final turnpoint = event.turnpoint;
+    int? id = 0;
+    try {
+      if (turnpoint.id == null) {
+        id = await repository.saveTurnpoint(turnpoint);
+      } else {
+        id = await repository.updateTurnpoint(turnpoint);
+      }
+    } catch (e) {
+      emit(TurnpointErrorState(
+          "Oops. An error occurred adding/updating the turnpoint!"));
+    }
+    turnpoint.id = id;
   }
 }

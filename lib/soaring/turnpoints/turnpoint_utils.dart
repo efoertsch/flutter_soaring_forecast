@@ -27,19 +27,24 @@ class TurnpointUtils {
   static const String COMMA = ",";
   static final List<Style> _cupStyles = [];
 
+  static final latitudeDegreesRegex =
+      RegExp(r'^-?([1-8]?[0-9]\.{1}\d{5}$|90\.{1}0{5}$)');
   static final latitudeCupRegex =
-      RegExp("(9000\\.000|[0-8][0-9][0-5][0-9]\\.[0-9]{3})[NS]");
+      RegExp(r'^(9000\.000|[0-8][0-9][0-5][0-9]\.[0-9]{3})[NS]$');
+
+  static final longitudeDegreesRegex =
+      RegExp(r'^-?((([1-9]?[0-9]|1[0-7][0-9])(\.[0-9]{5})?)|180(\.0{5})?)$');
   static final longitudeCupRegex = RegExp(
-      "(18000\\.000|(([0-1][0-7])|([0][0-9]))[0-9][0-5][0-9]\\.[0-9]{3})[EW]");
-  static final elevationRegex =
-      RegExp("([0-9]{1,4}(\\.[0-9])?|(\\.[0-9]))(m|ft)");
+      r'^(18000\.000|(([0-1][0-7])|([0][0-9]))[0-9][0-5][0-9]\.[0-9]{3})[EW]$');
+
+  static final elevationRegex = RegExp(r'^([0-9]{1,4}(\.[0-9])?)(m|ft)$');
   static final directionRegex =
-      RegExp("(360|(3[0-5][0-9])|([12][0-9][0-9])|(0[0-9][0-9]))");
-  static final lengthRegex = RegExp("([0-9]{1,5}((\\.[0-9])?))(m|ft)");
-  static final widthRegex = RegExp("([0-9]{1,3})(m|ft)");
-  static final frequencyRegex = RegExp("1[1-3][0-9]\\.[0-9][0-9](0|5)");
-  static final landableRegex = RegExp("[2-5]");
-  static final airportRegex = RegExp("[245]");
+      RegExp(r'^(360|(3[0-5][0-9])|([12][0-9][0-9])|(0[0-9][0-9]))$');
+  static final lengthRegex = RegExp(r'^([0-9]{1,5}((\.[0-9])?))(m|ft)$');
+  static final widthRegex = RegExp(r'^([0-9]{1,3})(m|ft)$');
+  static final frequencyRegex = RegExp(r'^1[1-3][0-9]\.[0-9][0-9](0|5)$');
+  static final landableRegex = RegExp(r'^[2-5]$');
+  static final airportRegex = RegExp(r'^[245]$');
 
 // Besides determining the input file format, also used for exporting turnpoints to a file
   static const WITH_WIDTH_AND_DESCRIPTION_LABELS = [
@@ -130,6 +135,10 @@ class TurnpointUtils {
 
   // Validate latitude in decimal degrees format
   static bool validateLatitudeInDecimalDegrees(String latitude) {
+    if (!latitudeDegreesRegex.hasMatch(latitude)) {
+      return false;
+    }
+    // double check
     try {
       final decimalLatitude = double.parse(latitude);
       return (decimalLatitude >= -90 && decimalLatitude <= 90);
@@ -181,9 +190,13 @@ class TurnpointUtils {
 
   // Validate latitude in decimal degrees format
   static bool validateLongitudeInDecimalDegrees(String longitude) {
+    if (!longitudeDegreesRegex.hasMatch(longitude)) {
+      return false;
+    }
+    // double check
     try {
       final decimalLongitude = double.parse(longitude);
-      return (decimalLongitude >= -180 && decimalLongitude <= -180);
+      return (decimalLongitude >= -180 && decimalLongitude <= 180);
     } catch (e) {
       return false;
     }
@@ -387,5 +400,25 @@ class TurnpointUtils {
 
   static double parseLongitudeValue(String value, bool isDecimalDegreesFormat) {
     return isDecimalDegreesFormat ? double.parse(value) : convertToLong(value);
+  }
+
+  static bool elevationValid(String elevation) {
+    return elevationRegex.hasMatch(elevation);
+  }
+
+  static bool runwayDirectionValid(String direction) {
+    return directionRegex.hasMatch(direction);
+  }
+
+  static bool runwayLengthValid(String length) {
+    return lengthRegex.hasMatch(length);
+  }
+
+  static bool runwayWidthValid(String width) {
+    return widthRegex.hasMatch(width);
+  }
+
+  static bool airportFrequencyValid(String frequency) {
+    return frequencyRegex.hasMatch(frequency);
   }
 }

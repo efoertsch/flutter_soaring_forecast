@@ -61,7 +61,7 @@ dependencies:
   cupertino_icons: ^1.0.3
   mockito: ^5.0.16
   http: ^0.13.4
-  workmanager: ^0.4.1
+  workmanager: ^0.5.0
 
 
 dev_dependencies:
