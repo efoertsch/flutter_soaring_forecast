@@ -69,6 +69,29 @@ class TurnpointEditText {
   static const String airportFrequency = 'Airport Frequency nnn.nn(0|5)';
   static const String description = 'Description';
   static const String turnpointType = "Turnpoint Type";
+  static const String screenTitle = "Turnpoint";
+  static const String enterWaypointTitle = "Please enter waypoint title";
+  static const String turnpointCodeRequired = 'A turnpoint code is required';
+  static const String countryCodeRequired =
+      'Country(probably \'US\') is required';
+  static const String latitudeRequired = "Latitude is required";
+  static const String latitudeInvalid = "Invalid latitude format";
+  static const String longitudeRequired = "Longitude is required";
+  static const String longitudeInvalid = "Invalid longitude format";
+  static const String elevationRequired = "Elevation is required";
+  static const String elevationInvalid = "Invalid elevation";
+  static const String selectTurnpointType = 'Select turnpoint type';
+  static const String runwayDirectionRequired = "Runway direction required";
+  static const String invalidRunwayDirection = "Invalid runway direction value";
+  static const String runwayLengthRequired =
+      "Enter runway/landable area length";
+  static const String invalidRunwayLength =
+      "Invalid runway/landable area value";
+  static const String invalidRunwayWidth = "Invalid runway/landable area width";
+  static const String invalidAirportFrequency = "Invalid airport frequency";
+  static const String correctDataErrors = "Correct data errors in turnpoint.";
+  static const String turnpointInEditMode = "Turnpoint in edit mode.";
+  static const String turnpointInReadOnlyMode = "Turnpoint in read only mode.";
 }
 
 const textStyleBoldBlackFontSize20 =

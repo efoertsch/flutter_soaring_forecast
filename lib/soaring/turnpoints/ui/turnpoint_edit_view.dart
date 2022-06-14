@@ -77,7 +77,7 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
   Widget _buildScaffold(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Turnpoint'),
+        title: Text(TurnpointEditText.screenTitle),
         leading: CommonWidgets.backArrowToHomeScreen(),
         actions: _getMenu(),
       ),
@@ -130,7 +130,7 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
         ),
         validator: (value) {
           if (value?.isEmpty ?? true) {
-            return 'Please enter waypoint title';
+            return TurnpointEditText.enterWaypointTitle;
           }
           modifiableTurnpoint.title = value!;
           return null;
@@ -153,7 +153,7 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
         autovalidateMode: AutovalidateMode.onUserInteraction,
         validator: (value) {
           if (value?.isEmpty ?? true) {
-            return 'A turnpoint code is required';
+            return TurnpointEditText.turnpointCodeRequired;
           }
           modifiableTurnpoint.code = value!;
           return null;
@@ -175,7 +175,7 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
         ),
         validator: (value) {
           if (value?.isEmpty ?? true) {
-            return 'Country(probably \'US\') is required';
+            return TurnpointEditText.countryCodeRequired;
           }
           modifiableTurnpoint.country = value!;
           return null;
@@ -198,7 +198,7 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
 
         validator: (value) {
           if (value?.isEmpty ?? true) {
-            return "Latitude is required";
+            return TurnpointEditText.latitudeRequired;
           }
           if (TurnpointUtils.validateLatitude(
               value!, _isDecimalDegreesFormat)) {
@@ -209,7 +209,7 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
               modifiableTurnpoint.latitudeDeg = double.parse(value);
             }
           } else {
-            return "Invalid Latitude format";
+            return TurnpointEditText.latitudeInvalid;
           }
           return null;
         },
@@ -230,8 +230,7 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
         controller: _longitudeController,
         validator: (value) {
           if (value?.isEmpty ?? true) {
-            return "Longitude is required";
-            ;
+            return TurnpointEditText.longitudeRequired;
           }
           if (TurnpointUtils.validateLongitude(
               value!, _isDecimalDegreesFormat)) {
@@ -242,7 +241,7 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
               modifiableTurnpoint.longitudeDeg = double.parse(value);
             }
           } else {
-            return "Invalid Longitude value";
+            return TurnpointEditText.longitudeInvalid;
           }
           return null;
         },
@@ -281,12 +280,12 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
         ),
         validator: (value) {
           if (value?.isEmpty ?? true) {
-            return "Elevation is required";
+            return TurnpointEditText.elevationRequired;
           }
           if (TurnpointUtils.elevationValid(value!)) {
             modifiableTurnpoint.elevation = value;
           } else {
-            return "Invalid elevation";
+            return TurnpointEditText.elevationInvalid;
           }
         },
       ),
@@ -316,7 +315,7 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
                 style: CustomStyle.bold18(context),
                 value: TurnpointUtils.getStyleDescriptionFromStyle(
                     state.cupStyles, modifiableTurnpoint.style),
-                hint: Text('Select turnpoint type'),
+                hint: Text(TurnpointEditText.selectTurnpointType),
                 isExpanded: true,
                 iconSize: 24,
                 elevation: 16,
@@ -371,10 +370,10 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
           validator: (value) {
             if (TurnpointUtils.isLandable(modifiableTurnpoint.style) &&
                 (value == null || value.isEmpty)) {
-              return "Enter runway direction";
+              return TurnpointEditText.runwayDirectionRequired;
             }
             if (!TurnpointUtils.runwayDirectionValid(value!)) {
-              return "Invalid runway direction value";
+              return TurnpointEditText.invalidRunwayDirection;
             }
             modifiableTurnpoint.direction = value;
             return null;
@@ -400,10 +399,10 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
           validator: (value) {
             if (TurnpointUtils.isLandable(modifiableTurnpoint.style) &&
                 (value == null || value.isEmpty)) {
-              return "Enter runway/landable area length";
+              return TurnpointEditText.runwayLengthRequired;
             }
             if (!TurnpointUtils.runwayLengthValid(value!)) {
-              return "Invalid runway/landable area value";
+              return TurnpointEditText.invalidRunwayLength;
             }
             modifiableTurnpoint.length = value;
             return null;
@@ -434,7 +433,7 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
               modifiableTurnpoint.runwayWidth = value ?? "";
               return null;
             }
-            return "Invalid runway/landable area width";
+            return TurnpointEditText.invalidRunwayWidth;
           },
         ),
       ),
@@ -466,7 +465,7 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
               modifiableTurnpoint.frequency = value!;
               return null;
             }
-            return "Invalid airport frequency";
+            return TurnpointEditText.invalidAirportFrequency;
           },
         ),
       ),
@@ -529,9 +528,9 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
           : TextButton(
               onPressed: () {
                 if (_formKey.currentState!.validate()) {
-                  print('Save/update turnpoint');
+                  _saveTurnpointEdit();
                 } else {
-                  _displayEditWaring();
+                  _displayEditWarning();
                 }
               },
               child: Text(
@@ -558,11 +557,11 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
     ];
   }
 
-  void _displayEditWaring() {
+  void _displayEditWarning() {
     ScaffoldMessenger.of(context).removeCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
         CommonWidgets.getSnackBarForMessage(
-            "Correct data errors in turnpoint ."));
+            TurnpointEditText.correctDataErrors));
     setState(() {});
   }
 
@@ -570,8 +569,8 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
     ScaffoldMessenger.of(context).removeCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
         CommonWidgets.getSnackBarForMessage(_isReadOnly
-            ? "Turnpoint in read only mode."
-            : "Turnpoint in edit mode."));
+            ? TurnpointEditText.turnpointInReadOnlyMode
+            : TurnpointEditText.turnpointInEditMode));
     setState(() {});
   }
 
@@ -606,6 +605,11 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
     // TODO check for changes
     Navigator.of(context).pop();
     return true;
+  }
+
+  void _saveTurnpointEdit() {
+    print('Save/update turnpoint');
+    _sendEvent(SaveTurnpointEvent(modifiableTurnpoint));
   }
 
   _sendEvent(TurnpointEvent event) {
