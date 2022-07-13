@@ -88,13 +88,15 @@ class _TurnpointsSearchState extends State<TurnpointsSearch>
 
           if (state is TurnpointsLoadedState) {
             if (state.turnpoints.isEmpty) {
-              WidgetsBinding.instance?.addPostFrameCallback(
-                  (_) => CommonWidgets.showTwoButtonAlertDialog(
-                        context,
-                        "No turnpoints found. Would you like to add some?",
+              WidgetsBinding.instance
+                  .addPostFrameCallback((_) => CommonWidgets.showInfoDialog(
+                        context: context,
+                        msg: "No turnpoints found. Would you like to add some?",
                         title: "No Turnpoints",
-                        cancelButtonFunction: _cancel,
-                        continueButtonFunction: _goToSeeYouImport,
+                        button1Text: "No",
+                        button1Function: _cancel,
+                        button2Text: "Yes",
+                        button2Function: _goToSeeYouImport,
                       ));
               return Center(
                 child: Text('No turnpoints found.'),
@@ -107,7 +109,7 @@ class _TurnpointsSearchState extends State<TurnpointsSearch>
           }
 
           if (state is TurnpointErrorState) {
-            WidgetsBinding.instance?.addPostFrameCallback((_) =>
+            WidgetsBinding.instance.addPostFrameCallback((_) =>
                 CommonWidgets.showErrorDialog(
                     context, 'Turnpoints Error', state.errorMsg));
           }
@@ -169,7 +171,8 @@ class _TurnpointsSearchState extends State<TurnpointsSearch>
           visualDensity: VisualDensity(horizontal: 0, vertical: -4),
           leading: IconButton(
             icon: Icon(Icons.location_searching),
-            color: TurnpointUtils.getColorForTurnpointIcon(turnpoints[index]),
+            color: TurnpointUtils.getColorForTurnpointIcon(
+                turnpoints[index].style),
             onPressed: () => Navigator.pushNamed(
               context,
               TurnpointView.routeName,
@@ -187,8 +190,7 @@ class _TurnpointsSearchState extends State<TurnpointsSearch>
                     CommonWidgets.getSnackBarForMessage(
                         turnpoints[index].title + ' added to task '));
               } else {
-                Navigator.pushNamed(context, TurnpointEdit.routeName,
-                    arguments: turnpoints[index]);
+                _displayTurnpointDetails(context, turnpoints, index);
               }
             },
             child: Column(
@@ -220,6 +222,21 @@ class _TurnpointsSearchState extends State<TurnpointsSearch>
         return Divider();
       },
     );
+  }
+
+  Future<void> _displayTurnpointDetails(
+      BuildContext context, List<Turnpoint> turnpoints, int index) async {
+    var turnpoint = await Navigator.pushNamed(context, TurnpointEdit.routeName,
+        arguments: turnpoints[index].id);
+    if (turnpoint == null) {
+      turnpoints.removeAt(index);
+    } else {
+      if (turnpoint is Turnpoint) {
+        turnpoints.removeAt(index);
+        turnpoints.insert(index, turnpoint);
+        // setState(() {});
+      }
+    }
   }
 
   List<Widget> getTurnpointMenu() {
@@ -280,6 +297,7 @@ class _TurnpointsSearchState extends State<TurnpointsSearch>
         Navigator.pushNamed(context, TurnpointFileImport.routeName);
         break;
       case TurnpointMenu.addTurnpoint:
+        _addNewTurnpoint();
         break;
       case TurnpointMenu.exportTurnpoint:
         break;
@@ -296,6 +314,11 @@ class _TurnpointsSearchState extends State<TurnpointsSearch>
 
         break;
     }
+  }
+
+  Future<void> _addNewTurnpoint() async {
+    await Navigator.pushNamed(context, TurnpointEdit.routeName,
+        arguments: null);
   }
 
   Future<bool> _onWillPop() async {

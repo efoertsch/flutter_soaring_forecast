@@ -287,14 +287,24 @@ class Repository {
     return _appDatabase!.turnpointDao.getTurnpoint(title, code);
   }
 
-  Future<int?>  saveTurnpoint(Turnpoint turnpoint) async {
+  Future<Turnpoint?> getTurnpointById(int turnpointId) async {
+    await makeDatabaseAvailable();
+    return _appDatabase!.turnpointDao.getTurnpointById(turnpointId);
+  }
+
+  Future<int?> saveTurnpoint(Turnpoint turnpoint) async {
     await makeDatabaseAvailable();
     return _appDatabase!.turnpointDao.insert(turnpoint);
-
   }
-  Future<int?>  updateTurnpoint(Turnpoint turnpoint) async {
+
+  Future<int?> updateTurnpoint(Turnpoint turnpoint) async {
     await makeDatabaseAvailable();
     return _appDatabase!.turnpointDao.update(turnpoint);
+  }
+
+  Future<int?> deleteTurnpoint(int id) async {
+    await makeDatabaseAvailable();
+    return _appDatabase!.turnpointDao.deleteTurnpoint(id);
   }
 
   /// Get the types of valid cup styles
@@ -417,6 +427,4 @@ class Repository {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.getInt(key) ?? defaultValue;
   }
-
-
 }

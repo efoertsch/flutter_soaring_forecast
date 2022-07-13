@@ -25,12 +25,12 @@ class SearchTurnpointsEvent extends TurnpointEvent {
 }
 
 class TurnpointViewEvent extends TurnpointEvent {
-  final Turnpoint turnpoint;
+  final int? turnpointId;
 
-  TurnpointViewEvent(this.turnpoint);
+  TurnpointViewEvent(this.turnpointId);
 
   @override
-  List<Object?> get props => [turnpoint];
+  List<Object?> get props => [turnpointId];
 }
 
 class AddTurnpointToTask extends TurnpointEvent {
@@ -85,10 +85,19 @@ class CupStylesEvent extends TurnpointEvent {
 }
 
 class SaveTurnpointEvent extends TurnpointEvent {
-  late final Turnpoint turnpoint ;
+  late final Turnpoint turnpoint;
 
-  SaveTurnpointEvent(this.turnpoint );
+  SaveTurnpointEvent(this.turnpoint);
 
   @override
   List<Object?> get props => [turnpoint];
+}
+
+class DeleteTurnpoint extends TurnpointEvent {
+  late final int id;
+
+  DeleteTurnpoint(this.id);
+
+  @override
+  List<Object?> get props => [id];
 }

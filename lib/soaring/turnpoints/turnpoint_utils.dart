@@ -39,10 +39,11 @@ class TurnpointUtils {
 
   static final elevationRegex = RegExp(r'^([0-9]{1,4}(\.[0-9])?)(m|ft)$');
   static final directionRegex =
-      RegExp(r'^(360|(3[0-5][0-9])|([12][0-9][0-9])|(0[0-9][0-9]))$');
+      RegExp(r'^(360|(3[0-5][0-9])|([12][0-9][0-9])|([0-9][0-9])|([0-9]))$');
   static final lengthRegex = RegExp(r'^([0-9]{1,5}((\.[0-9])?))(m|ft)$');
   static final widthRegex = RegExp(r'^([0-9]{1,3})(m|ft)$');
-  static final frequencyRegex = RegExp(r'^1[1-3][0-9]\.[0-9][0-9](0|5)$');
+  static final frequencyRegex =
+      RegExp(r'^1[1-3][0-9]\.(([0-9][0-9](0|5))|([0-9][0-9])|[0-9])$');
   static final landableRegex = RegExp(r'^[2-5]$');
   static final airportRegex = RegExp(r'^[245]$');
 
@@ -338,11 +339,11 @@ class TurnpointUtils {
     return sb.toString();
   }
 
-  static Color getColorForTurnpointIcon(Turnpoint turnpoint) {
-    if (isGrassOrGliderAirport(turnpoint.style)) {
+  static Color getColorForTurnpointIcon(String style) {
+    if (isGrassOrGliderAirport(style)) {
       return Colors.green;
     }
-    if (isHardSurfaceAirport(turnpoint.style)) {
+    if (isHardSurfaceAirport(style)) {
       return Colors.black;
     } else {
       return Colors.red;

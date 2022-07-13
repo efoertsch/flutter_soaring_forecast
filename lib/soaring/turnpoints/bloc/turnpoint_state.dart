@@ -71,12 +71,32 @@ class TurnpointCupStyles extends TurnpointState {
   List<Style> cupStyles;
   TurnpointCupStyles(this.cupStyles);
   @override
-  List<Object?> get props => [];
+  List<Object?> get props => [cupStyles];
 }
 
 class TurnpointDuplicateCode extends TurnpointState {
   @override
   List<Object?> get props => [];
+}
+
+class EditTurnpoint extends TurnpointState {
+  final Turnpoint turnpoint;
+  EditTurnpoint(this.turnpoint);
+  @override
+  List<Object?> get props => [turnpoint];
+}
+
+class UpdatedTurnpoint extends TurnpointState {
+  final Turnpoint turnpoint;
+  UpdatedTurnpoint(this.turnpoint);
+  @override
+  List<Object?> get props => [turnpoint];
+}
+
+class TurnpointDeletedState extends TurnpointState {
+  @override
+  // TODO: implement props
+  List<Object?> get props => throw UnimplementedError();
 }
 
 //----------------------------------------------------------------

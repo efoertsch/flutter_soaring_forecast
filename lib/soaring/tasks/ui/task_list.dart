@@ -64,7 +64,7 @@ class TaskListScreen extends StatelessWidget {
             }
           }
           if (state is TaskErrorState) {
-            WidgetsBinding.instance?.addPostFrameCallback((_) =>
+            WidgetsBinding.instance.addPostFrameCallback((_) =>
                 CommonWidgets.showErrorDialog(
                     context, 'Tasks Error', state.errorMsg));
             return Center(

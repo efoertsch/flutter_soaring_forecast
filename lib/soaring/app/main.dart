@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/airport_download/airports_downloader.dart';
 import 'package:flutter_soaring_forecast/soaring/app/custom_material_page_route.dart';
-import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_data_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/ui/rasp_screen.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
@@ -101,10 +100,11 @@ class SoaringForecastApp extends StatelessWidget {
           }
 
           if (settings.name == TurnpointEdit.routeName) {
-            final turnpoint = settings.arguments as Turnpoint;
+            int? turnpointId =
+                (settings.arguments == null ? null : settings.arguments as int);
             return CustomMaterialPageRoute(
               builder: (context) {
-                return TurnpointEdit(turnpoint: turnpoint);
+                return TurnpointEdit(turnpointId: turnpointId);
               },
               settings: settings,
             );
@@ -250,16 +250,16 @@ class TurnpointView extends StatelessWidget {
 
 class TurnpointEdit extends StatelessWidget {
   static const routeName = '/editTurnpoint';
-  final Turnpoint turnpoint;
+  final int? turnpointId;
 
-  TurnpointEdit({required this.turnpoint});
+  TurnpointEdit({this.turnpointId});
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider<TurnpointBloc>(
         create: (BuildContext context) => TurnpointBloc(
             repository: RepositoryProvider.of<Repository>(context)),
-        child: TurnpointEditView(turnpoint: turnpoint));
+        child: TurnpointEditView(turnpointId: turnpointId));
   }
 }
 

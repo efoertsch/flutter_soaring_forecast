@@ -89,13 +89,13 @@ class _RaspScreenState extends State<RaspScreen>
     super.initState();
     _firstLayoutComplete = false;
     _mapController = MapController();
-    WidgetsBinding.instance!.addObserver(this);
+    WidgetsBinding.instance.addObserver(this);
   }
 
   @override
   void dispose() {
     stopAnimation();
-    WidgetsBinding.instance!.removeObserver(this);
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 

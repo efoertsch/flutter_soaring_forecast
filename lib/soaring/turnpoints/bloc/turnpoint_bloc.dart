@@ -24,8 +24,10 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
     on<LoadTurnpointFileEvent>(_loadTurnpointFileFromTurnpointExchange);
     on<DeleteAllTurnpointsEvent>(_deleteAllTurnpoints);
     on<CheckIfDuplicateTurnpointCodeEvent>(_checkIfDuplicateTurnpointCode);
+    on<TurnpointViewEvent>(_getTurnpoint);
     on<CupStylesEvent>(_getAllCupStyles);
     on<SaveTurnpointEvent>(_saveTurnpoint);
+    on<DeleteTurnpoint>(_deleteTurnpoint);
     //on<GetCustomImportFileNamesEvent>(_getCustomImportFileNames);
   }
 
@@ -158,10 +160,24 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
     emit(TurnpointCupStyles(TurnpointUtils.getCupStyles()));
   }
 
+  FutureOr<void> _getTurnpoint(
+      TurnpointViewEvent event, Emitter<TurnpointState> emit) async {
+    Turnpoint? turnpoint;
+    if (event.turnpointId == null) {
+      turnpoint = Turnpoint();
+    } else {
+      turnpoint = await repository.getTurnpointById(event.turnpointId!);
+      if (turnpoint == null) {
+        turnpoint = Turnpoint();
+      }
+    }
+    emit(EditTurnpoint(turnpoint));
+  }
+
   FutureOr<int?> _saveTurnpoint(
       SaveTurnpointEvent event, Emitter<TurnpointState> emit) async {
     final turnpoint = event.turnpoint;
-    int? id = 0;
+    int? id = turnpoint.id;
     try {
       if (turnpoint.id == null) {
         id = await repository.saveTurnpoint(turnpoint);
@@ -171,7 +187,22 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
     } catch (e) {
       emit(TurnpointErrorState(
           "Oops. An error occurred adding/updating the turnpoint!"));
+      return null;
     }
+    emit(TurnpointShortMessageState("Turnpoint updated."));
     turnpoint.id = id;
+    emit(UpdatedTurnpoint(turnpoint));
+  }
+
+  FutureOr<void> _deleteTurnpoint(
+      DeleteTurnpoint event, Emitter<TurnpointState> emit) {
+    try {
+      repository.deleteTurnpoint(event.id);
+      emit(TurnpointDeletedState());
+    } catch (e) {
+      emit(TurnpointErrorState(
+          "Oops. An error occurred deleting the turnpoint!"));
+      return null;
+    }
   }
 }

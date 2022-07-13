@@ -123,7 +123,7 @@ class _CustomSeeYouImportScreenState extends State<CustomSeeYouImportScreen>
                 ]);
           }
           if (state is TurnpointErrorState) {
-            WidgetsBinding.instance?.addPostFrameCallback((_) =>
+            WidgetsBinding.instance.addPostFrameCallback((_) =>
                 CommonWidgets.showErrorDialog(
                     context, 'Turnpoints Error', state.errorMsg));
           }
@@ -160,14 +160,15 @@ class _CustomSeeYouImportScreenState extends State<CustomSeeYouImportScreen>
   void handleClick(String value) {
     switch (value) {
       case TurnpointMenu.clearTurnpointDatabase:
-        CommonWidgets.showTwoButtonAlertDialog(context,
-            "Are you sure you want to delete all turnpoints in the database?",
+        CommonWidgets.showInfoDialog(
+            context: context,
             title: "No Turning Back If You Do!",
-            cancelButtonText: "No",
-            cancelButtonFunction: _cancel,
-            continueButtonText: "Yes",
-            continueButtonFunction: _sendDeleteTurnpointsEvent);
-
+            msg:
+                "Are you sure you want to delete all turnpoints in the database?",
+            button1Text: "No",
+            button1Function: _cancel,
+            button2Text: "Yes",
+            button2Function: _sendDeleteTurnpointsEvent);
         break;
     }
   }

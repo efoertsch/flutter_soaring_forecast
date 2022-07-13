@@ -52,9 +52,12 @@ class TurnpointEditMenu {
   static const String toggleLatLongFormat = "Toggle lat/lng format";
   static const String airNav = "AIRNAV";
   static const String dragMarker = "Drag Marker";
+  static const String deleteTurnpoint = "Delete Turnpoint";
 }
 
 class TurnpointEditText {
+  static const String viewTurnpoint = "View Turnpoint";
+  static const String editTurnpoint = "Edit Turnppint";
   static const String waypointName = 'Waypoint Name';
   static const String waypointCode = 'Waypoint Code';
   static const String countryCode = 'Country Code';
@@ -92,6 +95,8 @@ class TurnpointEditText {
   static const String correctDataErrors = "Correct data errors in turnpoint.";
   static const String turnpointInEditMode = "Turnpoint in edit mode.";
   static const String turnpointInReadOnlyMode = "Turnpoint in read only mode.";
+  static const String reset = "Reset";
+  static const String saveLocation = "Save Location";
 }
 
 const textStyleBoldBlackFontSize20 =

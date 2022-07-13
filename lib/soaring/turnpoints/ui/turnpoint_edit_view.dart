@@ -18,9 +18,9 @@ import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoint_utils.dart
 import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_overhead_view.dart';
 
 class TurnpointEditView extends StatefulWidget {
-  final Turnpoint turnpoint;
+  late int? turnpointId;
 
-  TurnpointEditView({Key? key, required this.turnpoint}) : super(key: key) {}
+  TurnpointEditView({Key? key, int? this.turnpointId = null}) : super(key: key);
 
   @override
   State<TurnpointEditView> createState() => _TurnpointEditViewState();
@@ -29,10 +29,9 @@ class TurnpointEditView extends StatefulWidget {
 class _TurnpointEditViewState extends State<TurnpointEditView>
     with AfterLayoutMixin<TurnpointEditView> {
   // not making formKey final as may assign new key in case of edit/reset scenario and
-  // need to redraw screen
   var _formKey = GlobalKey<FormState>();
-  Turnpoint modifiableTurnpoint = Turnpoint();
-
+  Turnpoint? turnpoint = null;
+  Turnpoint? modifiableTurnpoint = null;
   bool _isReadOnly = true;
   bool _isDecimalDegreesFormat = true;
   List<Style> _cupStyles = [];
@@ -40,17 +39,12 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
   final TextEditingController _latitudeController = TextEditingController();
   final TextEditingController _longitudeController = TextEditingController();
 
-  void initState() {
-    modifiableTurnpoint = widget.turnpoint.clone();
-    _latitudeController.text = _getLatitudeInDisplayFormat();
-    _longitudeController.text = _getLongitudeInDisplayFormat();
-    super.initState();
-  }
-
   // Make sure first layout occurs
   @override
   void afterFirstLayout(BuildContext context) {
     BlocProvider.of<TurnpointBloc>(context).add(CupStylesEvent());
+    BlocProvider.of<TurnpointBloc>(context)
+        .add(TurnpointViewEvent(widget.turnpointId));
   }
 
   @override
@@ -87,34 +81,71 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
   }
 
   Widget _getBodyWidget() {
-    return SafeArea(
-      child: Form(
-        key: _formKey,
-        child: ListView(children: [
-          _getTitleWidget(),
-          _getCodeWidget(),
-          _getCountryWidget(),
-          Row(mainAxisSize: MainAxisSize.min, children: [
-            Expanded(
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                _getLatitudeWidget(),
-                _getLongitudeWidget(),
-              ]),
-            ),
-            Expanded(
-              child: _getTurnpointIconWidget(),
-            ),
+    return BlocConsumer<TurnpointBloc, TurnpointState>(
+        listener: (context, state) {
+      if (state is TurnpointShortMessageState) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.green,
+            content: Text(state.shortMsg),
+          ),
+        );
+      }
+      if (state is TurnpointErrorState) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.green,
+            content: Text(state.errorMsg),
+          ),
+        );
+      }
+    }, builder: (context, state) {
+      if (state is TurnpointsInitialState) {
+        return CommonWidgets.buildLoading();
+      }
+      if (state is EditTurnpoint) {
+        turnpoint = state.turnpoint;
+        modifiableTurnpoint = turnpoint!.clone();
+        _latitudeController.text = _getLatitudeInDisplayFormat();
+        _longitudeController.text = _getLongitudeInDisplayFormat();
+      }
+      if (state is UpdatedTurnpoint) {
+        _needToSaveUpdates = false;
+        turnpoint = state.turnpoint;
+        modifiableTurnpoint = turnpoint!.clone();
+      }
+      if (state is TurnpointDeletedState) {
+        _displayTurnpointDeletedDialog();
+      }
+      return SafeArea(
+        child: Form(
+          key: _formKey,
+          child: ListView(children: [
+            _getTitleWidget(),
+            _getCodeWidget(),
+            _getCountryWidget(),
+            Row(mainAxisSize: MainAxisSize.min, children: [
+              Expanded(
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  _getLatitudeWidget(),
+                  _getLongitudeWidget(),
+                ]),
+              ),
+              Expanded(
+                child: _getTurnpointIconWidget(),
+              ),
+            ]),
+            _getElevationWidget(),
+            _getCupStyleListWidget(),
+            _getDirectionWidget(),
+            _getRunwayLengthWidget(),
+            _getRunwayWidthWidget(),
+            _getAirportFrequencyWidget(),
+            _getDescriptionWidget(),
           ]),
-          _getElevationWidget(),
-          _getCupStyleListWidget(),
-          _getDirectionWidget(),
-          _getRunwayLengthWidget(),
-          _getRunwayWidthWidget(),
-          _getAirportFrequencyWidget(),
-          _getDescriptionWidget(),
-        ]),
-      ),
-    );
+        ),
+      );
+    });
   }
 
   Widget _getTitleWidget() {
@@ -122,17 +153,21 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
       padding: const EdgeInsets.only(top: 16.0, left: 8, right: 8),
       child: TextFormField(
         readOnly: _isReadOnly,
-        initialValue: modifiableTurnpoint.title,
+        initialValue: modifiableTurnpoint?.title,
         decoration: InputDecoration(
           border: OutlineInputBorder(),
           // hintText: TurnpointEditText.waypointName,
           labelText: TurnpointEditText.waypointName,
         ),
+        autovalidateMode: AutovalidateMode.onUserInteraction,
         validator: (value) {
+          if (value != turnpoint?.title) {
+            _needToSaveUpdates = true;
+          }
           if (value?.isEmpty ?? true) {
             return TurnpointEditText.enterWaypointTitle;
           }
-          modifiableTurnpoint.title = value!;
+          modifiableTurnpoint?.title = value!;
           return null;
         },
       ),
@@ -143,8 +178,9 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: TextFormField(
-        readOnly: _isReadOnly || modifiableTurnpoint.code.isNotEmpty,
-        initialValue: modifiableTurnpoint.code,
+        readOnly:
+            _isReadOnly || (modifiableTurnpoint?.code.isNotEmpty ?? false),
+        initialValue: modifiableTurnpoint?.code,
         decoration: InputDecoration(
           border: OutlineInputBorder(),
           hintText: TurnpointEditText.waypointCode,
@@ -155,7 +191,10 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
           if (value?.isEmpty ?? true) {
             return TurnpointEditText.turnpointCodeRequired;
           }
-          modifiableTurnpoint.code = value!;
+          modifiableTurnpoint?.code = value!;
+          if (modifiableTurnpoint?.code != turnpoint?.code) {
+            _needToSaveUpdates = true;
+          }
           return null;
         },
       ),
@@ -167,17 +206,21 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
       padding: const EdgeInsets.all(8.0),
       child: TextFormField(
         readOnly: _isReadOnly,
-        initialValue: (widget.turnpoint.country),
+        initialValue: (modifiableTurnpoint?.country),
         decoration: InputDecoration(
           border: OutlineInputBorder(),
           hintText: TurnpointEditText.countryCode,
           labelText: TurnpointEditText.countryCode,
         ),
+        autovalidateMode: AutovalidateMode.onUserInteraction,
         validator: (value) {
           if (value?.isEmpty ?? true) {
             return TurnpointEditText.countryCodeRequired;
           }
-          modifiableTurnpoint.country = value!;
+          modifiableTurnpoint?.country = value!;
+          if (modifiableTurnpoint?.country != turnpoint!.country) {
+            _needToSaveUpdates = true;
+          }
           return null;
         },
       ),
@@ -195,8 +238,12 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
             //hintText: getLatitudeText(),
             labelText: _getLatitudeText()),
         controller: _latitudeController,
-
+        autovalidateMode: AutovalidateMode.onUserInteraction,
         validator: (value) {
+          if (_isReadOnly) {
+            // just toggling lat/long format
+            return null;
+          }
           if (value?.isEmpty ?? true) {
             return TurnpointEditText.latitudeRequired;
           }
@@ -204,9 +251,9 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
               value!, _isDecimalDegreesFormat)) {
             final latitude = TurnpointUtils.parseLatitudeValue(
                 value, _isDecimalDegreesFormat);
-            if (latitude != widget.turnpoint.latitudeDeg) {
+            if (latitude != turnpoint?.latitudeDeg) {
               _needToSaveUpdates = true;
-              modifiableTurnpoint.latitudeDeg = double.parse(value);
+              modifiableTurnpoint?.latitudeDeg = latitude;
             }
           } else {
             return TurnpointEditText.latitudeInvalid;
@@ -228,7 +275,12 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
             //hintText: getLongitudeText(),
             labelText: _getLongitudeText()),
         controller: _longitudeController,
+        autovalidateMode: AutovalidateMode.onUserInteraction,
         validator: (value) {
+          if (_isReadOnly) {
+            // just toggling lat/long format
+            return null;
+          }
           if (value?.isEmpty ?? true) {
             return TurnpointEditText.longitudeRequired;
           }
@@ -236,9 +288,13 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
               value!, _isDecimalDegreesFormat)) {
             final longitude = TurnpointUtils.parseLongitudeValue(
                 value, _isDecimalDegreesFormat);
-            if (longitude != widget.turnpoint.longitudeDeg) {
+            if (longitude != turnpoint?.longitudeDeg) {
               _needToSaveUpdates = true;
-              modifiableTurnpoint.longitudeDeg = double.parse(value);
+              modifiableTurnpoint?.longitudeDeg = longitude;
+              if (modifiableTurnpoint?.longitudeDeg !=
+                  turnpoint!.longitudeDeg) {
+                _needToSaveUpdates = true;
+              }
             }
           } else {
             return TurnpointEditText.longitudeInvalid;
@@ -254,14 +310,15 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
       padding: const EdgeInsets.all(8.0),
       child: IconButton(
         icon: Icon(Icons.location_searching),
-        color: TurnpointUtils.getColorForTurnpointIcon(modifiableTurnpoint),
+        color: TurnpointUtils.getColorForTurnpointIcon(
+            modifiableTurnpoint?.style ?? "0"),
         onPressed: () => Navigator.pushNamed(
           context,
           TurnpointView.routeName,
           arguments: TurnpointOverHeadArgs(
               isReadOnly: _isReadOnly,
               isDecimalDegreesFormat: _isDecimalDegreesFormat,
-              turnpoint: modifiableTurnpoint),
+              turnpoint: modifiableTurnpoint ?? Turnpoint()),
         ),
       ),
     );
@@ -272,21 +329,25 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
       padding: const EdgeInsets.all(8.0),
       child: TextFormField(
         readOnly: _isReadOnly,
-        initialValue: modifiableTurnpoint.elevation,
+        initialValue: modifiableTurnpoint?.elevation,
         decoration: InputDecoration(
           border: OutlineInputBorder(),
           hintText: TurnpointEditText.elevation,
           labelText: TurnpointEditText.elevation,
         ),
+        autovalidateMode: AutovalidateMode.onUserInteraction,
         validator: (value) {
           if (value?.isEmpty ?? true) {
             return TurnpointEditText.elevationRequired;
           }
-          if (TurnpointUtils.elevationValid(value!)) {
-            modifiableTurnpoint.elevation = value;
-          } else {
+          if (!TurnpointUtils.elevationValid(value!)) {
             return TurnpointEditText.elevationInvalid;
           }
+          modifiableTurnpoint?.elevation = value;
+          if (modifiableTurnpoint?.elevation != turnpoint!.elevation) {
+            _needToSaveUpdates = true;
+          }
+          return null;
         },
       ),
     );
@@ -314,7 +375,7 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
               child: DropdownButton<String>(
                 style: CustomStyle.bold18(context),
                 value: TurnpointUtils.getStyleDescriptionFromStyle(
-                    state.cupStyles, modifiableTurnpoint.style),
+                    state.cupStyles, modifiableTurnpoint?.style ?? "0"),
                 hint: Text(TurnpointEditText.selectTurnpointType),
                 isExpanded: true,
                 iconSize: 24,
@@ -323,11 +384,14 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
                     ? null
                     : (String? description) {
                         if (description != null) {
-                          modifiableTurnpoint.style =
+                          modifiableTurnpoint?.style =
                               TurnpointUtils.getStyleFromStyleDescription(
                                   state.cupStyles, description);
                         } else {
-                          modifiableTurnpoint.style = '0';
+                          modifiableTurnpoint?.style = '0';
+                        }
+                        if (modifiableTurnpoint?.style != turnpoint!.style) {
+                          _needToSaveUpdates = true;
                         }
                         setState(() {});
                         // _sendEvent(context, );
@@ -356,26 +420,30 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
 
   Widget _getDirectionWidget() {
     return Visibility(
-      visible: TurnpointUtils.isLandable(modifiableTurnpoint.style),
+      visible: TurnpointUtils.isLandable(modifiableTurnpoint?.style ?? "0"),
       child: Padding(
         padding: const EdgeInsets.all(8.0),
         child: TextFormField(
           readOnly: _isReadOnly,
-          initialValue: modifiableTurnpoint.direction,
+          initialValue: modifiableTurnpoint?.direction,
           decoration: InputDecoration(
             border: OutlineInputBorder(),
             hintText: TurnpointEditText.runwayDirection,
             labelText: TurnpointEditText.runwayDirection,
           ),
+          autovalidateMode: AutovalidateMode.onUserInteraction,
           validator: (value) {
-            if (TurnpointUtils.isLandable(modifiableTurnpoint.style) &&
+            if (TurnpointUtils.isLandable(modifiableTurnpoint?.style ?? "0") &&
                 (value == null || value.isEmpty)) {
               return TurnpointEditText.runwayDirectionRequired;
             }
             if (!TurnpointUtils.runwayDirectionValid(value!)) {
               return TurnpointEditText.invalidRunwayDirection;
             }
-            modifiableTurnpoint.direction = value;
+            modifiableTurnpoint?.direction = value;
+            if (modifiableTurnpoint?.direction != turnpoint!.direction) {
+              _needToSaveUpdates = true;
+            }
             return null;
           },
         ),
@@ -385,26 +453,30 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
 
   Widget _getRunwayLengthWidget() {
     return Visibility(
-      visible: TurnpointUtils.isLandable(modifiableTurnpoint.style),
+      visible: TurnpointUtils.isLandable(modifiableTurnpoint?.style ?? "0"),
       child: Padding(
         padding: const EdgeInsets.all(8.0),
         child: TextFormField(
           readOnly: _isReadOnly,
-          initialValue: modifiableTurnpoint.length,
+          initialValue: modifiableTurnpoint?.length,
           decoration: InputDecoration(
             border: OutlineInputBorder(),
             hintText: TurnpointEditText.runwayLength,
             labelText: TurnpointEditText.runwayLength,
           ),
+          autovalidateMode: AutovalidateMode.onUserInteraction,
           validator: (value) {
-            if (TurnpointUtils.isLandable(modifiableTurnpoint.style) &&
+            if (TurnpointUtils.isLandable(modifiableTurnpoint?.style ?? "0") &&
                 (value == null || value.isEmpty)) {
               return TurnpointEditText.runwayLengthRequired;
             }
             if (!TurnpointUtils.runwayLengthValid(value!)) {
               return TurnpointEditText.invalidRunwayLength;
             }
-            modifiableTurnpoint.length = value;
+            modifiableTurnpoint?.length = value;
+            if (modifiableTurnpoint?.length != turnpoint!.length) {
+              _needToSaveUpdates = true;
+            }
             return null;
           },
         ),
@@ -414,23 +486,27 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
 
   Widget _getRunwayWidthWidget() {
     return Visibility(
-      visible: TurnpointUtils.isLandable(modifiableTurnpoint.style),
+      visible: TurnpointUtils.isLandable(modifiableTurnpoint?.style ?? "0"),
       child: Padding(
         padding: const EdgeInsets.all(8.0),
         child: TextFormField(
           readOnly: _isReadOnly,
-          initialValue: modifiableTurnpoint.runwayWidth,
+          initialValue: modifiableTurnpoint?.runwayWidth,
           decoration: InputDecoration(
             border: OutlineInputBorder(),
             hintText: TurnpointEditText.runwayWidth,
             labelText: TurnpointEditText.runwayWidth,
           ),
+          autovalidateMode: AutovalidateMode.onUserInteraction,
           validator: (value) {
             final isLandable =
-                TurnpointUtils.isLandable(modifiableTurnpoint.style);
+                TurnpointUtils.isLandable(modifiableTurnpoint?.style ?? "0");
             if ((!isLandable && (value == null || value.isEmpty)) ||
                 (isLandable && TurnpointUtils.runwayWidthValid(value ?? ""))) {
-              modifiableTurnpoint.runwayWidth = value ?? "";
+              modifiableTurnpoint?.runwayWidth = value ?? "";
+              if (modifiableTurnpoint?.runwayWidth != turnpoint!.runwayWidth) {
+                _needToSaveUpdates = true;
+              }
               return null;
             }
             return TurnpointEditText.invalidRunwayWidth;
@@ -442,28 +518,32 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
 
   Widget _getAirportFrequencyWidget() {
     return Visibility(
-      visible: TurnpointUtils.isAirport(modifiableTurnpoint.style),
+      visible: TurnpointUtils.isAirport(modifiableTurnpoint?.style),
       child: Padding(
         padding: const EdgeInsets.all(8.0),
         child: TextFormField(
           readOnly: _isReadOnly,
-          initialValue: modifiableTurnpoint.frequency,
+          initialValue: modifiableTurnpoint?.frequency,
           decoration: InputDecoration(
             border: OutlineInputBorder(),
             //hintText: TurnpointEditText.airportFrequency,
             labelText: TurnpointEditText.airportFrequency,
           ),
+          autovalidateMode: AutovalidateMode.onUserInteraction,
           validator: (value) {
             final isAirport =
-                TurnpointUtils.isAirport(modifiableTurnpoint.style);
+                TurnpointUtils.isAirport(modifiableTurnpoint?.style);
             if ((!isAirport || (value?.isEmpty ?? true))) {
-              modifiableTurnpoint.frequency = "";
+              modifiableTurnpoint?.frequency = "";
               return null;
             }
             if (isAirport &&
                 TurnpointUtils.airportFrequencyValid(value ?? "")) {
-              modifiableTurnpoint.frequency = value!;
+              modifiableTurnpoint?.frequency = value!;
               return null;
+            }
+            if (modifiableTurnpoint?.frequency != turnpoint!.frequency) {
+              _needToSaveUpdates = true;
             }
             return TurnpointEditText.invalidAirportFrequency;
           },
@@ -477,14 +557,18 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
       padding: const EdgeInsets.all(8.0),
       child: TextFormField(
         readOnly: _isReadOnly,
-        initialValue: modifiableTurnpoint.description,
+        initialValue: modifiableTurnpoint?.description,
         decoration: InputDecoration(
           border: OutlineInputBorder(),
           hintText: TurnpointEditText.description,
           labelText: TurnpointEditText.description,
         ),
+        autovalidateMode: AutovalidateMode.onUserInteraction,
         onChanged: (text) {
-          modifiableTurnpoint.description = text;
+          modifiableTurnpoint?.description = text;
+          if (modifiableTurnpoint?.description != turnpoint!.description) {
+            _needToSaveUpdates = true;
+          }
         },
       ),
     );
@@ -492,8 +576,10 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
 
   String _getLatitudeInDisplayFormat() {
     return _isDecimalDegreesFormat
-        ? modifiableTurnpoint.latitudeDeg.toStringAsFixed(5)
-        : TurnpointUtils.getLatitudeInCupFormat(widget.turnpoint.latitudeDeg);
+        ? modifiableTurnpoint?.latitudeDeg.toStringAsFixed(5) ??
+            0.toStringAsFixed(5)
+        : TurnpointUtils.getLatitudeInCupFormat(
+            modifiableTurnpoint?.latitudeDeg ?? 0);
   }
 
   String _getLatitudeText() {
@@ -504,8 +590,9 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
 
   String _getLongitudeInDisplayFormat() {
     return _isDecimalDegreesFormat
-        ? modifiableTurnpoint.longitudeDeg.toStringAsFixed(5)
-        : TurnpointUtils.getLongitudeInCupFormat(widget.turnpoint.longitudeDeg);
+        ? modifiableTurnpoint?.longitudeDeg.toStringAsFixed(5) ??
+            0.toStringAsFixed(5)
+        : TurnpointUtils.getLongitudeInCupFormat(turnpoint?.longitudeDeg ?? 0);
   }
 
   String _getLongitudeText() {
@@ -542,11 +629,7 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
         onSelected: handleClick,
         icon: Icon(Icons.more_vert),
         itemBuilder: (BuildContext context) {
-          return {
-            TurnpointEditMenu.reset,
-            TurnpointEditMenu.toggleLatLongFormat,
-            TurnpointEditMenu.airNav,
-          }.map((String choice) {
+          return _getMenuOptions().map((String choice) {
             return PopupMenuItem<String>(
               value: choice,
               child: Text(choice),
@@ -555,6 +638,17 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
         },
       ),
     ];
+  }
+
+  Set<String> _getMenuOptions() {
+    Set<String> menuOptions = {};
+    if (!_isReadOnly) menuOptions.add(TurnpointEditMenu.reset);
+    menuOptions.add(TurnpointEditMenu.toggleLatLongFormat);
+    if (modifiableTurnpoint != null && modifiableTurnpoint!.code.isNotEmpty)
+      menuOptions.add(TurnpointEditMenu.airNav);
+    if (!_isReadOnly && modifiableTurnpoint!.id != null)
+      menuOptions.add(TurnpointEditMenu.deleteTurnpoint);
+    return menuOptions;
   }
 
   void _displayEditWarning() {
@@ -579,7 +673,7 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
       case TurnpointEditMenu.reset:
         setState(() {
           _isReadOnly = true;
-          modifiableTurnpoint = widget.turnpoint.clone();
+          modifiableTurnpoint = turnpoint!.clone();
           _isDecimalDegreesFormat = true;
           _latitudeController.text = _getLatitudeInDisplayFormat();
           _longitudeController.text = _getLongitudeInDisplayFormat();
@@ -595,24 +689,75 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
         });
         break;
       case TurnpointEditMenu.airNav:
-        launchWebBrowser(
-            "www.airnav.com", "/airport/" + modifiableTurnpoint.code);
+        if (modifiableTurnpoint != null) {
+          launchWebBrowser(
+              "www.airnav.com", "/airport/" + modifiableTurnpoint!.code);
+        }
         break;
+      case TurnpointEditMenu.deleteTurnpoint:
+        _displayConfirmDeleteDialog();
     }
   }
 
   Future<bool> _onWillPop() async {
     // TODO check for changes
-    Navigator.of(context).pop();
+    if (_needToSaveUpdates) {
+      CommonWidgets.showInfoDialog(
+          context: context,
+          title: "Unsaved Updates!",
+          msg: "Updates will be lost. Continue?",
+          button1Text: "No",
+          button1Function: continuex,
+          button2Text: "Yes",
+          button2Function: _cancelUpdate);
+    } else {
+      Navigator.of(context).pop(turnpoint);
+    }
     return true;
+  }
+
+  void continuex() {
+    Navigator.of(context, rootNavigator: true).pop(); // remove dialog
+  }
+
+  void _cancelUpdate() {
+    Navigator.of(context, rootNavigator: true).pop(); // remove dialog
+    Navigator.of(context, rootNavigator: true)
+        .pop(turnpoint); // return to previous screen
   }
 
   void _saveTurnpointEdit() {
     print('Save/update turnpoint');
-    _sendEvent(SaveTurnpointEvent(modifiableTurnpoint));
+    _sendEvent(SaveTurnpointEvent(modifiableTurnpoint!));
   }
 
   _sendEvent(TurnpointEvent event) {
     BlocProvider.of<TurnpointBloc>(context).add(event);
+  }
+
+  void _displayConfirmDeleteDialog() {
+    CommonWidgets.showInfoDialog(
+        context: context,
+        title: "Deleting Turnpoint!",
+        msg: "Are you sure you want to do this?",
+        button1Text: "No",
+        button1Function: continuex,
+        button2Text: "Yes",
+        button2Function: _deleteTurnpoint);
+  }
+
+  _deleteTurnpoint() {
+    BlocProvider.of<TurnpointBloc>(context)
+        .add(DeleteTurnpoint(modifiableTurnpoint!.id!));
+    Navigator.of(context, rootNavigator: true).pop(); // remove dialog
+  }
+
+  void _displayTurnpointDeletedDialog() {
+    CommonWidgets.showInfoDialog(
+        context: context,
+        title: "Turnpoint Deleted",
+        msg: "Turnpoint Deleted Successfully!",
+        button1Text: "OK",
+        button1Function: continuex);
   }
 }
