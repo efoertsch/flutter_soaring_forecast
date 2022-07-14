@@ -101,3 +101,12 @@ class DeleteTurnpoint extends TurnpointEvent {
   @override
   List<Object?> get props => [id];
 }
+
+class GetElevationAtLatLong extends TurnpointEvent {
+  late final double latitude;
+  late final double longitude;
+  GetElevationAtLatLong(double this.latitude, double this.longitude);
+
+  @override
+  List<Object?> get props => [latitude, longitude];
+}

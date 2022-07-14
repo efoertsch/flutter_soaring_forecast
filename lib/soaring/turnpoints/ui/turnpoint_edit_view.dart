@@ -18,7 +18,7 @@ import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoint_utils.dart
 import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_overhead_view.dart';
 
 class TurnpointEditView extends StatefulWidget {
-  late int? turnpointId;
+  late final int? turnpointId;
 
   TurnpointEditView({Key? key, int? this.turnpointId = null}) : super(key: key);
 
@@ -39,12 +39,21 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
   final TextEditingController _latitudeController = TextEditingController();
   final TextEditingController _longitudeController = TextEditingController();
 
+  @override
+  initState() {
+    // if turnpointId is null then must be adding a new turnpoint so make immediately editable
+    _isReadOnly = widget.turnpointId != null;
+    super.initState();
+  }
+
   // Make sure first layout occurs
   @override
   void afterFirstLayout(BuildContext context) {
+    // issuing 2 events sequentially results in one state being dropped. Don't ask me why
+    // so get styles, and when that received, issue view event (in styles state handler
     BlocProvider.of<TurnpointBloc>(context).add(CupStylesEvent());
-    BlocProvider.of<TurnpointBloc>(context)
-        .add(TurnpointViewEvent(widget.turnpointId));
+    // BlocProvider.of<TurnpointBloc>(context)
+    //     .add(TurnpointViewEvent(widget.turnpointId));
   }
 
   @override
@@ -108,6 +117,7 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
         modifiableTurnpoint = turnpoint!.clone();
         _latitudeController.text = _getLatitudeInDisplayFormat();
         _longitudeController.text = _getLongitudeInDisplayFormat();
+        print("Processed EditTurnpoint State");
       }
       if (state is UpdatedTurnpoint) {
         _needToSaveUpdates = false;
@@ -116,6 +126,14 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
       }
       if (state is TurnpointDeletedState) {
         _displayTurnpointDeletedDialog();
+      }
+      if (state is TurnpointCupStyles) {
+        print("adding cup styles");
+        _cupStyles.clear();
+        _cupStyles.addAll(state.cupStyles);
+        // got styles now ask for turnpoint info
+        BlocProvider.of<TurnpointBloc>(context)
+            .add(TurnpointViewEvent(widget.turnpointId));
       }
       return SafeArea(
         child: Form(
@@ -312,16 +330,30 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
         icon: Icon(Icons.location_searching),
         color: TurnpointUtils.getColorForTurnpointIcon(
             modifiableTurnpoint?.style ?? "0"),
-        onPressed: () => Navigator.pushNamed(
-          context,
-          TurnpointView.routeName,
-          arguments: TurnpointOverHeadArgs(
-              isReadOnly: _isReadOnly,
-              isDecimalDegreesFormat: _isDecimalDegreesFormat,
-              turnpoint: modifiableTurnpoint ?? Turnpoint()),
-        ),
+        onPressed: () => _gotoOverheadView(),
       ),
     );
+  }
+
+  Future<void> _gotoOverheadView() async {
+    var updatedTurnpoint = await Navigator.pushNamed(
+      context,
+      TurnpointView.routeName,
+      arguments: TurnpointOverHeadArgs(
+          isReadOnly: _isReadOnly,
+          isDecimalDegreesFormat: _isDecimalDegreesFormat,
+          turnpoint: modifiableTurnpoint ?? Turnpoint()),
+    );
+    if (!_isReadOnly && updatedTurnpoint is Turnpoint) {
+      modifiableTurnpoint!.latitudeDeg = updatedTurnpoint.latitudeDeg;
+      modifiableTurnpoint!.longitudeDeg = updatedTurnpoint.longitudeDeg;
+      modifiableTurnpoint!.elevation = updatedTurnpoint.elevation;
+      _latitudeController.text = _getLatitudeInDisplayFormat();
+      _longitudeController.text = _getLongitudeInDisplayFormat();
+      // this.setState(() {
+      //   // force redraw
+      // });
+    }
   }
 
   Widget _getElevationWidget() {
@@ -354,68 +386,55 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
   }
 
   Widget _getCupStyleListWidget() {
-    return BlocBuilder<TurnpointBloc, TurnpointState>(
-        buildWhen: (previous, current) {
-      return current is TurnpointCupStyles;
-    }, builder: (context, state) {
-      if (state is TurnpointCupStyles) {
-        _cupStyles.clear();
-        _cupStyles.addAll(state.cupStyles);
-        return Padding(
-          padding: const EdgeInsets.only(top: 16.0, left: 8, right: 8),
-          child: InputDecorator(
-            decoration: InputDecoration(
-              contentPadding:
-                  EdgeInsets.symmetric(horizontal: 10.0, vertical: 8.0),
-              labelText: TurnpointEditText.turnpointType,
-              border:
-                  OutlineInputBorder(borderRadius: BorderRadius.circular(5.0)),
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                style: CustomStyle.bold18(context),
-                value: TurnpointUtils.getStyleDescriptionFromStyle(
-                    state.cupStyles, modifiableTurnpoint?.style ?? "0"),
-                hint: Text(TurnpointEditText.selectTurnpointType),
-                isExpanded: true,
-                iconSize: 24,
-                elevation: 16,
-                onChanged: _isReadOnly
-                    ? null
-                    : (String? description) {
-                        if (description != null) {
-                          modifiableTurnpoint?.style =
-                              TurnpointUtils.getStyleFromStyleDescription(
-                                  state.cupStyles, description);
-                        } else {
-                          modifiableTurnpoint?.style = '0';
-                        }
-                        if (modifiableTurnpoint?.style != turnpoint!.style) {
-                          _needToSaveUpdates = true;
-                        }
-                        setState(() {});
-                        // _sendEvent(context, );
-                      },
-                items: state.cupStyles
-                    .map((style) {
-                      return style.description;
-                    })
-                    .toList()
-                    .map<DropdownMenuItem<String>>((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value.toUpperCase()),
-                      );
-                    })
-                    .toList(),
-              ),
-            ),
+    return Padding(
+      padding: const EdgeInsets.only(top: 16.0, left: 8, right: 8),
+      child: InputDecorator(
+        decoration: InputDecoration(
+          contentPadding: EdgeInsets.symmetric(horizontal: 10.0, vertical: 8.0),
+          labelText: TurnpointEditText.turnpointType,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(5.0)),
+        ),
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<String>(
+            style: CustomStyle.bold18(context),
+            value: TurnpointUtils.getStyleDescriptionFromStyle(
+                _cupStyles, modifiableTurnpoint?.style ?? "0"),
+            hint: Text(TurnpointEditText.selectTurnpointType),
+            isExpanded: true,
+            iconSize: 24,
+            elevation: 16,
+            onChanged: _isReadOnly
+                ? null
+                : (String? description) {
+                    if (description != null) {
+                      modifiableTurnpoint?.style =
+                          TurnpointUtils.getStyleFromStyleDescription(
+                              _cupStyles, description);
+                    } else {
+                      modifiableTurnpoint?.style = '0';
+                    }
+                    if (modifiableTurnpoint?.style != turnpoint!.style) {
+                      _needToSaveUpdates = true;
+                    }
+                    setState(() {});
+                    // _sendEvent(context, );
+                  },
+            items: _cupStyles
+                .map((style) {
+                  return style.description;
+                })
+                .toList()
+                .map<DropdownMenuItem<String>>((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value.toUpperCase()),
+                  );
+                })
+                .toList(),
           ),
-        );
-      } else {
-        return Container();
-      }
-    });
+        ),
+      ),
+    );
   }
 
   Widget _getDirectionWidget() {
@@ -707,20 +726,20 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
           title: "Unsaved Updates!",
           msg: "Updates will be lost. Continue?",
           button1Text: "No",
-          button1Function: continuex,
+          button1Function: _continueFunction,
           button2Text: "Yes",
-          button2Function: _cancelUpdate);
+          button2Function: _cancelUpdateFunction);
     } else {
       Navigator.of(context).pop(turnpoint);
     }
     return true;
   }
 
-  void continuex() {
+  void _continueFunction() {
     Navigator.of(context, rootNavigator: true).pop(); // remove dialog
   }
 
-  void _cancelUpdate() {
+  void _cancelUpdateFunction() {
     Navigator.of(context, rootNavigator: true).pop(); // remove dialog
     Navigator.of(context, rootNavigator: true)
         .pop(turnpoint); // return to previous screen
@@ -741,7 +760,7 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
         title: "Deleting Turnpoint!",
         msg: "Are you sure you want to do this?",
         button1Text: "No",
-        button1Function: continuex,
+        button1Function: _continueFunction,
         button2Text: "Yes",
         button2Function: _deleteTurnpoint);
   }
@@ -758,6 +777,6 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
         title: "Turnpoint Deleted",
         msg: "Turnpoint Deleted Successfully!",
         button1Text: "OK",
-        button1Function: continuex);
+        button1Function: _continueFunction);
   }
 }

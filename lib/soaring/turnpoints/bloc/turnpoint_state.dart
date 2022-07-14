@@ -99,6 +99,15 @@ class TurnpointDeletedState extends TurnpointState {
   List<Object?> get props => throw UnimplementedError();
 }
 
+class LatLongElevationState extends TurnpointState {
+  final double latitude;
+  final double longitude;
+  final double elevation;
+  LatLongElevationState(this.latitude, this.longitude, this.elevation);
+  @override
+  List<Object?> get props => [latitude, longitude, elevation];
+}
+
 //----------------------------------------------------------------
 // For loading turnpoint file names
 class TurnpointFilesFoundState extends TurnpointState {

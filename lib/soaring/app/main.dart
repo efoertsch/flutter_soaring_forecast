@@ -244,7 +244,11 @@ class TurnpointView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TurnpointOverheadView(turnpointOverHeadArgs: turnpointOverHeadArgs);
+    return BlocProvider<TurnpointBloc>(
+        create: (BuildContext context) => TurnpointBloc(
+            repository: RepositoryProvider.of<Repository>(context)),
+        child: TurnpointOverheadView(
+            turnpointOverHeadArgs: turnpointOverHeadArgs));
   }
 }
 

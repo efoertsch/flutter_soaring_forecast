@@ -28,6 +28,7 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
     on<CupStylesEvent>(_getAllCupStyles);
     on<SaveTurnpointEvent>(_saveTurnpoint);
     on<DeleteTurnpoint>(_deleteTurnpoint);
+    on<GetElevationAtLatLong>(_getElevationAtLatLong);
     //on<GetCustomImportFileNamesEvent>(_getCustomImportFileNames);
   }
 
@@ -157,6 +158,7 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
   }
 
   void _getAllCupStyles(CupStylesEvent event, Emitter<TurnpointState> emit) {
+    print("Emitting CupStyles");
     emit(TurnpointCupStyles(TurnpointUtils.getCupStyles()));
   }
 
@@ -203,6 +205,22 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
       emit(TurnpointErrorState(
           "Oops. An error occurred deleting the turnpoint!"));
       return null;
+    }
+  }
+
+  FutureOr<double?> _getElevationAtLatLong(
+      GetElevationAtLatLong event, Emitter<TurnpointState> emit) async {
+    double elevation;
+    try {
+      final nationalMap = await repository.getElevationAtLatLongPoint(
+          event.latitude, event.longitude);
+      elevation = nationalMap
+              .uSGSElevationPointQueryService!.elevationQuery!.elevation ??
+          0.0;
+      emit(LatLongElevationState(event.latitude, event.longitude, elevation));
+    } catch (e) {
+      emit(TurnpointErrorState("Ooops. Could not get elevation at that point"));
+      return 0;
     }
   }
 }

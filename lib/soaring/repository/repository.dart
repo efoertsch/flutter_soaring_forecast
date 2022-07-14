@@ -18,6 +18,7 @@ import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_
 import 'package:flutter_soaring_forecast/soaring/repository/ImageCacheManager.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/rasp_options_api.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/turnpoint_regions.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/usgs/national_map.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/cup/cup_styles.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoints_downloader.dart';
 import 'package:retrofit/dio.dart';
@@ -28,6 +29,7 @@ import 'rasp/forecast_models.dart';
 import 'rasp/forecast_types.dart';
 import 'rasp/rasp_api.dart';
 import 'rasp/regions.dart';
+import 'usgs/usgs_api.dart';
 
 class Repository {
   static Repository? _repository;
@@ -35,6 +37,7 @@ class Repository {
   static late BuildContext? _context;
   static late RaspClient _raspClient;
   static late RaspOptionsClient _raspOptionsClient;
+  static UsgsClient? _usgsClient;
   static AppDatabase? _appDatabase;
 
   Repository._();
@@ -403,6 +406,16 @@ class Repository {
   Future<int?> deleteTaskTurnpoint(final int taskTurnpointId) async {
     await makeDatabaseAvailable();
     return _appDatabase!.taskTurnpointDao.deleteTaskTurnpoint(taskTurnpointId);
+  }
+
+  // ---- USGS calls --------------------------------------------------
+  Future<NationalMap> getElevationAtLatLongPoint(
+      double latitude, double longitude) {
+    if (_usgsClient == null) {
+      _usgsClient = UsgsClient(_dio);
+    }
+    return _usgsClient!.getElevation(
+        latitude.toStringAsFixed(6), longitude.toStringAsFixed(6), "Feet");
   }
 
   // ----- Shared preferences --------------------------

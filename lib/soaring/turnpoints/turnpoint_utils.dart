@@ -18,7 +18,7 @@ class TurnpointUtils {
   static const String AIRPORT_DETAILS =
       "%s %s %s\nLat: %s Long: %s\nElev: %s Dir: %s Lngth:%s Width:%s\nFreq: %s\n%s";
   static const String NON_AIRPORT_DETAILS =
-      "% s  % s\n%3 \nLat: %s Long: %s\nElev: %s \n%s ";
+      "%s  %s\n%s \nLat: %s Long: %s\nElev: %s \n%s ";
   static const String TURNPOINT_LAT_DECIMAL_FORMAT = "%.5f";
   static const String TURNPOINT_LONG_DECIMAL_FORMAT = "%.5f";
   static NumberFormat latitudeFormat = NumberFormat("0000.000");
