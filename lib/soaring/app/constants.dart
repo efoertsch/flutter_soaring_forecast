@@ -9,6 +9,9 @@ const String RASP_BASE_URL = BASE_URL + 'rasp/';
 const String RASP_OPTIONS_BASE_URL = 'https://soargbsc.com/soaringforecast/';
 const String AIRPORT_URL = 'http://ourairports.com/data/airports.csv';
 
+const double metersToFeet = 3.28084;
+const String ft = "ft";
+
 enum ImageTypes { body, head, side, foot }
 
 const String APP_DATABASE = 'app_database.db'; // Floor database name
@@ -61,6 +64,7 @@ class TurnpointEditText {
   static const String waypointName = 'Waypoint Name';
   static const String waypointCode = 'Waypoint Code';
   static const String countryCode = 'Country Code';
+  static const String countryCodeDefault = 'US';
   static const String latitudeDecimalDegrees = 'Latitude (-)dd.ddddd';
   static const String latitudeDecimalMinutes = 'Latitude DDMM.mmm(N|S)';
   static const String longitudeDecimalDegrees = 'Longitude (-)ddd.ddddd';
@@ -68,7 +72,8 @@ class TurnpointEditText {
   static const String elevation = 'Elevation ending in ft or m';
   static const String runwayDirection = 'Runway direction - 3 digit number';
   static const String runwayLength = 'Runway length - ending in ft or m';
-  static const String runwayWidth = 'Runway width';
+  static const String runwayWidth = 'Runway width - ending in ft or m';
+  static const String runwayWidthHint = 'e.g. 70ft';
   static const String airportFrequency = 'Airport Frequency nnn.nn(0|5)';
   static const String description = 'Description';
   static const String turnpointType = "Turnpoint Type";

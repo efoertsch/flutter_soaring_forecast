@@ -99,6 +99,19 @@ class TurnpointDeletedState extends TurnpointState {
   List<Object?> get props => throw UnimplementedError();
 }
 
+class CurrentLocationState extends TurnpointState {
+  // decimal degrees
+  final double latitude;
+  final double longitude;
+  // altitude in meters
+  final double altitude;
+
+  CurrentLocationState(this.latitude, this.longitude, this.altitude);
+
+  @override
+  List<Object?> get props => [latitude, longitude];
+}
+
 class LatLongElevationState extends TurnpointState {
   final double latitude;
   final double longitude;

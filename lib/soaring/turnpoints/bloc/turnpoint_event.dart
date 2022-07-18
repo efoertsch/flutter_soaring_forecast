@@ -102,6 +102,12 @@ class DeleteTurnpoint extends TurnpointEvent {
   List<Object?> get props => [id];
 }
 
+class GetCurrentLocation extends TurnpointEvent {
+  GetCurrentLocation();
+  @override
+  List<Object?> get props => [];
+}
+
 class GetElevationAtLatLong extends TurnpointEvent {
   late final double latitude;
   late final double longitude;

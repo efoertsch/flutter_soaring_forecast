@@ -34,16 +34,26 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
   Turnpoint? modifiableTurnpoint = null;
   bool _isReadOnly = true;
   bool _isDecimalDegreesFormat = true;
+  bool _turnpointInitialized = false;
   List<Style> _cupStyles = [];
   bool _needToSaveUpdates = false;
   final TextEditingController _latitudeController = TextEditingController();
   final TextEditingController _longitudeController = TextEditingController();
+  final TextEditingController _elevationController = TextEditingController();
 
   @override
   initState() {
     // if turnpointId is null then must be adding a new turnpoint so make immediately editable
     _isReadOnly = widget.turnpointId != null;
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    _latitudeController.dispose();
+    _longitudeController.dispose();
+    _elevationController.dispose();
+    super.dispose();
   }
 
   // Make sure first layout occurs
@@ -113,11 +123,13 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
         return CommonWidgets.buildLoading();
       }
       if (state is EditTurnpoint) {
-        turnpoint = state.turnpoint;
-        modifiableTurnpoint = turnpoint!.clone();
-        _latitudeController.text = _getLatitudeInDisplayFormat();
-        _longitudeController.text = _getLongitudeInDisplayFormat();
-        print("Processed EditTurnpoint State");
+        if (!_turnpointInitialized) {
+          turnpoint = state.turnpoint;
+          modifiableTurnpoint = turnpoint!.clone();
+          _updateLatLongDisplayText();
+          print("Processed EditTurnpoint State");
+          _turnpointInitialized = true;
+        }
       }
       if (state is UpdatedTurnpoint) {
         _needToSaveUpdates = false;
@@ -134,6 +146,7 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
         // got styles now ask for turnpoint info
         BlocProvider.of<TurnpointBloc>(context)
             .add(TurnpointViewEvent(widget.turnpointId));
+        return CommonWidgets.buildLoading();
       }
       return SafeArea(
         child: Form(
@@ -224,7 +237,9 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
       padding: const EdgeInsets.all(8.0),
       child: TextFormField(
         readOnly: _isReadOnly,
-        initialValue: (modifiableTurnpoint?.country),
+        initialValue: ((modifiableTurnpoint?.country ?? "").isEmpty
+            ? TurnpointEditText.countryCodeDefault
+            : modifiableTurnpoint?.country),
         decoration: InputDecoration(
           border: OutlineInputBorder(),
           hintText: TurnpointEditText.countryCode,
@@ -348,8 +363,7 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
       modifiableTurnpoint!.latitudeDeg = updatedTurnpoint.latitudeDeg;
       modifiableTurnpoint!.longitudeDeg = updatedTurnpoint.longitudeDeg;
       modifiableTurnpoint!.elevation = updatedTurnpoint.elevation;
-      _latitudeController.text = _getLatitudeInDisplayFormat();
-      _longitudeController.text = _getLongitudeInDisplayFormat();
+      _updateLatLongDisplayText();
       // this.setState(() {
       //   // force redraw
       // });
@@ -361,7 +375,7 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
       padding: const EdgeInsets.all(8.0),
       child: TextFormField(
         readOnly: _isReadOnly,
-        initialValue: modifiableTurnpoint?.elevation,
+        controller: _elevationController,
         decoration: InputDecoration(
           border: OutlineInputBorder(),
           hintText: TurnpointEditText.elevation,
@@ -513,7 +527,7 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
           initialValue: modifiableTurnpoint?.runwayWidth,
           decoration: InputDecoration(
             border: OutlineInputBorder(),
-            hintText: TurnpointEditText.runwayWidth,
+            hintText: TurnpointEditText.runwayWidthHint,
             labelText: TurnpointEditText.runwayWidth,
           ),
           autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -593,25 +607,10 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
     );
   }
 
-  String _getLatitudeInDisplayFormat() {
-    return _isDecimalDegreesFormat
-        ? modifiableTurnpoint?.latitudeDeg.toStringAsFixed(5) ??
-            0.toStringAsFixed(5)
-        : TurnpointUtils.getLatitudeInCupFormat(
-            modifiableTurnpoint?.latitudeDeg ?? 0);
-  }
-
   String _getLatitudeText() {
     return _isDecimalDegreesFormat
         ? TurnpointEditText.latitudeDecimalDegrees
         : TurnpointEditText.latitudeDecimalMinutes;
-  }
-
-  String _getLongitudeInDisplayFormat() {
-    return _isDecimalDegreesFormat
-        ? modifiableTurnpoint?.longitudeDeg.toStringAsFixed(5) ??
-            0.toStringAsFixed(5)
-        : TurnpointUtils.getLongitudeInCupFormat(turnpoint?.longitudeDeg ?? 0);
   }
 
   String _getLongitudeText() {
@@ -694,18 +693,15 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
           _isReadOnly = true;
           modifiableTurnpoint = turnpoint!.clone();
           _isDecimalDegreesFormat = true;
-          _latitudeController.text = _getLatitudeInDisplayFormat();
-          _longitudeController.text = _getLongitudeInDisplayFormat();
+          _updateLatLongDisplayText();
           _displayEditStatus();
           _formKey = GlobalKey<FormState>();
         });
         break;
       case TurnpointEditMenu.toggleLatLongFormat:
-        setState(() {
-          _isDecimalDegreesFormat = !_isDecimalDegreesFormat;
-          _latitudeController.text = _getLatitudeInDisplayFormat();
-          _longitudeController.text = _getLongitudeInDisplayFormat();
-        });
+        // don't need to use setState() when using textcontrollers
+        _isDecimalDegreesFormat = !_isDecimalDegreesFormat;
+        _updateLatLongDisplayText();
         break;
       case TurnpointEditMenu.airNav:
         if (modifiableTurnpoint != null) {
@@ -716,6 +712,14 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
       case TurnpointEditMenu.deleteTurnpoint:
         _displayConfirmDeleteDialog();
     }
+  }
+
+  void _updateLatLongDisplayText() {
+    _latitudeController.text = TurnpointUtils.getLatitudeInDisplayFormat(
+        _isDecimalDegreesFormat, modifiableTurnpoint!.latitudeDeg);
+    _longitudeController.text = TurnpointUtils.getLongitudeInDisplayFormat(
+        _isDecimalDegreesFormat, modifiableTurnpoint!.longitudeDeg);
+    _elevationController.text = modifiableTurnpoint!.elevation;
   }
 
   Future<bool> _onWillPop() async {

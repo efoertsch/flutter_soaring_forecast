@@ -8,6 +8,7 @@ import 'package:flutter_soaring_forecast/soaring/turnpoints/bloc/turnpoint_event
 import 'package:flutter_soaring_forecast/soaring/turnpoints/bloc/turnpoint_state.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/cup/cup_styles.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoint_utils.dart';
+import 'package:location/location.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
@@ -28,6 +29,7 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
     on<CupStylesEvent>(_getAllCupStyles);
     on<SaveTurnpointEvent>(_saveTurnpoint);
     on<DeleteTurnpoint>(_deleteTurnpoint);
+    on<GetCurrentLocation>(_getCurrentLocation);
     on<GetElevationAtLatLong>(_getElevationAtLatLong);
     //on<GetCustomImportFileNamesEvent>(_getCustomImportFileNames);
   }
@@ -205,6 +207,21 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
       emit(TurnpointErrorState(
           "Oops. An error occurred deleting the turnpoint!"));
       return null;
+    }
+  }
+
+  // only call when sure that user has given permission
+  FutureOr<void> _getCurrentLocation(
+      GetCurrentLocation event, Emitter<TurnpointState> emit) async {
+    Location location = Location();
+    try {
+      final currentLocation = await location.getLocation();
+      print(
+          "location: ${currentLocation.latitude} ${currentLocation.longitude}, elevation(m): ${currentLocation.altitude} ");
+      emit(CurrentLocationState(currentLocation!.latitude ?? 0,
+          currentLocation!.longitude ?? 0, currentLocation.altitude ?? 0));
+    } catch (e) {
+      emit(TurnpointErrorState("Oops. Can't find your location!"));
     }
   }
 

@@ -5,11 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
+import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
+    as Constants;
 import 'package:flutter_soaring_forecast/soaring/app/web_mixin.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoint_utils.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:location/location.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../bloc/turnpoint_bloc.dart';
@@ -47,14 +48,18 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
   bool _draggable = false;
   late Marker _marker;
   bool _displaySaveResetButtons = false;
-  bool _displayCloseButton = true;
+  bool _displaySaveButton = true;
   late final Turnpoint turnpoint;
   late final Turnpoint originalTurnpoint;
+  Key? _mapKey;
+
+  GoogleMap? _googleMapWidget;
 
   @override
   initState() {
     originalTurnpoint = widget.turnpointOverHeadArgs.turnpoint;
     turnpoint = originalTurnpoint.clone();
+    _mapKey = ObjectKey("");
     super.initState();
   }
 
@@ -103,30 +108,62 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
   }
 
   Widget getBodyWidget() {
-    return Padding(
-      padding: EdgeInsets.all(8.0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: <Widget>[
-          _getTurnpointText(),
-          googleMap(),
-          _getButtons(),
-        ],
+    return BlocListener<TurnpointBloc, TurnpointState>(
+      listener: (context, state) {
+        if (state is TurnpointsInitialState) {}
+        if (state is CurrentLocationState) {
+          turnpoint.latitudeDeg = state.latitude;
+          turnpoint.longitudeDeg = state.longitude;
+          if (originalTurnpoint.latitudeDeg == 0) {
+            originalTurnpoint.latitudeDeg = state.latitude;
+            originalTurnpoint.longitudeDeg = state.longitude;
+            originalTurnpoint.elevation =
+                TurnpointUtils.convertMetersToFeet(state.altitude)
+                        .toStringAsFixed(1) +
+                    Constants.ft;
+          }
+          print("lat/long ${turnpoint.latitudeDeg} ${turnpoint.longitudeDeg}");
+          if (state.altitude == 0) {
+            findElevationAtLatLong();
+          }
+        }
+        if (state is LatLongElevationState) {
+          turnpoint.elevation = state.elevation.toStringAsFixed(1) + "ft";
+          print("elevation is: ${turnpoint.elevation}");
+        }
+        _mapKey = ObjectKey(state);
+        _getTurnpointMarker();
+        _animateCameraToNewPosition();
+        delaySetState(200);
+      },
+      child: Padding(
+        padding: EdgeInsets.all(8.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: <Widget>[
+            _getTurnpointInfoWidget(),
+            _googleMap(),
+            _getButtons(),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _getTurnpointText() {
-    return BlocListener<TurnpointBloc, TurnpointState>(
-        listener: (context, state) {
-          if (state is LatLongElevationState) {
-            turnpoint.elevation = state.elevation.toStringAsFixed(1) + "ft";
-          }
-        },
-        child: getTurnpointInfoWidget());
+  void _animateCameraToNewPosition() {
+    Future.delayed(Duration(milliseconds: 60), () {
+      var newPosition = CameraPosition(
+          target: LatLng(
+            turnpoint.latitudeDeg,
+            turnpoint.longitudeDeg,
+          ),
+          zoom: 14);
+      CameraUpdate update = CameraUpdate.newCameraPosition(newPosition);
+      _mapController!.moveCamera(update);
+    });
   }
 
-  Widget getTurnpointInfoWidget() {
+  Widget _getTurnpointInfoWidget() {
     // putting swipe here as can't get 'right swipe to go back' to work if swiping
     // over google map
     if (Platform.isIOS) {
@@ -138,42 +175,43 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
             Navigator.of(context).pop();
           }
         },
-        child: _getTurnpointInfo(),
+        child: _getTurnpointInfoTextWidget(),
       );
     }
-    return _getTurnpointInfo();
+    return _getTurnpointInfoTextWidget();
   }
 
-  Text _getTurnpointInfo() {
-    return Text(TurnpointUtils.getFormattedTurnpointDetails(
-        turnpoint, _isDecimalDegreesFormat));
+  Text _getTurnpointInfoTextWidget() {
+    return Text(
+        TurnpointUtils.getFormattedTurnpointDetails(
+            turnpoint, _isDecimalDegreesFormat),
+        key: _mapKey);
   }
 
-  Widget googleMap() {
-    return Expanded(
-      child: GoogleMap(
-        myLocationButtonEnabled: true,
-        onMapCreated: _onMapCreated,
-        mapType: MapType.satellite,
-        initialCameraPosition: CameraPosition(
-          target: LatLng(turnpoint.latitudeDeg, turnpoint.longitudeDeg),
-          zoom: 14.0,
-        ),
-        markers: Set<Marker>.of({getTurnpointMarker()}),
+  Widget _googleMap() {
+    _googleMapWidget = GoogleMap(
+      myLocationButtonEnabled: true,
+      onMapCreated: _onMapCreated,
+      mapType: MapType.satellite,
+      initialCameraPosition: CameraPosition(
+        target: LatLng(turnpoint.latitudeDeg, turnpoint.longitudeDeg),
+        zoom: 14.0,
       ),
+      markers: Set<Marker>.of({_getTurnpointMarker()}),
     );
+    return Expanded(child: _googleMapWidget!);
   }
 
   Widget _getButtons() {
     return Column(mainAxisAlignment: MainAxisAlignment.start, children: [
-      _closeButton(),
+      _saveButton(),
       _saveResetButtons(),
     ]);
   }
 
-  Widget _closeButton() {
+  Widget _saveButton() {
     return Visibility(
-      visible: _displayCloseButton,
+      visible: _displaySaveButton,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
           minimumSize: Size(double.infinity,
@@ -244,10 +282,14 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
       onPressed: () {
         setState(() {
           _displaySaveResetButtons = false;
-          _displayCloseButton = true;
+          _displaySaveButton = true;
           turnpoint.latitudeDeg = originalTurnpoint.latitudeDeg;
           turnpoint.longitudeDeg = originalTurnpoint.longitudeDeg;
+          turnpoint.elevation = originalTurnpoint.elevation;
         });
+        _getTurnpointMarker();
+        _animateCameraToNewPosition();
+        delaySetState(200);
       },
       child: Text(
         TurnpointEditText.reset,
@@ -255,11 +297,12 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
     );
   }
 
-  Marker getTurnpointMarker() {
+  Marker _getTurnpointMarker() {
     print(
         "creating marker location: ${turnpoint.latitudeDeg} ${turnpoint.longitudeDeg} ");
     _marker = Marker(
       draggable: _draggable,
+      onDrag: _draggable ? _dragListener : null,
       onDragEnd: _draggable ? _markerDragListener : null,
       markerId: MarkerId(turnpoint.code),
       position: LatLng(turnpoint.latitudeDeg, turnpoint.longitudeDeg),
@@ -297,20 +340,28 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
     ];
   }
 
+  _dragListener(LatLng latLng) {
+    print("Dagging current lat: ${latLng.latitude} long: ${latLng.longitude}");
+  }
+
   _markerDragListener(LatLng latLng) {
     turnpoint.latitudeDeg = latLng.latitude;
     turnpoint.longitudeDeg = latLng.longitude;
     findElevationAtLatLong();
     setState(() {
-      _displayCloseButton = false;
+      _displaySaveButton = false;
       if (turnpoint.latitudeDeg != originalTurnpoint.latitudeDeg ||
           turnpoint.latitudeDeg != originalTurnpoint.longitudeDeg) {
         _displaySaveResetButtons = true;
       } else {
+        _displaySaveButton = true;
         _displaySaveResetButtons = false;
       }
       print(
           "New lat/long after dragging: ${turnpoint.latitudeDeg}, ${turnpoint.latitudeDeg}");
+      print(
+          "_displaySaveButton ${_displaySaveButton} _displaySaveResetButtons ${_displaySaveResetButtons}");
+      print("draggable : ${_draggable}");
     });
   }
 
@@ -360,28 +411,17 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
   }
 
   void getLocation() async {
-    Location location = new Location();
-    try {
-      final currentLocation = await location.getLocation();
-      originalTurnpoint.latitudeDeg = currentLocation.latitude ?? 0;
-      originalTurnpoint.longitudeDeg = currentLocation.longitude ?? 0;
-      turnpoint.latitudeDeg = currentLocation.latitude ?? 0;
-      turnpoint.longitudeDeg = currentLocation.longitude ?? 0;
-      print("location: ${turnpoint.latitudeDeg} ${turnpoint.longitudeDeg} ");
-      final newLatLng = LatLng(turnpoint.latitudeDeg, turnpoint.longitudeDeg);
-      findElevationAtLatLong();
-      _mapController!.animateCamera(CameraUpdate.newLatLng(newLatLng));
-      _displayCloseButton = true;
-      this.setState(() {
-        // force redraw of map
-      });
-    } catch (e) {
-      print(e.toString());
-    }
+    BlocProvider.of<TurnpointBloc>(context).add(GetCurrentLocation());
   }
 
   void findElevationAtLatLong() {
     BlocProvider.of<TurnpointBloc>(context).add(
         GetElevationAtLatLong(turnpoint.latitudeDeg, turnpoint.longitudeDeg));
+  }
+
+  void delaySetState(int delay) {
+    Future.delayed(Duration(milliseconds: delay), () {
+      setState(() {});
+    });
   }
 }

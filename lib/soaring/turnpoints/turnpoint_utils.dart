@@ -2,6 +2,8 @@ import 'dart:ui';
 
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
+    as Constants;
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/cup/cup_styles.dart';
 import 'package:intl/intl.dart';
@@ -19,8 +21,6 @@ class TurnpointUtils {
       "%s %s %s\nLat: %s Long: %s\nElev: %s Dir: %s Lngth:%s Width:%s\nFreq: %s\n%s";
   static const String NON_AIRPORT_DETAILS =
       "%s  %s\n%s \nLat: %s Long: %s\nElev: %s \n%s ";
-  static const String TURNPOINT_LAT_DECIMAL_FORMAT = "%.5f";
-  static const String TURNPOINT_LONG_DECIMAL_FORMAT = "%.5f";
   static NumberFormat latitudeFormat = NumberFormat("0000.000");
   static NumberFormat longitudeFormat = NumberFormat("00000.000");
   static const String QUOTE = "\"";
@@ -351,7 +351,7 @@ class TurnpointUtils {
   }
 
   static String getFormattedTurnpointDetails(
-      Turnpoint turnpoint, bool cupFormat) {
+      Turnpoint turnpoint, bool isDecimalDegreesFormat) {
     String turnpointDetails;
     switch (turnpoint.style) {
       case "2":
@@ -361,13 +361,10 @@ class TurnpointUtils {
           turnpoint.title,
           turnpoint.code,
           getStyleName(turnpoint.style),
-          cupFormat
-              ? getLatitudeInCupFormat(turnpoint.latitudeDeg)
-              : sprintf(TURNPOINT_LAT_DECIMAL_FORMAT, [turnpoint.latitudeDeg]),
-          cupFormat
-              ? getLongitudeInCupFormat(turnpoint.longitudeDeg)
-              : sprintf(
-                  TURNPOINT_LONG_DECIMAL_FORMAT, [turnpoint.longitudeDeg]),
+          getLatitudeInDisplayFormat(
+              isDecimalDegreesFormat, turnpoint.latitudeDeg),
+          getLongitudeInDisplayFormat(
+              isDecimalDegreesFormat, turnpoint.longitudeDeg),
           turnpoint.elevation,
           turnpoint.direction,
           turnpoint.length,
@@ -381,17 +378,29 @@ class TurnpointUtils {
           turnpoint.title,
           turnpoint.code,
           getStyleName(turnpoint.style),
-          cupFormat
-              ? getLatitudeInCupFormat(turnpoint.latitudeDeg)
-              : sprintf(TURNPOINT_LAT_DECIMAL_FORMAT, turnpoint.latitudeDeg),
-          cupFormat
-              ? getLongitudeInCupFormat(turnpoint.longitudeDeg)
-              : sprintf(TURNPOINT_LONG_DECIMAL_FORMAT, turnpoint.longitudeDeg),
+          getLatitudeInDisplayFormat(
+              isDecimalDegreesFormat, turnpoint.latitudeDeg),
+          getLongitudeInDisplayFormat(
+              isDecimalDegreesFormat, turnpoint.longitudeDeg),
           turnpoint.elevation,
           turnpoint.description
         ]);
     }
     return turnpointDetails;
+  }
+
+  static String getLongitudeInDisplayFormat(
+      bool isDecimalDegreesFormat, double longitudeInDegrees) {
+    return isDecimalDegreesFormat
+        ? longitudeInDegrees.toStringAsFixed(5)
+        : getLongitudeInCupFormat(longitudeInDegrees);
+  }
+
+  static String getLatitudeInDisplayFormat(
+      bool isDecimalDegreesFormat, double latitudeInDegrees) {
+    return isDecimalDegreesFormat
+        ? latitudeInDegrees.toStringAsFixed(5)
+        : getLatitudeInCupFormat(latitudeInDegrees);
   }
 
   //TODO - convert string for doublE
@@ -421,5 +430,9 @@ class TurnpointUtils {
 
   static bool airportFrequencyValid(String frequency) {
     return frequencyRegex.hasMatch(frequency);
+  }
+
+  static double convertMetersToFeet(double meters) {
+    return meters * Constants.metersToFeet;
   }
 }
