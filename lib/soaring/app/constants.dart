@@ -102,6 +102,7 @@ class TurnpointEditText {
   static const String turnpointInReadOnlyMode = "Turnpoint in read only mode.";
   static const String reset = "Reset";
   static const String saveLocation = "Save Location";
+  static String close = "Close";
 }
 
 const textStyleBoldBlackFontSize20 =

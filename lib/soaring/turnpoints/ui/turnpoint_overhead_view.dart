@@ -48,18 +48,24 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
   bool _draggable = false;
   late Marker _marker;
   bool _displaySaveResetButtons = false;
-  bool _displaySaveButton = true;
+  bool _displaySaveButton = false;
+  bool _gotLocation = false;
   late final Turnpoint turnpoint;
   late final Turnpoint originalTurnpoint;
   Key? _mapKey;
 
   GoogleMap? _googleMapWidget;
 
+  var _displayCloseButton = false;
+
   @override
   initState() {
     originalTurnpoint = widget.turnpointOverHeadArgs.turnpoint;
+    _isReadOnly = widget.turnpointOverHeadArgs.isReadOnly;
     turnpoint = originalTurnpoint.clone();
     _mapKey = ObjectKey("");
+    _displayCloseButton =
+        (Platform.isIOS && _isReadOnly) || turnpoint.latitudeDeg != 0;
     super.initState();
   }
 
@@ -96,7 +102,7 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
       child: Scaffold(
         key: _scaffoldKey,
         appBar: AppBar(
-          title: widget.turnpointOverHeadArgs.isReadOnly
+          title: _isReadOnly
               ? Text(TurnpointEditText.viewTurnpoint)
               : Text(TurnpointEditText.editTurnpoint),
           leading: CommonWidgets.backArrowToHomeScreen(),
@@ -121,6 +127,9 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
                 TurnpointUtils.convertMetersToFeet(state.altitude)
                         .toStringAsFixed(1) +
                     Constants.ft;
+            _gotLocation = true;
+            _displayCloseButton = false;
+            _displaySaveButton = true;
           }
           print("lat/long ${turnpoint.latitudeDeg} ${turnpoint.longitudeDeg}");
           if (state.altitude == 0) {
@@ -137,11 +146,11 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
         delaySetState(200);
       },
       child: Padding(
-        padding: EdgeInsets.all(8.0),
+        padding: const EdgeInsets.all(8.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
           children: <Widget>[
-            _getTurnpointInfoWidget(),
+            _getTurnpointInfoTextWidget(),
             _googleMap(),
             _getButtons(),
           ],
@@ -163,29 +172,12 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
     });
   }
 
-  Widget _getTurnpointInfoWidget() {
-    // putting swipe here as can't get 'right swipe to go back' to work if swiping
-    // over google map
-    if (Platform.isIOS) {
-      //iOS
-      return GestureDetector(
-        behavior: HitTestBehavior.deferToChild,
-        onHorizontalDragUpdate: (details) {
-          if (details.delta.direction >= 0) {
-            Navigator.of(context).pop();
-          }
-        },
-        child: _getTurnpointInfoTextWidget(),
-      );
-    }
-    return _getTurnpointInfoTextWidget();
-  }
-
-  Text _getTurnpointInfoTextWidget() {
+  Widget _getTurnpointInfoTextWidget() {
     return Text(
         TurnpointUtils.getFormattedTurnpointDetails(
             turnpoint, _isDecimalDegreesFormat),
-        key: _mapKey);
+        key: _mapKey,
+        textAlign: TextAlign.start);
   }
 
   Widget _googleMap() {
@@ -204,9 +196,30 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
 
   Widget _getButtons() {
     return Column(mainAxisAlignment: MainAxisAlignment.start, children: [
+      _closeButton(),
       _saveButton(),
       _saveResetButtons(),
     ]);
+  }
+
+  _closeButton() {
+    return Visibility(
+      visible: _displayCloseButton,
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          minimumSize: Size(double.infinity,
+              40), // double.infinity is the width and 30 is the height
+          onPrimary: Colors.white,
+          primary: Theme.of(context).colorScheme.primary,
+        ),
+        onPressed: () {
+          Navigator.pop(context);
+        },
+        child: Text(
+          TurnpointEditText.close,
+        ),
+      ),
+    );
   }
 
   Widget _saveButton() {
@@ -282,7 +295,10 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
       onPressed: () {
         setState(() {
           _displaySaveResetButtons = false;
-          _displaySaveButton = true;
+          _displayCloseButton =
+              (Platform.isIOS && _isReadOnly) || !_gotLocation;
+          _displaySaveButton = _gotLocation;
+
           turnpoint.latitudeDeg = originalTurnpoint.latitudeDeg;
           turnpoint.longitudeDeg = originalTurnpoint.longitudeDeg;
           turnpoint.elevation = originalTurnpoint.elevation;
@@ -314,8 +330,7 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
     return <Widget>[
       TextButton(
         onPressed: () {
-          launchWebBrowser("www.airnav.com",
-              "/airport/" + widget.turnpointOverHeadArgs.turnpoint.code);
+          launchWebBrowser("www.airnav.com", "/airport/" + turnpoint.code);
         },
         child: Text(
           TurnpointEditMenu.airNav,
@@ -326,10 +341,7 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
         onSelected: handleClick,
         icon: Icon(Icons.more_vert),
         itemBuilder: (BuildContext context) {
-          return {
-            TurnpointEditMenu.toggleLatLongFormat,
-            TurnpointEditMenu.dragMarker,
-          }.map((String choice) {
+          return getMenuOptions().map((String choice) {
             return PopupMenuItem<String>(
               value: choice,
               child: Text(choice),
@@ -350,6 +362,7 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
     findElevationAtLatLong();
     setState(() {
       _displaySaveButton = false;
+      _displayCloseButton = false;
       if (turnpoint.latitudeDeg != originalTurnpoint.latitudeDeg ||
           turnpoint.latitudeDeg != originalTurnpoint.longitudeDeg) {
         _displaySaveResetButtons = true;
@@ -357,18 +370,18 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
         _displaySaveButton = true;
         _displaySaveResetButtons = false;
       }
-      print(
-          "New lat/long after dragging: ${turnpoint.latitudeDeg}, ${turnpoint.latitudeDeg}");
-      print(
-          "_displaySaveButton ${_displaySaveButton} _displaySaveResetButtons ${_displaySaveResetButtons}");
-      print("draggable : ${_draggable}");
+      // print(
+      //     "New lat/long after dragging: ${turnpoint.latitudeDeg}, ${turnpoint.latitudeDeg}");
+      // print(
+      //     "_displaySaveButton ${_displaySaveButton} _displaySaveResetButtons ${_displaySaveResetButtons}");
+      // print("draggable : ${_draggable}");
     });
   }
 
-  List getMenuOptions() {
+  List<String> getMenuOptions() {
     List<String> optionList = [];
     optionList.add(TurnpointEditMenu.toggleLatLongFormat);
-    if (_isReadOnly) {
+    if (!_isReadOnly) {
       optionList.add(TurnpointEditMenu.dragMarker);
     }
     return optionList;

@@ -216,6 +216,10 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
     Location location = Location();
     try {
       final currentLocation = await location.getLocation();
+      if (currentLocation.altitude != null && currentLocation.altitude == 0) {
+        double? elevation = await getUSGSElevationAtLocation(
+            currentLocation.latitude ?? 0, currentLocation.longitude ?? 0);
+      }
       print(
           "location: ${currentLocation.latitude} ${currentLocation.longitude}, elevation(m): ${currentLocation.altitude} ");
       emit(CurrentLocationState(currentLocation!.latitude ?? 0,
@@ -229,15 +233,23 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
       GetElevationAtLatLong event, Emitter<TurnpointState> emit) async {
     double elevation;
     try {
-      final nationalMap = await repository.getElevationAtLatLongPoint(
-          event.latitude, event.longitude);
-      elevation = nationalMap
-              .uSGSElevationPointQueryService!.elevationQuery!.elevation ??
-          0.0;
+      elevation =
+          await getUSGSElevationAtLocation(event.latitude, event.longitude);
       emit(LatLongElevationState(event.latitude, event.longitude, elevation));
     } catch (e) {
       emit(TurnpointErrorState("Ooops. Could not get elevation at that point"));
       return 0;
     }
+  }
+
+  Future<double> getUSGSElevationAtLocation(
+      double latitude, double longitude) async {
+    double elevation;
+    final nationalMap =
+        await repository.getElevationAtLatLongPoint(latitude, longitude);
+    elevation =
+        nationalMap.uSGSElevationPointQueryService!.elevationQuery!.elevation ??
+            0.0;
+    return elevation;
   }
 }
