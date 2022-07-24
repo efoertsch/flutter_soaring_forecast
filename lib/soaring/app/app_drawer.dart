@@ -29,7 +29,7 @@ class AppDrawer {
               title: Text('Turnpoints'),
               onTap: () {
                 Navigator.popAndPushNamed(
-                    context, TurnpointSearchInAppBar.routeName);
+                    context, TurnpointListRouteBuilder.routeName);
               }),
           ListTile(
             title: Text('Task List'),

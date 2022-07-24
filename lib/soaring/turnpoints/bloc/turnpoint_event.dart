@@ -116,3 +116,18 @@ class GetElevationAtLatLong extends TurnpointEvent {
   @override
   List<Object?> get props => [latitude, longitude];
 }
+
+class DownloadTurnpointsToFile extends TurnpointEvent {
+  DownloadTurnpointsToFile();
+  @override
+  List<Object?> get props => [];
+}
+
+class DownloadTurnpointToFile extends TurnpointEvent {
+  late final Turnpoint turnpoint;
+
+  DownloadTurnpointToFile(this.turnpoint);
+
+  @override
+  List<Object?> get props => [turnpoint];
+}

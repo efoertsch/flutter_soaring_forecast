@@ -88,6 +88,16 @@ class TurnpointUtils {
     "Description"
   ];
 
+  static String getAllColumnHeaders() {
+    StringBuffer sb = StringBuffer();
+    WITH_WIDTH_AND_DESCRIPTION_LABELS.forEach((element) {
+      sb.write(element + COMMA);
+    });
+    String columnHeaders = sb.toString();
+    return columnHeaders.substring(0, columnHeaders.length - 1) +
+        Constants.NEW_LINE;
+  }
+
   static Turnpoint? createTurnpointFromCSVDetail(
       List<dynamic> turnpointDetail, SeeYouFormat seeYouFormat) {
     Turnpoint turnpoint = new Turnpoint();
@@ -322,19 +332,19 @@ class TurnpointUtils {
 
   static String getCupFormattedRecord(Turnpoint turnpoint) {
     StringBuffer sb = new StringBuffer();
-    sb.write({QUOTE, turnpoint.title, QUOTE, COMMA});
-    sb.write({QUOTE, turnpoint.code, QUOTE, COMMA});
-    sb.write({turnpoint.country, COMMA});
-    sb.write({getLatitudeInCupFormat(turnpoint.latitudeDeg), COMMA});
-    sb.write({getLongitudeInCupFormat(turnpoint.longitudeDeg), COMMA});
-    sb.write({turnpoint.elevation, COMMA});
-    sb.write({turnpoint.style, COMMA});
-    sb.write({turnpoint.direction, COMMA});
-    sb.write({turnpoint.length, COMMA});
-    sb.write({turnpoint.runwayWidth, COMMA});
-    sb.write({turnpoint.frequency, COMMA});
+    sb.write(QUOTE + turnpoint.title + QUOTE + COMMA);
+    sb.write(QUOTE + turnpoint.code + QUOTE + COMMA);
+    sb.write(turnpoint.country + COMMA);
+    sb.write(getLatitudeInCupFormat(turnpoint.latitudeDeg) + COMMA);
+    sb.write(getLongitudeInCupFormat(turnpoint.longitudeDeg) + COMMA);
+    sb.write(turnpoint.elevation + COMMA);
+    sb.write(turnpoint.style + COMMA);
+    sb.write(turnpoint.direction + COMMA);
+    sb.write(turnpoint.length + COMMA);
+    sb.write(turnpoint.runwayWidth + COMMA);
+    sb.write(turnpoint.frequency + COMMA);
     if (!turnpoint.description.isEmpty) {
-      sb.write({QUOTE, turnpoint.description, QUOTE});
+      sb.write(QUOTE + turnpoint.description + QUOTE);
     }
     return sb.toString();
   }

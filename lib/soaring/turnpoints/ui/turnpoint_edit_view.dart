@@ -16,6 +16,7 @@ import 'package:flutter_soaring_forecast/soaring/turnpoints/bloc/turnpoint_state
 import 'package:flutter_soaring_forecast/soaring/turnpoints/cup/cup_styles.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoint_utils.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_overhead_view.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class TurnpointEditView extends StatefulWidget {
   late final int? turnpointId;
@@ -666,6 +667,9 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
       menuOptions.add(TurnpointEditMenu.airNav);
     if (!_isReadOnly && modifiableTurnpoint!.id != null)
       menuOptions.add(TurnpointEditMenu.deleteTurnpoint);
+    if (_isReadOnly || (!_needToSaveUpdates)) {
+      menuOptions.add(TurnpointEditMenu.exportTurnpoint);
+    }
     return menuOptions;
   }
 
@@ -711,6 +715,10 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
         break;
       case TurnpointEditMenu.deleteTurnpoint:
         _displayConfirmDeleteDialog();
+        break;
+      case TurnpointEditMenu.exportTurnpoint:
+        _exportTurnpoint();
+        break;
     }
   }
 
@@ -782,5 +790,24 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
         msg: "Turnpoint Deleted Successfully!",
         button1Text: "OK",
         button1Function: _continueFunction);
+  }
+
+  void _exportTurnpoint() async {
+    var status = await Permission.storage.status;
+    if (status.isDenied) {
+      // We didn't ask for permission yet or the permission has been denied before but not permanently.
+      if (await Permission.storage.request().isGranted) {
+        // Fire event to export turnpoints
+        _sendEvent(DownloadTurnpointToFile(modifiableTurnpoint!));
+      }
+    }
+    if (status.isPermanentlyDenied) {
+      // display msg to user they need to go to settings to re-enable
+      openAppSettings();
+    }
+    if (status.isGranted) {
+      _sendEvent(DownloadTurnpointToFile(modifiableTurnpoint!));
+      ;
+    }
   }
 }

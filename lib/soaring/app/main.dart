@@ -13,7 +13,7 @@ import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/custom_see_you_im
 import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/see_you_import.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_edit_view.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_overhead_view.dart';
-import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_search_in_appbar.dart';
+import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoints_list.dart';
 import 'package:flutter_soaring_forecast/soaring/values/strings.dart';
 import 'package:workmanager/workmanager.dart';
 
@@ -129,10 +129,10 @@ class SoaringForecastApp extends StatelessWidget {
             );
           }
 
-          if (settings.name == TurnpointSearchInAppBar.routeName) {
+          if (settings.name == TurnpointListRouteBuilder.routeName) {
             return CustomMaterialPageRoute(
               builder: (context) {
-                return TurnpointSearchInAppBar();
+                return TurnpointListRouteBuilder();
               },
               settings: settings,
             );
@@ -177,7 +177,7 @@ class SoaringForecast extends StatelessWidget {
 
 //-----------------------------------------------------------
 // Turnpoint related
-class TurnpointSearchInAppBar extends StatelessWidget {
+class TurnpointListRouteBuilder extends StatelessWidget {
   static const routeName = '/turnpointSearchInAppBar';
 
   @override
@@ -185,7 +185,7 @@ class TurnpointSearchInAppBar extends StatelessWidget {
     return BlocProvider<TurnpointBloc>(
       create: (BuildContext context) =>
           TurnpointBloc(repository: RepositoryProvider.of<Repository>(context)),
-      child: TurnpointsSearch(),
+      child: TurnpointsList(),
     );
   }
 }
@@ -201,7 +201,7 @@ class TurnpointsForTask extends StatelessWidget {
     return BlocProvider<TurnpointBloc>(
       create: (BuildContext context) =>
           TurnpointBloc(repository: RepositoryProvider.of<Repository>(context)),
-      child: TurnpointsSearch(viewOption: viewOption),
+      child: TurnpointsList(viewOption: viewOption),
     );
   }
 }

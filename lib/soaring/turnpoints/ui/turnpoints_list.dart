@@ -13,25 +13,25 @@ import 'package:flutter_soaring_forecast/soaring/turnpoints/bloc/turnpoint_event
 import 'package:flutter_soaring_forecast/soaring/turnpoints/bloc/turnpoint_state.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/cup/cup_styles.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_overhead_view.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../turnpoint_utils.dart';
 
-class TurnpointsSearch extends StatefulWidget {
+class TurnpointsList extends StatefulWidget {
   final String? viewOption;
   static const String TASK_TURNPOINT_OPTION = 'TaskTurnpointOption';
   final List<Turnpoint> turnpointsForTask = [];
   String _searchString = "";
   bool _hasChanges = false;
 
-  TurnpointsSearch({Key? key, String? this.viewOption = null})
-      : super(key: key);
+  TurnpointsList({Key? key, String? this.viewOption = null}) : super(key: key);
 
   @override
-  State<TurnpointsSearch> createState() => _TurnpointsSearchState();
+  State<TurnpointsList> createState() => _TurnpointsListState();
 }
 
-class _TurnpointsSearchState extends State<TurnpointsSearch>
-    with AfterLayoutMixin<TurnpointsSearch> {
+class _TurnpointsListState extends State<TurnpointsList>
+    with AfterLayoutMixin<TurnpointsList> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   bool typing = false;
 
@@ -77,6 +77,13 @@ class _TurnpointsSearchState extends State<TurnpointsSearch>
               ),
             );
           }
+        }, buildWhen: (previous, current) {
+          return current is TurnpointsInitialState ||
+              current is SearchingTurnpointsState ||
+              current is TurnpointsLoadedState ||
+              current is TurnpointErrorState ||
+              current is TurnpointSearchMessage ||
+              current is TurnpointSearchErrorState;
         }, builder: (context, state) {
           if (state is TurnpointsInitialState) {
             return CommonWidgets.buildLoading();
@@ -120,8 +127,7 @@ class _TurnpointsSearchState extends State<TurnpointsSearch>
           }
           if (state is TurnpointSearchErrorState) {
             return Center(
-              child: Text(
-                  'Oops. Error occurred searching the turnpoint database.'),
+              child: Text(state.errorMsg),
             );
           }
           return Center(
@@ -181,7 +187,7 @@ class _TurnpointsSearchState extends State<TurnpointsSearch>
           ),
           title: TextButton(
             onPressed: () {
-              if (widget.viewOption == TurnpointsSearch.TASK_TURNPOINT_OPTION) {
+              if (widget.viewOption == TurnpointsList.TASK_TURNPOINT_OPTION) {
                 widget._searchString = "";
                 widget._hasChanges = true;
                 widget.turnpointsForTask.add(turnpoints[index]);
@@ -272,10 +278,10 @@ class _TurnpointsSearchState extends State<TurnpointsSearch>
           onSelected: handleClick,
           itemBuilder: (BuildContext context) {
             return {
-              //TurnpointMenu.importTurnpoints,
+              TurnpointMenu.importTurnpoints,
               TurnpointMenu.addTurnpoint,
-              //TurnpointMenu.exportTurnpoint,
-              TurnpointMenu.emailTurnpoint,
+              TurnpointMenu.exportTurnpoints,
+              TurnpointMenu.emailTurnpoints,
               TurnpointMenu.clearTurnpointDatabase
             }.map((String choice) {
               return PopupMenuItem<String>(
@@ -299,9 +305,10 @@ class _TurnpointsSearchState extends State<TurnpointsSearch>
       case TurnpointMenu.addTurnpoint:
         _addNewTurnpoint();
         break;
-      case TurnpointMenu.exportTurnpoint:
+      case TurnpointMenu.exportTurnpoints:
+        _exportTurnpoints();
         break;
-      case TurnpointMenu.emailTurnpoint:
+      case TurnpointMenu.emailTurnpoints:
         break;
       case TurnpointMenu.clearTurnpointDatabase:
         CommonWidgets.showTwoButtonAlertDialog(context,
@@ -322,7 +329,7 @@ class _TurnpointsSearchState extends State<TurnpointsSearch>
   }
 
   Future<bool> _onWillPop() async {
-    if (widget.viewOption == TurnpointsSearch.TASK_TURNPOINT_OPTION) {
+    if (widget.viewOption == TurnpointsList.TASK_TURNPOINT_OPTION) {
       ScaffoldMessenger.of(context).removeCurrentSnackBar();
       Navigator.of(context).pop(widget.turnpointsForTask);
     } else {
@@ -351,5 +358,24 @@ class _TurnpointsSearchState extends State<TurnpointsSearch>
 
   _sendEvent(TurnpointEvent event) {
     BlocProvider.of<TurnpointBloc>(context).add(event);
+  }
+
+  void _exportTurnpoints() async {
+    var status = await Permission.storage.status;
+    if (status.isDenied) {
+      // We didn't ask for permission yet or the permission has been denied before but not permanently.
+      if (await Permission.storage.request().isGranted) {
+        // Fire event to export turnpoints
+        _sendEvent(DownloadTurnpointsToFile());
+      }
+    }
+    if (status.isPermanentlyDenied) {
+      // display msg to user they need to go to settings to re-enable
+      openAppSettings();
+    }
+    if (status.isGranted) {
+      _sendEvent(DownloadTurnpointsToFile());
+      ;
+    }
   }
 }

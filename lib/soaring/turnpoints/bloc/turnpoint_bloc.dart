@@ -1,6 +1,9 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
+    as Constants;
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/turnpoint_regions.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
@@ -8,7 +11,9 @@ import 'package:flutter_soaring_forecast/soaring/turnpoints/bloc/turnpoint_event
 import 'package:flutter_soaring_forecast/soaring/turnpoints/bloc/turnpoint_state.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/cup/cup_styles.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoint_utils.dart';
+import 'package:intl/intl.dart';
 import 'package:location/location.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
@@ -31,6 +36,8 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
     on<DeleteTurnpoint>(_deleteTurnpoint);
     on<GetCurrentLocation>(_getCurrentLocation);
     on<GetElevationAtLatLong>(_getElevationAtLatLong);
+    on<DownloadTurnpointsToFile>(_downloadTurnpointsToFile);
+    on<DownloadTurnpointToFile>(_downloadTurnpointToFile);
     //on<GetCustomImportFileNamesEvent>(_getCustomImportFileNames);
   }
 
@@ -251,5 +258,100 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
         nationalMap.uSGSElevationPointQueryService!.elevationQuery!.elevation ??
             0.0;
     return elevation;
+  }
+
+  // Make sure user has file permissions before calling this method
+  FutureOr<void> _downloadTurnpointsToFile(
+      DownloadTurnpointsToFile event, Emitter<TurnpointState> emit) async {
+    List<Turnpoint> turnpoints = [];
+    try {
+      turnpoints.addAll(await repository.getAllTurnpoints());
+      String filename = await _writeTurnpointsToFile(turnpoints);
+      emit(TurnpointShortMessageState("Turnpoints written to :" + filename));
+    } catch (e) {
+      emit(TurnpointErrorState("Error on writing turnpoints to file"));
+      print("Error on writing turnpoints to file: ${e.toString()}");
+    }
+  }
+
+  FutureOr<void> _downloadTurnpointToFile(
+      DownloadTurnpointToFile event, Emitter<TurnpointState> emit) async {
+    final turnpoint = event.turnpoint;
+    try {
+      String filename = await _writeTurnpointToFile(turnpoint);
+      emit(TurnpointShortMessageState("Turnpoint written to :" + filename));
+    } catch (e) {
+      emit(TurnpointErrorState("Error on writing turnpoint to file"));
+      print("Error on writing turnpoint to file: ${e.toString()}");
+    }
+  }
+
+  FutureOr<String> _writeTurnpointsToFile(
+      List<Turnpoint> turnpointsList) async {
+    String turnpointFileName =
+        "Turnpoints_" + _getCurrentDateAndTime() + ".cup";
+    File? file = await _createTurnpointFile(turnpointFileName);
+    if (file != null) {
+      var sink = file!.openWrite();
+      sink.write(TurnpointUtils.getAllColumnHeaders());
+      turnpointsList.forEach((turnpoint) {
+        sink.write(TurnpointUtils.getCupFormattedRecord(turnpoint) +
+            Constants.NEW_LINE);
+      });
+      // Close the IOSink to free system resources.
+      sink.close();
+    }
+    return turnpointFileName;
+  }
+
+  FutureOr<String> _writeTurnpointToFile(Turnpoint turnpoint) async {
+    String turnpointFileName =
+        "Turnpoint_" + turnpoint.code + "_" + _getCurrentDateAndTime() + ".cup";
+    File? file = await _createTurnpointFile(turnpointFileName);
+    if (file != null) {
+      var sink = file!.openWrite();
+      sink.write(TurnpointUtils.getAllColumnHeaders());
+      sink.write(
+          TurnpointUtils.getCupFormattedRecord(turnpoint) + Constants.NEW_LINE);
+      // Close the IOSink to free system resources.
+      sink.close();
+    }
+    ;
+    return turnpointFileName;
+  }
+
+  String _getCurrentDateAndTime() {
+    DateTime now = DateTime.now();
+    return DateFormat('yyyy_MM_dd.HH.mm').format(now);
+  }
+
+  Future<File?> _createTurnpointFile(String filename) async {
+    File? file = null;
+    try {
+      Directory? directory = await _getDownloadDirectory();
+      if (directory != null) {
+        file = File(directory.absolute.path + '/' + filename);
+      }
+    } catch (e) {
+      print("Exception creating dowload file: " + e.toString());
+    }
+    return file;
+  }
+
+  Future<Directory?> _getDownloadDirectory() async {
+    Directory? directory = null;
+    if (Platform.isAndroid) {
+      directory = Directory('/storage/emulated/0/Download');
+      if (!await directory.exists()) {
+        directory = await getExternalStorageDirectory();
+      }
+    } else {
+      //iOS
+      directory = await getApplicationDocumentsDirectory();
+      if (!directory.existsSync()) {
+        directory.createSync(recursive: true);
+      }
+    }
+    return directory;
   }
 }

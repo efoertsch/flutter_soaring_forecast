@@ -14,7 +14,7 @@ import 'package:flutter_soaring_forecast/soaring/tasks/bloc/task_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/tasks/bloc/task_event.dart';
 import 'package:flutter_soaring_forecast/soaring/tasks/bloc/task_state.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_overhead_view.dart';
-import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_search_in_appbar.dart';
+import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoints_list.dart';
 
 class TaskDetailScreen extends StatefulWidget {
   final int taskId;
@@ -376,7 +376,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
     final result = await Navigator.pushNamed(
       context,
       TurnpointsForTask.routeName,
-      arguments: TurnpointsSearch.TASK_TURNPOINT_OPTION,
+      arguments: TurnpointsList.TASK_TURNPOINT_OPTION,
     );
     if (result is List<Turnpoint>) {
       BlocProvider.of<TaskBloc>(context)

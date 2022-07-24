@@ -11,6 +11,7 @@ const String AIRPORT_URL = 'http://ourairports.com/data/airports.csv';
 
 const double metersToFeet = 3.28084;
 const String ft = "ft";
+const String NEW_LINE = '\n';
 
 enum ImageTypes { body, head, side, foot }
 
@@ -43,8 +44,8 @@ class TurnpointMenu {
   static const String searchTurnpoints = "Search";
   static const String importTurnpoints = 'Import Turnpoints';
   static const String addTurnpoint = 'Add Turnpoint';
-  static const String exportTurnpoint = 'Export Turnpoint';
-  static const String emailTurnpoint = 'Email Turnpoint';
+  static const String exportTurnpoints = 'Export Turnpoints';
+  static const String emailTurnpoints = 'Email Turnpoints';
   static const String clearTurnpointDatabase = 'Clear Turnpoint Database';
   static const String customImport = 'Custom Import';
 }
@@ -56,6 +57,7 @@ class TurnpointEditMenu {
   static const String airNav = "AIRNAV";
   static const String dragMarker = "Drag Marker";
   static const String deleteTurnpoint = "Delete Turnpoint";
+  static const String exportTurnpoint = "Export Turnpoint";
 }
 
 class TurnpointEditText {
