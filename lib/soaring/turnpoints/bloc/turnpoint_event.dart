@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
@@ -55,6 +57,16 @@ class LoadTurnpointFileEvent extends TurnpointEvent {
   late final TurnpointFile turnpointFile;
 
   LoadTurnpointFileEvent(this.turnpointFile);
+
+  @override
+  List<Object?> get props => [turnpointFile];
+}
+
+// For getting list of files from soargbsc.com/soaringforecast/turnpoint_regions.json
+class LoadCustomTurnpointFileEvent extends TurnpointEvent {
+  final File turnpointFile;
+
+  LoadCustomTurnpointFileEvent(this.turnpointFile);
 
   @override
   List<Object?> get props => [turnpointFile];

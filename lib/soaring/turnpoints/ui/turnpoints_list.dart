@@ -12,6 +12,7 @@ import 'package:flutter_soaring_forecast/soaring/turnpoints/bloc/turnpoint_bloc.
 import 'package:flutter_soaring_forecast/soaring/turnpoints/bloc/turnpoint_event.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/bloc/turnpoint_state.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/cup/cup_styles.dart';
+import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_edit_view.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_overhead_view.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -60,7 +61,6 @@ class _TurnpointsListState extends State<TurnpointsList>
         child: _buildScaffold(context),
       );
     }
-    ;
   }
 
   Scaffold _buildScaffold(BuildContext context) {
@@ -232,17 +232,9 @@ class _TurnpointsListState extends State<TurnpointsList>
 
   Future<void> _displayTurnpointDetails(
       BuildContext context, List<Turnpoint> turnpoints, int index) async {
-    var turnpoint = await Navigator.pushNamed(context, TurnpointEdit.routeName,
+    var value = await Navigator.pushNamed(context, TurnpointEdit.routeName,
         arguments: turnpoints[index].id);
-    if (turnpoint == null) {
-      turnpoints.removeAt(index);
-    } else {
-      if (turnpoint is Turnpoint) {
-        turnpoints.removeAt(index);
-        turnpoints.insert(index, turnpoint);
-        // setState(() {});
-      }
-    }
+    processTurnpointEditResult(value);
   }
 
   List<Widget> getTurnpointMenu() {
@@ -324,8 +316,22 @@ class _TurnpointsListState extends State<TurnpointsList>
   }
 
   Future<void> _addNewTurnpoint() async {
-    await Navigator.pushNamed(context, TurnpointEdit.routeName,
+    var object = await Navigator.pushNamed(context, TurnpointEdit.routeName,
         arguments: null);
+    processTurnpointEditResult(object);
+  }
+
+  void processTurnpointEditResult(Object? object) {
+    if (object is TurnpointEditResult) {
+      if (object.returnResult == TurnpointEditReturn.noChange) {
+        return;
+      } else {
+        // refresh list
+        BlocProvider.of<TurnpointBloc>(context).add(TurnpointListEvent());
+        return;
+      }
+    }
+    return;
   }
 
   Future<bool> _onWillPop() async {
@@ -339,7 +345,7 @@ class _TurnpointsListState extends State<TurnpointsList>
   }
 
   _goToSeeYouImport() async {
-    Navigator.of(context, rootNavigator: true).pop();
+    Navigator.pop(context);
     var object =
         await Navigator.pushNamed(context, TurnpointFileImport.routeName);
     BlocProvider.of<TurnpointBloc>(context).add(TurnpointListEvent());

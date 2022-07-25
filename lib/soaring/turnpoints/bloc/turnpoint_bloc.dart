@@ -14,7 +14,6 @@ import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoint_utils.dart
 import 'package:intl/intl.dart';
 import 'package:location/location.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
   final Repository repository;
@@ -38,7 +37,7 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
     on<GetElevationAtLatLong>(_getElevationAtLatLong);
     on<DownloadTurnpointsToFile>(_downloadTurnpointsToFile);
     on<DownloadTurnpointToFile>(_downloadTurnpointToFile);
-    //on<GetCustomImportFileNamesEvent>(_getCustomImportFileNames);
+    on<GetCustomImportFileNamesEvent>(_getCustomImportFileNames);
   }
 
   void _searchTurnpointsEvent(
@@ -133,29 +132,6 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
     }
   }
 
-  // FutureOr<void> _getCustomImportFileNames(GetCustomImportFileNamesEvent event,
-  //     Emitter<TurnpointState> emit) async {
-  //   var ok = await _checkPermissionToDownloadsDir();
-  //   if (ok) {
-  //     List<File> = await repository.getCupFilesInDownloadsDirectory();
-  //   }
-  // }
-
-  Future<bool> _checkPermissionToDownloadsDir() async {
-    var status = await Permission.storage.status;
-    if (status.isGranted) {
-      return true;
-    }
-    if (status.isDenied) {
-      // We didn't ask for permission yet or the permission has been denied before but not permanently.
-      return await Permission.storage.request().isGranted;
-    }
-    if (status.isPermanentlyDenied) {
-      openAppSettings();
-    }
-    return false;
-  }
-
   void _checkIfDuplicateTurnpointCode(CheckIfDuplicateTurnpointCodeEvent event,
       Emitter<TurnpointState> emit) async {
     Turnpoint? turnpoint =
@@ -206,9 +182,9 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
   }
 
   FutureOr<void> _deleteTurnpoint(
-      DeleteTurnpoint event, Emitter<TurnpointState> emit) {
+      DeleteTurnpoint event, Emitter<TurnpointState> emit) async {
     try {
-      repository.deleteTurnpoint(event.id);
+      await repository.deleteTurnpoint(event.id);
       emit(TurnpointDeletedState());
     } catch (e) {
       emit(TurnpointErrorState(
@@ -229,8 +205,8 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
       }
       print(
           "location: ${currentLocation.latitude} ${currentLocation.longitude}, elevation(m): ${currentLocation.altitude} ");
-      emit(CurrentLocationState(currentLocation!.latitude ?? 0,
-          currentLocation!.longitude ?? 0, currentLocation.altitude ?? 0));
+      emit(CurrentLocationState(currentLocation.latitude ?? 0,
+          currentLocation.longitude ?? 0, currentLocation.altitude ?? 0));
     } catch (e) {
       emit(TurnpointErrorState("Oops. Can't find your location!"));
     }
@@ -292,7 +268,7 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
         "Turnpoints_" + _getCurrentDateAndTime() + ".cup";
     File? file = await _createTurnpointFile(turnpointFileName);
     if (file != null) {
-      var sink = file!.openWrite();
+      var sink = file.openWrite();
       sink.write(TurnpointUtils.getAllColumnHeaders());
       turnpointsList.forEach((turnpoint) {
         sink.write(TurnpointUtils.getCupFormattedRecord(turnpoint) +
@@ -309,7 +285,7 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
         "Turnpoint_" + turnpoint.code + "_" + _getCurrentDateAndTime() + ".cup";
     File? file = await _createTurnpointFile(turnpointFileName);
     if (file != null) {
-      var sink = file!.openWrite();
+      var sink = file.openWrite();
       sink.write(TurnpointUtils.getAllColumnHeaders());
       sink.write(
           TurnpointUtils.getCupFormattedRecord(turnpoint) + Constants.NEW_LINE);
@@ -333,7 +309,7 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
         file = File(directory.absolute.path + '/' + filename);
       }
     } catch (e) {
-      print("Exception creating dowload file: " + e.toString());
+      print("Exception creating download file: " + e.toString());
     }
     return file;
   }
@@ -353,5 +329,26 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
       }
     }
     return directory;
+  }
+
+  FutureOr<List<File>> _getCustomImportFileNames(
+      GetCustomImportFileNamesEvent event, Emitter<TurnpointState> emit) async {
+    List<File> cupfiles = [];
+    try {
+      Directory? directory = await _getDownloadDirectory();
+      if (directory != null) {
+        directory
+            .listSync()
+            .where((file) => file is File && file.path.endsWith(".cup"))
+            .forEach((file) {
+          cupfiles.add(file as File);
+        });
+        emit(CustomTurnpointFileList(cupfiles));
+      }
+    } catch (e) {
+      emit(TurnpointErrorState("Error getting list of .cup files"));
+      print("Exception getting list of cup files" + e.toString());
+    }
+    return cupfiles;
   }
 }

@@ -150,8 +150,8 @@ class _SeeYouImportScreenState extends State<SeeYouImportScreen>
         onSelected: handleClick,
         itemBuilder: (BuildContext context) {
           return {
-            TurnpointMenu.clearTurnpointDatabase,
             TurnpointMenu.customImport,
+            TurnpointMenu.clearTurnpointDatabase,
           }.map((String choice) {
             return PopupMenuItem<String>(
               value: choice,

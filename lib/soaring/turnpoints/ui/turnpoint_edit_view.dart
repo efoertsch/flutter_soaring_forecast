@@ -18,6 +18,13 @@ import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoint_utils.dart
 import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_overhead_view.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+class TurnpointEditResult {
+  final TurnpointEditReturn returnResult;
+  final Turnpoint turnpoint;
+
+  TurnpointEditResult(this.returnResult, this.turnpoint);
+}
+
 class TurnpointEditView extends StatefulWidget {
   late final int? turnpointId;
 
@@ -41,6 +48,7 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
   final TextEditingController _latitudeController = TextEditingController();
   final TextEditingController _longitudeController = TextEditingController();
   final TextEditingController _elevationController = TextEditingController();
+  TurnpointEditReturn turnpointEditReturn = TurnpointEditReturn.noChange;
 
   @override
   initState() {
@@ -136,6 +144,7 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
         _needToSaveUpdates = false;
         turnpoint = state.turnpoint;
         modifiableTurnpoint = turnpoint!.clone();
+        turnpointEditReturn = TurnpointEditReturn.tpAddedUpdated;
       }
       if (state is TurnpointDeletedState) {
         _displayTurnpointDeletedDialog();
@@ -665,11 +674,11 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
     menuOptions.add(TurnpointEditMenu.toggleLatLongFormat);
     if (modifiableTurnpoint != null && modifiableTurnpoint!.code.isNotEmpty)
       menuOptions.add(TurnpointEditMenu.airNav);
+    if (_isReadOnly || (!_needToSaveUpdates))
+      menuOptions.add(TurnpointEditMenu.exportTurnpoint);
     if (!_isReadOnly && modifiableTurnpoint!.id != null)
       menuOptions.add(TurnpointEditMenu.deleteTurnpoint);
-    if (_isReadOnly || (!_needToSaveUpdates)) {
-      menuOptions.add(TurnpointEditMenu.exportTurnpoint);
-    }
+
     return menuOptions;
   }
 
@@ -738,23 +747,28 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
           title: "Unsaved Updates!",
           msg: "Updates will be lost. Continue?",
           button1Text: "No",
-          button1Function: _continueFunction,
+          button1Function: _dismissDialogFunction,
           button2Text: "Yes",
           button2Function: _cancelUpdateFunction);
     } else {
-      Navigator.of(context).pop(turnpoint);
+      Navigator.pop(
+          context,
+          TurnpointEditResult(
+              turnpointEditReturn, modifiableTurnpoint ?? Turnpoint()));
     }
     return true;
   }
 
-  void _continueFunction() {
-    Navigator.of(context, rootNavigator: true).pop(); // remove dialog
+  void _dismissDialogFunction() {
+    Navigator.pop(context);
   }
 
   void _cancelUpdateFunction() {
-    Navigator.of(context, rootNavigator: true).pop(); // remove dialog
-    Navigator.of(context, rootNavigator: true)
-        .pop(turnpoint); // return to previous screen
+    Navigator.pop(context); // remove dialog
+    Navigator.pop(
+        context,
+        TurnpointEditResult(
+            turnpointEditReturn, modifiableTurnpoint ?? Turnpoint()));
   }
 
   void _saveTurnpointEdit() {
@@ -772,24 +786,34 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
         title: "Deleting Turnpoint!",
         msg: "Are you sure you want to do this?",
         button1Text: "No",
-        button1Function: _continueFunction,
+        button1Function: _dismissDialogFunction,
         button2Text: "Yes",
         button2Function: _deleteTurnpoint);
   }
 
   _deleteTurnpoint() {
+    Navigator.pop(context); // remove dialog
     BlocProvider.of<TurnpointBloc>(context)
         .add(DeleteTurnpoint(modifiableTurnpoint!.id!));
-    Navigator.of(context, rootNavigator: true).pop(); // remove dialog
   }
 
   void _displayTurnpointDeletedDialog() {
-    CommonWidgets.showInfoDialog(
-        context: context,
-        title: "Turnpoint Deleted",
-        msg: "Turnpoint Deleted Successfully!",
-        button1Text: "OK",
-        button1Function: _continueFunction);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      CommonWidgets.showInfoDialog(
+          context: context,
+          title: "Turnpoint Deleted",
+          msg: "Turnpoint Deleted Successfully!",
+          button1Text: "OK",
+          button1Function: _exitAndRefreshListFunction);
+    });
+  }
+
+  _exitAndRefreshListFunction() {
+    _dismissDialogFunction();
+    Navigator.pop(
+        context,
+        TurnpointEditResult(TurnpointEditReturn.tpDeleted,
+            modifiableTurnpoint!)); // remove dialog
   }
 
   void _exportTurnpoint() async {

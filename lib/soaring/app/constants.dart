@@ -2,6 +2,7 @@ library constants;
 
 import 'package:flutter/material.dart';
 
+//-------- Non translatable values --------------------------------------------
 /// Hold any system wide constants
 // if you leave off www. below, the POST to get point forecast returns a 301
 const String BASE_URL = 'https://www.soargbsc.net/';
@@ -17,6 +18,9 @@ enum ImageTypes { body, head, side, foot }
 
 const String APP_DATABASE = 'app_database.db'; // Floor database name
 
+enum TurnpointEditReturn { noChange, tpAddedUpdated, tpDeleted }
+
+//------------- Translatable values --------------------------------------------
 class RaspMenu {
   static const String selectTask = 'SELECT TASK';
   static const String clearTask = 'Clear Task';
@@ -107,6 +111,7 @@ class TurnpointEditText {
   static String close = "Close";
 }
 
+//---------------------------------------------------------------------------
 const textStyleBoldBlackFontSize20 =
     TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 20);
 

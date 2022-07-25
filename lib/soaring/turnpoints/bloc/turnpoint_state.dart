@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
@@ -128,4 +130,12 @@ class TurnpointFilesFoundState extends TurnpointState {
   TurnpointFilesFoundState(this.turnpointFiles);
   @override
   List<Object?> get props => [turnpointFiles];
+}
+
+class CustomTurnpointFileList extends TurnpointState {
+  final List<File> customTurnpointFiles;
+  CustomTurnpointFileList(List<File> this.customTurnpointFiles);
+  @override
+  // TODO: implement props
+  List<Object?> get props => [customTurnpointFiles];
 }
