@@ -1,4 +1,5 @@
 import 'dart:collection';
+import 'dart:io';
 
 import 'package:csv/csv.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
@@ -6,27 +7,31 @@ import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoint_utils.dart';
 import 'package:http/http.dart' as http;
 
-class TurnpointsDownloader {
+class TurnpointsImporter {
   late Repository repository;
   static const TURNPOINTS_URL = "https://soaringweb.org/TP/";
   static const TURNPOINT_EXCHANGE_LIST =
       TURNPOINTS_URL + "/soaringforecast/turnpoint_regions.json";
 
-  TurnpointsDownloader({required this.repository});
+  TurnpointsImporter({required this.repository});
 
-  static Future<List<Turnpoint>> downloadTurnpointFile(
+  static Future<List<Turnpoint>> getTurnpointsFromTurnpointExchange(
       String turnpointUrl) async {
     List<List<dynamic>> parsedTurnpoints = await getTurnpointsCSV(turnpointUrl);
     return await convertTurnpointCsvListToTurnpoints(parsedTurnpoints);
   }
 
-  // Future<List<Turnpoint>> getTurnpoints(String turnpointUrl) async{
-  //   var turnpointsList = <Turnpoint>[];
-  //   try{
-  //     parsedTurnpointList = await getTurnpointsCSV(turnpointUrl);
-  //   }
-  //
-  // }
+  static Future<List<Turnpoint>> getTurnpointsFromFile(
+      File turnpointFile) async {
+    String turnpointString = await turnpointFile.readAsString();
+    if (turnpointString.indexOf('\r\n') == -1) {
+      turnpointString = turnpointString.replaceAll('\n', '\r\n');
+    }
+    List<List<dynamic>> parsedTurnpoints = const CsvToListConverter(
+      eol: '\r\n',
+    ).convert(turnpointString);
+    return await convertTurnpointCsvListToTurnpoints(parsedTurnpoints);
+  }
 
   static Future<List<List<dynamic>>> getTurnpointsCSV(
       String turnpointUrl) async {

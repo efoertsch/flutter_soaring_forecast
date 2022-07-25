@@ -1,0 +1,76 @@
+{
+  "styles": [
+    {
+      "style": "0",
+      "description": "Unknown"
+    },
+    {
+      "style": "1",
+      "description": "Waypoint"
+    },
+    {
+      "style": "2",
+      "description": "Airfield with grass surface runway"
+    },
+    {
+      "style": "3",
+      "description": "Outlanding"
+    },
+    {
+      "style": "4",
+      "description": "Gliding airfield"
+    },
+    {
+      "style": "5",
+      "description": "Airfield with solid surface runway"
+    },
+    {
+      "style": "6",
+      "description": "Mountain Pass"
+    },
+    {
+      "style": "7",
+      "description": "Mountain Top"
+    },
+    {
+      "style": "8",
+      "description": "Transmitter Mast"
+    },
+    {
+      "style": "9",
+      "description": "VOR"
+    },
+    {
+      "style": "10",
+      "description": "NDB"
+    },
+    {
+      "style": "11",
+      "description": "Cooling Tower"
+    },
+    {
+      "style": "12",
+      "description": "Dam"
+    },
+    {
+      "style": "13",
+      "description": "Tunnel"
+    },
+    {
+      "style": "14",
+      "description": "Bridge"
+    },
+    {
+      "style": "15",
+      "description": "Power Plant"
+    },
+    {
+      "style": "16",
+      "description": "Castle"
+    },
+    {
+      "style": "17",
+      "description": "Intersection"
+    }
+  ]
+}

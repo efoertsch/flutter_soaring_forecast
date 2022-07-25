@@ -2,7 +2,10 @@ import 'dart:ui';
 
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
+    as Constants;
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
+import 'package:flutter_soaring_forecast/soaring/turnpoints/cup/cup_styles.dart';
 import 'package:intl/intl.dart';
 import 'package:sprintf/sprintf.dart';
 
@@ -17,13 +20,32 @@ class TurnpointUtils {
   static const String AIRPORT_DETAILS =
       "%s %s %s\nLat: %s Long: %s\nElev: %s Dir: %s Lngth:%s Width:%s\nFreq: %s\n%s";
   static const String NON_AIRPORT_DETAILS =
-      "% s  % s\n%3 \nLat: %s Long: %s\nElev: %s \n%s ";
-  static const String TURNPOINT_LAT_DECIMAL_FORMAT = "%.5f";
-  static const String TURNPOINT_LONG_DECIMAL_FORMAT = "%.5f";
+      "%s  %s\n%s \nLat: %s Long: %s\nElev: %s \n%s ";
   static NumberFormat latitudeFormat = NumberFormat("0000.000");
   static NumberFormat longitudeFormat = NumberFormat("00000.000");
   static const String QUOTE = "\"";
   static const String COMMA = ",";
+  static final List<Style> _cupStyles = [];
+
+  static final latitudeDegreesRegex =
+      RegExp(r'^-?([1-8]?[0-9]\.{1}\d{5}$|90\.{1}0{5}$)');
+  static final latitudeCupRegex =
+      RegExp(r'^(9000\.000|[0-8][0-9][0-5][0-9]\.[0-9]{3})[NS]$');
+
+  static final longitudeDegreesRegex =
+      RegExp(r'^-?((([1-9]?[0-9]|1[0-7][0-9])(\.[0-9]{5})?)|180(\.0{5})?)$');
+  static final longitudeCupRegex = RegExp(
+      r'^(18000\.000|(([0-1][0-7])|([0][0-9]))[0-9][0-5][0-9]\.[0-9]{3})[EW]$');
+
+  static final elevationRegex = RegExp(r'^([0-9]{1,4}(\.[0-9])?)(m|ft)$');
+  static final directionRegex =
+      RegExp(r'^(360|(3[0-5][0-9])|([12][0-9][0-9])|([0-9][0-9])|([0-9]))$');
+  static final lengthRegex = RegExp(r'^([0-9]{1,5}((\.[0-9])?))(m|ft)$');
+  static final widthRegex = RegExp(r'^([0-9]{1,3})(m|ft)$');
+  static final frequencyRegex =
+      RegExp(r'^1[1-3][0-9]\.(([0-9][0-9](0|5))|([0-9][0-9])|[0-9])$');
+  static final landableRegex = RegExp(r'^[2-5]$');
+  static final airportRegex = RegExp(r'^[245]$');
 
 // Besides determining the input file format, also used for exporting turnpoints to a file
   static const WITH_WIDTH_AND_DESCRIPTION_LABELS = [
@@ -66,6 +88,16 @@ class TurnpointUtils {
     "Description"
   ];
 
+  static String getAllColumnHeaders() {
+    StringBuffer sb = StringBuffer();
+    WITH_WIDTH_AND_DESCRIPTION_LABELS.forEach((element) {
+      sb.write(element + COMMA);
+    });
+    String columnHeaders = sb.toString();
+    return columnHeaders.substring(0, columnHeaders.length - 1) +
+        Constants.NEW_LINE;
+  }
+
   static Turnpoint? createTurnpointFromCSVDetail(
       List<dynamic> turnpointDetail, SeeYouFormat seeYouFormat) {
     Turnpoint turnpoint = new Turnpoint();
@@ -106,6 +138,48 @@ class TurnpointUtils {
     return turnpoint;
   }
 
+  static bool validateLatitude(String latitude, bool isDecimalDegreesFormat) {
+    return isDecimalDegreesFormat
+        ? validateLatitudeInDecimalDegrees(latitude)
+        : validateLatitudeInCupFormat(latitude);
+  }
+
+  // Validate latitude in decimal degrees format
+  static bool validateLatitudeInDecimalDegrees(String latitude) {
+    if (!latitudeDegreesRegex.hasMatch(latitude)) {
+      return false;
+    }
+    // double check
+    try {
+      final decimalLatitude = double.parse(latitude);
+      return (decimalLatitude >= -90 && decimalLatitude <= 90);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Validate latitude in decimal minutes (cup) format
+  static bool validateLatitudeInCupFormat(String cupLatitude) {
+    return latitudeCupRegex.hasMatch(cupLatitude);
+  }
+
+  static bool validateLongitude(String longitude, bool isDecimalDegreesFormat) {
+    return isDecimalDegreesFormat
+        ? validateLongitudeInDecimalDegrees(longitude)
+        : validateLongitudeInCupFormat(longitude);
+  }
+
+  static double convertLatitudeToDouble(
+      String longitude, bool isDecimalDegreesFormat) {
+    try {
+      return isDecimalDegreesFormat
+          ? double.parse(longitude)
+          : convertToLong(longitude);
+    } catch (e) {
+      return 0;
+    }
+  }
+
   ///
   ///@param latitudeString is a field of length 9 (1 based), where 1-2 characters are degrees
   ///                       , 3-4 characters are minutes, 5 decimal point
@@ -123,6 +197,25 @@ class TurnpointUtils {
             (double.parse(latitudeString.substring(2, 4)) / 60) +
             (double.parse(latitudeString.substring(4, 8)) / 60)) *
         (latitudeString.endsWith("N") ? 1 : -1);
+  }
+
+  // Validate latitude in decimal degrees format
+  static bool validateLongitudeInDecimalDegrees(String longitude) {
+    if (!longitudeDegreesRegex.hasMatch(longitude)) {
+      return false;
+    }
+    // double check
+    try {
+      final decimalLongitude = double.parse(longitude);
+      return (decimalLongitude >= -180 && decimalLongitude <= 180);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Validate latitude in decimal minutes (cup) format
+  static bool validateLongitudeInCupFormat(String cupLongitude) {
+    return longitudeCupRegex.hasMatch(cupLongitude);
   }
 
   ///
@@ -160,51 +253,47 @@ class TurnpointUtils {
     return SeeYouFormat.NOT_DEFINED;
   }
 
-  static String getStyleName(String style) {
-    switch (style) {
-      case "0":
-        return "Unknown";
-      case "1":
-        return "Waypoint";
-      case "2":
-        return "Airfield with grass surface runway";
-      case "3":
-        return "Outlanding";
-      case "4":
-        return "Gliding airfield";
-      case "5":
-        return "Airfield with solid surface runway";
-      case "6":
-        return "Mountain Pass";
-      case "7":
-        return "Mountain Top";
-      case "8":
-        return "Transmitter Mast";
-      case "9":
-        return "VOR";
-      case "10":
-        return "NDB";
-      case "11":
-        return "Cooling Tower";
-      case "12":
-        return "Dam";
-      case "13":
-        return "Tunnel";
-      case "14":
-        return "Bridge";
-      case "15":
-        return "Power Plant";
-      case "16":
-        return "Castle";
-      case "17":
-        return "Intersection";
-      default:
-        return "Unknown";
-    }
+  /// Bit of a hack.
+  /// _cupStyles must be set earlier (by bloc call loading them)
+  /// before use in these util functions.
+  static String getStyleFromStyleDescription(
+      List<Style> cupStyles, String styleDesription) {
+    return cupStyles
+        .firstWhere((cupStyle) => cupStyle.description == styleDesription,
+            orElse: () => Style(style: '0', description: "Unknown"))
+        .style;
+  }
+
+  /// Bit of a hack.
+  /// _cupStyles must be set earlier (by bloc call loading them)
+  /// before use in these util functions.
+  static String getStyleDescriptionFromStyle(
+      List<Style> cupStyles, String style) {
+    return cupStyles
+        .firstWhere((cupStyle) => cupStyle.style == style,
+            orElse: () => Style(style: '0', description: "Unknown"))
+        .description;
+  }
+
+  static void setCupStyles(List<Style> listOfCupStyles) {
+    _cupStyles.clear();
+    _cupStyles.addAll(listOfCupStyles);
+  }
+
+  /// Bit of a hack.
+  /// _cupStyles must be set earlier (by bloc call loading them)
+  /// before use in these util functions.
+  static List<Style> getCupStyles() {
+    return _cupStyles;
+  }
+
+  // Note that whatever calls this must first call setCupStyles
+  static String getStyleName(String styleNumber) {
+    return getStyleDescriptionFromStyle(_cupStyles, styleNumber);
   }
 
   static bool isLandable(String style) {
-    return style.indexOf("[2345]") > 0;
+    return landableRegex.hasMatch(style);
   }
 
   static bool isGrassOrGliderAirport(String style) {
@@ -216,7 +305,7 @@ class TurnpointUtils {
   }
 
   static bool isAirport(String? style) {
-    return style != null && style.indexOf("[245]") > 0;
+    return style != null && airportRegex.hasMatch(style);
   }
 
   static String getLatitudeInCupFormat(double lat) {
@@ -243,28 +332,28 @@ class TurnpointUtils {
 
   static String getCupFormattedRecord(Turnpoint turnpoint) {
     StringBuffer sb = new StringBuffer();
-    sb.write({QUOTE, turnpoint.title, QUOTE, COMMA});
-    sb.write({QUOTE, turnpoint.code, QUOTE, COMMA});
-    sb.write({turnpoint.country, COMMA});
-    sb.write({getLatitudeInCupFormat(turnpoint.latitudeDeg), COMMA});
-    sb.write({getLongitudeInCupFormat(turnpoint.longitudeDeg), COMMA});
-    sb.write({turnpoint.elevation, COMMA});
-    sb.write({turnpoint.style, COMMA});
-    sb.write({turnpoint.direction, COMMA});
-    sb.write({turnpoint.length, COMMA});
-    sb.write({turnpoint.runwayWidth, COMMA});
-    sb.write({turnpoint.frequency, COMMA});
+    sb.write(QUOTE + turnpoint.title + QUOTE + COMMA);
+    sb.write(QUOTE + turnpoint.code + QUOTE + COMMA);
+    sb.write(turnpoint.country + COMMA);
+    sb.write(getLatitudeInCupFormat(turnpoint.latitudeDeg) + COMMA);
+    sb.write(getLongitudeInCupFormat(turnpoint.longitudeDeg) + COMMA);
+    sb.write(turnpoint.elevation + COMMA);
+    sb.write(turnpoint.style + COMMA);
+    sb.write(turnpoint.direction + COMMA);
+    sb.write(turnpoint.length + COMMA);
+    sb.write(turnpoint.runwayWidth + COMMA);
+    sb.write(turnpoint.frequency + COMMA);
     if (!turnpoint.description.isEmpty) {
-      sb.write({QUOTE, turnpoint.description, QUOTE});
+      sb.write(QUOTE + turnpoint.description + QUOTE);
     }
     return sb.toString();
   }
 
-  static Color getColorForTurnpointIcon(Turnpoint turnpoint) {
-    if (isGrassOrGliderAirport(turnpoint.style)) {
+  static Color getColorForTurnpointIcon(String style) {
+    if (isGrassOrGliderAirport(style)) {
       return Colors.green;
     }
-    if (isHardSurfaceAirport(turnpoint.style)) {
+    if (isHardSurfaceAirport(style)) {
       return Colors.black;
     } else {
       return Colors.red;
@@ -272,7 +361,7 @@ class TurnpointUtils {
   }
 
   static String getFormattedTurnpointDetails(
-      Turnpoint turnpoint, bool cupFormat) {
+      Turnpoint turnpoint, bool isDecimalDegreesFormat) {
     String turnpointDetails;
     switch (turnpoint.style) {
       case "2":
@@ -282,13 +371,10 @@ class TurnpointUtils {
           turnpoint.title,
           turnpoint.code,
           getStyleName(turnpoint.style),
-          cupFormat
-              ? getLatitudeInCupFormat(turnpoint.latitudeDeg)
-              : sprintf(TURNPOINT_LAT_DECIMAL_FORMAT, [turnpoint.latitudeDeg]),
-          cupFormat
-              ? getLongitudeInCupFormat(turnpoint.longitudeDeg)
-              : sprintf(
-                  TURNPOINT_LONG_DECIMAL_FORMAT, [turnpoint.longitudeDeg]),
+          getLatitudeInDisplayFormat(
+              isDecimalDegreesFormat, turnpoint.latitudeDeg),
+          getLongitudeInDisplayFormat(
+              isDecimalDegreesFormat, turnpoint.longitudeDeg),
           turnpoint.elevation,
           turnpoint.direction,
           turnpoint.length,
@@ -302,16 +388,61 @@ class TurnpointUtils {
           turnpoint.title,
           turnpoint.code,
           getStyleName(turnpoint.style),
-          cupFormat
-              ? getLatitudeInCupFormat(turnpoint.latitudeDeg)
-              : sprintf(TURNPOINT_LAT_DECIMAL_FORMAT, turnpoint.latitudeDeg),
-          cupFormat
-              ? getLongitudeInCupFormat(turnpoint.longitudeDeg)
-              : sprintf(TURNPOINT_LONG_DECIMAL_FORMAT, turnpoint.longitudeDeg),
+          getLatitudeInDisplayFormat(
+              isDecimalDegreesFormat, turnpoint.latitudeDeg),
+          getLongitudeInDisplayFormat(
+              isDecimalDegreesFormat, turnpoint.longitudeDeg),
           turnpoint.elevation,
           turnpoint.description
         ]);
     }
     return turnpointDetails;
+  }
+
+  static String getLongitudeInDisplayFormat(
+      bool isDecimalDegreesFormat, double longitudeInDegrees) {
+    return isDecimalDegreesFormat
+        ? longitudeInDegrees.toStringAsFixed(5)
+        : getLongitudeInCupFormat(longitudeInDegrees);
+  }
+
+  static String getLatitudeInDisplayFormat(
+      bool isDecimalDegreesFormat, double latitudeInDegrees) {
+    return isDecimalDegreesFormat
+        ? latitudeInDegrees.toStringAsFixed(5)
+        : getLatitudeInCupFormat(latitudeInDegrees);
+  }
+
+  //TODO - convert string for doublE
+  static double parseLatitudeValue(String value, bool isDecimalDegreesFormat) {
+    return isDecimalDegreesFormat ? double.parse(value) : convertToLat(value);
+  }
+
+  static double parseLongitudeValue(String value, bool isDecimalDegreesFormat) {
+    return isDecimalDegreesFormat ? double.parse(value) : convertToLong(value);
+  }
+
+  static bool elevationValid(String elevation) {
+    return elevationRegex.hasMatch(elevation);
+  }
+
+  static bool runwayDirectionValid(String direction) {
+    return directionRegex.hasMatch(direction);
+  }
+
+  static bool runwayLengthValid(String length) {
+    return lengthRegex.hasMatch(length);
+  }
+
+  static bool runwayWidthValid(String width) {
+    return widthRegex.hasMatch(width);
+  }
+
+  static bool airportFrequencyValid(String frequency) {
+    return frequencyRegex.hasMatch(frequency);
+  }
+
+  static double convertMetersToFeet(double meters) {
+    return meters * Constants.metersToFeet;
   }
 }

@@ -36,9 +36,9 @@ dependencies:
   drag_and_drop_lists: ^0.3.2+2
   cupertino_back_gesture: 0.1.0
   cupertino_will_pop_scope: 1.2.0
-  path_provider: ^2.0.9      # for access to downloads directory
-  permission_handler: ^9.2.0  # for permissions to downloads directory
-
+  path_provider: ^2.0.11      # for access to image cache manager and downloads directory
+  permission_handler: ^10.0.0  # for permissions to downloads directory, location
+  location: ^4.2.0 # Get location via GPS - also provides permission so overlap with above
 
   flutter_cache_manager: ^3.1.2
   intl: ^0.17.0   # used for date/time formatting
@@ -51,7 +51,7 @@ dependencies:
   shared_preferences:
 
   flutter_map: any # or the latest version on Pub, current used for rasp map
-  google_maps_flutter: ^2.1.0 # used for overhead view of turnpoints
+  google_maps_flutter: ^2.1.4 # used for overhead view of turnpoints
 
   flutter:
     sdk: flutter
@@ -61,7 +61,7 @@ dependencies:
   cupertino_icons: ^1.0.3
   mockito: ^5.0.16
   http: ^0.13.4
-  workmanager: ^0.4.1
+  workmanager: ^0.5.0
 
 
 dev_dependencies:
@@ -85,7 +85,7 @@ dev_dependencies:
 flutter:
 
   assets:
-    - assets/json/forecast_options.json
+    - assets/json/
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

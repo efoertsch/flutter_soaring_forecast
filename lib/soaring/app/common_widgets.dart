@@ -59,21 +59,18 @@ class CommonWidgets {
       context: context,
       barrierDismissible: false, // user must tap button!
       builder: (BuildContext context) {
-        return WillPopScope(
-          onWillPop: () async => false,
-          child: AlertDialog(
-            title: Text(title),
-            content: SingleChildScrollView(
-              child: ListBody(
-                children: <Widget>[Text(msg)],
-              ),
+        return AlertDialog(
+          title: Text(title),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[Text(msg)],
             ),
-            actions: composeDialogButtons(
-                button1Text: button1Text,
-                button1Function: button1Function,
-                button2Text: button2Text,
-                button2Function: button2Function),
           ),
+          actions: composeDialogButtons(
+              button1Text: button1Text,
+              button1Function: button1Function,
+              button2Text: button2Text,
+              button2Function: button2Function),
         );
       },
     );
@@ -88,13 +85,15 @@ class CommonWidgets {
     buttonWidgets.add(TextButton(
         child: Text(button1Text),
         onPressed: () {
-          button1Function;
+          print("button1 pressed");
+          button1Function();
         }));
     if (button2Text != null) {
       buttonWidgets.add(TextButton(
           child: Text(button2Text),
           onPressed: () {
-            button2Function;
+            print("button2 pressed");
+            button2Function!();
           }));
     }
     return buttonWidgets;

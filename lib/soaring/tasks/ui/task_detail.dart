@@ -13,7 +13,8 @@ import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart'
 import 'package:flutter_soaring_forecast/soaring/tasks/bloc/task_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/tasks/bloc/task_event.dart';
 import 'package:flutter_soaring_forecast/soaring/tasks/bloc/task_state.dart';
-import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_search_in_appbar.dart';
+import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_overhead_view.dart';
+import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoints_list.dart';
 
 class TaskDetailScreen extends StatefulWidget {
   final int taskId;
@@ -44,6 +45,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
     } else {
       //iOS
       return GestureDetector(
+        behavior: HitTestBehavior.deferToChild,
         onHorizontalDragUpdate: (details) {
           if (details.delta.direction >= 0) {
             Navigator.of(context).pop();
@@ -125,22 +127,15 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
             child: Text('Task:', style: Theme.of(context).textTheme.subtitle1)),
         Expanded(
           child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: TextField(
-                controller: TextEditingController()..text = task.taskName,
-                onChanged: (text) => {
-                  BlocProvider.of<TaskBloc>(context)
-                      .add(TaskNamedChangedEvent(text))
-                },
-              )
-              // child: TextFormField(
-              //     initialValue: task.taskName,
-              //     style: Theme.of(context).textTheme.subtitle1,
-              //     onChanged: (text) {
-              //       BlocProvider.of<TaskBloc>(context)
-              //           .add(TaskNamedChangedEvent(text));
-              //     }),
-              ),
+            padding: const EdgeInsets.all(8.0),
+            child: TextField(
+              controller: TextEditingController()..text = task.taskName,
+              onChanged: (text) => {
+                BlocProvider.of<TaskBloc>(context)
+                    .add(TaskNamedChangedEvent(text))
+              },
+            ),
+          ),
         ),
       ]),
     );
@@ -196,14 +191,6 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
 
   _onItemReorder(
       int oldItemIndex, int oldListIndex, int newItemIndex, int newListIndex) {
-    // setState(() {
-    //   var movedItem = _taskTurnpointDragAndDropList[oldListIndex]
-    //       .children
-    //       .removeAt(oldItemIndex);
-    //   _taskTurnpointDragAndDropList[newListIndex]
-    //       .children
-    //       .insert(newItemIndex, movedItem);
-    // });
     BlocProvider.of<TaskBloc>(context)
         .add(SwitchOrderOfTaskTurnpointsEvent(oldItemIndex, newItemIndex));
   }
@@ -389,7 +376,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
     final result = await Navigator.pushNamed(
       context,
       TurnpointsForTask.routeName,
-      arguments: TurnpointsSearchInAppBarScreen.TASK_TURNPOINT_OPTION,
+      arguments: TurnpointsList.TASK_TURNPOINT_OPTION,
     );
     if (result is List<Turnpoint>) {
       BlocProvider.of<TaskBloc>(context)
@@ -402,7 +389,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
     final result = await Navigator.pushNamed(
       context,
       TurnpointView.routeName,
-      arguments: state.turnpoint,
+      arguments: TurnpointOverHeadArgs(turnpoint: state.turnpoint),
     );
   }
 }

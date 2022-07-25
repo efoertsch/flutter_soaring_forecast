@@ -18,7 +18,9 @@ import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_
 import 'package:flutter_soaring_forecast/soaring/repository/ImageCacheManager.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/rasp_options_api.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/turnpoint_regions.dart';
-import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoints_downloader.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/usgs/national_map.dart';
+import 'package:flutter_soaring_forecast/soaring/turnpoints/cup/cup_styles.dart';
+import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoints_importer.dart';
 import 'package:retrofit/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
@@ -27,6 +29,7 @@ import 'rasp/forecast_models.dart';
 import 'rasp/forecast_types.dart';
 import 'rasp/rasp_api.dart';
 import 'rasp/regions.dart';
+import 'usgs/usgs_api.dart';
 
 class Repository {
   static Repository? _repository;
@@ -34,6 +37,7 @@ class Repository {
   static late BuildContext? _context;
   static late RaspClient _raspClient;
   static late RaspOptionsClient _raspOptionsClient;
+  static UsgsClient? _usgsClient;
   static AppDatabase? _appDatabase;
 
   Repository._();
@@ -250,6 +254,11 @@ class Repository {
     return filePath;
   }
 
+  Future<Turnpoint?> getTurnpointByCode(String code) async {
+    await makeDatabaseAvailable();
+    return _appDatabase!.turnpointDao.getTurnpointByCode(code);
+  }
+
   //------  Selected turnpoint files available from turnpoint exchange ------
   Future<List<TurnpointFile>> getListOfTurnpointExchangeRegionFiles() async {
     List<TurnpointRegion> turnpointRegionList = [];
@@ -267,10 +276,20 @@ class Repository {
   }
 
   // eg from https://soaringweb.org/TP/Sterling/Sterling,%20Massachusetts%202021%20SeeYou.cup
-  Future<List<Turnpoint>> downloadTurnpointsFromTurnpointExchange(
+  Future<List<Turnpoint>> importTurnpointsFromTurnpointExchange(
       String endUrl) async {
     List<Turnpoint> turnpoints = [];
-    turnpoints.addAll(await TurnpointsDownloader.downloadTurnpointFile(endUrl));
+    turnpoints.addAll(
+        await TurnpointsImporter.getTurnpointsFromTurnpointExchange(endUrl));
+    var ids = await insertAllTurnpoints(turnpoints);
+    print("Number turnpoints downloaded: ${ids.length}");
+    return turnpoints;
+  }
+
+  Future<List<Turnpoint>> importTurnpointsFromFile(File turnpointFile) async {
+    List<Turnpoint> turnpoints = [];
+    turnpoints
+        .addAll(await TurnpointsImporter.getTurnpointsFromFile(turnpointFile));
     var ids = await insertAllTurnpoints(turnpoints);
     print("Number turnpoints downloaded: ${ids.length}");
     return turnpoints;
@@ -280,6 +299,57 @@ class Repository {
     await makeDatabaseAvailable();
     return _appDatabase!.turnpointDao.getTurnpoint(title, code);
   }
+
+  Future<Turnpoint?> getTurnpointById(int turnpointId) async {
+    await makeDatabaseAvailable();
+    return _appDatabase!.turnpointDao.getTurnpointById(turnpointId);
+  }
+
+  Future<int?> saveTurnpoint(Turnpoint turnpoint) async {
+    await makeDatabaseAvailable();
+    return _appDatabase!.turnpointDao.insert(turnpoint);
+  }
+
+  Future<int?> updateTurnpoint(Turnpoint turnpoint) async {
+    await makeDatabaseAvailable();
+    return _appDatabase!.turnpointDao.update(turnpoint);
+  }
+
+  Future<int?> deleteTurnpoint(int id) async {
+    await makeDatabaseAvailable();
+    return _appDatabase!.turnpointDao.deleteTurnpoint(id);
+  }
+
+  /// Get the types of valid cup styles
+  /// Note we use a customized list held locally.
+  Future<List<Style>> getCupStyles() async {
+    final List<Style> cupListStyles = [];
+    try {
+      final json = DefaultAssetBundle.of(_context!)
+          .loadString('assets/json/turnpoint_styles.json');
+      CupStyles cupStyles = cupStylesFromJson(await json);
+      cupListStyles.addAll(cupStyles.styles);
+    } catch (error, stackTrace) {
+      print(stackTrace);
+    }
+    return Future<List<Style>>.value(cupListStyles);
+  }
+
+  //
+  // Future<List<File>> getCupFilesInDownloadsDirectory() async {
+  //   List<File> cupFiles = []
+  //   if (Platform.isAndroid) {
+  //     final Directory directory = Directory('/storage/emulated/0/Download');
+  //     if (!await directory.exists()) {
+  //       directory = await getExternalStorageDirectory();
+  //     }
+  //   }
+  //   if (Platform.isIOS){
+  //
+  //   }
+  //   return cupFiles;
+  //
+  // }
 
   // ----- Task ----------------------------------------
 
@@ -346,6 +416,16 @@ class Repository {
   Future<int?> deleteTaskTurnpoint(final int taskTurnpointId) async {
     await makeDatabaseAvailable();
     return _appDatabase!.taskTurnpointDao.deleteTaskTurnpoint(taskTurnpointId);
+  }
+
+  // ---- USGS calls --------------------------------------------------
+  Future<NationalMap> getElevationAtLatLongPoint(
+      double latitude, double longitude) {
+    if (_usgsClient == null) {
+      _usgsClient = UsgsClient(_dio);
+    }
+    return _usgsClient!.getElevation(
+        latitude.toStringAsFixed(6), longitude.toStringAsFixed(6), "Feet");
   }
 
   // ----- Shared preferences --------------------------

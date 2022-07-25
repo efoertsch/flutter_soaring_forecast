@@ -17,6 +17,7 @@ import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/rasp_wid
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image_set.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/ui/display_ticker.dart';
 import 'package:flutter_soaring_forecast/soaring/tasks/ui/task_list.dart';
+import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_overhead_view.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../floor/taskturnpoint/task_turnpoint.dart';
@@ -88,13 +89,13 @@ class _RaspScreenState extends State<RaspScreen>
     super.initState();
     _firstLayoutComplete = false;
     _mapController = MapController();
-    WidgetsBinding.instance!.addObserver(this);
+    WidgetsBinding.instance.addObserver(this);
   }
 
   @override
   void dispose() {
     stopAnimation();
-    WidgetsBinding.instance!.removeObserver(this);
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
@@ -138,17 +139,20 @@ class _RaspScreenState extends State<RaspScreen>
           title: Text('RASP'),
           actions: getRaspMenu(),
         ),
-        body: Padding(
-          padding: EdgeInsets.all(8.0),
-          child: Column(mainAxisAlignment: MainAxisAlignment.start, children: [
-            getForecastModelsAndDates(context),
-            getForecastTypes(context),
-            displayForecastTime(context),
-            forecastWindow(),
-            //emptyWidgetForForecastImages(),
-            widgetForSnackBarMessages(),
-            //displayMarkersAndLines(),
-          ]),
+        body: SafeArea(
+          child: Padding(
+            padding: EdgeInsets.all(8.0),
+            child:
+                Column(mainAxisAlignment: MainAxisAlignment.start, children: [
+              getForecastModelsAndDates(context),
+              getForecastTypes(context),
+              displayForecastTime(context),
+              forecastWindow(),
+              //emptyWidgetForForecastImages(),
+              widgetForSnackBarMessages(),
+              //displayMarkersAndLines(),
+            ]),
+          ),
         )
         // }),
         );
@@ -807,6 +811,7 @@ class _RaspScreenState extends State<RaspScreen>
       ),
       PopupMenuButton<String>(
         onSelected: handleClick,
+        icon: Icon(Icons.more_vert),
         itemBuilder: (BuildContext context) {
           return {
             RaspMenu.clearTask,
@@ -881,7 +886,7 @@ class _RaspScreenState extends State<RaspScreen>
     final result = await Navigator.pushNamed(
       context,
       TurnpointView.routeName,
-      arguments: state.turnpoint,
+      arguments: TurnpointOverHeadArgs(turnpoint: state.turnpoint),
     );
   }
 
