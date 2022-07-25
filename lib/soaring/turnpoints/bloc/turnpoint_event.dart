@@ -82,6 +82,16 @@ class GetCustomImportFileNamesEvent extends TurnpointEvent {
   List<Object?> get props => [];
 }
 
+class ImportTurnpointsFromFileEvent extends TurnpointEvent {
+  final File turnpointFile;
+
+  ImportTurnpointsFromFileEvent(this.turnpointFile);
+
+  @override
+  // TODO: implement props
+  List<Object?> get props => [turnpointFile];
+}
+
 class CheckIfDuplicateTurnpointCodeEvent extends TurnpointEvent {
   late final String turnpointCode;
 

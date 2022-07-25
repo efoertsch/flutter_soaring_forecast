@@ -27,8 +27,7 @@ class _CustomSeeYouImportScreenState extends State<CustomSeeYouImportScreen>
 // Make sure first layout occurs prior to map ready otherwise crash occurs
   @override
   void afterFirstLayout(BuildContext context) {
-    BlocProvider.of<TurnpointBloc>(context)
-        .add(GetCustomImportFileNamesEvent());
+    _sendEvent(GetCustomImportFileNamesEvent());
   }
 
   @override
@@ -115,12 +114,18 @@ class _CustomSeeYouImportScreenState extends State<CustomSeeYouImportScreen>
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: <Widget>[
                                 Expanded(
-                                  child: Text(
-                                    fileName,
-                                    maxLines: 2,
-                                    textAlign: TextAlign.left,
-                                    style: TextStyle(
-                                        color: Colors.black, fontSize: 20),
+                                  child: InkWell(
+                                    onTap: () {
+                                      _sendEvent(ImportTurnpointsFromFileEvent(
+                                          state.customTurnpointFiles[index]));
+                                    },
+                                    child: Text(
+                                      fileName,
+                                      maxLines: 2,
+                                      textAlign: TextAlign.left,
+                                      style: TextStyle(
+                                          color: Colors.black, fontSize: 20),
+                                    ),
                                   ),
                                 ),
                               ],

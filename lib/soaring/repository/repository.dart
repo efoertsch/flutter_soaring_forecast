@@ -20,7 +20,7 @@ import 'package:flutter_soaring_forecast/soaring/repository/options/rasp_options
 import 'package:flutter_soaring_forecast/soaring/repository/options/turnpoint_regions.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/usgs/national_map.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/cup/cup_styles.dart';
-import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoints_downloader.dart';
+import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoints_importer.dart';
 import 'package:retrofit/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
@@ -276,10 +276,20 @@ class Repository {
   }
 
   // eg from https://soaringweb.org/TP/Sterling/Sterling,%20Massachusetts%202021%20SeeYou.cup
-  Future<List<Turnpoint>> downloadTurnpointsFromTurnpointExchange(
+  Future<List<Turnpoint>> importTurnpointsFromTurnpointExchange(
       String endUrl) async {
     List<Turnpoint> turnpoints = [];
-    turnpoints.addAll(await TurnpointsDownloader.downloadTurnpointFile(endUrl));
+    turnpoints.addAll(
+        await TurnpointsImporter.getTurnpointsFromTurnpointExchange(endUrl));
+    var ids = await insertAllTurnpoints(turnpoints);
+    print("Number turnpoints downloaded: ${ids.length}");
+    return turnpoints;
+  }
+
+  Future<List<Turnpoint>> importTurnpointsFromFile(File turnpointFile) async {
+    List<Turnpoint> turnpoints = [];
+    turnpoints
+        .addAll(await TurnpointsImporter.getTurnpointsFromFile(turnpointFile));
     var ids = await insertAllTurnpoints(turnpoints);
     print("Number turnpoints downloaded: ${ids.length}");
     return turnpoints;

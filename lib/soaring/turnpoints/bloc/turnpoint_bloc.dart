@@ -38,6 +38,7 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
     on<DownloadTurnpointsToFile>(_downloadTurnpointsToFile);
     on<DownloadTurnpointToFile>(_downloadTurnpointToFile);
     on<GetCustomImportFileNamesEvent>(_getCustomImportFileNames);
+    on<ImportTurnpointsFromFileEvent>(_importTurnpointsFromFile);
   }
 
   void _searchTurnpointsEvent(
@@ -102,7 +103,7 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
 
   Future<List<Turnpoint>> _getTurnpointsFromTurnpointExchange(
       TurnpointFile turnpointfile) async {
-    return await repository.downloadTurnpointsFromTurnpointExchange(
+    return await repository.importTurnpointsFromTurnpointExchange(
         turnpointfile.location + "/" + turnpointfile.filename);
   }
 
@@ -350,5 +351,19 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
       print("Exception getting list of cup files" + e.toString());
     }
     return cupfiles;
+  }
+
+  FutureOr<void> _importTurnpointsFromFile(
+      ImportTurnpointsFromFileEvent event, Emitter<TurnpointState> emit) async {
+    try {
+      List<Turnpoint> turnpoints =
+          await repository.importTurnpointsFromFile(event.turnpointFile);
+      emit(
+          TurnpointShortMessageState("${turnpoints.length} turnpoints loaded"));
+      emit(TurnpointFilesFoundState(turnpointFiles));
+    } catch (e) {
+      print(e.toString());
+      emit(TurnpointErrorState(e.toString()));
+    }
   }
 }

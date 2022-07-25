@@ -1,6 +1,6 @@
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
-import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoints_downloader.dart';
+import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoints_importer.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -41,11 +41,11 @@ void main() {
 }
 
 Future<List<List<dynamic>>> getTurnpoinstCSV(String testUrl) async {
-  return await TurnpointsDownloader.getTurnpointsCSV(testUrl);
+  return await TurnpointsImporter.getTurnpointsCSV(testUrl);
 }
 
 Future<List<Turnpoint>> convertDynamicListToTurnpoints(
     List<List<dynamic>> turnpoinstCSV) async {
-  return await TurnpointsDownloader.convertTurnpointCsvListToTurnpoints(
+  return await TurnpointsImporter.convertTurnpointCsvListToTurnpoints(
       turnpoinstCSV);
 }
