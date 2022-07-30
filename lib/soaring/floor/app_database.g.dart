@@ -638,7 +638,7 @@ class _$TurnpointDao extends TurnpointDao {
   }
 
   @override
-  Future<List<Turnpoint?>> getTurnpointsInRegion(
+  Future<List<Turnpoint>> getTurnpointsWithinBounds(
       double swLatitudeDeg,
       double swLongitudeDeg,
       double neLatitudeDeg,

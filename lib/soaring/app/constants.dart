@@ -20,6 +20,31 @@ const String APP_DATABASE = 'app_database.db'; // Floor database name
 
 enum TurnpointEditReturn { noChange, tpAddedUpdated, tpDeleted }
 
+class PreferenceOption {
+  final String key;
+  final String displayText;
+  bool selected;
+  PreferenceOption(
+      {required this.key, required this.displayText, this.selected = false});
+}
+
+// Key here is used to store and retrieve preferences so don't change
+const String soundingsDisplayOption = "SoundingsDisplayOption";
+const String suaDisplayOption = "SuaDisplayOption";
+const String turnpointsDisplayOption = "TurnpointsDisplayOption";
+
+// Consider this a const List, but only selected value should be changeable during program execution
+final List<PreferenceOption> raspDisplayOptions = [
+  PreferenceOption(
+      key: soundingsDisplayOption,
+      displayText: RaspDisplayOptionsMenu.soundings),
+  PreferenceOption(
+      key: suaDisplayOption, displayText: RaspDisplayOptionsMenu.sua),
+  PreferenceOption(
+      key: turnpointsDisplayOption,
+      displayText: RaspDisplayOptionsMenu.turnpoints)
+];
+
 //------------- Translatable values --------------------------------------------
 class RaspMenu {
   static const String selectTask = 'SELECT TASK';
@@ -141,3 +166,5 @@ const textStyleBoldBlack87FontSize14 =
 
 const textStyleBlack87FontSize14 =
     TextStyle(color: Colors.black87, fontSize: 14);
+
+const textStyleWhiteFontSize12 = TextStyle(color: Colors.white, fontSize: 12);

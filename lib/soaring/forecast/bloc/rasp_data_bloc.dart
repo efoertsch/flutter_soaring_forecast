@@ -4,6 +4,7 @@ import 'package:bloc/bloc.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/taskturnpoint/task_turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/LatLngForecast.dart';
@@ -50,7 +51,9 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     on<MapReadyEvent>(_checkForPreviouslySelectedTask);
     on<DisplayTaskTurnpointEvent>(_displayTaskTurnpoint);
     on<DisplayLocalForecastEvent>(_displayLocalForecast);
-    on<RemoveLocalForecastEvent>(_removeLatLngForecast);
+    on<RedisplayMarkersEvent>(_redisplayMarkers);
+    on<SaveRaspDisplayOptionsEvent>(_processSaveRaspDisplayOptions);
+    on<NewLatLngBoundsEvent>(_processNewLatLongBounds);
   }
 
   void _processInitialRaspRegionEvent(
@@ -76,6 +79,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
         _emitRaspLatLngBounds(emit);
         _getForecastImages();
         _emitRaspImageSet(emit);
+        _checkDisplayOptions(emit);
       }
     } catch (_) {
       emit(RaspDataLoadErrorState("Error getting regions."));
@@ -344,6 +348,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
       MapReadyEvent event, Emitter<RaspDataState> emit) async {
     var taskId = await repository.getCurrentTaskId();
     await _emitTaskTurnpoints(emit, taskId);
+    await _emitRaspDisplayOptions(emit);
   }
 
   void _getTurnpointsForTaskId(
@@ -360,6 +365,17 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
       print('emitting taskturnpoints');
       emit(RaspTaskTurnpoints(taskTurnpoints));
     }
+  }
+
+  FutureOr<void> _emitSoundings(Emitter<RaspDataState> emit) async {
+    List<Soundings> regionSoundings = [];
+    regionSoundings.addAll(_region!.soundings ?? []);
+    emit(RaspSoundingsState(regionSoundings));
+    // emit soundings state
+  }
+
+  _emitRaspDisplayOptions(Emitter<RaspDataState> emit) async {
+    emit(RaspDisplayOptionsState(await repository.getRaspDisplayOptions()));
   }
 
   Future<List<TaskTurnpoint>> _addTaskTurnpointDetails(int taskId) async {
@@ -417,8 +433,65 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     }
   }
 
-  void _removeLatLngForecast(
-      RemoveLocalForecastEvent event, Emitter<RaspDataState> emit) {
-    emit(RemoveLocalForecastState());
+  // Can't get flutter_map to display updated markers without issuing state
+  void _redisplayMarkers(
+      RedisplayMarkersEvent event, Emitter<RaspDataState> emit) {
+    emit(RedisplayMarkersState());
+  }
+
+  // This should only occur when user requests this particular option to be displayed.
+  FutureOr<void> _processSaveRaspDisplayOptions(
+      SaveRaspDisplayOptionsEvent event, Emitter<RaspDataState> emit) async {
+    switch (event.displayOption.key) {
+      case (soundingsDisplayOption):
+        {
+          if (_region!.soundings != null) {
+            emit(RaspSoundingsState(event.displayOption.selected
+                ? _region!.soundings!
+                : <Soundings>[]));
+          }
+          break;
+        }
+      case (suaDisplayOption):
+        {
+          print("implement sua ");
+          break;
+        }
+      case (turnpointsDisplayOption):
+        {
+          // only send turnpoints based on current lat/long corners of map
+          emit(TurnpointsInBoundsState(
+              await repository.getTurnpointsWithinBounds(_latLngBounds!)));
+          break;
+        }
+    }
+    repository.saveRaspDisplayOption(event.displayOption);
+  }
+
+  // check new bounds and if needed send turnpoints and soundings within those bounds
+  FutureOr<void> _processNewLatLongBounds(
+      NewLatLngBoundsEvent event, Emitter<RaspDataState> emit) {}
+
+  // initial check for display options (soundings, turnpoints, sua) and send them if needed
+  void _checkDisplayOptions(Emitter<RaspDataState> emit) async {
+    raspDisplayOptions.forEach((displayOption) async {
+      final preferenceOptions = await repository.getRaspDisplayOptions();
+      preferenceOptions.forEach((option) async {
+        switch (option.key) {
+          case (soundingsDisplayOption):
+            if (option.selected) {
+              emit(RaspSoundingsState(_region?.soundings ?? <Soundings>[]));
+            }
+            break;
+          case (turnpointsDisplayOption):
+            if (option.selected) {
+              final turnpoints = <Turnpoint>[];
+              turnpoints.addAll(
+                  await repository.getTurnpointsWithinBounds(_latLngBounds!));
+              emit(TurnpointsInBoundsState(turnpoints));
+            }
+        }
+      });
+    });
   }
 }

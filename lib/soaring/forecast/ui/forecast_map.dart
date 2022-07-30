@@ -6,17 +6,30 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     as Constants;
+import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
+import 'package:flutter_soaring_forecast/soaring/app/main.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/taskturnpoint/task_turnpoint.dart';
+import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_data_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_data_event.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_data_state.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/LatLngForecast.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image_set.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/rasp/regions.dart';
+import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_overhead_view.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:latlong2/latlong.dart';
 
 class ForecastMap extends StatefulWidget {
-  late final Function stopAnimation;
-  ForecastMap({Key? key, required Function stopAnimation}) : super(key: key);
+  final Function stopAnimation;
+  final StreamController<PreferenceOption> displayOptionsController;
+
+  ForecastMap(
+      {Key? key,
+      required Function this.stopAnimation,
+      required StreamController<PreferenceOption>
+          this.displayOptionsController})
+      : super(key: key);
 
   @override
   _ForecastMapState createState() => _ForecastMapState();
@@ -26,14 +39,16 @@ class _ForecastMapState extends State<ForecastMap>
     with AfterLayoutMixin<ForecastMap> {
   late final MapController _mapController;
   final _forecastOverlayController = StreamController<Null>.broadcast();
+  late final StreamSubscription _mapControllerStream;
 
   bool _firstLayoutComplete = false;
   SoaringForecastImageSet? soaringForecastImageSet;
   List<Polyline> _taskTurnpointCourse = <Polyline>[];
   List<Marker> _mapMarkers = <Marker>[];
   List<Marker> _soundingMarkers = <Marker>[];
-  List<Marker> _turnpointMarkerrs = <Marker>[];
-  List<Marker> _taskMarkers = <Marker>[];
+  List<Marker> _turnpointMarkers = <Marker>[];
+  final _taskMarkers = <Marker>[];
+  List<Polyline> _suaPolyLines = <Polyline>[];
 
   Marker? _latLngMarker;
 
@@ -50,10 +65,24 @@ class _ForecastMapState extends State<ForecastMap>
   double neLat = 0;
   double neLong = 0;
 
+  bool _displaySoundings = false;
+  bool _displaySua = false;
+  bool _displayTurnpoints = false;
+
   @override
   void initState() {
     super.initState();
     _mapController = MapController();
+    widget.displayOptionsController.stream
+        .listen((displayOption) => _processDisplayOption(displayOption));
+  }
+
+  @override
+  void dispose() {
+    // Anything?
+    _mapControllerStream.cancel();
+    _forecastOverlayController.close();
+    super.dispose();
   }
 
   @override
@@ -62,7 +91,20 @@ class _ForecastMapState extends State<ForecastMap>
     // print("First layout complete.");
     // print('Calling series of APIs');
     _sendEvent(InitialRaspRegionEvent());
-    _mapController.onReady.then((value) => _sendEvent(MapReadyEvent()));
+    _mapController.onReady.then((value) {
+      _sendEvent(MapReadyEvent());
+      _processMapEvent();
+    });
+  }
+
+  void _processMapEvent() {
+    _mapControllerStream =
+        _mapController.mapEventStream.listen((MapEvent mapEvent) {
+      //print("MapEvent:  ${mapEvent.toString()}");
+      if (mapEvent is MapEventFlingAnimationEnd) {
+        _sendEvent(NewLatLngBoundsEvent(_mapController.bounds!));
+      }
+    });
   }
 
   var _overlayImages = <OverlayImage>[];
@@ -115,7 +157,9 @@ class _ForecastMapState extends State<ForecastMap>
           current is RaspForecastImageSet ||
           current is RaspTaskTurnpoints ||
           current is LocalForecastState ||
-          current is RemoveLocalForecastState;
+          // current is RemoveLocalForecastState ||
+          current is RaspSoundingsState ||
+          current is TurnpointsInBoundsState;
     }, builder: (context, state) {
       print('creating/updating ForecastImages');
       if (state is RaspForecastImageSet) {
@@ -126,23 +170,18 @@ class _ForecastMapState extends State<ForecastMap>
         _updateTaskTurnpoints(state.taskTurnpoints);
       }
       if (state is LocalForecastState) {
-        final latLngForecast = state.latLngForecast;
-        _latLngMarker = Marker(
-          width: 160.0,
-          height: 160.0,
-          point: latLngForecast.latLng,
-          builder: (context) => _getLatLngForecastMarker(latLngForecast),
-          anchorPos: AnchorPos.align(AnchorAlign.top),
-        );
-        _mapMarkers.add(_latLngMarker!);
+        _placeLocalForecastMarker(state.latLngForecast);
+      }
+      if (state is RaspSoundingsState) {
+        _placeSoundingMarkers(state.soundings);
+      }
+      if (state is TurnpointsInBoundsState) {
+        _updateTurnpointMarkers(state.turnpoints);
       }
 
-      if (state is RemoveLocalForecastState) {
-        if (_latLngMarker != null) {
-          _mapMarkers.remove(_latLngMarker);
-          _latLngMarker = null;
-        }
-      }
+      // if (state is DisplayTurnpointsState) {
+      //
+      // }
 
       return FlutterMap(
           mapController: _mapController,
@@ -153,6 +192,8 @@ class _ForecastMapState extends State<ForecastMap>
             onTap: (tapPosition, latlng) => print(latlng.toString()),
             onLongPress: (longPressPostion, latLng) =>
                 _getLocalForecast(latLng),
+            onPositionChanged: ((mapPosition, hasGesture) =>
+                _updateMapPositon(mapPosition, hasGesture)),
           ),
           layers: [
             TileLayerOptions(
@@ -177,9 +218,21 @@ class _ForecastMapState extends State<ForecastMap>
     });
   }
 
+  void _placeLocalForecastMarker(LatLngForecast latLngForecast) {
+    _latLngMarker = Marker(
+      width: 160.0,
+      height: 160.0,
+      point: latLngForecast.latLng,
+      builder: (context) => _getLatLngForecastMarker(latLngForecast),
+      anchorPos: AnchorPos.align(AnchorAlign.top),
+    );
+    _mapMarkers.add(_latLngMarker!);
+  }
+
   void _updateTaskTurnpoints(List<TaskTurnpoint> taskTurnpoints) {
     print('number of task turnpoints ${taskTurnpoints.length.toString()} ');
-    clearTaskFromMap();
+    clearTaskFromMap(taskTurnpoints.length > 0);
+    if (taskTurnpoints.length == 0) return;
     List<LatLng> points = <LatLng>[];
     for (var taskTurnpoint in taskTurnpoints) {
       print('adding taskturnpoint: ${taskTurnpoint.title}');
@@ -240,6 +293,77 @@ class _ForecastMapState extends State<ForecastMap>
     );
   }
 
+  void _updateTurnpointMarkers(List<Turnpoint> turnpoints) {
+    print('number of turnpoints ${turnpoints.length.toString()} ');
+    _turnpointMarkers.clear();
+    List<LatLng> points = <LatLng>[];
+    for (var turnpoint in turnpoints) {
+      print('adding turnpoint: ${turnpoint.title}');
+      var turnpointLatLng =
+          LatLng(turnpoint.latitudeDeg, turnpoint.longitudeDeg);
+      points.add(turnpointLatLng);
+      _taskMarkers.add(Marker(
+          width: 80.0,
+          height: 40.0,
+          point: turnpointLatLng,
+          builder: (context) => _getTurnpointMarker(turnpoint),
+          anchorPos: AnchorPos.align(AnchorAlign.top)));
+    }
+    _rebuildMarkerArray();
+  }
+
+  Widget _getSoundingMarker(Turnpoint turnpoint) {
+    return InkWell(
+      onTap: () {
+        // display sounding and allow stepping through time
+        print("Implement soundngs logic");
+      },
+      child: Container(
+          color: Colors.white,
+          width: 30,
+          height: 30,
+          child: Stack(
+            children: [
+              Positioned.fill(child: Image.asset('assets/svg/skew_t.png')),
+              Positioned.fill(
+                child: Text(
+                    turnpoint.title.length > 4
+                        ? turnpoint.title.substring(0, 4)
+                        : turnpoint.title,
+                    textAlign: TextAlign.center),
+              ),
+            ],
+          )),
+    );
+  }
+
+  Widget _getTurnpointMarker(Turnpoint turnpoint) {
+    return InkWell(
+      onTap: () {
+        _displayTurnpointOverheadView(turnpoint);
+      },
+      child: Container(
+          width: 30,
+          height: 30,
+          color: Colors.transparent,
+          child: Stack(
+            children: [
+              Positioned.fill(
+                  child:
+                      SvgPicture.asset('assets/svg/ic_turnpoint_red_48dp.svg')),
+              Positioned.fill(
+                child: Text(
+                    style: textStyleWhiteFontSize12,
+                    turnpoint.title.length > 4
+                        ? turnpoint.title.substring(0, 4)
+                        : turnpoint.title,
+                    textAlign: TextAlign.center),
+              ),
+            ],
+          )),
+    );
+  }
+
   Widget _getLatLngForecastMarker(LatLngForecast latLngForecast) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.start,
@@ -257,7 +381,7 @@ class _ForecastMapState extends State<ForecastMap>
               maxLines: 5,
               minLines: 5,
               onTap: () {
-                _sendEvent(RemoveLocalForecastEvent());
+                _removeLocalForecastMarker();
               }),
         ),
         Icon(Icons.arrow_drop_down, color: Colors.white),
@@ -265,10 +389,12 @@ class _ForecastMapState extends State<ForecastMap>
     );
   }
 
-  void clearTaskFromMap() {
+  void clearTaskFromMap(bool taskDefined) {
     _taskTurnpointCourse.clear();
     _taskMarkers.clear();
-    southwest = null;
+    if (taskDefined) {
+      southwest = null;
+    }
   }
 
   void updateForecastOverlay() {
@@ -333,8 +459,56 @@ class _ForecastMapState extends State<ForecastMap>
 
   void _rebuildMarkerArray() {
     _mapMarkers.clear();
-    _mapMarkers.addAll(_turnpointMarkerrs);
+    _mapMarkers.addAll(_turnpointMarkers);
     _mapMarkers.addAll(_soundingMarkers);
     _mapMarkers.addAll(_taskMarkers);
+    if (_latLngMarker != null) {
+      _mapMarkers.add(_latLngMarker!);
+    }
   }
+
+  // this is only used to *remove* particular types of markers
+  // states will be processed to *add* markers to map
+  _processDisplayOption(PreferenceOption displayOption) {
+    switch (displayOption.key) {
+      case RaspDisplayOptionsMenu.soundings:
+        _soundingMarkers.clear();
+        _rebuildMarkerArray();
+        break;
+      case RaspDisplayOptionsMenu.sua:
+        _suaPolyLines.clear();
+        break;
+      case RaspDisplayOptionsMenu.turnpoints:
+        _turnpointMarkers.clear();
+        _rebuildMarkerArray();
+        break;
+    }
+    setState(() {});
+  }
+
+  // Currently only display max of 1, so if changes in future need to revisit logic
+  void _removeLocalForecastMarker() {
+    if (_latLngMarker != null) {
+      _latLngMarker = null;
+      _rebuildMarkerArray();
+    }
+    _sendEvent(RedisplayMarkersEvent());
+  }
+
+  void _displayTurnpointOverheadView(Turnpoint turnpoint) async {
+    await Navigator.pushNamed(context, TurnpointView.routeName,
+        arguments: TurnpointOverHeadArgs(turnpoint: turnpoint));
+  }
+
+  _updateMapPositon(MapPosition mapPosition, bool hasGesture) {
+    LatLngBounds? latLngBounds = mapPosition.bounds;
+    print(
+        "New bounds: : sw corner ${latLngBounds?.southWest?.latitude.toString()} "
+        "/  ${latLngBounds?.southWest?.longitude.toString()}");
+    print(
+        "New bounds: : ne corner ${latLngBounds!.northEast?.latitude.toString()} "
+        "/  ${latLngBounds.northEast?.longitude.toString()}");
+  }
+
+  void _placeSoundingMarkers(List<Soundings> soundings) {}
 }

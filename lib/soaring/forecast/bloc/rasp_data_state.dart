@@ -1,11 +1,13 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/taskturnpoint/task_turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/LatLngForecast.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image_set.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/rasp/regions.dart';
 
 import '../forecast_data/LatLngForecast.dart';
 
@@ -140,8 +142,33 @@ class LocalForecastState extends RaspDataState {
   List<Object?> get props => [latLngForecast];
 }
 
-class RemoveLocalForecastState extends RaspDataState {
-  RemoveLocalForecastState();
+class RedisplayMarkersState extends RaspDataState {
+  RedisplayMarkersState();
   @override
   List<Object?> get props => [];
+}
+
+class RaspSoundingsState extends RaspDataState {
+  final List<Soundings> soundings;
+  RaspSoundingsState(this.soundings);
+  @override
+  // TODO: implement props
+  List<Object?> get props => [soundings];
+}
+
+class TurnpointsInBoundsState extends RaspDataState {
+  final List<Turnpoint> turnpoints;
+
+  TurnpointsInBoundsState(this.turnpoints);
+
+  @override
+  List<Object?> get props => [turnpoints];
+}
+
+class RaspDisplayOptionsState extends RaspDataState {
+  final List<PreferenceOption> displayOptions;
+  RaspDisplayOptionsState(this.displayOptions);
+  @override
+  // TODO: implement props
+  List<Object?> get props => [displayOptions];
 }

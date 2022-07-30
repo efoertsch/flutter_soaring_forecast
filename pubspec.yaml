@@ -14,7 +14,7 @@ description: A new Flutter application.
 version: 1.0.0+1
 
 environment:
-  sdk: ">=2.12.0 <3.0.0"
+  sdk: ">=2.17.0 <3.0.0"
 
 dependencies:
 
@@ -39,6 +39,7 @@ dependencies:
   path_provider: ^2.0.11      # for access to image cache manager and downloads directory
   permission_handler: ^10.0.0  # for permissions to downloads directory, location
   location: ^4.2.0 # Get location via GPS - also provides permission so overlap with above
+  flutter_svg: ^1.1.1+1   #Used to draw turnpoint icons
 
   flutter_cache_manager: ^3.1.2
   intl: ^0.17.0   # used for date/time formatting
@@ -86,6 +87,8 @@ flutter:
 
   assets:
     - assets/json/
+    - assets/svg/
+    - assets/png/
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

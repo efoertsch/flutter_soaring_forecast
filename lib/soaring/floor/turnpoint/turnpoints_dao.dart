@@ -32,6 +32,7 @@ abstract class TurnpointDao extends BaseDao<Turnpoint> {
   Future<Turnpoint?> getTurnpointById(int id);
 
   // an integer return value from select count(*) is not currently supported
+  // so need to do raw query
   //@Query("Select count(*) from turnpoint")
   //Future<int?> getTurnpointCount();
 
@@ -40,6 +41,6 @@ abstract class TurnpointDao extends BaseDao<Turnpoint> {
 
   @Query(
       "Select * from turnpoint where latitudeDeg between :swLatitudeDeg and :neLatitudeDeg  and longitudeDeg between :swLongitudeDeg and :neLongitudeDeg")
-  Future<List<Turnpoint?>> getTurnpointsInRegion(double swLatitudeDeg,
+  Future<List<Turnpoint>> getTurnpointsWithinBounds(double swLatitudeDeg,
       double swLongitudeDeg, double neLatitudeDeg, double neLongitudeDeg);
 }

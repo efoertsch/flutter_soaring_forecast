@@ -32,6 +32,8 @@ class RaspScreen extends StatefulWidget {
 class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
   late final MapController _mapController;
   final _scaffoldKey = GlobalKey<ScaffoldState>();
+  final _displayOptionsController =
+      StreamController<PreferenceOption>.broadcast();
 
 // TODO internationalize literals
   String _pauseAnimationLabel = "Pause";
@@ -47,6 +49,8 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
 
   Stream<int>? _overlayPositionCounter;
   StreamSubscription<int>? _tickerSubscription;
+
+  late List<PreferenceOption> _raspDisplayOptions;
 
   // Executed only when class created
   @override
@@ -90,6 +94,7 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
               _displayForecastTime(context),
               _getForecastWindow(),
               _widgetForSnackBarMessages(),
+              _widgetToGetRaspDisplayOptions(),
             ]),
           ),
         )
@@ -317,6 +322,15 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
     });
   }
 
+  Widget _widgetToGetRaspDisplayOptions() {
+    return BlocBuilder<RaspDataBloc, RaspDataState>(builder: (context, state) {
+      if (state is RaspDisplayOptionsState) {
+        _raspDisplayOptions = state.displayOptions;
+      }
+      return SizedBox.shrink();
+    });
+  }
+
   void _startStopImageAnimation() {
     //TODO timer and subscription to convoluted. Make simpler
     if (_startImageAnimation) {
@@ -423,14 +437,17 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
   }
 
   Widget _getForecastWindow() {
-    return ForecastMap(stopAnimation: _stopAnimation);
+    return ForecastMap(
+        stopAnimation: _stopAnimation,
+        displayOptionsController: _displayOptionsController);
   }
 
   void _showMapDisplayOptionsDialog() async {
-    List<CheckboxItem> displayOptions = [];
-    displayOptions.add(CheckboxItem(RaspDisplayOptionsMenu.soundings, false));
-    displayOptions.add(CheckboxItem(RaspDisplayOptionsMenu.sua, false));
-    displayOptions.add(CheckboxItem(RaspDisplayOptionsMenu.turnpoints, false));
+    List<CheckboxItem> currentDisplayOptions = [];
+    _raspDisplayOptions.forEach((option) {
+      currentDisplayOptions
+          .add(CheckboxItem(option.displayText, option.selected));
+    });
 
     CommonWidgets.showCheckBoxsInfoDialog(
       context: context,
@@ -439,20 +456,35 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
       button1Text: "Cancel",
       button1Function: _cancel,
       button2Text: "OK",
-      button2Function: (() => Navigator.pop(context, displayOptions)),
-      checkboxItems: displayOptions,
-    ).then((value) => _processDisplayOptions(value));
+      button2Function: (() => Navigator.pop(context, currentDisplayOptions)),
+      checkboxItems: currentDisplayOptions,
+    ).then((newDisplayOptions) => _processDisplayOptions(newDisplayOptions));
   }
 
-  _processDisplayOptions(List<CheckboxItem>? displayOptions) {
-    if (displayOptions != null) {
-      displayOptions.forEach((element) {
-        print(element.checkboxText + " " + element.isChecked.toString());
-      });
-    }
+  _processDisplayOptions(List<CheckboxItem>? newDisplayOptions) {
+    if (newDisplayOptions == null) return;
+
+    newDisplayOptions.forEach((newOption) {
+      final oldOption = _raspDisplayOptions.firstWhere(
+          (oldOption) => oldOption.displayText == newOption.checkboxText);
+      if (newOption.isChecked != oldOption.selected) {
+        // some change in checked status
+        oldOption.selected = newOption.isChecked;
+        _sendEvent(SaveRaspDisplayOptionsEvent(oldOption));
+      }
+      ;
+    });
   }
 
   _cancel() {
     Navigator.pop(context);
+  }
+
+  // Process the change in the preference/display option
+  // Since you are here you know the preference/display option has been toogled
+  void _processSelectedOptionChange(
+      PreferenceOption preferenceOption, bool newValue) {
+    // save change
+    _sendEvent(SaveRaspDisplayOptionsEvent(preferenceOption));
   }
 }
