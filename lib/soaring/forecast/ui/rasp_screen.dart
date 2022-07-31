@@ -31,8 +31,6 @@ class RaspScreen extends StatefulWidget {
 class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
   late final MapController _mapController;
   final _scaffoldKey = GlobalKey<ScaffoldState>();
-  final _displayOptionsController =
-      StreamController<PreferenceOption>.broadcast();
 
 // TODO internationalize literals
   String _pauseAnimationLabel = "Pause";
@@ -435,9 +433,7 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
   }
 
   Widget _getForecastWindow() {
-    return ForecastMap(
-        stopAnimation: _stopAnimation,
-        displayOptionsController: _displayOptionsController);
+    return ForecastMap(stopAnimation: _stopAnimation);
   }
 
   void _showMapDisplayOptionsDialog() async {

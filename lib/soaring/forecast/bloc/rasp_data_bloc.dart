@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:bloc/bloc.dart';
 import 'package:collection/collection.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/taskturnpoint/task_turnpoint.dart';
@@ -16,8 +15,14 @@ import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 
 import 'rasp_bloc.dart';
 
+class DelayEmitState {
+  final Emitter<RaspDataState> emit;
+  final RaspDataState state;
+
+  DelayEmitState(this.emit, this.state);
+}
+
 /// https://medium.com/flutter-community/flutter-bloc-pattern-for-dummies-like-me-c22d40f05a56
-/// Bloc processes Events and outputs State
 class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
   final Repository repository;
   Regions? _regions;
@@ -28,16 +33,12 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
   List<String>? _forecastDates; // array of dates like  2019-12-19
   String? _selectedForecastDate; // selected date  2019-12-19
   List<String>? _forecastTimes;
-  int _selectedForecastTimeIndex = 4; // start at to 1300 forecast
-  int _startingForecastTimeIndex = 4;
+  int _selectedForecastTimeIndex = 4; // start at   1300 forecast
 
   List<Forecast>? _forecasts;
   Forecast? _selectedForecast;
   List<SoaringForecastImageSet> _imageSets = [];
   LatLngBounds? _latLngBounds;
-  AnimationController? _forecastImageAnimationController;
-  Animation<double>? _forecastImageAnimation;
-  bool _runAnimation = true;
 
   RaspDataBloc({required this.repository}) : super(RaspInitialState()) {
     on<InitialRaspRegionEvent>(_processInitialRaspRegionEvent);
@@ -79,6 +80,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
         _emitRaspLatLngBounds(emit);
         _getForecastImages();
         await _emitDisplayOptions(emit);
+        await waitAFrame();
         _emitRaspImageSet(emit);
       }
     } catch (_) {
@@ -168,8 +170,8 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     _updateForecastDates();
   }
 
-  // A new model (e.g. nam) has been selected so get new dates and times
-  // for selected model
+// A new model (e.g. nam) has been selected so get new dates and times
+// for selected model
   void _getDatesForSelectedModel() {
     // first get the set of dates available for the model
     _selectedModelDates = _region!
@@ -180,7 +182,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     _updateForecastDates();
   }
 
-  // Dependent on having _selectedModelDates assigned
+// Dependent on having _selectedModelDates assigned
   void _updateForecastDates() {
     _setForecastDates();
     // stay on same date if new model has forecast for that date
@@ -191,8 +193,8 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     _updateForecastTimesList();
   }
 
-  // A new date has been selected, so get the times for that date
-  // Set the time for the new date the same as the previous date if possible
+// A new date has been selected, so get the times for that date
+// Set the time for the new date the same as the previous date if possible
   void _setForecastTimesForDate() {
     var modelDateDetail = _selectedModelDates!
         .getModelDateDetailList()
@@ -265,22 +267,6 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
 
       _imageSets.add(soaringForecastImageSet);
     }
-    //Start getting images to try to make initial UI animation smoother
-    // Start at first image to be displayed
-    // for (int i = _selectedForecastTimeIndex; i < _imageSets.length; ++i) {
-    //   futures.add(Future<NetworkImage>.value(NetworkImage(
-    //       Constants.RASP_BASE_URL + _imageSets[i].bodyImage!.imageUrl)));
-    //   futures.add(Future<NetworkImage>.value(NetworkImage(
-    //       Constants.RASP_BASE_URL + _imageSets[i].sideImage!.imageUrl)));
-    // }
-    // for (int i = 0; i < _selectedForecastTimeIndex; ++i) {
-    //   futures.add(Future<NetworkImage>.value(NetworkImage(
-    //       Constants.RASP_BASE_URL + _imageSets[i].bodyImage!.imageUrl)));
-    //   futures.add(Future<NetworkImage>.value(NetworkImage(
-    //       Constants.RASP_BASE_URL + _imageSets[i].sideImage!.imageUrl)));
-    // }
-    // //unawaited(Future.wait(futures));
-    // getImagesAheadOfTime(futures);
   }
 
   void getImagesAheadOfTime(List<Future> imageFutures) async {
@@ -432,13 +418,13 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     }
   }
 
-  // Can't get flutter_map to display updated markers without issuing state
+// Can't get flutter_map to display updated markers without issuing state
   void _redisplayMarkers(
       RedisplayMarkersEvent event, Emitter<RaspDataState> emit) {
     emit(RedisplayMarkersState());
   }
 
-  // This should only occur when user requests this particular option to be displayed.
+// This should only occur when user requests this particular option to be displayed.
   FutureOr<void> _processSaveRaspDisplayOptions(
       SaveRaspDisplayOptionsEvent event, Emitter<RaspDataState> emit) async {
     switch (event.displayOption.key) {
@@ -467,19 +453,21 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     repository.saveRaspDisplayOption(event.displayOption);
   }
 
-  // check new bounds and if needed send turnpoints and soundings within those bounds
+// check new bounds and if needed send turnpoints and soundings within those bounds
   FutureOr<void> _processNewLatLongBounds(
       NewLatLngBoundsEvent event, Emitter<RaspDataState> emit) {}
 
-  // initial check for display options (soundings, turnpoints, sua) and send them if needed
+// initial check for display options (soundings, turnpoints, sua) and send them if needed
   FutureOr<void> _emitDisplayOptions(Emitter<RaspDataState> emit) async {
     final preferenceOptions = await repository.getRaspDisplayOptions();
     for (var option in preferenceOptions) {
       switch (option.key) {
         case (soundingsDisplayOption):
           if (option.selected) {
+            await waitAFrame();
             emit(RaspSoundingsState(_region?.soundings ?? <Soundings>[]));
           } else {
+            await waitAFrame();
             emit(RaspSoundingsState(<Soundings>[]));
           }
           print('emitted RaspSoundingsState');
@@ -488,8 +476,10 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
           if (option.selected) {
             final turnpoints =
                 await repository.getTurnpointsWithinBounds(_latLngBounds!);
+            await waitAFrame();
             emit(TurnpointsInBoundsState(turnpoints));
           } else {
+            await waitAFrame();
             emit(TurnpointsInBoundsState(<Turnpoint>[]));
           }
           print('emitted TurnpointsInBoundsState');
@@ -504,5 +494,9 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
           break;
       }
     }
+  }
+
+  Future<void> waitAFrame() async {
+    await Future.delayed(Duration(milliseconds: 17));
   }
 }

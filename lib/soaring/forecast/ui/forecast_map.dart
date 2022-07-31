@@ -23,13 +23,8 @@ import 'package:latlong2/latlong.dart';
 
 class ForecastMap extends StatefulWidget {
   final Function stopAnimation;
-  final StreamController<PreferenceOption> displayOptionsController;
 
-  ForecastMap(
-      {Key? key,
-      required Function this.stopAnimation,
-      required StreamController<PreferenceOption>
-          this.displayOptionsController})
+  ForecastMap({Key? key, required Function this.stopAnimation})
       : super(key: key);
 
   @override
@@ -74,8 +69,6 @@ class _ForecastMapState extends State<ForecastMap>
   void initState() {
     super.initState();
     _mapController = MapController();
-    widget.displayOptionsController.stream
-        .listen((displayOption) => _processDisplayOption(displayOption));
   }
 
   @override
