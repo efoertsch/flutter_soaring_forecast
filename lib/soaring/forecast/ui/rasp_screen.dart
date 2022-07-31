@@ -10,7 +10,6 @@ import 'package:flutter_soaring_forecast/soaring/app/custom_styles.dart';
 import 'package:flutter_soaring_forecast/soaring/app/main.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_data_state.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/rasp_widgets.dart';
-import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image_set.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/ui/display_ticker.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/ui/forecast_map.dart';
 import 'package:flutter_soaring_forecast/soaring/tasks/ui/task_list.dart';
@@ -44,7 +43,6 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
   int _currentImageIndex = 0;
   int _lastImageIndex = 0;
 
-  SoaringForecastImageSet? soaringForecastImageSet;
   DisplayTimer? _displayTimer;
 
   Stream<int>? _overlayPositionCounter;
@@ -103,7 +101,7 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
   }
 
   Widget _getForecastModelsAndDates(BuildContext context) {
-    print('creating/updating main ForecastModelsAndDates');
+    //print('creating/updating main ForecastModelsAndDates');
     return Row(
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
@@ -127,7 +125,7 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
         buildWhen: (previous, current) {
       return current is RaspInitialState || current is RaspForecastModels;
     }, builder: (context, state) {
-      print('creating/updating forecastModelDropDown');
+      //print('creating/updating forecastModelDropDown');
       if (state is RaspForecastModels) {
         return DropdownButton<String>(
           style: CustomStyle.bold18(context),
@@ -159,7 +157,7 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
         buildWhen: (previous, current) {
       return current is RaspInitialState || current is RaspModelDates;
     }, builder: (context, state) {
-      print('creating/updating forecastDatesDropDown');
+      //print('creating/updating forecastDatesDropDown');
       if (state is RaspModelDates) {
         return DropdownButton<String>(
           style: CustomStyle.bold18(context),
@@ -188,7 +186,7 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
         buildWhen: (previous, current) {
       return current is RaspInitialState || current is RaspForecasts;
     }, builder: (context, state) {
-      print('creating/updating ForecastTypes');
+      //print('creating/updating ForecastTypes');
       if (state is RaspForecasts) {
         return DropdownButton<String>(
           style: CustomStyle.bold18(context),
@@ -217,7 +215,7 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
 
 // Display forecast time for model and date
   Widget _displayForecastTime(BuildContext context) {
-    print('creating/updating ForecastTime');
+    //print('creating/updating ForecastTime');
     return Row(
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
@@ -245,7 +243,7 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
                 return current is RaspInitialState ||
                     current is RaspForecastImageSet;
               }, builder: (context, state) {
-                print('creating/updating ForecastTime value');
+                //print('creating/updating ForecastTime value');
                 if (state is RaspForecastImageSet) {
                   var localTime = state.soaringForecastImageSet.localTime;
                   _currentImageIndex = state.displayIndex;
@@ -478,13 +476,5 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
 
   _cancel() {
     Navigator.pop(context);
-  }
-
-  // Process the change in the preference/display option
-  // Since you are here you know the preference/display option has been toogled
-  void _processSelectedOptionChange(
-      PreferenceOption preferenceOption, bool newValue) {
-    // save change
-    _sendEvent(SaveRaspDisplayOptionsEvent(preferenceOption));
   }
 }

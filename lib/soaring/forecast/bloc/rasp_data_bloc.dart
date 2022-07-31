@@ -78,8 +78,8 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
         _emitRaspModelDates(emit);
         _emitRaspLatLngBounds(emit);
         _getForecastImages();
+        await _emitDisplayOptions(emit);
         _emitRaspImageSet(emit);
-        _checkDisplayOptions(emit);
       }
     } catch (_) {
       emit(RaspDataLoadErrorState("Error getting regions."));
@@ -245,7 +245,6 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
 
     _imageSets.clear();
     var soaringForecastImages = [];
-    var futures = <Future>[];
     for (var time in _forecastTimes!) {
       // Get forecast overlay
       imageUrl = _createImageUrl(_region!.name!, _selectedForecastDate!,
@@ -473,25 +472,37 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
       NewLatLngBoundsEvent event, Emitter<RaspDataState> emit) {}
 
   // initial check for display options (soundings, turnpoints, sua) and send them if needed
-  void _checkDisplayOptions(Emitter<RaspDataState> emit) async {
-    raspDisplayOptions.forEach((displayOption) async {
-      final preferenceOptions = await repository.getRaspDisplayOptions();
-      preferenceOptions.forEach((option) async {
-        switch (option.key) {
-          case (soundingsDisplayOption):
-            if (option.selected) {
-              emit(RaspSoundingsState(_region?.soundings ?? <Soundings>[]));
-            }
-            break;
-          case (turnpointsDisplayOption):
-            if (option.selected) {
-              final turnpoints = <Turnpoint>[];
-              turnpoints.addAll(
-                  await repository.getTurnpointsWithinBounds(_latLngBounds!));
-              emit(TurnpointsInBoundsState(turnpoints));
-            }
-        }
-      });
-    });
+  FutureOr<void> _emitDisplayOptions(Emitter<RaspDataState> emit) async {
+    final preferenceOptions = await repository.getRaspDisplayOptions();
+    for (var option in preferenceOptions) {
+      switch (option.key) {
+        case (soundingsDisplayOption):
+          if (option.selected) {
+            emit(RaspSoundingsState(_region?.soundings ?? <Soundings>[]));
+          } else {
+            emit(RaspSoundingsState(<Soundings>[]));
+          }
+          print('emitted RaspSoundingsState');
+          break;
+        case (turnpointsDisplayOption):
+          if (option.selected) {
+            final turnpoints =
+                await repository.getTurnpointsWithinBounds(_latLngBounds!);
+            emit(TurnpointsInBoundsState(turnpoints));
+          } else {
+            emit(TurnpointsInBoundsState(<Turnpoint>[]));
+          }
+          print('emitted TurnpointsInBoundsState');
+          break;
+        case (suaDisplayOption):
+          print('Need to implements sua state');
+          if (option.selected) {
+            // get sua and emit
+          } else {
+            // send empty sua files
+          }
+          break;
+      }
+    }
   }
 }

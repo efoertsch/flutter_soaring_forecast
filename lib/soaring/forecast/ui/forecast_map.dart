@@ -16,6 +16,7 @@ import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_data_state.d
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/LatLngForecast.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image_set.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/regions.dart';
+import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoint_utils.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_overhead_view.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:latlong2/latlong.dart';
@@ -87,6 +88,7 @@ class _ForecastMapState extends State<ForecastMap>
 
   @override
   void afterFirstLayout(BuildContext context) {
+    print("First layout complete");
     _firstLayoutComplete = true;
     // print("First layout complete.");
     // print('Calling series of APIs');
@@ -111,7 +113,6 @@ class _ForecastMapState extends State<ForecastMap>
 
   @override
   Widget build(BuildContext context) {
-    print('creating/updating forecastWindow window');
     return Expanded(
       child: Stack(children: [
         Container(
@@ -138,8 +139,8 @@ class _ForecastMapState extends State<ForecastMap>
         buildWhen: (previous, current) {
       return current is RaspInitialState || current is RaspForecastImageSet;
     }, builder: (context, state) {
-      print('creating/updating forecastLegend');
       if (state is RaspForecastImageSet) {
+        print('Processing RaspForecastImageSet for forecastLegend');
         return Image(
           image: NetworkImage(Constants.RASP_BASE_URL +
               state.soaringForecastImageSet.sideImage!.imageUrl),
@@ -153,16 +154,17 @@ class _ForecastMapState extends State<ForecastMap>
   Widget forecastMap() {
     return BlocBuilder<RaspDataBloc, RaspDataState>(
         buildWhen: (previous, current) {
+      //print("forecast state is:" + current.toString());
       return current is RaspInitialState ||
           current is RaspForecastImageSet ||
           current is RaspTaskTurnpoints ||
           current is LocalForecastState ||
-          // current is RemoveLocalForecastState ||
           current is RaspSoundingsState ||
-          current is TurnpointsInBoundsState;
+          current is TurnpointsInBoundsState ||
+          current is RedisplayMarkersState;
     }, builder: (context, state) {
-      print('creating/updating ForecastImages');
       if (state is RaspForecastImageSet) {
+        print('Received RaspForecastImageSet in ForecastMap');
         soaringForecastImageSet = state.soaringForecastImageSet;
         updateForecastOverlay();
       }
@@ -179,9 +181,9 @@ class _ForecastMapState extends State<ForecastMap>
         _updateTurnpointMarkers(state.turnpoints);
       }
 
-      // if (state is DisplayTurnpointsState) {
-      //
-      // }
+      if (state is RedisplayMarkersState) {
+        // work already done
+      }
 
       return FlutterMap(
           mapController: _mapController,
@@ -235,7 +237,7 @@ class _ForecastMapState extends State<ForecastMap>
     if (taskTurnpoints.length == 0) return;
     List<LatLng> points = <LatLng>[];
     for (var taskTurnpoint in taskTurnpoints) {
-      print('adding taskturnpoint: ${taskTurnpoint.title}');
+      // print('adding taskturnpoint: ${taskTurnpoint.title}');
       var turnpointLatLng =
           LatLng(taskTurnpoint.latitudeDeg, taskTurnpoint.longitudeDeg);
       points.add(turnpointLatLng);
@@ -298,7 +300,7 @@ class _ForecastMapState extends State<ForecastMap>
     _turnpointMarkers.clear();
     List<LatLng> points = <LatLng>[];
     for (var turnpoint in turnpoints) {
-      print('adding turnpoint: ${turnpoint.title}');
+      // print('adding turnpoint: ${turnpoint.title}');
       var turnpointLatLng =
           LatLng(turnpoint.latitudeDeg, turnpoint.longitudeDeg);
       points.add(turnpointLatLng);
@@ -316,24 +318,26 @@ class _ForecastMapState extends State<ForecastMap>
     return InkWell(
       onTap: () {
         // display sounding and allow stepping through time
-        print("Implement soundngs logic");
+        print("Implement soundings logic");
       },
-      child: Container(
-          color: Colors.white,
-          width: 30,
-          height: 30,
-          child: Stack(
-            children: [
-              Positioned.fill(child: Image.asset('assets/svg/skew_t.png')),
-              Positioned.fill(
-                child: Text(
-                    turnpoint.title.length > 4
-                        ? turnpoint.title.substring(0, 4)
-                        : turnpoint.title,
-                    textAlign: TextAlign.center),
-              ),
-            ],
-          )),
+      child: ClipOval(
+        child: Container(
+            color: Colors.white,
+            width: 20,
+            height: 20,
+            child: Stack(
+              children: [
+                Positioned.fill(child: Image.asset('assets/svg/skew_t.png')),
+                Positioned.fill(
+                  child: Text(
+                      turnpoint.title.length > 4
+                          ? turnpoint.title.substring(0, 4)
+                          : turnpoint.title,
+                      textAlign: TextAlign.center),
+                ),
+              ],
+            )),
+      ),
     );
   }
 
@@ -342,25 +346,29 @@ class _ForecastMapState extends State<ForecastMap>
       onTap: () {
         _displayTurnpointOverheadView(turnpoint);
       },
-      child: Container(
-          width: 30,
-          height: 30,
-          color: Colors.transparent,
-          child: Stack(
-            children: [
-              Positioned.fill(
-                  child:
-                      SvgPicture.asset('assets/svg/ic_turnpoint_red_48dp.svg')),
-              Positioned.fill(
-                child: Text(
-                    style: textStyleWhiteFontSize12,
+      child: ClipOval(
+        child: Container(
+            width: 24,
+            height: 24,
+            color: Colors.transparent,
+            child: Stack(
+              alignment: AlignmentDirectional.center,
+              children: [
+                SvgPicture.asset(
+                  'assets/svg/ic_turnpoint_white_48dp.svg',
+                  fit: BoxFit.scaleDown,
+                  color:
+                      TurnpointUtils.getColorForTurnpointIcon(turnpoint.style),
+                ),
+                Text(
+                    style: textStyleBlackFontSize12,
                     turnpoint.title.length > 4
                         ? turnpoint.title.substring(0, 4)
                         : turnpoint.title,
                     textAlign: TextAlign.center),
-              ),
-            ],
-          )),
+              ],
+            )),
+      ),
     );
   }
 
@@ -398,7 +406,7 @@ class _ForecastMapState extends State<ForecastMap>
   }
 
   void updateForecastOverlay() {
-    print('Posting imageSet soaringForecastImageSet');
+    print('Using RaspForecastImageSet imageset to display map overlay');
     if (_firstLayoutComplete) {
       displayForecastNoAnimation();
     }

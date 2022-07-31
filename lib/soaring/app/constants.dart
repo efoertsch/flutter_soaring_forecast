@@ -136,6 +136,10 @@ class TurnpointEditText {
   static String close = "Close";
 }
 
+// Turnpoint icon colors for type of runway
+const Color grassRunway = Color(0xFF3CB043);
+const Color asphaltRunway = Colors.black;
+const Color noRunway = Color(0xFFEE4926);
 //---------------------------------------------------------------------------
 const textStyleBoldBlackFontSize20 =
     TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 20);
@@ -168,3 +172,4 @@ const textStyleBlack87FontSize14 =
     TextStyle(color: Colors.black87, fontSize: 14);
 
 const textStyleWhiteFontSize12 = TextStyle(color: Colors.white, fontSize: 12);
+const textStyleBlackFontSize12 = TextStyle(color: Colors.black, fontSize: 12);

@@ -4,6 +4,7 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     as Constants;
+import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/cup/cup_styles.dart';
 import 'package:intl/intl.dart';
@@ -351,12 +352,12 @@ class TurnpointUtils {
 
   static Color getColorForTurnpointIcon(String style) {
     if (isGrassOrGliderAirport(style)) {
-      return Colors.green;
+      return grassRunway;
     }
     if (isHardSurfaceAirport(style)) {
-      return Colors.black;
+      return asphaltRunway;
     } else {
-      return Colors.red;
+      return noRunway;
     }
   }
 
