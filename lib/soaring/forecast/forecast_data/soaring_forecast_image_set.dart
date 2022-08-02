@@ -1,6 +1,7 @@
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image.dart';
 
 /// Hold the set of forecast images for the forecast time period
+/// Or hold the soundings for the forecast time period
 class SoaringForecastImageSet {
   String localTime;
   SoaringForecastImage? bodyImage;

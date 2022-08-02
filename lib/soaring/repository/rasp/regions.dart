@@ -66,6 +66,7 @@ class Region {
   List<Soundings>? _soundings;
   List<String>? _dates;
   String? _name;
+  bool _soundingPositionSet = false;
 
   Region(
       {List<String>? printDates,
@@ -82,7 +83,17 @@ class Region {
 
   set printDates(List<String>? printDates) => _printDates = printDates;
 
-  List<Soundings>? get soundings => _soundings;
+  List<Soundings>? get soundings {
+    if (!_soundingPositionSet) {
+      if (_soundings != null && _soundings!.length > 0) {
+        for (int i = 0; i < _soundings!.length; ++i) {
+          _soundings![i].position = i + 1;
+        }
+      }
+      _soundingPositionSet = true;
+    }
+    return _soundings;
+  }
 
   set soundings(List<Soundings>? soundings) => _soundings = soundings;
 
@@ -166,6 +177,7 @@ class Soundings {
   String? _location;
   String? _longitude;
   String? _latitude;
+  int? position;
 
   Soundings({String? location, String? longitude, String? latitude}) {
     this._location = location;

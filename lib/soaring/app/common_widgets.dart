@@ -144,4 +144,63 @@ class CommonWidgets {
   static SnackBar getSnackBarForMessage(String msg) {
     return SnackBar(content: Text(msg));
   }
+
+  static Future<List<CheckboxItem>?> showCheckBoxsInfoDialog(
+      {required final BuildContext context,
+      required final String title,
+      required final String msg,
+      required final String button1Text,
+      required final Function button1Function,
+      final String? button2Text,
+      final Function? button2Function,
+      required final List<CheckboxItem> checkboxItems}) async {
+    return showDialog<List<CheckboxItem>?>(
+      context: context,
+      barrierDismissible: false, // user must tap button!
+      builder: (BuildContext context) {
+        return StatefulBuilder(builder: (context, setState) {
+          return AlertDialog(
+            title: Text(title),
+            content: Container(
+              width: double.minPositive,
+              child: getCheckboxListTiles(context, checkboxItems, setState),
+            ),
+            actions: composeDialogButtons(
+                button1Text: button1Text,
+                button1Function: button1Function,
+                button2Text: button2Text,
+                button2Function: button2Function),
+          );
+        });
+      },
+    );
+  }
+
+  static Widget getCheckboxListTiles(BuildContext context,
+      List<CheckboxItem> checkboxItems, StateSetter setState) {
+    return ListView.separated(
+        shrinkWrap: true,
+        itemCount: checkboxItems.length,
+        itemBuilder: (BuildContext context, int index) {
+          return CheckboxListTile(
+            title: Text(checkboxItems[index].checkboxText),
+            value: checkboxItems[index].isChecked,
+            onChanged: (bool? value) {
+              setState(() {
+                checkboxItems[index].isChecked = value!;
+              });
+            },
+          );
+        },
+        separatorBuilder: (context, index) {
+          return Divider();
+        });
+  }
+}
+
+class CheckboxItem {
+  final String checkboxText;
+  bool isChecked;
+
+  CheckboxItem(this.checkboxText, this.isChecked);
 }

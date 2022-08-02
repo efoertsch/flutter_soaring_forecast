@@ -1,4 +1,6 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/taskturnpoint/task_turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/regions.dart';
@@ -94,8 +96,46 @@ class DisplayLocalForecastEvent extends RaspDataEvent {
   List<Object?> get props => [latLng];
 }
 
-class RemoveLocalForecastEvent extends RaspDataEvent {
-  RemoveLocalForecastEvent();
+class RedisplayMarkersEvent extends RaspDataEvent {
+  RedisplayMarkersEvent();
+  @override
+  List<Object?> get props => [];
+}
+
+class SaveRaspDisplayOptionsEvent extends RaspDataEvent {
+  final PreferenceOption displayOption;
+  SaveRaspDisplayOptionsEvent(this.displayOption);
+  @override
+  List<Object?> get props => [displayOption];
+}
+
+class NewLatLngBoundsEvent extends RaspDataEvent {
+  final LatLngBounds latLngBounds;
+  NewLatLngBoundsEvent(LatLngBounds this.latLngBounds);
+  @override
+  List<Object?> get props => [latLngBounds];
+}
+
+class DisplayTurnointsEvent extends RaspDataEvent {
+  final LatLngBounds latLngBounds;
+
+  DisplayTurnointsEvent(this.latLngBounds);
+
+  @override
+  List<Object?> get props => [latLngBounds];
+}
+
+class DisplaySoundingsEvent extends RaspDataEvent {
+  final Soundings sounding;
+
+  DisplaySoundingsEvent(this.sounding);
+  @override
+  List<Object?> get props => [sounding];
+}
+
+// Used when closing soundings display and go back to displaying forecast images
+class DisplayCurrentForecastEvent extends RaspDataEvent {
+  DisplayCurrentForecastEvent();
   @override
   List<Object?> get props => [];
 }

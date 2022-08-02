@@ -3,12 +3,13 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
-import 'package:dio_logging_interceptor/dio_logging_interceptor.dart';
 import 'package:floor/floor.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_map/src/geo/latlng_bounds.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     as Constants;
+import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/airport/airport.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/app_database.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/task/task.dart';
@@ -50,12 +51,12 @@ class Repository {
       // _dio.interceptors.add(LogInterceptor(responseBody: true));
       _dio.options.receiveTimeout = 300000;
       _dio.options.followRedirects = true;
-      _dio.interceptors.add(
-        DioLoggingInterceptor(
-          level: Level.body,
-          compact: false,
-        ),
-      );
+      // _dio.interceptors.add(
+      //   DioLoggingInterceptor(
+      //     level: Level.body,
+      //     compact: false,
+      //   ),
+      // );
       _raspClient = RaspClient(_dio);
       _raspOptionsClient = RaspOptionsClient(_dio);
     }
@@ -223,6 +224,16 @@ class Repository {
     return _appDatabase!.turnpointDao.listAllTurnpoints();
   }
 
+  Future<List<Turnpoint>> getTurnpointsWithinBounds(
+      LatLngBounds latLngBounds) async {
+    await makeDatabaseAvailable();
+    return _appDatabase!.turnpointDao.getTurnpointsWithinBounds(
+        latLngBounds.southWest!.latitude,
+        latLngBounds.southWest!.longitude,
+        latLngBounds.northEast!.latitude,
+        latLngBounds.northEast!.longitude);
+  }
+
   Future<List<Turnpoint>> findTurnpoints(String query) async {
     await makeDatabaseAvailable();
     return _appDatabase!.turnpointDao.findTurnpoints('%' + query + '%');
@@ -268,8 +279,8 @@ class Repository {
     if (turnpointRegions != null) {
       turnpointRegionList.addAll(turnpointRegions.turnpointRegions!);
     }
-    String selectedRegion =
-        await getGenericString("SOARING_FORECAST_REGION", "NewEngland");
+    String selectedRegion = await getGenericString(
+        key: "SOARING_FORECAST_REGION", defaultValue: "NewEngland");
     return turnpointRegionList
         .firstWhere((region) => region.region == selectedRegion)
         .turnpointFiles;
@@ -388,12 +399,12 @@ class Repository {
 
   // -1 is no task defined
   Future<int> getCurrentTaskId() async {
-    return getGenericInt("CURRENT_TASK_ID", -1);
+    return getGenericInt(key: "CURRENT_TASK_ID", defaultValue: -1);
   }
 
   // Set to -1 to clear task
   void setCurrentTaskId(int taskId) async {
-    saveGenericInt("CURRENT_TASK_ID", taskId);
+    saveGenericInt(key: "CURRENT_TASK_ID", value: taskId);
   }
 
   // ----- Task Turnpoints----------------------------------------
@@ -418,6 +429,30 @@ class Repository {
     return _appDatabase!.taskTurnpointDao.deleteTaskTurnpoint(taskTurnpointId);
   }
 
+  //-------- Map Display Options ----------------------------------------
+  Future<List<PreferenceOption>> getRaspDisplayOptions() async {
+    List<PreferenceOption> displayOptions = [];
+    raspDisplayOptions.forEach((option) async {
+      displayOptions.add(PreferenceOption(
+          key: option.key,
+          displayText: option.displayText,
+          selected:
+              (await getGenericBool(key: option.key, defaultValue: false))));
+    });
+    return displayOptions;
+  }
+
+  FutureOr<void> saveRaspDisplayOptions(
+      List<PreferenceOption> displayOptions) async {
+    raspDisplayOptions.forEach((option) async {
+      saveRaspDisplayOption(option);
+    });
+  }
+
+  FutureOr<void> saveRaspDisplayOption(PreferenceOption option) async {
+    await saveGenericBool(key: option.key, value: option.selected);
+  }
+
   // ---- USGS calls --------------------------------------------------
   Future<NationalMap> getElevationAtLatLongPoint(
       double latitude, double longitude) {
@@ -431,23 +466,38 @@ class Repository {
   // ----- Shared preferences --------------------------
   // Make sure keys are unique among calling routines!
 
-  Future<bool> saveGenericString(String key, String value) async {
+  Future<bool> saveGenericString(
+      {required String key, required String value}) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.setString(key, value);
   }
 
-  Future<String> getGenericString(String key, String defaultValue) async {
+  Future<String> getGenericString(
+      {required String key, required String defaultValue}) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.getString(key) ?? defaultValue;
   }
 
-  Future<bool> saveGenericInt(String key, int value) async {
+  Future<bool> saveGenericInt({required String key, required int value}) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.setInt(key, value);
   }
 
-  Future<int> getGenericInt(String key, int defaultValue) async {
+  Future<int> getGenericInt(
+      {required String key, required int defaultValue}) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.getInt(key) ?? defaultValue;
+  }
+
+  Future<bool> saveGenericBool(
+      {required String key, required bool value}) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.setBool(key, value);
+  }
+
+  Future<bool> getGenericBool(
+      {required String key, required bool defaultValue}) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(key) ?? defaultValue;
   }
 }
