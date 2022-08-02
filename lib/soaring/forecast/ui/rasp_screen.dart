@@ -239,13 +239,23 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
               child: BlocBuilder<RaspDataBloc, RaspDataState>(
                   buildWhen: (previous, current) {
                 return current is RaspInitialState ||
-                    current is RaspForecastImageSet;
+                    current is RaspForecastImageSet ||
+                    current is SoundingForecastImageSet;
               }, builder: (context, state) {
+                var localTime;
                 //print('creating/updating ForecastTime value');
-                if (state is RaspForecastImageSet) {
-                  var localTime = state.soaringForecastImageSet.localTime;
-                  _currentImageIndex = state.displayIndex;
-                  _lastImageIndex = state.numberImages - 1;
+                if (state is RaspForecastImageSet ||
+                    state is SoundingForecastImageSet) {
+                  if (state is RaspForecastImageSet) {
+                    localTime = state.soaringForecastImageSet.localTime;
+                    _currentImageIndex = state.displayIndex;
+                    _lastImageIndex = state.numberImages - 1;
+                  }
+                  if (state is SoundingForecastImageSet) {
+                    localTime = state.soaringForecastImageSet.localTime;
+                    _currentImageIndex = state.displayIndex;
+                    _lastImageIndex = state.numberImages - 1;
+                  }
                   localTime = localTime.startsWith("old ")
                       ? localTime.substring(4)
                       : localTime;

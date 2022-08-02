@@ -111,14 +111,6 @@ class RaspForecastImageSet extends RaspDataState {
       [soaringForecastImageSet, displayIndex, numberImages];
 }
 
-class RaspForecastImageDisplay extends RaspDataState {
-  final SoaringForecastImageSet soaringForecastImageSet;
-  RaspForecastImageDisplay(this.soaringForecastImageSet);
-
-  @override
-  List<Object?> get props => [soaringForecastImageSet];
-}
-
 class RaspTaskTurnpoints extends RaspDataState {
   final List<TaskTurnpoint> taskTurnpoints;
   RaspTaskTurnpoints(this.taskTurnpoints);
@@ -154,6 +146,18 @@ class RaspSoundingsState extends RaspDataState {
   @override
   // TODO: implement props
   List<Object?> get props => [soundings];
+}
+
+class SoundingForecastImageSet extends RaspDataState {
+  final SoaringForecastImageSet soaringForecastImageSet;
+  final int displayIndex;
+  final int numberImages;
+  SoundingForecastImageSet(
+      this.soaringForecastImageSet, this.displayIndex, this.numberImages);
+
+  @override
+  List<Object?> get props =>
+      [soaringForecastImageSet, displayIndex, numberImages];
 }
 
 class TurnpointsInBoundsState extends RaspDataState {

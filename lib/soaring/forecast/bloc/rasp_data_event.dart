@@ -106,7 +106,6 @@ class SaveRaspDisplayOptionsEvent extends RaspDataEvent {
   final PreferenceOption displayOption;
   SaveRaspDisplayOptionsEvent(this.displayOption);
   @override
-  // TODO: implement props
   List<Object?> get props => [displayOption];
 }
 
@@ -114,7 +113,6 @@ class NewLatLngBoundsEvent extends RaspDataEvent {
   final LatLngBounds latLngBounds;
   NewLatLngBoundsEvent(LatLngBounds this.latLngBounds);
   @override
-  // TODO: implement props
   List<Object?> get props => [latLngBounds];
 }
 
@@ -124,6 +122,20 @@ class DisplayTurnointsEvent extends RaspDataEvent {
   DisplayTurnointsEvent(this.latLngBounds);
 
   @override
-  // TODO: implement props
   List<Object?> get props => [latLngBounds];
+}
+
+class DisplaySoundingsEvent extends RaspDataEvent {
+  final Soundings sounding;
+
+  DisplaySoundingsEvent(this.sounding);
+  @override
+  List<Object?> get props => [sounding];
+}
+
+// Used when closing soundings display and go back to displaying forecast images
+class DisplayCurrentForecastEvent extends RaspDataEvent {
+  DisplayCurrentForecastEvent();
+  @override
+  List<Object?> get props => [];
 }

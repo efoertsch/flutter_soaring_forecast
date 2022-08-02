@@ -61,9 +61,7 @@ class _ForecastMapState extends State<ForecastMap>
   double neLat = 0;
   double neLong = 0;
 
-  bool _displaySoundings = false;
-  bool _displaySua = false;
-  bool _displayTurnpoints = false;
+  bool _soundingsVisibility = false;
 
   @override
   void initState() {
@@ -108,26 +106,33 @@ class _ForecastMapState extends State<ForecastMap>
   Widget build(BuildContext context) {
     return Expanded(
       child: Stack(children: [
-        Container(
-          alignment: Alignment.center,
-          child: forecastMap(),
-        ),
-        Container(
-          alignment: Alignment.centerRight,
-          child: FractionallySizedBox(
-            widthFactor: .15,
-            child: InteractiveViewer(
-              child: forecastLegend(),
-              panEnabled: true,
-              maxScale: 4.0,
-            ),
-          ),
-        ),
+        _getMapAndLegendWidget(),
+        _getSoundingDisplayWidget(),
       ]),
     );
   }
 
-  Widget forecastLegend() {
+  Stack _getMapAndLegendWidget() {
+    return Stack(children: [
+      Container(
+        alignment: Alignment.center,
+        child: _forecastMap(),
+      ),
+      Container(
+        alignment: Alignment.centerRight,
+        child: FractionallySizedBox(
+          widthFactor: .15,
+          child: InteractiveViewer(
+            child: _forecastLegend(),
+            panEnabled: true,
+            maxScale: 4.0,
+          ),
+        ),
+      ),
+    ]);
+  }
+
+  Widget _forecastLegend() {
     return BlocBuilder<RaspDataBloc, RaspDataState>(
         buildWhen: (previous, current) {
       return current is RaspInitialState || current is RaspForecastImageSet;
@@ -144,7 +149,7 @@ class _ForecastMapState extends State<ForecastMap>
     });
   }
 
-  Widget forecastMap() {
+  Widget _forecastMap() {
     return BlocBuilder<RaspDataBloc, RaspDataState>(
         buildWhen: (previous, current) {
       //print("forecast state is:" + current.toString());
@@ -168,9 +173,11 @@ class _ForecastMapState extends State<ForecastMap>
         _placeLocalForecastMarker(state.latLngForecast);
       }
       if (state is RaspSoundingsState) {
+        print('Received Soundings in ForecastMap');
         _placeSoundingMarkers(state.soundings);
       }
       if (state is TurnpointsInBoundsState) {
+        print('Received TurnpointsInBoundsState in ForecastMap');
         _updateTurnpointMarkers(state.turnpoints);
       }
 
@@ -213,15 +220,45 @@ class _ForecastMapState extends State<ForecastMap>
     });
   }
 
-  void _placeLocalForecastMarker(LatLngForecast latLngForecast) {
-    _latLngMarker = Marker(
-      width: 160.0,
-      height: 160.0,
-      point: latLngForecast.latLng,
-      builder: (context) => _getLatLngForecastMarker(latLngForecast),
-      anchorPos: AnchorPos.align(AnchorAlign.top),
-    );
-    _mapMarkers.add(_latLngMarker!);
+  Widget _getSoundingDisplayWidget() {
+    return BlocBuilder<RaspDataBloc, RaspDataState>(
+        buildWhen: (previous, current) {
+      return current is RaspInitialState || current is SoundingForecastImageSet;
+    }, builder: (context, state) {
+      if (state is SoundingForecastImageSet) {
+        final imageUrl = state.soaringForecastImageSet.bodyImage!.imageUrl;
+        return Visibility(
+          visible: _soundingsVisibility,
+          child: Stack(
+            children: [
+              Align(
+                alignment: Alignment.center,
+                child: InteractiveViewer(
+                  panEnabled: true,
+                  maxScale: 4.0,
+                  child: Image(
+                    image: NetworkImage(Constants.RASP_BASE_URL + imageUrl),
+                    gaplessPlayback: true,
+                  ),
+                ),
+              ),
+              Align(
+                  alignment: Alignment.topRight,
+                  child: IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () {
+                        setState(() {
+                          _soundingsVisibility = false;
+                          _sendEvent(DisplayCurrentForecastEvent());
+                        });
+                      }))
+            ],
+          ),
+        );
+      }
+      ;
+      return SizedBox.shrink();
+    });
   }
 
   void _updateTaskTurnpoints(List<TaskTurnpoint> taskTurnpoints) {
@@ -288,15 +325,14 @@ class _ForecastMapState extends State<ForecastMap>
     );
   }
 
-  void _updateTurnpointMarkers(List<Turnpoint> turnpoints) {
+  void _updateTurnpointMarkers(final List<Turnpoint> turnpoints) {
     print('number of turnpoints ${turnpoints.length.toString()} ');
     _turnpointMarkers.clear();
-    List<LatLng> points = <LatLng>[];
     for (var turnpoint in turnpoints) {
       // print('adding turnpoint: ${turnpoint.title}');
       var turnpointLatLng =
           LatLng(turnpoint.latitudeDeg, turnpoint.longitudeDeg);
-      points.add(turnpointLatLng);
+
       _taskMarkers.add(Marker(
           width: 80.0,
           height: 40.0,
@@ -307,34 +343,7 @@ class _ForecastMapState extends State<ForecastMap>
     _rebuildMarkerArray();
   }
 
-  Widget _getSoundingMarker(Turnpoint turnpoint) {
-    return InkWell(
-      onTap: () {
-        // display sounding and allow stepping through time
-        print("Implement soundings logic");
-      },
-      child: ClipOval(
-        child: Container(
-            color: Colors.white,
-            width: 20,
-            height: 20,
-            child: Stack(
-              children: [
-                Positioned.fill(child: Image.asset('assets/svg/skew_t.png')),
-                Positioned.fill(
-                  child: Text(
-                      turnpoint.title.length > 4
-                          ? turnpoint.title.substring(0, 4)
-                          : turnpoint.title,
-                      textAlign: TextAlign.center),
-                ),
-              ],
-            )),
-      ),
-    );
-  }
-
-  Widget _getTurnpointMarker(Turnpoint turnpoint) {
+  Widget _getTurnpointMarker(final Turnpoint turnpoint) {
     return InkWell(
       onTap: () {
         _displayTurnpointOverheadView(turnpoint);
@@ -363,6 +372,89 @@ class _ForecastMapState extends State<ForecastMap>
             )),
       ),
     );
+  }
+
+  void _placeSoundingMarkers(final List<Soundings> soundings) {
+    print('number of soundings ${soundings.length.toString()} ');
+    _soundingMarkers.clear();
+    for (var sounding in soundings) {
+      var soundingLatLng = LatLng(
+          double.parse(sounding.latitude!), double.parse(sounding.longitude!));
+      _soundingMarkers.add(Marker(
+          height: 40.0,
+          width: 70.0,
+          point: soundingLatLng,
+          builder: (context) => _getSoundingMarker(sounding),
+          anchorPos: AnchorPos.align(AnchorAlign.top)));
+    }
+    _rebuildMarkerArray();
+  }
+
+  Widget _getSoundingMarker(Soundings sounding) {
+    // print('Sounding location: ${sounding.location}');
+    return InkWell(
+      onTap: () {
+        _displaySoundingsView(sounding);
+      },
+      child: Container(
+          color: Colors.transparent,
+          //margin: new EdgeInsets.all(4.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              SizedBox(
+                height: 30,
+                width: 70,
+                child: Container(
+                  color: Colors.white,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      Expanded(
+                          flex: 4, child: Image.asset('assets/png/skew_t.png')),
+                      Expanded(
+                        flex: 6,
+                        child: Text(
+                            style: textStyleBlackFontSize12,
+                            sounding.location!.length > 5
+                                ? sounding.location!.substring(0, 5)
+                                : sounding.location!,
+                            textAlign: TextAlign.left),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Container(
+                height: 10,
+                width: 10,
+                child: SvgPicture.asset(
+                  'assets/svg/ic_downward_triangle.svg',
+                  fit: BoxFit.scaleDown,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          )),
+    );
+  }
+
+  void _displaySoundingsView(Soundings sounding) {
+    _sendEvent(DisplaySoundingsEvent(sounding));
+    setState(() {
+      _soundingsVisibility = true;
+    });
+  }
+
+  void _placeLocalForecastMarker(LatLngForecast latLngForecast) {
+    _latLngMarker = Marker(
+      width: 160.0,
+      height: 160.0,
+      point: latLngForecast.latLng,
+      builder: (context) => _getLatLngForecastMarker(latLngForecast),
+      anchorPos: AnchorPos.align(AnchorAlign.top),
+    );
+    _mapMarkers.add(_latLngMarker!);
   }
 
   Widget _getLatLngForecastMarker(LatLngForecast latLngForecast) {
@@ -468,25 +560,6 @@ class _ForecastMapState extends State<ForecastMap>
     }
   }
 
-  // this is only used to *remove* particular types of markers
-  // states will be processed to *add* markers to map
-  _processDisplayOption(PreferenceOption displayOption) {
-    switch (displayOption.key) {
-      case RaspDisplayOptionsMenu.soundings:
-        _soundingMarkers.clear();
-        _rebuildMarkerArray();
-        break;
-      case RaspDisplayOptionsMenu.sua:
-        _suaPolyLines.clear();
-        break;
-      case RaspDisplayOptionsMenu.turnpoints:
-        _turnpointMarkers.clear();
-        _rebuildMarkerArray();
-        break;
-    }
-    setState(() {});
-  }
-
   // Currently only display max of 1, so if changes in future need to revisit logic
   void _removeLocalForecastMarker() {
     if (_latLngMarker != null) {
@@ -510,6 +583,4 @@ class _ForecastMapState extends State<ForecastMap>
         "New bounds: : ne corner ${latLngBounds!.northEast?.latitude.toString()} "
         "/  ${latLngBounds.northEast?.longitude.toString()}");
   }
-
-  void _placeSoundingMarkers(List<Soundings> soundings) {}
 }
