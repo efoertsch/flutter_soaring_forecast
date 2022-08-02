@@ -229,30 +229,33 @@ class _ForecastMapState extends State<ForecastMap>
         final imageUrl = state.soaringForecastImageSet.bodyImage!.imageUrl;
         return Visibility(
           visible: _soundingsVisibility,
-          child: Stack(
-            children: [
-              Align(
-                alignment: Alignment.center,
-                child: InteractiveViewer(
-                  panEnabled: true,
-                  maxScale: 4.0,
-                  child: Image(
-                    image: NetworkImage(Constants.RASP_BASE_URL + imageUrl),
-                    gaplessPlayback: true,
+          child: Container(
+            color: Colors.white,
+            child: Stack(
+              children: [
+                Align(
+                  alignment: Alignment.center,
+                  child: InteractiveViewer(
+                    panEnabled: true,
+                    maxScale: 4.0,
+                    child: Image(
+                      image: NetworkImage(Constants.RASP_BASE_URL + imageUrl),
+                      gaplessPlayback: true,
+                    ),
                   ),
                 ),
-              ),
-              Align(
-                  alignment: Alignment.topRight,
-                  child: IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () {
-                        setState(() {
-                          _soundingsVisibility = false;
-                          _sendEvent(DisplayCurrentForecastEvent());
-                        });
-                      }))
-            ],
+                Align(
+                    alignment: Alignment.topRight,
+                    child: IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () {
+                          setState(() {
+                            _soundingsVisibility = false;
+                            _sendEvent(DisplayCurrentForecastEvent());
+                          });
+                        }))
+              ],
+            ),
           ),
         );
       }
