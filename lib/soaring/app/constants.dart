@@ -48,17 +48,16 @@ final List<PreferenceOption> raspDisplayOptions = [
 enum SUAColor {
   //: Color(0x0000FF).withOpacity(0.5)
 
-  classB(suaClassTitle: "CLASS B", airspaceColor: Color(0x0000FF80)),
-  classC(suaClassTitle: "CLASS C", airspaceColor: Color(0xFF00FF80)),
-  classD(suaClassTitle: "CLASS D", airspaceColor: Color(0x0000FF80)),
-  classE(suaClassTitle: "CLASS C", airspaceColor: Color(0xFF00FF80)),
-  classMATZ(suaClassTitle: "MATZ", airspaceColor: Color(0xFF0000F80)),
-  classDanger(suaClassTitle: "DANGER", airspaceColor: Color(0xFF000080)),
-  classProhibited(
-      suaClassTitle: "PROHIBITED", airspaceColor: Color(0xFF0000F80));
+  classB(suaClassType: "CLASS B", airspaceColor: Color(0x400000FF)),
+  classC(suaClassType: "CLASS C", airspaceColor: Color(0x40FF00FF)),
+  classD(suaClassType: "CLASS D", airspaceColor: Color(0x400000FF)),
+  classE(suaClassType: "CLASS C", airspaceColor: Color(0x40FF00FF)),
+  classMATZ(suaClassType: "MATZ", airspaceColor: Color(0x40FF0000)),
+  classDanger(suaClassType: "DANGER", airspaceColor: Color(0x40FF0000)),
+  classProhibited(suaClassType: "PROHIBITED", airspaceColor: Color(0x800000FF));
 
-  const SUAColor({required this.suaClassTitle, required this.airspaceColor});
-  final String suaClassTitle;
+  const SUAColor({required this.suaClassType, required this.airspaceColor});
+  final String suaClassType;
   final Color airspaceColor;
 }
 

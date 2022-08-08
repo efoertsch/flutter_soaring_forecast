@@ -604,16 +604,19 @@ class _ForecastMapState extends State<ForecastMap>
       if (airspace.properties != null && airspace.properties!.type != null) {
         label = airspace.properties!.type!;
         for (var suaType in Constants.SUAColor.values) {
-          if (suaType.suaClassTitle == airspace.properties!.type) {
+          if (suaType.suaClassType == airspace.properties!.type) {
             polygonColor = suaType.airspaceColor;
           }
         }
       }
+      print("SUA label: $label");
       _suaPolygons.add(Polygon(
           borderStrokeWidth: 2,
           points: airspace.geometry!.coordinates,
           label: label ?? "Unknown",
-          color: polygonColor ?? Color(0xFF0000F80),
+          isFilled: true,
+          labelStyle: Constants.textStyleBlack87FontSize14,
+          color: polygonColor ?? Color(0x400000F80),
           borderColor: (polygonColor ?? Color(0xFF0000F80)).withOpacity(1)));
     });
 
