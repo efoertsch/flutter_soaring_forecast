@@ -167,7 +167,7 @@ class _TurnpointsListState extends State<TurnpointsList>
   Widget _getTurnpointListView(
       {required BuildContext context,
       required List<Turnpoint> turnpoints,
-      required List<Style> cupStyles}) {
+      required List<CupStyle> cupStyles}) {
     return ListView.separated(
       itemCount: turnpoints.length,
       itemBuilder: (BuildContext context, int index) {

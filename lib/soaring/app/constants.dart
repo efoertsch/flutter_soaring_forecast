@@ -45,6 +45,23 @@ final List<PreferenceOption> raspDisplayOptions = [
       displayText: RaspDisplayOptionsMenu.turnpoints)
 ];
 
+enum SUAColor {
+  //: Color(0x0000FF).withOpacity(0.5)
+
+  classB(suaClassTitle: "CLASS B", airspaceColor: Color(0x0000FF80)),
+  classC(suaClassTitle: "CLASS C", airspaceColor: Color(0xFF00FF80)),
+  classD(suaClassTitle: "CLASS D", airspaceColor: Color(0x0000FF80)),
+  classE(suaClassTitle: "CLASS C", airspaceColor: Color(0xFF00FF80)),
+  classMATZ(suaClassTitle: "MATZ", airspaceColor: Color(0xFF0000F80)),
+  classDanger(suaClassTitle: "DANGER", airspaceColor: Color(0xFF000080)),
+  classProhibited(
+      suaClassTitle: "PROHIBITED", airspaceColor: Color(0xFF0000F80));
+
+  const SUAColor({required this.suaClassTitle, required this.airspaceColor});
+  final String suaClassTitle;
+  final Color airspaceColor;
+}
+
 //------------- Translatable values --------------------------------------------
 class RaspMenu {
   static const String selectTask = 'SELECT TASK';

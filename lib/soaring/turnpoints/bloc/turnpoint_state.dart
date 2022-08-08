@@ -36,7 +36,7 @@ class TurnpointsDownloadingState extends TurnpointState {
 
 class TurnpointsLoadedState extends TurnpointState {
   final List<Turnpoint> turnpoints;
-  final List<Style> cupStyles;
+  final List<CupStyle> cupStyles;
   TurnpointsLoadedState(this.turnpoints, this.cupStyles);
   @override
   List<Object?> get props => [turnpoints, cupStyles];
@@ -70,7 +70,7 @@ class TurnpointFileLoadingState extends TurnpointState {
 }
 
 class TurnpointCupStyles extends TurnpointState {
-  List<Style> cupStyles;
+  List<CupStyle> cupStyles;
   TurnpointCupStyles(this.cupStyles);
   @override
   List<Object?> get props => [cupStyles];

@@ -18,10 +18,15 @@ import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart'
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/ImageCacheManager.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/rasp_options_api.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/options/special_use_airspace.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/options/sua_region_files.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/turnpoint_regions.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/usgs/national_map.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/cup/cup_styles.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoints_importer.dart';
+import 'package:logger/logger.dart';
+import 'package:path/path.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:retrofit/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
@@ -40,6 +45,7 @@ class Repository {
   static late RaspOptionsClient _raspOptionsClient;
   static UsgsClient? _usgsClient;
   static AppDatabase? _appDatabase;
+  static var logger = Logger();
 
   Repository._();
 
@@ -91,7 +97,7 @@ class Repository {
         region.addForecastModelsForDate(
             forecastModels, dates[i], printdates[i]);
       } catch (error, stackTrace) {
-        print(stackTrace);
+        logger.e(stackTrace);
       }
     }
     return new Future<Region>.value(region);
@@ -108,7 +114,7 @@ class Repository {
       ForecastTypes forecastTypes = forecastTypesFromJson(await json);
       return Future<ForecastTypes>.value(forecastTypes);
     } catch (error, stackTrace) {
-      print(stackTrace);
+      logger.e(stackTrace);
       return Future<ForecastTypes>.value(null);
     }
   }
@@ -141,7 +147,7 @@ class Repository {
       SoaringForecastImage soaringForecastImage) async {
     String fullUrl = Constants.RASP_BASE_URL + soaringForecastImage.imageUrl;
     File file = await ImageCacheManager().getSingleFile(fullUrl);
-    //print("Downloading forecast image: $fullUrl");
+    //logger.d("Downloading forecast image: $fullUrl");
     Image image = Image.file(file);
     soaringForecastImage.setImage(image);
     return Future<SoaringForecastImage>.value(soaringForecastImage);
@@ -168,7 +174,7 @@ class Repository {
   // Set up Floor database
   Future<AppDatabase> makeDatabaseAvailable() async {
     if (_appDatabase == null) {
-      print('App database being created');
+      logger.d('App database being created');
       _appDatabase =
           await $FloorAppDatabase.databaseBuilder('app_database.db').build();
     }
@@ -293,7 +299,7 @@ class Repository {
     turnpoints.addAll(
         await TurnpointsImporter.getTurnpointsFromTurnpointExchange(endUrl));
     var ids = await insertAllTurnpoints(turnpoints);
-    print("Number turnpoints downloaded: ${ids.length}");
+    logger.d("Number turnpoints downloaded: ${ids.length}");
     return turnpoints;
   }
 
@@ -302,7 +308,7 @@ class Repository {
     turnpoints
         .addAll(await TurnpointsImporter.getTurnpointsFromFile(turnpointFile));
     var ids = await insertAllTurnpoints(turnpoints);
-    print("Number turnpoints downloaded: ${ids.length}");
+    logger.d("Number turnpoints downloaded: ${ids.length}");
     return turnpoints;
   }
 
@@ -333,34 +339,18 @@ class Repository {
 
   /// Get the types of valid cup styles
   /// Note we use a customized list held locally.
-  Future<List<Style>> getCupStyles() async {
-    final List<Style> cupListStyles = [];
+  Future<List<CupStyle>> getCupStyles() async {
+    final List<CupStyle> cupListStyles = [];
     try {
       final json = DefaultAssetBundle.of(_context!)
           .loadString('assets/json/turnpoint_styles.json');
       CupStyles cupStyles = cupStylesFromJson(await json);
       cupListStyles.addAll(cupStyles.styles);
     } catch (error, stackTrace) {
-      print(stackTrace);
+      logger.e(stackTrace);
     }
-    return Future<List<Style>>.value(cupListStyles);
+    return Future<List<CupStyle>>.value(cupListStyles);
   }
-
-  //
-  // Future<List<File>> getCupFilesInDownloadsDirectory() async {
-  //   List<File> cupFiles = []
-  //   if (Platform.isAndroid) {
-  //     final Directory directory = Directory('/storage/emulated/0/Download');
-  //     if (!await directory.exists()) {
-  //       directory = await getExternalStorageDirectory();
-  //     }
-  //   }
-  //   if (Platform.isIOS){
-  //
-  //   }
-  //   return cupFiles;
-  //
-  // }
 
   // ----- Task ----------------------------------------
 
@@ -461,6 +451,133 @@ class Repository {
     }
     return _usgsClient!.getElevation(
         latitude.toStringAsFixed(6), longitude.toStringAsFixed(6), "Feet");
+  }
+
+  // ------- Special Use Airspace ----------------------
+
+  /**
+   * The process to retrieve/display an SUA for the region is
+   * 1. See if SUA file already downloaded for region
+   * 2. If so, pass on the GeoJson object
+   * 3. In any case, get the lastest SUA info from the server
+   * 4. If SUA file was available and the file name matches that of the
+   * server, it means the file is still most current so stop here
+   * 5. If SUA file not available OR the SUA file is no longer current (an updated file is on server)
+   * a. download the new file
+   * b. if successful download delete the old (if it existed)
+   * c. Emit updated GeoJson object
+   *
+   * @param region
+   */
+
+  Future<SUA?> getSuaForRegion(String region) async {
+    String? suaString = null;
+    SUA? sua = null;
+    // See if SUA on device and send it if found
+    String? oldSuaFilename = await _seeIfRegionSuaFileExists(region);
+    if (oldSuaFilename != null) {
+      suaString = await _readAppDocFile(oldSuaFilename);
+      logger.d("Found existing sua file $oldSuaFilename in app directory");
+      sua = SUA.fromJson(json.decode(suaString));
+    } else {
+      logger.d("No sua file related to region $region found in app directory");
+    }
+    // Now see if newer SUA available
+    var suaRegionsString = await _raspOptionsClient.getSUARegions();
+    if (suaRegionsString != null) {
+      SUARegionFiles? suaRegionFiles =
+          SUARegionFiles.fromJson(jsonDecode(suaRegionsString));
+      try {
+        String? suaFileName = suaRegionFiles.suaRegions
+            .singleWhere(
+              (suaRegion) => suaRegion.region == region,
+            )
+            .suaFileName;
+        if (oldSuaFilename == null ||
+            (oldSuaFilename != null &&
+                !(oldSuaFilename).endsWith(region + '_' + suaFileName))) {
+          logger.d(
+              "Need to get SUA file from server (no sua on device or new file available");
+          // so get details from server
+          suaString = await _raspOptionsClient.downloadSuaFile(suaFileName);
+          // and if OK save them to file
+          if (suaString != null) {
+            sua = SUA.fromJson(json.decode(suaString));
+            File file = await _writeStringToAppDocsFile(
+                region + '_' + suaFileName, suaString);
+            // and delete the old file
+            if (oldSuaFilename != null) {
+              await _deleteFileFromAppDocsDirectory(oldSuaFilename);
+            }
+          }
+        }
+      } catch (e) {
+        // some error maybe no SUA files, or region not in list of sua files
+        // ignoring
+        logger.d("Exception when getting sua file: ${e.toString()}");
+      }
+      if (sua != null) {
+        logger.d("returning sua: ${sua.type!.toString()}");
+      } else {
+        logger.d("No SUA found");
+      }
+      return sua;
+    }
+  }
+
+  bool equalsIgnoreCase(String string1, String string2) {
+    return string1.toLowerCase() == string2.toLowerCase();
+  }
+
+  Future<String> _getAppDocsPath() async {
+    final directory = await getApplicationDocumentsDirectory();
+    return directory.path;
+  }
+
+  Future<File> _getAppDocsFile(String fileName) async {
+    final path = await _getAppDocsPath();
+    return File(path + '/' + fileName);
+  }
+
+  Future<String> _readAppDocFile(String fileName) async {
+    try {
+      final file = await _getAppDocsFile(fileName);
+      // Read the file
+      final contents = await file.readAsStringSync();
+      return contents;
+    } catch (e) {
+      logger.d("Error reading $fileName");
+      return "";
+    }
+  }
+
+  Future<File> _writeStringToAppDocsFile(String filename, String data) async {
+    final file = await _getAppDocsFile(filename);
+    return file.writeAsString(data);
+  }
+
+  Future<String?> _seeIfRegionSuaFileExists(String region) async {
+    String? fileName = null;
+    RegExp fileEndsWith = RegExp(region + "_.+\.geojson");
+    String path = await _getAppDocsPath();
+    final dir = Directory(path);
+    final List<FileSystemEntity?> files = await dir.list().toList();
+    try {
+      fileName = basename(files
+          .singleWhere(
+              (file) => file is File && fileEndsWith.hasMatch(file.path),
+              orElse: () => null)!
+          .path);
+      // logger.d("SUA file found: $fileName");
+    } catch (e) {
+      // may get Bad State: No element execption if no file found. We ignore exception
+    }
+    return fileName;
+  }
+
+  Future<void> _deleteFileFromAppDocsDirectory(String filename) async {
+    final file = await _getAppDocsFile(filename);
+    await file.delete();
   }
 
   // ----- Shared preferences --------------------------

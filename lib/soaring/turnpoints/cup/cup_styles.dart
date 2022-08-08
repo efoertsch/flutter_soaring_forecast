@@ -17,13 +17,14 @@ String cupStylesToJson(CupStyles data) => json.encode(data.toJson());
 
 @JsonSerializable()
 class CupStyles {
-  final List<Style> styles;
+  final List<CupStyle> styles;
   CupStyles({
     required this.styles,
   });
 
   factory CupStyles.fromJson(Map<String, dynamic> json) => CupStyles(
-        styles: List<Style>.from(json["styles"].map((x) => Style.fromJson(x))),
+        styles: List<CupStyle>.from(
+            json["styles"].map((x) => CupStyle.fromJson(x))),
       );
 
   Map<String, dynamic> toJson() => {
@@ -32,16 +33,16 @@ class CupStyles {
 }
 
 @JsonSerializable()
-class Style {
+class CupStyle {
   final String style;
   final String description;
 
-  Style({
+  CupStyle({
     required this.style,
     required this.description,
   });
 
-  factory Style.fromJson(Map<String, dynamic> json) => Style(
+  factory CupStyle.fromJson(Map<String, dynamic> json) => CupStyle(
         style: json["style"],
         description: json["description"],
       );

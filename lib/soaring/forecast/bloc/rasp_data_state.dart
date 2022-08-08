@@ -6,6 +6,7 @@ import 'package:flutter_soaring_forecast/soaring/floor/taskturnpoint/task_turnpo
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/LatLngForecast.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image_set.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/options/special_use_airspace.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/regions.dart';
 
@@ -175,4 +176,12 @@ class RaspDisplayOptionsState extends RaspDataState {
   @override
   // TODO: implement props
   List<Object?> get props => [displayOptions];
+}
+
+class SuaDetailsState extends RaspDataState {
+  final SUA suaDetails;
+  SuaDetailsState(this.suaDetails);
+  @override
+  // TODO: implement props
+  List<Object?> get props => [suaDetails.toString()];
 }

@@ -6,6 +6,8 @@ part of 'rasp_options_api.dart';
 // RetrofitGenerator
 // **************************************************************************
 
+// ignore_for_file: unnecessary_brace_in_string_interps
+
 class _RaspOptionsClient implements RaspOptionsClient {
   _RaspOptionsClient(this._dio, {this.baseUrl}) {
     baseUrl ??= 'https://soargbsc.com/soaringforecast/';
@@ -31,7 +33,7 @@ class _RaspOptionsClient implements RaspOptionsClient {
   }
 
   @override
-  Future<String> getSUARegions() async {
+  Future<String?> getSUARegions() async {
     const _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
@@ -41,12 +43,12 @@ class _RaspOptionsClient implements RaspOptionsClient {
             .compose(_dio.options, '/sua_regions.json',
                 queryParameters: queryParameters, data: _data)
             .copyWith(baseUrl: baseUrl ?? _dio.options.baseUrl)));
-    final value = _result.data!;
+    final value = _result.data;
     return value;
   }
 
   @override
-  Future<String> downloadSuaFile(suaFilename) async {
+  Future<String?> downloadSuaFile(suaFilename) async {
     const _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
@@ -56,7 +58,7 @@ class _RaspOptionsClient implements RaspOptionsClient {
             .compose(_dio.options, '/${suaFilename}',
                 queryParameters: queryParameters, data: _data)
             .copyWith(baseUrl: baseUrl ?? _dio.options.baseUrl)));
-    final value = _result.data!;
+    final value = _result.data;
     return value;
   }
 
