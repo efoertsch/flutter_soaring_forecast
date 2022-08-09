@@ -6,15 +6,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     as Constants;
-import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
 import 'package:flutter_soaring_forecast/soaring/app/main.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/taskturnpoint/task_turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
-import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_data_bloc.dart';
-import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_data_event.dart';
-import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_data_state.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/LatLngForecast.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image_set.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/options/special_use_airspace.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/regions.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoint_utils.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_overhead_view.dart';
@@ -39,13 +37,14 @@ class _ForecastMapState extends State<ForecastMap>
 
   bool _firstLayoutComplete = false;
   SoaringForecastImageSet? soaringForecastImageSet;
-  List<Polyline> _taskTurnpointCourse = <Polyline>[];
-  List<Marker> _mapMarkers = <Marker>[];
-  List<Marker> _soundingMarkers = <Marker>[];
-  List<Marker> _turnpointMarkers = <Marker>[];
+  final List<Polyline> _taskTurnpointCourse = <Polyline>[];
+  final List<Marker> _mapMarkers = <Marker>[];
+  final List<Marker> _soundingMarkers = <Marker>[];
+  final List<Marker> _turnpointMarkers = <Marker>[];
+  final List<Polygon> _suaPolygons = <Polygon>[];
   final _taskMarkers = <Marker>[];
-  List<Polyline> _suaPolyLines = <Polyline>[];
-
+  final List<Polyline> _suaPolyLines = <Polyline>[];
+  final List<Marker> _latLngMarkers = <Marker>[];
   Marker? _latLngMarker;
 
   //Default values - NewEngland lat/lng of course!
@@ -81,8 +80,6 @@ class _ForecastMapState extends State<ForecastMap>
   void afterFirstLayout(BuildContext context) {
     print("First layout complete");
     _firstLayoutComplete = true;
-    // print("First layout complete.");
-    // print('Calling series of APIs');
     _sendEvent(InitialRaspRegionEvent());
     _mapController.onReady.then((value) {
       _sendEvent(MapReadyEvent());
@@ -150,8 +147,44 @@ class _ForecastMapState extends State<ForecastMap>
   }
 
   Widget _forecastMap() {
-    return BlocBuilder<RaspDataBloc, RaspDataState>(
-        buildWhen: (previous, current) {
+    return BlocConsumer<RaspDataBloc, RaspDataState>(
+        listener: (context, state) {
+      print("state : $state");
+      if (state is RaspInitialState ||
+          state is RaspForecastImageSet ||
+          state is RaspTaskTurnpoints ||
+          state is LocalForecastState ||
+          state is RaspSoundingsState ||
+          state is TurnpointsInBoundsState ||
+          state is RedisplayMarkersState ||
+          state is SuaDetailsState) {
+        if (state is RaspForecastImageSet) {
+          print('Received RaspForecastImageSet in ForecastMap');
+          soaringForecastImageSet = state.soaringForecastImageSet;
+          updateForecastOverlay();
+        }
+        if (state is RaspTaskTurnpoints) {
+          _updateTaskTurnpoints(state.taskTurnpoints);
+        }
+        if (state is LocalForecastState) {
+          _placeLocalForecastMarker(state.latLngForecast);
+        }
+        if (state is RaspSoundingsState) {
+          print('Received Soundings in ForecastMap');
+          _placeSoundingMarkers(state.soundings);
+        }
+        if (state is TurnpointsInBoundsState) {
+          print('Received TurnpointsInBoundsState in ForecastMap');
+          _updateTurnpointMarkers(state.turnpoints);
+        }
+
+        if (state is SuaDetailsState) {
+          print('Received SuaDetailsState');
+          _updateSuaDetails(state.suaDetails);
+        }
+      }
+      ;
+    }, buildWhen: (previous, current) {
       //print("forecast state is:" + current.toString());
       return current is RaspInitialState ||
           current is RaspForecastImageSet ||
@@ -159,32 +192,9 @@ class _ForecastMapState extends State<ForecastMap>
           current is LocalForecastState ||
           current is RaspSoundingsState ||
           current is TurnpointsInBoundsState ||
-          current is RedisplayMarkersState;
+          current is RedisplayMarkersState ||
+          current is SuaDetailsState;
     }, builder: (context, state) {
-      if (state is RaspForecastImageSet) {
-        print('Received RaspForecastImageSet in ForecastMap');
-        soaringForecastImageSet = state.soaringForecastImageSet;
-        updateForecastOverlay();
-      }
-      if (state is RaspTaskTurnpoints) {
-        _updateTaskTurnpoints(state.taskTurnpoints);
-      }
-      if (state is LocalForecastState) {
-        _placeLocalForecastMarker(state.latLngForecast);
-      }
-      if (state is RaspSoundingsState) {
-        print('Received Soundings in ForecastMap');
-        _placeSoundingMarkers(state.soundings);
-      }
-      if (state is TurnpointsInBoundsState) {
-        print('Received TurnpointsInBoundsState in ForecastMap');
-        _updateTurnpointMarkers(state.turnpoints);
-      }
-
-      if (state is RedisplayMarkersState) {
-        // work already done
-      }
-
       return FlutterMap(
           mapController: _mapController,
           options: MapOptions(
@@ -201,9 +211,6 @@ class _ForecastMapState extends State<ForecastMap>
             TileLayerOptions(
               urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
               subdomains: ['a', 'b', 'c'],
-              attributionBuilder: (_) {
-                return Text("© OpenStreetMap contributors");
-              },
             ),
             OverlayImageLayerOptions(
               key: null,
@@ -215,7 +222,8 @@ class _ForecastMapState extends State<ForecastMap>
             ),
             MarkerLayerOptions(
               markers: _mapMarkers,
-            )
+            ),
+            PolygonLayerOptions(polygons: _suaPolygons),
           ]);
     });
   }
@@ -336,7 +344,7 @@ class _ForecastMapState extends State<ForecastMap>
       var turnpointLatLng =
           LatLng(turnpoint.latitudeDeg, turnpoint.longitudeDeg);
 
-      _taskMarkers.add(Marker(
+      _turnpointMarkers.add(Marker(
           width: 80.0,
           height: 40.0,
           point: turnpointLatLng,
@@ -366,10 +374,10 @@ class _ForecastMapState extends State<ForecastMap>
                       TurnpointUtils.getColorForTurnpointIcon(turnpoint.style),
                 ),
                 Text(
-                    style: textStyleBlackFontSize12,
                     turnpoint.title.length > 4
                         ? turnpoint.title.substring(0, 4)
                         : turnpoint.title,
+                    style: Constants.textStyleBlackFontSize12,
                     textAlign: TextAlign.center),
               ],
             )),
@@ -418,11 +426,12 @@ class _ForecastMapState extends State<ForecastMap>
                       Expanded(
                         flex: 6,
                         child: Text(
-                            style: textStyleBlackFontSize12,
-                            sounding.location!.length > 5
-                                ? sounding.location!.substring(0, 5)
-                                : sounding.location!,
-                            textAlign: TextAlign.left),
+                          sounding.location!.length > 5
+                              ? sounding.location!.substring(0, 5)
+                              : sounding.location!,
+                          style: Constants.textStyleBlackFontSize12,
+                          textAlign: TextAlign.left,
+                        ),
                       ),
                     ],
                   ),
@@ -450,14 +459,15 @@ class _ForecastMapState extends State<ForecastMap>
   }
 
   void _placeLocalForecastMarker(LatLngForecast latLngForecast) {
-    _latLngMarker = Marker(
+    _latLngMarkers.clear();
+    var latLngMarker = Marker(
       width: 160.0,
       height: 160.0,
       point: latLngForecast.latLng,
       builder: (context) => _getLatLngForecastMarker(latLngForecast),
       anchorPos: AnchorPos.align(AnchorAlign.top),
     );
-    _mapMarkers.add(_latLngMarker!);
+    _latLngMarkers.add(latLngMarker);
   }
 
   Widget _getLatLngForecastMarker(LatLngForecast latLngForecast) {
@@ -558,17 +568,13 @@ class _ForecastMapState extends State<ForecastMap>
     _mapMarkers.addAll(_turnpointMarkers);
     _mapMarkers.addAll(_soundingMarkers);
     _mapMarkers.addAll(_taskMarkers);
-    if (_latLngMarker != null) {
-      _mapMarkers.add(_latLngMarker!);
-    }
+    _mapMarkers.addAll(_latLngMarkers);
   }
 
   // Currently only display max of 1, so if changes in future need to revisit logic
   void _removeLocalForecastMarker() {
-    if (_latLngMarker != null) {
-      _latLngMarker = null;
-      _rebuildMarkerArray();
-    }
+    _latLngMarkers.clear();
+    _rebuildMarkerArray();
     _sendEvent(RedisplayMarkersEvent());
   }
 
@@ -579,11 +585,41 @@ class _ForecastMapState extends State<ForecastMap>
 
   _updateMapPositon(MapPosition mapPosition, bool hasGesture) {
     LatLngBounds? latLngBounds = mapPosition.bounds;
-    print(
-        "New bounds: : sw corner ${latLngBounds?.southWest?.latitude.toString()} "
-        "/  ${latLngBounds?.southWest?.longitude.toString()}");
-    print(
-        "New bounds: : ne corner ${latLngBounds!.northEast?.latitude.toString()} "
-        "/  ${latLngBounds.northEast?.longitude.toString()}");
+    // print(
+    //     "New bounds: : sw corner ${latLngBounds?.southWest?.latitude.toString()} "
+    //     "/  ${latLngBounds?.southWest?.longitude.toString()}");
+    // print(
+    //     "New bounds: : ne corner ${latLngBounds!.northEast?.latitude.toString()} "
+    //     "/  ${latLngBounds.northEast?.longitude.toString()}");
+  }
+
+  void _updateSuaDetails(SUA suaDetails) async {
+    // print("Processing suaDetails");
+    _suaPolygons.clear();
+
+    suaDetails.features?.forEach((airspace) {
+      Color? polygonColor = null;
+      String? label = null;
+      String? type = null;
+      if (airspace.properties != null && airspace.properties!.type != null) {
+        label = airspace.properties!.type!;
+        for (var suaType in Constants.SUAColor.values) {
+          if (suaType.suaClassType == airspace.properties!.type) {
+            polygonColor = suaType.airspaceColor;
+          }
+        }
+      }
+      print("SUA label: $label");
+      _suaPolygons.add(Polygon(
+          borderStrokeWidth: 2,
+          points: airspace.geometry!.coordinates,
+          label: label ?? "Unknown",
+          isFilled: true,
+          labelStyle: Constants.textStyleBlack87FontSize14,
+          color: polygonColor ?? Color(0x400000F80),
+          borderColor: (polygonColor ?? Color(0xFF0000F80)).withOpacity(1)));
+    });
+
+    _sendEvent(RedisplayMarkersEvent());
   }
 }

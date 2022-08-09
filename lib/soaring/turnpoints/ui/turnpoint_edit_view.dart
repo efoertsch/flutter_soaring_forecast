@@ -43,7 +43,7 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
   bool _isReadOnly = true;
   bool _isDecimalDegreesFormat = true;
   bool _turnpointInitialized = false;
-  List<Style> _cupStyles = [];
+  List<CupStyle> _cupStyles = [];
   bool _needToSaveUpdates = false;
   final TextEditingController _latitudeController = TextEditingController();
   final TextEditingController _longitudeController = TextEditingController();

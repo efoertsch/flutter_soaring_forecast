@@ -132,16 +132,22 @@ class Properties {
 @JsonSerializable()
 class Geometry {
   String? type;
-  List<LatLng>? coordinates;
+  List<LatLng> coordinates = <LatLng>[];
 
-  Geometry({this.type, this.coordinates});
+  Geometry({this.type, required this.coordinates});
 
   Geometry.fromJson(Map<String, dynamic> json) {
     type = json['type'];
     if (json['coordinates'] != null) {
-      coordinates = <LatLng>[];
+      List latLngList;
+      // Custom coding
       json['coordinates'].forEach((v) {
-        coordinates!.add(LatLng.fromJson(v));
+        (v as List).forEach((element) {
+          latLngList = element as List;
+          if (latLngList.length == 2) {
+            coordinates.add(LatLng(latLngList[1], latLngList[0]));
+          }
+        });
       });
     }
   }

@@ -6,6 +6,8 @@ part of 'usgs_api.dart';
 // RetrofitGenerator
 // **************************************************************************
 
+// ignore_for_file: unnecessary_brace_in_string_interps
+
 class _UsgsClient implements UsgsClient {
   _UsgsClient(this._dio, {this.baseUrl});
 

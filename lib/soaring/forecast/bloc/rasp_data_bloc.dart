@@ -9,6 +9,7 @@ import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart'
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/LatLngForecast.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image_set.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/options/special_use_airspace.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/regions.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
@@ -478,25 +479,38 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     switch (event.displayOption.key) {
       case (soundingsDisplayOption):
         {
-          if (_region!.soundings != null) {
-            emit(RaspSoundingsState(event.displayOption.selected
-                ? _region!.soundings!
-                : <Soundings>[]));
+          if (event.displayOption.selected) {
+            if (_region!.soundings != null) {
+              emit(RaspSoundingsState(event.displayOption.selected
+                  ? _region!.soundings!
+                  : <Soundings>[]));
+            }
+          } else {
+            emit(RaspSoundingsState((<Soundings>[])));
           }
           break;
         }
       case (suaDisplayOption):
         {
-          print("implement sua ");
+          if (event.displayOption.selected) {
+            await _getSuaDetails(emit);
+          } else {
+            emit(SuaDetailsState(SUA()));
+          }
           break;
         }
       case (turnpointsDisplayOption):
         {
-          // only send turnpoints based on current lat/long corners of map
-          emit(TurnpointsInBoundsState(
-              await repository.getTurnpointsWithinBounds(_latLngBounds!)));
-          break;
+          if (event.displayOption.selected) {
+            // only send turnpoints based on current lat/long corners of map
+            List<Turnpoint> turnpoints =
+                await repository.getTurnpointsWithinBounds(_latLngBounds!);
+            emit(TurnpointsInBoundsState(turnpoints));
+          } else {
+            emit(TurnpointsInBoundsState(<Turnpoint>[]));
+          }
         }
+        break;
     }
     repository.saveRaspDisplayOption(event.displayOption);
   }
@@ -533,11 +547,10 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
           print('emitted TurnpointsInBoundsState');
           break;
         case (suaDisplayOption):
-          print('Need to implements sua state');
           if (option.selected) {
-            // get sua and emit
+            await _getSuaDetails(emit);
           } else {
-            // send empty sua files
+            // nada
           }
           break;
       }
@@ -566,7 +579,17 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
 
   FutureOr<void> _processDisplayCurrentForecast(
       DisplayCurrentForecastEvent event, Emitter<RaspDataState> emit) {
-    _displayType = _DisplayType.sounding;
+    _displayType = _DisplayType.forecast;
     _emitRaspForecastImageSet(emit);
+  }
+
+  _getSuaDetails(Emitter<RaspDataState> emit) async {
+    var sua = await repository.getSuaForRegion(_region!.name!);
+    if (sua != null) {
+      // print("repository returned sua so emitting");
+      emit(SuaDetailsState(sua));
+    } else {
+      // print("repository returned null sua");
+    }
   }
 }

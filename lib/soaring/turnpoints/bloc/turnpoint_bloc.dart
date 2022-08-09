@@ -18,7 +18,7 @@ import 'package:path_provider/path_provider.dart';
 class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
   final Repository repository;
   final List<TurnpointFile> turnpointFiles = [];
-  final List<Style> cupStyles = [];
+  final List<CupStyle> cupStyles = [];
 
   //TurnpointState get initialState => TurnpointsLoadingState();
 
@@ -51,7 +51,7 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
     try {
       var turnpoints = await repository.findTurnpoints(event.searchString);
       if (TurnpointUtils.getCupStyles().isEmpty) {
-        final List<Style> cupStyles = await _getCupStyles();
+        final List<CupStyle> cupStyles = await _getCupStyles();
         TurnpointUtils.setCupStyles(cupStyles);
       }
       emit(TurnpointsLoadedState(turnpoints, TurnpointUtils.getCupStyles()));
@@ -60,7 +60,7 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
     }
   }
 
-  Future<List<Style>> _getCupStyles() async {
+  Future<List<CupStyle>> _getCupStyles() async {
     return await repository.getCupStyles();
   }
 
@@ -75,7 +75,7 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
     try {
       turnpoints.addAll(await repository.getAllTurnpoints());
       if (TurnpointUtils.getCupStyles().isEmpty) {
-        final List<Style> cupStyles = await _getCupStyles();
+        final List<CupStyle> cupStyles = await _getCupStyles();
         TurnpointUtils.setCupStyles(cupStyles);
       }
       emit(TurnpointsLoadedState(turnpoints, TurnpointUtils.getCupStyles()));

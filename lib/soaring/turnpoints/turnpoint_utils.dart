@@ -26,7 +26,7 @@ class TurnpointUtils {
   static NumberFormat longitudeFormat = NumberFormat("00000.000");
   static const String QUOTE = "\"";
   static const String COMMA = ",";
-  static final List<Style> _cupStyles = [];
+  static final List<CupStyle> _cupStyles = [];
 
   static final latitudeDegreesRegex =
       RegExp(r'^-?([1-8]?[0-9]\.{1}\d{5}$|90\.{1}0{5}$)');
@@ -258,10 +258,10 @@ class TurnpointUtils {
   /// _cupStyles must be set earlier (by bloc call loading them)
   /// before use in these util functions.
   static String getStyleFromStyleDescription(
-      List<Style> cupStyles, String styleDesription) {
+      List<CupStyle> cupStyles, String styleDesription) {
     return cupStyles
         .firstWhere((cupStyle) => cupStyle.description == styleDesription,
-            orElse: () => Style(style: '0', description: "Unknown"))
+            orElse: () => CupStyle(style: '0', description: "Unknown"))
         .style;
   }
 
@@ -269,14 +269,14 @@ class TurnpointUtils {
   /// _cupStyles must be set earlier (by bloc call loading them)
   /// before use in these util functions.
   static String getStyleDescriptionFromStyle(
-      List<Style> cupStyles, String style) {
+      List<CupStyle> cupStyles, String style) {
     return cupStyles
         .firstWhere((cupStyle) => cupStyle.style == style,
-            orElse: () => Style(style: '0', description: "Unknown"))
+            orElse: () => CupStyle(style: '0', description: "Unknown"))
         .description;
   }
 
-  static void setCupStyles(List<Style> listOfCupStyles) {
+  static void setCupStyles(List<CupStyle> listOfCupStyles) {
     _cupStyles.clear();
     _cupStyles.addAll(listOfCupStyles);
   }
@@ -284,7 +284,7 @@ class TurnpointUtils {
   /// Bit of a hack.
   /// _cupStyles must be set earlier (by bloc call loading them)
   /// before use in these util functions.
-  static List<Style> getCupStyles() {
+  static List<CupStyle> getCupStyles() {
     return _cupStyles;
   }
 
