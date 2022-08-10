@@ -670,22 +670,21 @@ class ForecastMapState extends State<ForecastMap>
                       divisions: 100,
                       label: _forecastOverlayOpacity.round().toString(),
                       onChanged: (double value) {
-                        print("Slider value: $value");
                         if (_hideOpacityTimer != null) {
                           _hideOpacityTimer!.cancel();
                           _hideOpacityTimer = null;
                         }
+                        // changing value in setState() doesn't cause overlay opacity change
+                        // so save value and receive updated value from bloc state issue
+                        _sendEvent(SetForecastOverlayOpacityEvent(value));
                         setState(() {
+                          // but need to set value in setState to redraw slider
                           _forecastOverlayOpacity = value;
-                          print(
-                              "_forecastOverlayOpacity: $_forecastOverlayOpacity");
                         });
                       },
                       onChangeEnd: (double value) {
                         setState(() {
-                          _sendEvent(SetForecastOverlayOpacityEvent(value));
                           _startHideOpacityTimer();
-                          _forecastOverlayOpacity = value;
                         });
                       },
                     ),
