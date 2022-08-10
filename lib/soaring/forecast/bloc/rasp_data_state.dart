@@ -145,7 +145,6 @@ class RaspSoundingsState extends RaspDataState {
   final List<Soundings> soundings;
   RaspSoundingsState(this.soundings);
   @override
-  // TODO: implement props
   List<Object?> get props => [soundings];
 }
 
@@ -174,7 +173,6 @@ class RaspDisplayOptionsState extends RaspDataState {
   final List<PreferenceOption> displayOptions;
   RaspDisplayOptionsState(this.displayOptions);
   @override
-  // TODO: implement props
   List<Object?> get props => [displayOptions];
 }
 
@@ -182,6 +180,12 @@ class SuaDetailsState extends RaspDataState {
   final SUA suaDetails;
   SuaDetailsState(this.suaDetails);
   @override
-  // TODO: implement props
   List<Object?> get props => [suaDetails.toString()];
+}
+
+class ForecastOverlayOpacityState extends RaspDataState {
+  final double opacity;
+  ForecastOverlayOpacityState(this.opacity);
+  @override
+  List<Object?> get props => [opacity];
 }

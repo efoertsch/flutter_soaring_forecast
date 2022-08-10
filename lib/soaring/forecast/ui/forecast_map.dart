@@ -26,10 +26,10 @@ class ForecastMap extends StatefulWidget {
       : super(key: key);
 
   @override
-  _ForecastMapState createState() => _ForecastMapState();
+  ForecastMapState createState() => ForecastMapState();
 }
 
-class _ForecastMapState extends State<ForecastMap>
+class ForecastMapState extends State<ForecastMap>
     with AfterLayoutMixin<ForecastMap> {
   late final MapController _mapController;
   final _forecastOverlayController = StreamController<Null>.broadcast();
@@ -43,9 +43,7 @@ class _ForecastMapState extends State<ForecastMap>
   final List<Marker> _turnpointMarkers = <Marker>[];
   final List<Polygon> _suaPolygons = <Polygon>[];
   final _taskMarkers = <Marker>[];
-  final List<Polyline> _suaPolyLines = <Polyline>[];
   final List<Marker> _latLngMarkers = <Marker>[];
-  Marker? _latLngMarker;
 
   //Default values - NewEngland lat/lng of course!
   final LatLng _center = LatLng(43.1394043, -72.0759888);
@@ -61,6 +59,9 @@ class _ForecastMapState extends State<ForecastMap>
   double neLong = 0;
 
   bool _soundingsVisibility = false;
+  double _forecastOverlayOpacity = 50;
+  var _forecastOverlaySliderIsVisible = false;
+  Timer? _hideOpacityTimer = null;
 
   @override
   void initState() {
@@ -117,15 +118,9 @@ class _ForecastMapState extends State<ForecastMap>
       ),
       Container(
         alignment: Alignment.centerRight,
-        child: FractionallySizedBox(
-          widthFactor: .15,
-          child: InteractiveViewer(
-            child: _forecastLegend(),
-            panEnabled: true,
-            maxScale: 4.0,
-          ),
-        ),
+        child: _forecastLegend(),
       ),
+      _getOpacitySlider(),
     ]);
   }
 
@@ -136,10 +131,14 @@ class _ForecastMapState extends State<ForecastMap>
     }, builder: (context, state) {
       if (state is RaspForecastImageSet) {
         print('Processing RaspForecastImageSet for forecastLegend');
-        return Image(
-          image: NetworkImage(Constants.RASP_BASE_URL +
-              state.soaringForecastImageSet.sideImage!.imageUrl),
-          gaplessPlayback: true,
+        return InteractiveViewer(
+          panEnabled: true,
+          maxScale: 4.0,
+          child: Image(
+            image: NetworkImage(Constants.RASP_BASE_URL +
+                state.soaringForecastImageSet.sideImage!.imageUrl),
+            gaplessPlayback: true,
+          ),
         );
       }
       return SizedBox.shrink();
@@ -157,30 +156,41 @@ class _ForecastMapState extends State<ForecastMap>
           state is RaspSoundingsState ||
           state is TurnpointsInBoundsState ||
           state is RedisplayMarkersState ||
-          state is SuaDetailsState) {
+          state is SuaDetailsState ||
+          state is ForecastOverlayOpacityState) {
         if (state is RaspForecastImageSet) {
           print('Received RaspForecastImageSet in ForecastMap');
           soaringForecastImageSet = state.soaringForecastImageSet;
           updateForecastOverlay();
+          return;
         }
         if (state is RaspTaskTurnpoints) {
           _updateTaskTurnpoints(state.taskTurnpoints);
+          return;
         }
         if (state is LocalForecastState) {
           _placeLocalForecastMarker(state.latLngForecast);
+          return;
         }
         if (state is RaspSoundingsState) {
           print('Received Soundings in ForecastMap');
           _placeSoundingMarkers(state.soundings);
+          return;
         }
         if (state is TurnpointsInBoundsState) {
           print('Received TurnpointsInBoundsState in ForecastMap');
           _updateTurnpointMarkers(state.turnpoints);
+          return;
         }
-
         if (state is SuaDetailsState) {
           print('Received SuaDetailsState');
           _updateSuaDetails(state.suaDetails);
+          return;
+        }
+        if (state is ForecastOverlayOpacityState) {
+          _forecastOverlayOpacity = state.opacity;
+          updateForecastOverlay();
+          return;
         }
       }
       ;
@@ -193,7 +203,8 @@ class _ForecastMapState extends State<ForecastMap>
           current is RaspSoundingsState ||
           current is TurnpointsInBoundsState ||
           current is RedisplayMarkersState ||
-          current is SuaDetailsState;
+          current is SuaDetailsState ||
+          current is ForecastOverlayOpacityState;
     }, builder: (context, state) {
       return FlutterMap(
           mapController: _mapController,
@@ -518,7 +529,7 @@ class _ForecastMapState extends State<ForecastMap>
       var raspUrl = Constants.RASP_BASE_URL + imageUrl;
       var overlayImage = OverlayImage(
           bounds: _mapLatLngBounds,
-          opacity: (.5),
+          opacity: _forecastOverlayOpacity / 100,
           imageProvider: NetworkImage(raspUrl),
           gaplessPlayback: true);
 
@@ -609,7 +620,7 @@ class _ForecastMapState extends State<ForecastMap>
           }
         }
       }
-      print("SUA label: $label");
+      //print("SUA label: $label");
       _suaPolygons.add(Polygon(
           borderStrokeWidth: 2,
           points: airspace.geometry!.coordinates,
@@ -621,5 +632,90 @@ class _ForecastMapState extends State<ForecastMap>
     });
 
     _sendEvent(RedisplayMarkersEvent());
+  }
+
+  Widget _getOpacitySlider() {
+    return Positioned(
+        top: 20,
+        left: 0,
+        right: 0,
+        child: AnimatedOpacity(
+          opacity: _forecastOverlaySliderIsVisible ? 1.0 : 0.0,
+          duration: const Duration(milliseconds: 2000),
+          onEnd: (() {
+            if (_forecastOverlaySliderIsVisible) _startHideOpacityTimer();
+          }),
+          child: IntrinsicHeight(
+            child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  Container(
+                    color: Colors.white,
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 8),
+                        child: Text("0",
+                            textAlign: TextAlign.center,
+                            style: Constants.textStyleBoldBlack87FontSize14),
+                      ),
+                    ),
+                  ),
+                  Container(
+                    color: Colors.white,
+                    child: Slider(
+                      value: _forecastOverlayOpacity,
+                      max: 100,
+                      min: 0,
+                      divisions: 100,
+                      label: _forecastOverlayOpacity.round().toString(),
+                      onChanged: (double value) {
+                        if (_hideOpacityTimer != null) {
+                          _hideOpacityTimer!.cancel();
+                          _hideOpacityTimer = null;
+                        }
+                        // changing value in setState() doesn't cause overlay opacity change
+                        // so save value and receive updated value from bloc state issue
+                        _sendEvent(SetForecastOverlayOpacityEvent(value));
+                        setState(() {
+                          // but need to set value in setState to redraw slider
+                          _forecastOverlayOpacity = value;
+                        });
+                      },
+                      onChangeEnd: (double value) {
+                        setState(() {
+                          _startHideOpacityTimer();
+                        });
+                      },
+                    ),
+                  ),
+                  Container(
+                    color: Colors.white,
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.only(right: 8.0),
+                        child: Text("100",
+                            textAlign: TextAlign.center,
+                            style: Constants.textStyleBoldBlack87FontSize14),
+                      ),
+                    ),
+                  ),
+                ]),
+          ),
+        ));
+  }
+
+  showOverlayOpacitySlider() {
+    setState(() {
+      _forecastOverlaySliderIsVisible = !_forecastOverlaySliderIsVisible;
+    });
+  }
+
+  void _startHideOpacityTimer() {
+    _hideOpacityTimer = Timer(Duration(seconds: 4), () {
+      setState(() {
+        _forecastOverlaySliderIsVisible = false;
+      });
+    });
   }
 }

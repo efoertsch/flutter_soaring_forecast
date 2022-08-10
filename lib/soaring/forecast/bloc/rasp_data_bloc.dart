@@ -63,6 +63,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     on<SaveRaspDisplayOptionsEvent>(_processSaveRaspDisplayOptions);
     on<NewLatLngBoundsEvent>(_processNewLatLongBounds);
     on<DisplaySoundingsEvent>(_processSoundingsEvent);
+    on<SetForecastOverlayOpacityEvent>(_setForecastOverlayOpacity);
   }
 
   void _processInitialRaspRegionEvent(
@@ -87,6 +88,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
         _emitRaspModelDates(emit);
         _emitRaspLatLngBounds(emit);
         _getForecastImages();
+        await _sendInitialForecastOverlayOpacity(emit);
         await _emitDisplayOptions(emit);
         await waitAFrame();
         _emitRaspForecastImageSet(emit);
@@ -591,5 +593,17 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     } else {
       // print("repository returned null sua");
     }
+  }
+
+  FutureOr<void> _sendInitialForecastOverlayOpacity(
+      Emitter<RaspDataState> emit) async {
+    var opacity = await repository.getForecastOverlayOpacity();
+    emit(ForecastOverlayOpacityState(opacity));
+  }
+
+  FutureOr<void> _setForecastOverlayOpacity(
+      SetForecastOverlayOpacityEvent event, Emitter<RaspDataState> emit) async {
+    await repository.setForecastOverlayOpacity(event.forecastOverlayOpacity);
+    emit(ForecastOverlayOpacityState(event.forecastOverlayOpacity));
   }
 }

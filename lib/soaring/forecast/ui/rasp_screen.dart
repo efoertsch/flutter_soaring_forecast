@@ -31,6 +31,7 @@ class RaspScreen extends StatefulWidget {
 class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
   late final MapController _mapController;
   final _scaffoldKey = GlobalKey<ScaffoldState>();
+  final _forecastMapStateKey = GlobalKey<ForecastMapState>();
 
 // TODO internationalize literals
   String _pauseAnimationLabel = "Pause";
@@ -338,7 +339,7 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
   }
 
   void _startStopImageAnimation() {
-    //TODO timer and subscription to convoluted. Make simpler
+    //TODO timer and subscription too convoluted. Make simpler
     if (_startImageAnimation) {
       _displayTimer = DisplayTimer(Duration(seconds: 3));
       _overlayPositionCounter = _displayTimer!.stream;
@@ -418,6 +419,8 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
       case RaspMenu.orderForecasts:
         break;
       case RaspMenu.opacity:
+        _forecastMapStateKey.currentState!.showOverlayOpacitySlider();
+        //_sendEvent(GetForecastOverlayOpacityEvent());
         break;
       case RaspMenu.selectRegion:
         break;
@@ -443,7 +446,8 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
   }
 
   Widget _getForecastWindow() {
-    return ForecastMap(stopAnimation: _stopAnimation);
+    return ForecastMap(
+        key: _forecastMapStateKey, stopAnimation: _stopAnimation);
   }
 
   void _showMapDisplayOptionsDialog() async {
