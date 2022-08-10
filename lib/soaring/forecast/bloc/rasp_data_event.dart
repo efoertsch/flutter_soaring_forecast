@@ -139,3 +139,16 @@ class DisplayCurrentForecastEvent extends RaspDataEvent {
   @override
   List<Object?> get props => [];
 }
+
+class GetForecastOverlayOpacityEvent extends RaspDataEvent {
+  GetForecastOverlayOpacityEvent();
+  @override
+  List<Object?> get props => [];
+}
+
+class SetForecastOverlayOpacityEvent extends RaspDataEvent {
+  final double forecastOverlayOpacity;
+  SetForecastOverlayOpacityEvent(this.forecastOverlayOpacity);
+  @override
+  List<Object?> get props => [forecastOverlayOpacity];
+}

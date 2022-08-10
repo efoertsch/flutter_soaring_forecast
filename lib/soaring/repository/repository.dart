@@ -138,6 +138,16 @@ class Repository {
         contentType, region, date, model, time, lat, lon, forecastType);
   }
 
+  Future<double> getForecastOverlayOpacity() async {
+    return await getGenericDouble(
+        key: 'FORECAST_OVERLAY_OPACITY', defaultValue: 50);
+  }
+
+  Future<void> setForecastOverlayOpacity(double forecastOverlayOpacity) async {
+    await saveGenericDouble(
+        key: 'FORECAST_OVERLAY_OPACITY', value: forecastOverlayOpacity);
+  }
+
   dispose() {
     // TODO what do I need to do here?
   }
@@ -604,6 +614,18 @@ class Repository {
       {required String key, required int defaultValue}) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.getInt(key) ?? defaultValue;
+  }
+
+  Future<bool> saveGenericDouble(
+      {required String key, required double value}) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.setDouble(key, value);
+  }
+
+  Future<double> getGenericDouble(
+      {required String key, required double defaultValue}) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getDouble(key) ?? defaultValue;
   }
 
   Future<bool> saveGenericBool(
