@@ -103,20 +103,49 @@ class Repository {
     return new Future<Region>.value(region);
   }
 
-  /// Get the types of forecasts that are generated.
+  /// Get the list of forecasts that are generated.
   /// Note we use a customized list held locally.
-  Future<ForecastTypes> getForecastTypes() async {
+  Future<List<Forecast>> getForecastList() async {
     /// Retrieves a list of forecast types
     try {
-      final json = DefaultAssetBundle.of(_context!)
-          .loadString('assets/json/forecast_options.json');
-      // TODO - why is method hanging here in test
-      ForecastTypes forecastTypes = forecastTypesFromJson(await json);
-      return Future<ForecastTypes>.value(forecastTypes);
+      var forecastList = await _getCustomForecastList();
+      if (!forecastList.isEmpty) {
+        return forecastList;
+      } else {
+        return await _getForecastListFromAssets();
+      }
     } catch (error, stackTrace) {
       logger.e(stackTrace);
-      return Future<ForecastTypes>.value(null);
+      return <Forecast>[];
     }
+  }
+
+  Future<List<Forecast>> _getForecastListFromAssets() async {
+    final json = await DefaultAssetBundle.of(_context!)
+        .loadString('assets/json/forecast_options.json');
+    ForecastTypes forecastTypes = forecastTypesFromJson(json);
+    return forecastTypes.forecasts;
+  }
+
+  Future<List<Forecast>> _getCustomForecastList() async {
+    final forecasts = <Forecast>[];
+    final jsonString =
+        await getGenericString(key: "FORECAST_LIST", defaultValue: "");
+    if (jsonString.isNotEmpty) {
+      final forecastTypes = forecastTypesFromJson(jsonString);
+      forecasts.addAll(forecastTypes.forecasts);
+    }
+    return forecasts;
+  }
+
+  Future<bool> deleteCustomForecastList() async {
+    return await _deleteGenericString(key: "FORECAST_LIST");
+  }
+
+  Future<bool> saveForecasts(List<Forecast> forecasts) async {
+    final jsonForecasts =
+        forecastTypesToJson(ForecastTypes(forecasts: forecasts));
+    return await saveGenericString(key: "FORECAST_LIST", value: jsonForecasts);
   }
 
   /**
@@ -596,18 +625,23 @@ class Repository {
   Future<bool> saveGenericString(
       {required String key, required String value}) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.setString(key, value);
+    return await prefs.setString(key, value);
   }
 
   Future<String> getGenericString(
       {required String key, required String defaultValue}) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getString(key) ?? defaultValue;
+    return await prefs.getString(key) ?? defaultValue;
+  }
+
+  Future<bool> _deleteGenericString({required String key}) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return await prefs.remove(key);
   }
 
   Future<bool> saveGenericInt({required String key, required int value}) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.setInt(key, value);
+    return await prefs.setInt(key, value);
   }
 
   Future<int> getGenericInt(
@@ -619,24 +653,24 @@ class Repository {
   Future<bool> saveGenericDouble(
       {required String key, required double value}) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.setDouble(key, value);
+    return await prefs.setDouble(key, value);
   }
 
   Future<double> getGenericDouble(
       {required String key, required double defaultValue}) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getDouble(key) ?? defaultValue;
+    return await prefs.getDouble(key) ?? defaultValue;
   }
 
   Future<bool> saveGenericBool(
       {required String key, required bool value}) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.setBool(key, value);
+    return await prefs.setBool(key, value);
   }
 
   Future<bool> getGenericBool(
       {required String key, required bool defaultValue}) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(key) ?? defaultValue;
+    return await prefs.getBool(key) ?? defaultValue;
   }
 }

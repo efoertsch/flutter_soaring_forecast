@@ -4,6 +4,8 @@ import 'package:flutter_soaring_forecast/soaring/airport_download/airports_downl
 import 'package:flutter_soaring_forecast/soaring/app/custom_material_page_route.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_data_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/ui/rasp_screen.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast_types/bloc/forecast_bloc.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast_types/ui/forecast_list.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 import 'package:flutter_soaring_forecast/soaring/tasks/bloc/task_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/tasks/ui/task_detail.dart';
@@ -155,6 +157,14 @@ class SoaringForecastApp extends StatelessWidget {
               settings: settings,
             );
           }
+          if (settings.name == ForecastList.routeName) {
+            return CustomMaterialPageRoute(
+              builder: (context) {
+                return ForecastList();
+              },
+              settings: settings,
+            );
+          }
 
           assert(false, 'Need to implement ${settings.name}');
           return null;
@@ -295,6 +305,21 @@ class TaskDetail extends StatelessWidget {
       create: (BuildContext context) =>
           TaskBloc(repository: RepositoryProvider.of<Repository>(context)),
       child: TaskDetailScreen(taskId: taskId),
+    );
+  }
+}
+
+//-------------------------------------------------------------
+// Forecast related
+class ForecastList extends StatelessWidget {
+  static const routeName = '/ViewForecastList';
+  ForecastList();
+
+  Widget build(BuildContext context) {
+    return BlocProvider<ForecastBloc>(
+      create: (BuildContext context) =>
+          ForecastBloc(repository: RepositoryProvider.of<Repository>(context)),
+      child: ForecastListScreen(),
     );
   }
 }

@@ -93,7 +93,8 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
         await waitAFrame();
         _emitRaspForecastImageSet(emit);
       }
-    } catch (_) {
+    } catch (e) {
+      print("Error: ${e.toString()}");
       emit(RaspDataLoadErrorState("Error getting regions."));
     }
   }
@@ -169,7 +170,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
 
   /// wstar_bsratio, wstar, ...
   Future _loadForecastTypes() async {
-    _forecasts = (await this.repository.getForecastTypes()).forecasts!;
+    _forecasts = (await this.repository.getForecastList());
     _selectedForecast = _forecasts!.first;
   }
 

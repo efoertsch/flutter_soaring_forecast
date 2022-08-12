@@ -382,7 +382,7 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
           return {
             RaspMenu.clearTask,
             RaspMenu.displayOptions,
-            RaspMenu.mapBackground,
+            // RaspMenu.mapBackground,
             RaspMenu.orderForecasts,
             RaspMenu.opacity,
             RaspMenu.selectRegion
@@ -417,6 +417,10 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
       case RaspMenu.mapBackground:
         break;
       case RaspMenu.orderForecasts:
+        Navigator.pushNamed(
+          context,
+          ForecastList.routeName,
+        );
         break;
       case RaspMenu.opacity:
         _forecastMapStateKey.currentState!.showOverlayOpacitySlider();

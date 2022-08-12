@@ -1,6 +1,7 @@
 library constants;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 //-------- Non translatable values --------------------------------------------
 /// Hold any system wide constants
@@ -19,6 +20,13 @@ enum ImageTypes { body, head, side, foot }
 const String APP_DATABASE = 'app_database.db'; // Floor database name
 
 enum TurnpointEditReturn { noChange, tpAddedUpdated, tpDeleted }
+
+enum ForecastCategoryEnum { thermal, wave, wind }
+
+final Widget waveIcon = SvgPicture.asset('assets/svg/wave.svg');
+final Widget windIcon = SvgPicture.asset('assets/svg/wind.svg');
+final Widget thermalIcon = SvgPicture.asset('assets/svg/thermal.svg');
+final Widget cloudIcon = SvgPicture.asset('assets/svg/cloud.svg');
 
 class PreferenceOption {
   final String key;
@@ -161,6 +169,8 @@ const textStyleBoldBlackFontSize20 =
     TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 20);
 
 const textStyleBlackFontSize20 = TextStyle(color: Colors.black, fontSize: 20);
+
+const textStyleBlackFontSize18 = TextStyle(color: Colors.black, fontSize: 18);
 
 const textStyleBoldBlackFontSize18 =
     TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 18);
