@@ -64,6 +64,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     on<NewLatLngBoundsEvent>(_processNewLatLongBounds);
     on<DisplaySoundingsEvent>(_processSoundingsEvent);
     on<SetForecastOverlayOpacityEvent>(_setForecastOverlayOpacity);
+    on<LoadForecastTypesEvents>(_reloadForecastTypes);
   }
 
   void _processInitialRaspRegionEvent(
@@ -606,5 +607,13 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
       SetForecastOverlayOpacityEvent event, Emitter<RaspDataState> emit) async {
     await repository.setForecastOverlayOpacity(event.forecastOverlayOpacity);
     emit(ForecastOverlayOpacityState(event.forecastOverlayOpacity));
+  }
+
+  FutureOr<void> _reloadForecastTypes(
+      LoadForecastTypesEvents event, Emitter<RaspDataState> emit) async {
+    var currentSelectedForecast = _selectedForecast;
+    await _loadForecastTypes();
+    _selectedForecast = currentSelectedForecast;
+    _emitForecasts(emit);
   }
 }

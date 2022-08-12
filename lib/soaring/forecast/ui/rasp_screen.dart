@@ -406,7 +406,7 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
     }
   }
 
-  void handleClick(String value) {
+  void handleClick(String value) async {
     switch (value) {
       case RaspMenu.clearTask:
         _fireEvent(context, ClearTaskEvent());
@@ -417,10 +417,7 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
       case RaspMenu.mapBackground:
         break;
       case RaspMenu.orderForecasts:
-        Navigator.pushNamed(
-          context,
-          ForecastList.routeName,
-        );
+        _displayForecastList();
         break;
       case RaspMenu.opacity:
         _forecastMapStateKey.currentState!.showOverlayOpacitySlider();
@@ -428,6 +425,16 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
         break;
       case RaspMenu.selectRegion:
         break;
+    }
+  }
+
+  Future<void> _displayForecastList() async {
+    final result = await Navigator.pushNamed(
+      context,
+      ForecastList.routeName,
+    );
+    if (result != null && result is bool && result) {
+      _sendEvent(LoadForecastTypesEvents());
     }
   }
 

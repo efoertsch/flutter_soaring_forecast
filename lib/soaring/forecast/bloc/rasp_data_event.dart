@@ -32,9 +32,9 @@ class SelectRaspForecastDateEvent extends RaspDataEvent {
   SelectRaspForecastDateEvent(this.forecastDate);
 }
 
-class SetRaspForecastTime extends RaspDataEvent {
+class SetRaspForecastTimeEvent extends RaspDataEvent {
   final String forecastTime;
-  SetRaspForecastTime(this.forecastTime);
+  SetRaspForecastTimeEvent(this.forecastTime);
 }
 
 class SelectedRaspForecastEvent extends RaspDataEvent {
@@ -58,8 +58,8 @@ class PreviousTimeEvent extends RaspDataEvent {
 }
 
 /// Tell bloc to load all forecast types
-class LoadForecastTypes extends RaspDataEvent {
-  LoadForecastTypes();
+class LoadForecastTypesEvents extends RaspDataEvent {
+  LoadForecastTypesEvents();
 }
 
 class RunAnimationEvent extends RaspDataEvent {

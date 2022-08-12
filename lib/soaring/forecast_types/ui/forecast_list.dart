@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:cupertino_will_pop_scope/cupertino_will_pop_scope.dart';
 import 'package:drag_and_drop_lists/drag_and_drop_lists.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -10,14 +13,42 @@ import 'package:flutter_soaring_forecast/soaring/forecast_types/bloc/forecast_ev
 import 'package:flutter_soaring_forecast/soaring/forecast_types/bloc/forecast_state.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
 
-class ForecastListScreen extends StatelessWidget {
+class ForecastListScreen extends StatefulWidget {
   ForecastListScreen({Key? key}) : super(key: key);
+
+  @override
+  State<ForecastListScreen> createState() => _ForecastListScreenState();
+}
+
+class _ForecastListScreenState extends State<ForecastListScreen> {
+  bool _reorderedList = false;
+
   late final BuildContext _context;
 
   @override
   Widget build(BuildContext context) {
     BlocProvider.of<ForecastBloc>(context).add(ListForecastsEvent());
     _context = context;
+    if (Platform.isAndroid) {
+      return ConditionalWillPopScope(
+        onWillPop: _onWillPop,
+        shouldAddCallback: true,
+        child: _buildScaffold(context),
+      );
+    } else {
+      //iOS
+      return GestureDetector(
+        onHorizontalDragUpdate: (details) {
+          if (details.delta.direction >= 0) {
+            _onWillPop();
+          }
+        },
+        child: _buildScaffold(context),
+      );
+    }
+  }
+
+  Scaffold _buildScaffold(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         leading: CommonWidgets.backArrowToHomeScreen(),
@@ -96,6 +127,7 @@ class ForecastListScreen extends StatelessWidget {
 
   _onItemReorder(
       int oldItemIndex, int oldListIndex, int newItemIndex, int newListIndex) {
+    _reorderedList = true;
     BlocProvider.of<ForecastBloc>(_context)
         .add(SwitchOrderOfForecastsEvent(oldItemIndex, newItemIndex));
   }
@@ -212,5 +244,11 @@ class ForecastListScreen extends StatelessWidget {
                 onPressed: () => Navigator.pop(context),
               ),
             ]));
+  }
+
+  Future<bool> _onWillPop() async {
+    ScaffoldMessenger.of(context).removeCurrentSnackBar();
+    Navigator.of(context).pop(_reorderedList);
+    return true;
   }
 }
