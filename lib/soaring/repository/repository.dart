@@ -461,14 +461,15 @@ class Repository {
   //-------- Map Display Options ----------------------------------------
   Future<List<PreferenceOption>> getRaspDisplayOptions() async {
     List<PreferenceOption> displayOptions = [];
-    raspDisplayOptions.forEach((option) async {
+    for (var option in raspDisplayOptions) {
       final isSelected =
           await getGenericBool(key: option.key, defaultValue: false);
       displayOptions.add(PreferenceOption(
           key: option.key,
           displayText: option.displayText,
           selected: isSelected));
-    });
+    }
+    ;
     return displayOptions;
   }
 
