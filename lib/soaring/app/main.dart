@@ -158,9 +158,10 @@ class SoaringForecastApp extends StatelessWidget {
             );
           }
           if (settings.name == ForecastList.routeName) {
+            final forecastArgs = settings.arguments as ForecastListArgs;
             return CustomMaterialPageRoute(
               builder: (context) {
-                return ForecastList();
+                return ForecastList(forecastArgs: forecastArgs);
               },
               settings: settings,
             );
@@ -313,13 +314,15 @@ class TaskDetail extends StatelessWidget {
 // Forecast related
 class ForecastList extends StatelessWidget {
   static const routeName = '/ViewForecastList';
-  ForecastList();
+  final ForecastListArgs? forecastArgs;
+
+  ForecastList({this.forecastArgs = null});
 
   Widget build(BuildContext context) {
     return BlocProvider<ForecastBloc>(
       create: (BuildContext context) =>
           ForecastBloc(repository: RepositoryProvider.of<Repository>(context)),
-      child: ForecastListScreen(),
+      child: ForecastListScreen(forecastArgs: forecastArgs),
     );
   }
 }

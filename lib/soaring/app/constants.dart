@@ -1,6 +1,7 @@
 library constants;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 //-------- Non translatable values --------------------------------------------
@@ -27,6 +28,22 @@ final Widget waveIcon = SvgPicture.asset('assets/svg/wave.svg');
 final Widget windIcon = SvgPicture.asset('assets/svg/wind.svg');
 final Widget thermalIcon = SvgPicture.asset('assets/svg/thermal.svg');
 final Widget cloudIcon = SvgPicture.asset('assets/svg/cloud.svg');
+
+Widget getForecastIcon(String forecastCategory) {
+  if (forecastCategory == ForecastCategory.THERMAL.toString()) {
+    return thermalIcon;
+  }
+  if (forecastCategory == ForecastCategory.WIND.toString()) {
+    return windIcon;
+  }
+  if (forecastCategory == ForecastCategory.WAVE.toString()) {
+    return waveIcon;
+  }
+  if (forecastCategory == ForecastCategory.CLOUD.toString()) {
+    return cloudIcon;
+  }
+  return Icon(Icons.help);
+}
 
 class PreferenceOption {
   final String key;

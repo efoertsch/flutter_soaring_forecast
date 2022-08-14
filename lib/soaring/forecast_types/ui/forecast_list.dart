@@ -5,16 +5,32 @@ import 'package:drag_and_drop_lists/drag_and_drop_lists.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
-import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
-import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
-    as Constants;
 import 'package:flutter_soaring_forecast/soaring/forecast_types/bloc/forecast_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast_types/bloc/forecast_event.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast_types/bloc/forecast_state.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast_types/ui/common_forecast_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
+
+class ForecastListArgs {
+  Forecast? forecast;
+
+  ForecastListArgs({
+    this.forecast = null,
+  });
+}
+
+class ReturnedForecastArgs {
+  bool reorderedForecasts;
+  Forecast? forecast;
+
+  ReturnedForecastArgs({this.reorderedForecasts = false, this.forecast = null});
+}
 
 class ForecastListScreen extends StatefulWidget {
-  ForecastListScreen({Key? key}) : super(key: key);
+  final ForecastListArgs? forecastArgs;
+
+  ForecastListScreen({Key? key, this.forecastArgs}) : super(key: key);
 
   @override
   State<ForecastListScreen> createState() => _ForecastListScreenState();
@@ -22,13 +38,14 @@ class ForecastListScreen extends StatefulWidget {
 
 class _ForecastListScreenState extends State<ForecastListScreen> {
   bool _reorderedList = false;
-
-  late final BuildContext _context;
+  Forecast? _selectedForecast = null;
+  final ItemScrollController itemScrollController = ItemScrollController();
+  final ItemPositionsListener itemPositionsListener =
+      ItemPositionsListener.create();
 
   @override
   Widget build(BuildContext context) {
     BlocProvider.of<ForecastBloc>(context).add(ListForecastsEvent());
-    _context = context;
     if (Platform.isAndroid) {
       return ConditionalWillPopScope(
         onWillPop: _onWillPop,
@@ -55,56 +72,92 @@ class _ForecastListScreenState extends State<ForecastListScreen> {
         title: Text('Forecasts'),
         actions: _getForecastMenu(),
       ),
-      body: BlocConsumer<ForecastBloc, ForecastState>(
-        listener: (context, state) {
-          if (state is ForecastShortMessageState) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                backgroundColor: Colors.green,
-                content: Text(state.shortMsg),
-              ),
-            );
-          }
-          if (state is ForecastErrorState) {
-            CommonWidgets.showErrorDialog(
-                context, 'Forecast Error', state.errorMsg);
-          }
-        },
-        buildWhen: (previous, current) {
-          return current is ForecastsLoadingState ||
-              current is ListOfForecastsState;
-        },
-        builder: (context, state) {
-          if (state is ForecastsLoadingState) {
-            return CommonWidgets.buildLoading();
-          }
-          if (state is ListOfForecastsState) {
-            if (state.forecasts.length == 0) {
-              return Center(child: Text("Oh-oh! No Forecasts Found!"));
-            } else {
-              return Column(
-                children: [
-                  SizedBox(height: 8),
-                  _getForecastListView(context, state.forecasts),
-                ],
-              );
-            }
-          }
-          if (state is ForecastErrorState) {
-            WidgetsBinding.instance.addPostFrameCallback((_) =>
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: BlocConsumer<ForecastBloc, ForecastState>(
+            listener: (context, state) {
+              if (state is ForecastShortMessageState) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    backgroundColor: Colors.green,
+                    content: Text(state.shortMsg),
+                  ),
+                );
+              }
+              if (state is ForecastErrorState) {
                 CommonWidgets.showErrorDialog(
-                    context, 'Forecast Error', state.errorMsg));
-            return Center(
-                child:
-                    Text('Oops. Error occurred getting available forecasts.'));
-          }
-          return Center(child: Text("Unhandled State"));
-        },
+                    context, 'Forecast Error', state.errorMsg);
+              }
+            },
+            buildWhen: (previous, current) {
+              return current is ForecastsLoadingState ||
+                  current is ListOfForecastsState;
+            },
+            builder: (context, state) {
+              if (state is ForecastsLoadingState) {
+                return CommonWidgets.buildLoading();
+              }
+              if (state is ListOfForecastsState) {
+                if (state.forecasts.length == 0) {
+                  return Center(child: Text("Oh-oh! No Forecasts Found!"));
+                } else {
+                  return Column(
+                    children: [
+                      _getCorrectListView(context, state.forecasts),
+                    ],
+                  );
+                }
+              }
+              if (state is ForecastErrorState) {
+                WidgetsBinding.instance.addPostFrameCallback((_) =>
+                    CommonWidgets.showErrorDialog(
+                        context, 'Forecast Error', state.errorMsg));
+                return Center(
+                    child: Text(
+                        'Oops. Error occurred getting available forecasts.'));
+              }
+              return Center(child: Text("Unhandled State"));
+            },
+          ),
+        ),
       ),
     );
   }
 
-  Widget _getForecastListView(BuildContext context, List<Forecast> forecasts) {
+  Widget _getCorrectListView(BuildContext context, List<Forecast> forecasts) {
+    if (widget.forecastArgs != null && widget.forecastArgs!.forecast != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        itemScrollController.jumpTo(
+            index: forecasts.indexOf(widget.forecastArgs!.forecast!));
+      });
+      return _getScrollToPositionListView(context, forecasts);
+    }
+    return _getDragAndDropListView(context, forecasts);
+  }
+
+  Widget _getScrollToPositionListView(
+      BuildContext context, List<Forecast> forecasts) {
+    return Expanded(
+      flex: 15,
+      child: Align(
+        alignment: Alignment.topLeft,
+        child: ScrollablePositionedList.builder(
+          shrinkWrap: true,
+          itemCount: forecasts.length,
+          itemBuilder: (context, index) => _getForecastDisplayRow(
+              context: context,
+              forecast: forecasts[index],
+              onTapText: () => _returnSelectedForecast(forecasts[index])),
+          itemScrollController: itemScrollController,
+          itemPositionsListener: itemPositionsListener,
+        ),
+      ),
+    );
+  }
+
+  Widget _getDragAndDropListView(
+      BuildContext context, List<Forecast> forecasts) {
     List<DragAndDropList> forecastDragAndDropList = [];
     List<DragAndDropItem> forecastDragAndDropItems = [];
     forecasts.forEach((forecast) {
@@ -128,7 +181,7 @@ class _ForecastListScreenState extends State<ForecastListScreen> {
   _onItemReorder(
       int oldItemIndex, int oldListIndex, int newItemIndex, int newListIndex) {
     _reorderedList = true;
-    BlocProvider.of<ForecastBloc>(_context)
+    BlocProvider.of<ForecastBloc>(context)
         .add(SwitchOrderOfForecastsEvent(oldItemIndex, newItemIndex));
   }
 
@@ -140,74 +193,44 @@ class _ForecastListScreenState extends State<ForecastListScreen> {
     return DragAndDropItem(
       child: Padding(
         padding: const EdgeInsets.only(top: 8.0),
-        child:
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Expanded(
-            flex: 10,
-            child: Material(
-              color: Colors.white.withOpacity(0.0),
-              child: InkWell(
-                onTap: () {
-                  _showForecastDescription(context, forecast);
-                },
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Add icon to display type of forecast thermal cloud, wave,..
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: _getForecastDisplayNameAndIcon(forecast),
-                    ),
-                    const Divider(
-                      height: 1,
-                      thickness: 1,
-                      indent: 0,
-                      endIndent: 0,
-                      color: Colors.black12,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ]),
+        child: _getForecastDisplayRow(context: context, forecast: forecast),
       ),
     );
   }
 
-  Row _getForecastDisplayNameAndIcon(Forecast forecast) {
-    return Row(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: _getForecastIcon(forecast.forecastCategory.toString()),
-        ),
-        Expanded(
-          child: Text(
-            forecast.forecastNameDisplay,
-            textAlign: TextAlign.left,
-            softWrap: true,
-            style: textStyleBlackFontSize20,
+  Row _getForecastDisplayRow(
+      {required BuildContext context,
+      required Forecast forecast,
+      Function? onTapText = null}) {
+    return Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+      Expanded(
+        flex: 10,
+        child: Material(
+          color: Colors.white.withOpacity(0.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Add icon to display type of forecast thermal cloud, wave,..
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: CommonForecastWidgets.getForecastDisplayNameAndIcon(
+                    forecast,
+                    onTapIcon: (() => CommonForecastWidgets
+                        .showForecastDescriptionBottomSheet(context, forecast)),
+                    onTapText: (() => onTapText != null ? onTapText() : null)),
+              ),
+              const Divider(
+                height: 1,
+                thickness: 1,
+                indent: 0,
+                endIndent: 0,
+                color: Colors.black12,
+              ),
+            ],
           ),
         ),
-      ],
-    );
-  }
-
-  Widget _getForecastIcon(String forecastCategory) {
-    if (forecastCategory == ForecastCategory.THERMAL.toString()) {
-      return Constants.thermalIcon;
-    }
-    if (forecastCategory == ForecastCategory.WIND.toString()) {
-      return Constants.windIcon;
-    }
-    if (forecastCategory == ForecastCategory.WAVE.toString()) {
-      return Constants.waveIcon;
-    }
-    if (forecastCategory == ForecastCategory.CLOUD.toString()) {
-      return Constants.cloudIcon;
-    }
-    return Icon(Icons.help);
+      )
+    ]);
   }
 
   List<Widget> _getForecastMenu() {
@@ -215,40 +238,22 @@ class _ForecastListScreenState extends State<ForecastListScreen> {
       TextButton(
         child: const Text('RESET', style: TextStyle(color: Colors.white)),
         onPressed: () {
-          BlocProvider.of<ForecastBloc>(_context)
+          BlocProvider.of<ForecastBloc>(context)
               .add(ResetForecastListToDefaultEvent());
         },
       ),
     ];
   }
 
-  void _showForecastDescription(BuildContext context, Forecast forecast) {
-    showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(
-            top: Radius.circular(20),
-          ),
-        ),
-        builder: (context) => Column(mainAxisSize: MainAxisSize.min, children: [
-              _getForecastDisplayNameAndIcon(forecast),
-              Padding(
-                padding: const EdgeInsets.only(
-                    top: 16, left: 8.0, right: 8.0, bottom: 8.0),
-                child: Text(forecast.forecastDescription,
-                    style: textStyleBlackFontSize18),
-              ),
-              ElevatedButton(
-                child: Text('Close'),
-                onPressed: () => Navigator.pop(context),
-              ),
-            ]));
-  }
-
   Future<bool> _onWillPop() async {
     ScaffoldMessenger.of(context).removeCurrentSnackBar();
-    Navigator.of(context).pop(_reorderedList);
+    Navigator.of(context).pop(ReturnedForecastArgs(
+        reorderedForecasts: _reorderedList, forecast: _selectedForecast));
     return true;
+  }
+
+  void _returnSelectedForecast(forecast) {
+    _selectedForecast = forecast;
+    _onWillPop();
   }
 }

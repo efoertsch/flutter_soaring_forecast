@@ -462,11 +462,12 @@ class Repository {
   Future<List<PreferenceOption>> getRaspDisplayOptions() async {
     List<PreferenceOption> displayOptions = [];
     raspDisplayOptions.forEach((option) async {
+      final isSelected =
+          await getGenericBool(key: option.key, defaultValue: false);
       displayOptions.add(PreferenceOption(
           key: option.key,
           displayText: option.displayText,
-          selected:
-              (await getGenericBool(key: option.key, defaultValue: false))));
+          selected: isSelected));
     });
     return displayOptions;
   }

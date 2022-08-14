@@ -8,6 +8,7 @@
 ///    b. Add getters as needed for convenience
 import 'dart:convert';
 
+import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'forecast_types.g.dart';
@@ -42,7 +43,7 @@ class ForecastTypes {
 }
 
 @JsonSerializable()
-class Forecast {
+class Forecast extends Equatable {
   String forecastName;
   ForecastType? forecastType;
   String forecastNameDisplay;
@@ -72,6 +73,15 @@ class Forecast {
         "forecast_description": forecastDescription,
         "forecast_category": ForecastCategoryValues.reverse[forecastCategory],
       };
+
+  @override
+  List<Object?> get props => [
+        forecastName,
+        forecastType,
+        forecastNameDisplay,
+        forecastDescription,
+        forecastCategory
+      ];
 }
 
 enum ForecastCategory { THERMAL, WIND, CLOUD, WAVE }

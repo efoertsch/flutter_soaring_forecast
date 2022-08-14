@@ -6,12 +6,17 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_soaring_forecast/soaring/app/app_drawer.dart';
 import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
+import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
+    as Constants;
 import 'package:flutter_soaring_forecast/soaring/app/custom_styles.dart';
 import 'package:flutter_soaring_forecast/soaring/app/main.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_data_state.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/rasp_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/ui/display_ticker.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/ui/forecast_map.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast_types/ui/common_forecast_widgets.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast_types/ui/forecast_list.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
 import 'package:flutter_soaring_forecast/soaring/tasks/ui/task_list.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_overhead_view.dart';
 
@@ -187,30 +192,85 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
     }, builder: (context, state) {
       //print('creating/updating ForecastTypes');
       if (state is RaspForecasts) {
-        return DropdownButton<String>(
-          style: CustomStyle.bold18(context),
-          isExpanded: true,
-          value: state.selectedForecast.forecastNameDisplay,
-          onChanged: (String? newValue) {
-            var selectedForecast = state.forecasts.firstWhere(
-                (forecast) => forecast.forecastNameDisplay == newValue);
-            _fireEvent(context, SelectedRaspForecastEvent(selectedForecast));
-          },
-          items: state.forecasts
-              .map((forecast) => forecast.forecastNameDisplay)
-              .toList()
-              .map<DropdownMenuItem<String>>((String? value) {
-            return DropdownMenuItem<String>(
-              value: value,
-              child: Text(value!),
-            );
-          }).toList(),
-        );
+        return _getSelectedForecastDisplay(context, state.selectedForecast);
+        //_getForecastDropDown(context, state);
       } else {
         return Text("Getting Forecasts");
       }
     });
   }
+
+  Widget _getSelectedForecastDisplay(BuildContext context, Forecast forecast) {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 4.0, bottom: 4.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(left: 8.0, right: 8.0),
+                child: InkWell(
+                    onTap: () {
+                      CommonForecastWidgets.showForecastDescriptionBottomSheet(
+                          context, forecast);
+                    },
+                    child: Constants.getForecastIcon(
+                        forecast.forecastCategory.toString())),
+              ),
+              Flexible(
+                  fit: FlexFit.tight,
+                  child: InkWell(
+                    onTap: () {
+                      _displayForecastList(forecast: forecast);
+                    },
+                    child: Text(
+                      forecast.forecastNameDisplay,
+                      style: CustomStyle.bold18(context),
+                    ),
+                  )),
+              InkWell(
+                onTap: () {
+                  _displayForecastList(forecast: forecast);
+                },
+                child: Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: Icon(Icons.arrow_drop_down_outlined)),
+              )
+            ],
+          ),
+        ),
+        const Divider(
+            height: 1,
+            thickness: 1,
+            indent: 0,
+            endIndent: 0,
+            color: Colors.black12),
+      ],
+    );
+  }
+
+  // DropdownButton<String> _getForecastDropDown(BuildContext context, RaspForecasts state) {
+  //   return DropdownButton<String>(
+  //     style: CustomStyle.bold18(context),
+  //     isExpanded: true,
+  //     value: state.selectedForecast.forecastNameDisplay,
+  //     onChanged: (String? newValue) {
+  //       var selectedForecast = state.forecasts.firstWhere(
+  //           (forecast) => forecast.forecastNameDisplay == newValue);
+  //       _fireEvent(context, SelectedRaspForecastEvent(selectedForecast));
+  //     },
+  //     items: state.forecasts
+  //         .map((forecast) => forecast.forecastNameDisplay)
+  //         .toList()
+  //         .map<DropdownMenuItem<String>>((String? value) {
+  //       return DropdownMenuItem<String>(
+  //         value: value,
+  //         child: Text(value!),
+  //       );
+  //     }).toList(),
+  //   );
+  // }
 
 // Display forecast time for model and date
   Widget _displayForecastTime(BuildContext context) {
@@ -428,13 +488,18 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
     }
   }
 
-  Future<void> _displayForecastList() async {
-    final result = await Navigator.pushNamed(
-      context,
-      ForecastList.routeName,
-    );
-    if (result != null && result is bool && result) {
-      _sendEvent(LoadForecastTypesEvents());
+  Future<void> _displayForecastList({Forecast? forecast = null}) async {
+    final result = await Navigator.pushNamed(context, ForecastList.routeName,
+        arguments: ForecastListArgs(forecast: forecast));
+    if (result != null) {
+      if (result is ReturnedForecastArgs) {
+        if (result.reorderedForecasts) {
+          _sendEvent(LoadForecastTypesEvents());
+        }
+        if (result.forecast != null) {
+          _sendEvent(SelectedRaspForecastEvent(result.forecast!));
+        }
+      }
     }
   }
 

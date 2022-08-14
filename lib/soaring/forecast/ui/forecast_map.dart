@@ -479,6 +479,7 @@ class ForecastMapState extends State<ForecastMap>
       anchorPos: AnchorPos.align(AnchorAlign.top),
     );
     _latLngMarkers.add(latLngMarker);
+    _rebuildMarkerArray();
   }
 
   Widget _getLatLngForecastMarker(LatLngForecast latLngForecast) {
@@ -630,8 +631,6 @@ class ForecastMapState extends State<ForecastMap>
           color: polygonColor ?? Color(0x400000F80),
           borderColor: (polygonColor ?? Color(0xFF0000F80)).withOpacity(1)));
     });
-
-    _sendEvent(RedisplayMarkersEvent());
   }
 
   Widget _getOpacitySlider() {

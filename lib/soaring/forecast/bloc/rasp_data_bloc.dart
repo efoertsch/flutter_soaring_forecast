@@ -309,11 +309,6 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     }
   }
 
-  Future<SoaringForecastImage> _getRaspForecastImage(
-      SoaringForecastImage soaringForecastImage) {
-    return repository.getRaspForecastImageByUrl(soaringForecastImage);
-  }
-
   /// Create url for fetching forecast overly
   /// eg. "/NewEngland/2019-12-19/gfs/wstar_bsratio.1500local.d2.body.png"
   String _createForecastImageUrl(
@@ -377,11 +372,6 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     emit(RaspTaskTurnpoints(<TaskTurnpoint>[]));
   }
 
-  void _showTaskIfSelected(Emitter<RaspDataState> emit) async {
-    var taskId = await repository.getCurrentTaskId();
-    _emitTaskTurnpoints(emit, taskId);
-  }
-
   void _checkForPreviouslySelectedTask(
       MapReadyEvent event, Emitter<RaspDataState> emit) async {
     var taskId = await repository.getCurrentTaskId();
@@ -405,15 +395,9 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     }
   }
 
-  FutureOr<void> _emitSoundings(Emitter<RaspDataState> emit) async {
-    List<Soundings> regionSoundings = [];
-    regionSoundings.addAll(_region!.soundings ?? []);
-    emit(RaspSoundingsState(regionSoundings));
-    // emit soundings state
-  }
-
   _emitRaspDisplayOptions(Emitter<RaspDataState> emit) async {
-    emit(RaspDisplayOptionsState(await repository.getRaspDisplayOptions()));
+    final preferenceOptions = await repository.getRaspDisplayOptions();
+    emit(RaspDisplayOptionsState(preferenceOptions));
   }
 
   Future<List<TaskTurnpoint>> _addTaskTurnpointDetails(int taskId) async {
