@@ -8,8 +8,8 @@ part of 'forecast_types.dart';
 
 ForecastTypes _$ForecastTypesFromJson(Map<String, dynamic> json) =>
     ForecastTypes(
-      forecasts: (json['forecasts'] as List<dynamic>?)
-          ?.map((e) => Forecast.fromJson(e as Map<String, dynamic>))
+      forecasts: (json['forecasts'] as List<dynamic>)
+          .map((e) => Forecast.fromJson(e as Map<String, dynamic>))
           .toList(),
     );
 
@@ -22,8 +22,8 @@ Forecast _$ForecastFromJson(Map<String, dynamic> json) => Forecast(
       forecastName: json['forecastName'] as String,
       forecastType:
           $enumDecodeNullable(_$ForecastTypeEnumMap, json['forecastType']),
-      forecastNameDisplay: json['forecastNameDisplay'] as String?,
-      forecastDescription: json['forecastDescription'] as String?,
+      forecastNameDisplay: json['forecastNameDisplay'] as String,
+      forecastDescription: json['forecastDescription'] as String,
       forecastCategory: $enumDecodeNullable(
           _$ForecastCategoryEnumMap, json['forecastCategory']),
     );

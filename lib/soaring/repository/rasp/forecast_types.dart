@@ -8,6 +8,7 @@
 ///    b. Add getters as needed for convenience
 import 'dart:convert';
 
+import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'forecast_types.g.dart';
@@ -25,10 +26,10 @@ String forecastTypesToJson(ForecastTypes data) => json.encode(data.toJson());
 
 @JsonSerializable()
 class ForecastTypes {
-  List<Forecast>? forecasts;
+  List<Forecast> forecasts;
 
   ForecastTypes({
-    this.forecasts,
+    required this.forecasts,
   });
 
   factory ForecastTypes.fromJson(Map<String, dynamic> json) => ForecastTypes(
@@ -37,24 +38,24 @@ class ForecastTypes {
       );
 
   Map<String, dynamic> toJson() => {
-        "forecasts": List<dynamic>.from(forecasts!.map((x) => x.toJson())),
+        "forecasts": List<dynamic>.from(forecasts.map((x) => x.toJson())),
       };
 }
 
 @JsonSerializable()
-class Forecast {
+class Forecast extends Equatable {
   String forecastName;
   ForecastType? forecastType;
-  String? forecastNameDisplay;
-  String? forecastDescription;
+  String forecastNameDisplay;
+  String forecastDescription;
   ForecastCategory? forecastCategory;
 
   Forecast({
     required this.forecastName,
     this.forecastType,
-    this.forecastNameDisplay,
-    this.forecastDescription,
-    this.forecastCategory,
+    required this.forecastNameDisplay,
+    required this.forecastDescription,
+    required this.forecastCategory,
   });
 
   factory Forecast.fromJson(Map<String, dynamic> json) => Forecast(
@@ -62,7 +63,7 @@ class Forecast {
         forecastType: forecastTypeValues.map[json["forecast_type"]],
         forecastNameDisplay: json["forecast_name_display"],
         forecastDescription: json["forecast_description"],
-        forecastCategory: forecastCategoryValues.map[json["forecast_category"]],
+        forecastCategory: ForecastCategoryValues.map[json["forecast_category"]],
       );
 
   Map<String, dynamic> toJson() => {
@@ -70,13 +71,22 @@ class Forecast {
         "forecast_type": forecastTypeValues.reverse[forecastType],
         "forecast_name_display": forecastNameDisplay,
         "forecast_description": forecastDescription,
-        "forecast_category": forecastCategoryValues.reverse[forecastCategory],
+        "forecast_category": ForecastCategoryValues.reverse[forecastCategory],
       };
+
+  @override
+  List<Object?> get props => [
+        forecastName,
+        forecastType,
+        forecastNameDisplay,
+        forecastDescription,
+        forecastCategory
+      ];
 }
 
 enum ForecastCategory { THERMAL, WIND, CLOUD, WAVE }
 
-final forecastCategoryValues = EnumValues({
+final ForecastCategoryValues = EnumValues({
   "cloud": ForecastCategory.CLOUD,
   "thermal": ForecastCategory.THERMAL,
   "wave": ForecastCategory.WAVE,
@@ -95,9 +105,7 @@ class EnumValues<T> {
   EnumValues(this.map);
 
   Map<T, String> get reverse {
-    if (reverseMap == null) {
-      reverseMap = map.map((k, v) => new MapEntry(v, k));
-    }
+    reverseMap = map.map((k, v) => new MapEntry(v, k));
     return reverseMap;
   }
 }

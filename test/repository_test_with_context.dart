@@ -8,8 +8,9 @@ void main() {
     await tester.pumpWidget(
       Builder(
         builder: (BuildContext context) {
-          var actual = Repository(context).getForecastTypes().then(expectAsync1(
-              (forecastTypes) => expect(forecastTypes.forecasts!.length, 43)));
+          var actual = Repository(context)
+              .getForecastList()
+              .then(expectAsync1((forecasts) => expect(forecasts.length, 43)));
 
           // The builder function must return a widget.
           return Container();

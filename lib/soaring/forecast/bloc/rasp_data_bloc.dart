@@ -64,6 +64,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     on<NewLatLngBoundsEvent>(_processNewLatLongBounds);
     on<DisplaySoundingsEvent>(_processSoundingsEvent);
     on<SetForecastOverlayOpacityEvent>(_setForecastOverlayOpacity);
+    on<LoadForecastTypesEvents>(_reloadForecastTypes);
   }
 
   void _processInitialRaspRegionEvent(
@@ -93,7 +94,8 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
         await waitAFrame();
         _emitRaspForecastImageSet(emit);
       }
-    } catch (_) {
+    } catch (e) {
+      print("Error: ${e.toString()}");
       emit(RaspDataLoadErrorState("Error getting regions."));
     }
   }
@@ -169,7 +171,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
 
   /// wstar_bsratio, wstar, ...
   Future _loadForecastTypes() async {
-    _forecasts = (await this.repository.getForecastTypes()).forecasts!;
+    _forecasts = (await this.repository.getForecastList());
     _selectedForecast = _forecasts!.first;
   }
 
@@ -307,11 +309,6 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     }
   }
 
-  Future<SoaringForecastImage> _getRaspForecastImage(
-      SoaringForecastImage soaringForecastImage) {
-    return repository.getRaspForecastImageByUrl(soaringForecastImage);
-  }
-
   /// Create url for fetching forecast overly
   /// eg. "/NewEngland/2019-12-19/gfs/wstar_bsratio.1500local.d2.body.png"
   String _createForecastImageUrl(
@@ -375,11 +372,6 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     emit(RaspTaskTurnpoints(<TaskTurnpoint>[]));
   }
 
-  void _showTaskIfSelected(Emitter<RaspDataState> emit) async {
-    var taskId = await repository.getCurrentTaskId();
-    _emitTaskTurnpoints(emit, taskId);
-  }
-
   void _checkForPreviouslySelectedTask(
       MapReadyEvent event, Emitter<RaspDataState> emit) async {
     var taskId = await repository.getCurrentTaskId();
@@ -403,15 +395,9 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     }
   }
 
-  FutureOr<void> _emitSoundings(Emitter<RaspDataState> emit) async {
-    List<Soundings> regionSoundings = [];
-    regionSoundings.addAll(_region!.soundings ?? []);
-    emit(RaspSoundingsState(regionSoundings));
-    // emit soundings state
-  }
-
   _emitRaspDisplayOptions(Emitter<RaspDataState> emit) async {
-    emit(RaspDisplayOptionsState(await repository.getRaspDisplayOptions()));
+    final preferenceOptions = await repository.getRaspDisplayOptions();
+    emit(RaspDisplayOptionsState(preferenceOptions));
   }
 
   Future<List<TaskTurnpoint>> _addTaskTurnpointDetails(int taskId) async {
@@ -605,5 +591,13 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
       SetForecastOverlayOpacityEvent event, Emitter<RaspDataState> emit) async {
     await repository.setForecastOverlayOpacity(event.forecastOverlayOpacity);
     emit(ForecastOverlayOpacityState(event.forecastOverlayOpacity));
+  }
+
+  FutureOr<void> _reloadForecastTypes(
+      LoadForecastTypesEvents event, Emitter<RaspDataState> emit) async {
+    var currentSelectedForecast = _selectedForecast;
+    await _loadForecastTypes();
+    _selectedForecast = currentSelectedForecast;
+    _emitForecasts(emit);
   }
 }
