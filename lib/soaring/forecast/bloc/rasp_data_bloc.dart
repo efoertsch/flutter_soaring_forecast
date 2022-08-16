@@ -103,7 +103,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
   void _processSelectedModelEvent(
       SelectedRaspModelEvent event, Emitter<RaspDataState> emit) {
     _selectedModelname = event.modelName;
-    print('Selected model: $_selectedModelname');
+    // print('Selected model: $_selectedModelname');
     // emits same list of models with new selected model
     _emitRaspModels(emit);
     _getDatesForSelectedModel();
@@ -153,8 +153,8 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
   void _emitRaspForecastImageSet(Emitter<RaspDataState> emit) {
     emit(RaspForecastImageSet(_forecastImageSets[_selectedForecastTimeIndex],
         _selectedForecastTimeIndex, _forecastImageSets.length));
-    print(
-        'emitted RaspForecastImageSet  ${_forecastImageSets[_selectedForecastTimeIndex]}');
+    //print(
+    //    'emitted RaspForecastImageSet  ${_forecastImageSets[_selectedForecastTimeIndex]}');
   }
 
   Future<Region> _loadRaspValuesForRegion() async {
@@ -343,8 +343,8 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
   }
 
   void _updateTimeIndex(int incOrDec, Emitter<RaspDataState> emit) {
-    print('Current _selectedForecastTimeIndex $_selectedForecastTimeIndex'
-        '  incOrDec $incOrDec');
+    // print('Current _selectedForecastTimeIndex $_selectedForecastTimeIndex'
+    //     '  incOrDec $incOrDec');
     if (incOrDec > 0) {
       _selectedForecastTimeIndex =
           (_selectedForecastTimeIndex == _forecastTimes!.length - 1)
@@ -355,7 +355,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
           ? _forecastTimes!.length - 1
           : _selectedForecastTimeIndex + incOrDec;
     }
-    print('New _selectedForecastTimeIndex $_selectedForecastTimeIndex');
+    //print('New _selectedForecastTimeIndex $_selectedForecastTimeIndex');
 
     switch (_displayType) {
       case _DisplayType.forecast:
@@ -397,6 +397,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
 
   _emitRaspDisplayOptions(Emitter<RaspDataState> emit) async {
     final preferenceOptions = await repository.getRaspDisplayOptions();
+    print('emitting RaspDisplayOptionsState (to provision dialog dropdown)');
     emit(RaspDisplayOptionsState(preferenceOptions));
   }
 
@@ -443,7 +444,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
           latLngForecastParms);
       if (httpResponse.response.statusCode! >= 200 &&
           httpResponse.response.statusCode! < 300) {
-        print('LatLngForecast text ${httpResponse.response.data.toString()}');
+        // print('LatLngForecast text ${httpResponse.response.data.toString()}');
         emit(LocalForecastState(LatLngForecast(
             latLng: event.latLng,
             forecastText: httpResponse.response.data.toString())));
@@ -561,8 +562,8 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
         _soundingsImageSets[_selectedForecastTimeIndex],
         _selectedForecastTimeIndex,
         _soundingsImageSets.length));
-    print(
-        'emitted SoundingsImageSet  ${_soundingsImageSets[_selectedForecastTimeIndex]}');
+    // print(
+    //     'emitted SoundingsImageSet  ${_soundingsImageSets[_selectedForecastTimeIndex]}');
   }
 
   FutureOr<void> _processDisplayCurrentForecast(
