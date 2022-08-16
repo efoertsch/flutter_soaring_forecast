@@ -19,6 +19,7 @@ import 'package:flutter_soaring_forecast/soaring/forecast_types/ui/forecast_list
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
 import 'package:flutter_soaring_forecast/soaring/tasks/ui/task_list.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_overhead_view.dart';
+import 'package:intl/intl.dart';
 
 import '../bloc/rasp_data_bloc.dart';
 import '../bloc/rasp_data_event.dart';
@@ -34,6 +35,7 @@ class RaspScreen extends StatefulWidget {
 
 //TODO - keep more data details in Bloc,
 class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
+  final abbrevDateformatter = DateFormat('E, MMM dd');
   late final MapController _mapController;
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _forecastMapStateKey = GlobalKey<ForecastMapState>();
@@ -139,7 +141,7 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
           iconSize: 24,
           elevation: 16,
           onChanged: (String? newValue) {
-            print('Selected model onChanged: $newValue');
+            // print('Selected model onChanged: $newValue');
             _fireEvent(context, SelectedRaspModelEvent(newValue!));
           },
           items: state.modelNames.map<DropdownMenuItem<String>>((String value) {
@@ -163,15 +165,21 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
     }, builder: (context, state) {
       //print('creating/updating forecastDatesDropDown');
       if (state is RaspModelDates) {
+        final _shortDOWs = _reformatDatesToDOW(state.forecastDates);
+        final _selectedForecastDOW =
+            _shortDOWs[state.forecastDates.indexOf(state.selectedForecastDate)];
+        final _forecastDates = state.forecastDates;
         return DropdownButton<String>(
           style: CustomStyle.bold18(context),
           isExpanded: true,
-          value: state.selectedForecastDate,
+          value: _selectedForecastDOW,
           onChanged: (String? newValue) {
-            _fireEvent(context, SelectRaspForecastDateEvent(newValue!));
+            final selectedForecastDate =
+                _forecastDates[_shortDOWs.indexOf(newValue!)];
+            _fireEvent(
+                context, SelectRaspForecastDateEvent(selectedForecastDate));
           },
-          items:
-              state.forecastDates.map<DropdownMenuItem<String>>((String value) {
+          items: _shortDOWs.map<DropdownMenuItem<String>>((String value) {
             return DropdownMenuItem<String>(
               value: value,
               child: Text(value),
@@ -249,28 +257,6 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
       ],
     );
   }
-
-  // DropdownButton<String> _getForecastDropDown(BuildContext context, RaspForecasts state) {
-  //   return DropdownButton<String>(
-  //     style: CustomStyle.bold18(context),
-  //     isExpanded: true,
-  //     value: state.selectedForecast.forecastNameDisplay,
-  //     onChanged: (String? newValue) {
-  //       var selectedForecast = state.forecasts.firstWhere(
-  //           (forecast) => forecast.forecastNameDisplay == newValue);
-  //       _fireEvent(context, SelectedRaspForecastEvent(selectedForecast));
-  //     },
-  //     items: state.forecasts
-  //         .map((forecast) => forecast.forecastNameDisplay)
-  //         .toList()
-  //         .map<DropdownMenuItem<String>>((String? value) {
-  //       return DropdownMenuItem<String>(
-  //         value: value,
-  //         child: Text(value!),
-  //       );
-  //     }).toList(),
-  //   );
-  // }
 
 // Display forecast time for model and date
   Widget _displayForecastTime(BuildContext context) {
@@ -390,10 +376,13 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
   }
 
   Widget _widgetToGetRaspDisplayOptions() {
-    return BlocBuilder<RaspDataBloc, RaspDataState>(builder: (context, state) {
+    return BlocConsumer<RaspDataBloc, RaspDataState>(
+        listener: (context, state) {
       if (state is RaspDisplayOptionsState) {
+        // print("Received RaspDisplayOptionsState");
         _raspDisplayOptions = state.displayOptions;
       }
+    }, builder: (context, state) {
       return SizedBox.shrink();
     });
   }
@@ -408,15 +397,15 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
       });
       _displayTimer!.setStartAndLimit(_currentImageIndex, _lastImageIndex);
       _displayTimer!.startTimer();
-      print('Started timer');
+      //print('Started timer');
     } else {
-      print('Stopping timer');
+      //print('Stopping timer');
       if (_tickerSubscription != null) {
         _tickerSubscription!.cancel();
         _displayTimer!.cancelTimer();
         _displayTimer = null;
       }
-      print('Stopped timer');
+      // print('Stopped timer');
     }
   }
 
@@ -461,7 +450,7 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
     final result = await Navigator.pushNamed(context, TaskList.routeName,
         arguments: TaskListScreen.SELECT_TASK_OPTION);
     if (result != null && result is int && result > -1) {
-      print('Draw task for ' + result.toString());
+      //print('Draw task for ' + result.toString());
       _fireEvent(context, GetTaskTurnpointsEvent(result));
     }
   }
@@ -562,5 +551,16 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
 
   _cancel() {
     Navigator.pop(context);
+  }
+
+  List<String> _reformatDatesToDOW(List<String> forecastDates) {
+    final List<String> shortDOWs = [];
+    forecastDates.forEach((date) {
+      final realDate = DateTime.tryParse(date);
+      if (realDate != null) {
+        shortDOWs.add(abbrevDateformatter.format(realDate));
+      }
+    });
+    return shortDOWs;
   }
 }
