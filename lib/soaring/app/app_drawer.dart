@@ -37,12 +37,12 @@ class AppDrawer {
               Navigator.popAndPushNamed(context, TaskList.routeName);
             },
           ),
-          ListTile(
-            title: Text('Windy'),
-            onTap: () {
-              Navigator.pop(context);
-            },
-          ),
+          // ListTile(
+          //   title: Text('Windy'),
+          //   onTap: () {
+          //     Navigator.pop(context);
+          //   },
+          // ),
           ListTile(
             title: Text('SkySight'),
             onTap: () {
@@ -57,58 +57,55 @@ class AppDrawer {
               _launchWebBrowser("http://www.drjack.info/BLIP/univiewer.html");
             },
           ),
-          ListTile(
-            title: Text('Airport METAR/TAF'),
-            onTap: () {
-// Update the state of the app
-// ...
-// Then close the drawer
-              Navigator.pop(context);
-            },
-          ),
-          ListTile(
-            title: Text('NOAA'),
-            onTap: () {
-// Update the state of the app
-// ...
-// Then close the drawer
-              Navigator.pop(context);
-            },
-          ),
-          ListTile(
-            title: Text('GEOS NE'),
-            onTap: () {
-// Update the state of the app
-// ...
-// Then close the drawer
-              Navigator.pop(context);
-            },
-          ),
-          ListTile(
-            title: Text('Airport List'),
-            onTap: () {
-// Update the state of the app
-// ...
-// Then close the drawer
-              Navigator.pop(context);
-            },
-          ),
-          ListTile(
-            title: Text('Settings'),
-            onTap: () {
-// Update the state of the app
-// ...
-// Then close the drawer
-              Navigator.pop(context);
-            },
-          ),
+//           ListTile(
+//             title: Text('Airport METAR/TAF'),
+//             onTap: () {
+// // Update the state of the app
+// // ...
+// // Then close the drawer
+//               Navigator.pop(context);
+//             },
+//           ),
+//           ListTile(
+//             title: Text('NOAA'),
+//             onTap: () {
+// // Update the state of the app
+// // ...
+// // Then close the drawer
+//               Navigator.pop(context);
+//             },
+//           ),
+//           ListTile(
+//             title: Text('GEOS NE'),
+//             onTap: () {
+// // Update the state of the app
+// // ...
+// // Then close the drawer
+//               Navigator.pop(context);
+//             },
+//           ),
+//           ListTile(
+//             title: Text('Airport List'),
+//             onTap: () {
+// // Update the state of the app
+// // ...
+// // Then close the drawer
+//               Navigator.pop(context);
+//             },
+//           ),
+//           ListTile(
+//             title: Text('Settings'),
+//             onTap: () {
+// // Update the state of the app
+// // ...
+// // Then close the drawer
+//               Navigator.pop(context);
+//             },
+//        ),
           ListTile(
             title: Text('About'),
             onTap: () {
-// Update the state of the app
-// ...
-// Then close the drawer
-              Navigator.pop(context);
+              Navigator.popAndPushNamed(context, AboutInfo.routeName);
             },
           ),
         ],

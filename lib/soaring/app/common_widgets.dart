@@ -196,6 +196,51 @@ class CommonWidgets {
           return Divider();
         });
   }
+
+  static Future<void> displayTextInputDialog({
+    required BuildContext context,
+    required String title,
+    required String inputHintText,
+    required TextEditingController textEditingController,
+    required String button1Text,
+    required Function button1Function,
+    required String button2Text,
+    required Function button2Function,
+    bool barrierDismissible = false,
+    int minLines = 2,
+    int maxLines = 10,
+    double widthFactor = .75,
+    double heightFactor = .5,
+  }) async {
+    return showDialog(
+        barrierDismissible: barrierDismissible,
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: Text(title),
+            content: FractionallySizedBox(
+              widthFactor: widthFactor,
+              heightFactor: heightFactor,
+              child: TextFormField(
+                controller: textEditingController,
+                decoration: InputDecoration(hintText: inputHintText),
+                minLines: minLines,
+                maxLines: maxLines,
+              ),
+            ),
+            actions: <Widget>[
+              TextButton(
+                child: Text(button1Text),
+                onPressed: () => button1Function(),
+              ),
+              TextButton(
+                child: Text(button2Text),
+                onPressed: () => button2Function(),
+              ),
+            ],
+          );
+        });
+  }
 }
 
 class CheckboxItem {
