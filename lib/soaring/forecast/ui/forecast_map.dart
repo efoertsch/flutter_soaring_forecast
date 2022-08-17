@@ -12,6 +12,7 @@ import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart'
 import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/LatLngForecast.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image_set.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast/util/animated_map_controller.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/special_use_airspace.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/regions.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoint_utils.dart';
@@ -30,8 +31,8 @@ class ForecastMap extends StatefulWidget {
 }
 
 class ForecastMapState extends State<ForecastMap>
-    with AfterLayoutMixin<ForecastMap> {
-  late final MapController _mapController;
+    with AfterLayoutMixin<ForecastMap>, TickerProviderStateMixin {
+  late final AnimatedMapController _mapController;
   final _forecastOverlayController = StreamController<Null>.broadcast();
   late final StreamSubscription _mapControllerStream;
 
@@ -66,7 +67,8 @@ class ForecastMapState extends State<ForecastMap>
   @override
   void initState() {
     super.initState();
-    _mapController = MapController();
+    //_mapController = MapController();
+    _mapController = AnimatedMapController(this);
   }
 
   @override
@@ -148,7 +150,7 @@ class ForecastMapState extends State<ForecastMap>
   Widget _forecastMap() {
     return BlocConsumer<RaspDataBloc, RaspDataState>(
         listener: (context, state) {
-      print("state : $state");
+      //print("state : $state");
       if (state is RaspInitialState ||
           state is RaspForecastImageSet ||
           state is RaspTaskTurnpoints ||
@@ -157,7 +159,8 @@ class ForecastMapState extends State<ForecastMap>
           state is TurnpointsInBoundsState ||
           state is RedisplayMarkersState ||
           state is SuaDetailsState ||
-          state is ForecastOverlayOpacityState) {
+          state is ForecastOverlayOpacityState ||
+          state is RaspMapLatLngBounds) {
         if (state is RaspForecastImageSet) {
           print('Received RaspForecastImageSet in ForecastMap');
           soaringForecastImageSet = state.soaringForecastImageSet;
@@ -192,6 +195,10 @@ class ForecastMapState extends State<ForecastMap>
           updateForecastOverlay();
           return;
         }
+        if (state is RaspMapLatLngBounds) {
+          _mapLatLngBounds = state.latLngBounds;
+          _mapController.animatedFitBounds(_mapLatLngBounds);
+        }
       }
       ;
     }, buildWhen: (previous, current) {
@@ -204,7 +211,8 @@ class ForecastMapState extends State<ForecastMap>
           current is TurnpointsInBoundsState ||
           current is RedisplayMarkersState ||
           current is SuaDetailsState ||
-          current is ForecastOverlayOpacityState;
+          current is ForecastOverlayOpacityState ||
+          current is RaspMapLatLngBounds;
     }, builder: (context, state) {
       return FlutterMap(
           mapController: _mapController,

@@ -6,6 +6,8 @@ import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_data_bloc.da
 import 'package:flutter_soaring_forecast/soaring/forecast/ui/rasp_screen.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast_types/bloc/forecast_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast_types/ui/forecast_list.dart';
+import 'package:flutter_soaring_forecast/soaring/region/bloc/region_bloc.dart';
+import 'package:flutter_soaring_forecast/soaring/region/ui/region_list_screen.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 import 'package:flutter_soaring_forecast/soaring/tasks/bloc/task_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/tasks/ui/task_detail.dart';
@@ -162,6 +164,15 @@ class SoaringForecastApp extends StatelessWidget {
             return CustomMaterialPageRoute(
               builder: (context) {
                 return ForecastList(forecastArgs: forecastArgs);
+              },
+              settings: settings,
+            );
+          }
+          if (settings.name == RegionList.routeName) {
+            final selectedForecast = settings.arguments as String;
+            return CustomMaterialPageRoute(
+              builder: (context) {
+                return RegionList(selectedRegion: selectedForecast);
               },
               settings: settings,
             );
@@ -323,6 +334,24 @@ class ForecastList extends StatelessWidget {
       create: (BuildContext context) =>
           ForecastBloc(repository: RepositoryProvider.of<Repository>(context)),
       child: ForecastListScreen(forecastArgs: forecastArgs),
+    );
+  }
+}
+
+//-------------------------------------------------------------
+// Regions
+class RegionList extends StatelessWidget {
+  static const routeName = '/RegionList';
+
+  var selectedRegion;
+
+  RegionList({required String this.selectedRegion});
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider<RegionDataBloc>(
+      create: (BuildContext context) => RegionDataBloc(
+          repository: RepositoryProvider.of<Repository>(context)),
+      child: RegionListScreen(selectedRegionName: selectedRegion),
     );
   }
 }

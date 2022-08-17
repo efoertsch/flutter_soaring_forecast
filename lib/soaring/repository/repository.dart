@@ -47,6 +47,12 @@ class Repository {
   static AppDatabase? _appDatabase;
   static var logger = Logger();
 
+  static const String SELECTED_REGION = "SELECTED_REGION";
+  static const String DEFAULT_SELECTED_REGION = "NewEngland";
+  static const String FORECAST_LIST = "FORECAST_LIST";
+  static const String FORECAST_OVERLAY_OPACITY = 'FORECAST_OVERLAY_OPACITY';
+  static const String CURRENT_TASK_ID = "CURRENT_TASK_ID";
+
   Repository._();
 
   // BuildContext should only be null if repository created in WorkManager task!!!
@@ -82,6 +88,15 @@ class Repository {
   ///  1. Get the list of available forecast regions (e.g. NewEngland, Mifflin) and forecast dates, etc for each region
   Future<Regions> getRegions() async {
     return _raspClient.getRegions();
+  }
+
+  Future<String> getSelectedRegionName() async {
+    return await getGenericString(
+        key: SELECTED_REGION, defaultValue: DEFAULT_SELECTED_REGION);
+  }
+
+  Future<void> saveSelectedRegionName(String regionName) async {
+    await saveGenericString(key: SELECTED_REGION, value: regionName);
   }
 
   /// 2. For selected region, iterate through dates for which forecasts have
@@ -130,7 +145,7 @@ class Repository {
   Future<List<Forecast>> _getCustomForecastList() async {
     final forecasts = <Forecast>[];
     final jsonString =
-        await getGenericString(key: "FORECAST_LIST", defaultValue: "");
+        await getGenericString(key: FORECAST_LIST, defaultValue: "");
     if (jsonString.isNotEmpty) {
       final forecastTypes = forecastTypesFromJson(jsonString);
       forecasts.addAll(forecastTypes.forecasts);
@@ -139,13 +154,13 @@ class Repository {
   }
 
   Future<bool> deleteCustomForecastList() async {
-    return await _deleteGenericString(key: "FORECAST_LIST");
+    return await _deleteGenericString(key: FORECAST_LIST);
   }
 
   Future<bool> saveForecasts(List<Forecast> forecasts) async {
     final jsonForecasts =
         forecastTypesToJson(ForecastTypes(forecasts: forecasts));
-    return await saveGenericString(key: "FORECAST_LIST", value: jsonForecasts);
+    return await saveGenericString(key: FORECAST_LIST, value: jsonForecasts);
   }
 
   /**
@@ -169,12 +184,12 @@ class Repository {
 
   Future<double> getForecastOverlayOpacity() async {
     return await getGenericDouble(
-        key: 'FORECAST_OVERLAY_OPACITY', defaultValue: 50);
+        key: FORECAST_OVERLAY_OPACITY, defaultValue: 50);
   }
 
   Future<void> setForecastOverlayOpacity(double forecastOverlayOpacity) async {
     await saveGenericDouble(
-        key: 'FORECAST_OVERLAY_OPACITY', value: forecastOverlayOpacity);
+        key: FORECAST_OVERLAY_OPACITY, value: forecastOverlayOpacity);
   }
 
   dispose() {
@@ -325,7 +340,7 @@ class Repository {
       turnpointRegionList.addAll(turnpointRegions.turnpointRegions!);
     }
     String selectedRegion = await getGenericString(
-        key: "SOARING_FORECAST_REGION", defaultValue: "NewEngland");
+        key: "SOARING_FORECAST_REGION", defaultValue: DEFAULT_SELECTED_REGION);
     return turnpointRegionList
         .firstWhere((region) => region.region == selectedRegion)
         .turnpointFiles;
@@ -428,12 +443,12 @@ class Repository {
 
   // -1 is no task defined
   Future<int> getCurrentTaskId() async {
-    return getGenericInt(key: "CURRENT_TASK_ID", defaultValue: -1);
+    return getGenericInt(key: CURRENT_TASK_ID, defaultValue: -1);
   }
 
   // Set to -1 to clear task
   void setCurrentTaskId(int taskId) async {
-    saveGenericInt(key: "CURRENT_TASK_ID", value: taskId);
+    saveGenericInt(key: CURRENT_TASK_ID, value: taskId);
   }
 
   // ----- Task Turnpoints----------------------------------------
