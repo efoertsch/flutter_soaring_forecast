@@ -220,13 +220,14 @@ class ForecastMapState extends State<ForecastMap>
             bounds: _mapLatLngBounds,
             boundsOptions: FitBoundsOptions(padding: EdgeInsets.all(8.0)),
             allowPanning: true,
-            onTap: (tapPosition, latlng) => print(latlng.toString()),
+            //onTap: (tapPosition, latlng) => print(latlng.toString()),
             onLongPress: (longPressPostion, latLng) =>
                 _getLocalForecast(latLng),
             onPositionChanged: ((mapPosition, hasGesture) =>
                 _updateMapPositon(mapPosition, hasGesture)),
           ),
           layers: [
+            // !!!---- Order of layers very important for receiving click events --- !!!
             TileLayerOptions(
               urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
               subdomains: ['a', 'b', 'c'],
@@ -236,13 +237,13 @@ class ForecastMapState extends State<ForecastMap>
               overlayImages: _overlayImages,
               rebuild: _forecastOverlayController.stream,
             ),
+            PolygonLayerOptions(polygons: _suaPolygons),
             PolylineLayerOptions(
               polylines: _taskTurnpointCourse,
             ),
             MarkerLayerOptions(
               markers: _mapMarkers,
             ),
-            PolygonLayerOptions(polygons: _suaPolygons),
           ]);
     });
   }
@@ -480,8 +481,8 @@ class ForecastMapState extends State<ForecastMap>
   void _placeLocalForecastMarker(LatLngForecast latLngForecast) {
     _latLngMarkers.clear();
     var latLngMarker = Marker(
-      width: 160.0,
-      height: 160.0,
+      width: 200.0,
+      height: 200.0,
       point: latLngForecast.latLng,
       builder: (context) => _getLatLngForecastMarker(latLngForecast),
       anchorPos: AnchorPos.align(AnchorAlign.top),
