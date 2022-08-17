@@ -77,9 +77,10 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
         _regions = await this.repository.getRegions();
       }
       if (_regions != null) {
-        // TODO - get last region displayed from repository and if in list of regions
-        _region = _regions!.regions!.firstWhereOrNull(
-            (region) => (region.name == _regions!.initialRegion))!;
+        final selectedRegionName = await repository.getSelectedRegionName();
+        _region = _regions!.regions!
+            .firstWhereOrNull((region) => (region.name == selectedRegionName))!;
+        emit(SelectedRegionNameState(selectedRegionName));
         // Now get the model (gfs/etc)
         await _loadRaspValuesForRegion();
         await _getSelectedModelDates();
@@ -96,7 +97,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
       }
     } catch (e) {
       print("Error: ${e.toString()}");
-      emit(RaspDataLoadErrorState("Error getting regions."));
+      emit(RaspErrorState("Error getting regions."));
     }
   }
 
@@ -176,7 +177,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
   }
 
   Future _getSelectedModelDates() async {
-    await repository.loadForecastModelsByDateForRegion(_region!);
+    _region = await repository.loadForecastModelsByDateForRegion(_region!);
     // TODO - get last model (gfs, name) from repository and display
     _selectedModelDates = _region!.getModelDates().first;
     _updateForecastDates();
@@ -415,8 +416,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     if (turnpoint != null) {
       emit(TurnpointFoundState(turnpoint));
     } else {
-      emit(RaspDataLoadErrorState(
-          "Oops. Turnpoint not found based on TaskTurnpoint"));
+      emit(RaspErrorState("Oops. Turnpoint not found based on TaskTurnpoint"));
     }
   }
 
@@ -450,7 +450,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
             forecastText: httpResponse.response.data.toString())));
       }
     } catch (e) {
-      emit(RaspDataLoadErrorState(
+      emit(RaspErrorState(
           "Oops. An error occurred getting the location forecast"));
       print(e.toString());
     }

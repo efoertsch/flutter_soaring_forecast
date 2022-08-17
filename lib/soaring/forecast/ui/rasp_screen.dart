@@ -55,6 +55,7 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
   StreamSubscription<int>? _tickerSubscription;
 
   late List<PreferenceOption> _raspDisplayOptions;
+  late String _selectedRegionName;
 
   // Executed only when class created
   @override
@@ -98,7 +99,7 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
               _displayForecastTime(context),
               _getForecastWindow(),
               _widgetForSnackBarMessages(),
-              _widgetToGetRaspDisplayOptions(),
+              _miscStatesHandlerWidget(),
             ]),
           ),
         )
@@ -355,7 +356,7 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
   Widget _widgetForSnackBarMessages() {
     return BlocConsumer<RaspDataBloc, RaspDataState>(
         listener: (context, state) {
-      if (state is RaspDataLoadErrorState) {
+      if (state is RaspErrorState) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: Colors.green,
@@ -367,7 +368,7 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
         displayTurnpointView(context, state);
       }
     }, builder: (context, state) {
-      if (state is RaspDataLoadErrorState) {
+      if (state is RaspErrorState) {
         return SizedBox.shrink();
       } else {
         return SizedBox.shrink();
@@ -375,12 +376,15 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
     });
   }
 
-  Widget _widgetToGetRaspDisplayOptions() {
+  Widget _miscStatesHandlerWidget() {
     return BlocConsumer<RaspDataBloc, RaspDataState>(
         listener: (context, state) {
       if (state is RaspDisplayOptionsState) {
         // print("Received RaspDisplayOptionsState");
         _raspDisplayOptions = state.displayOptions;
+      }
+      if (state is SelectedRegionNameState) {
+        _selectedRegionName = state.selectedRegionName;
       }
     }, builder: (context, state) {
       return SizedBox.shrink();
@@ -470,9 +474,9 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
         break;
       case RaspMenu.opacity:
         _forecastMapStateKey.currentState!.showOverlayOpacitySlider();
-        //_sendEvent(GetForecastOverlayOpacityEvent());
         break;
       case RaspMenu.selectRegion:
+        _showRegionListScreen();
         break;
     }
   }
@@ -532,6 +536,17 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
       button2Function: (() => Navigator.pop(context, currentDisplayOptions)),
       checkboxItems: currentDisplayOptions,
     ).then((newDisplayOptions) => _processDisplayOptions(newDisplayOptions));
+  }
+
+  void _showRegionListScreen() async {
+    final result = await Navigator.pushNamed(context, RegionList.routeName,
+        arguments: _selectedRegionName);
+    if (result != null && result is String) {
+      print("selected region: result");
+      // user switched to another region
+      if (result != _selectedRegionName) ;
+      _fireEvent(context, InitialRaspRegionEvent());
+    }
   }
 
   _processDisplayOptions(List<CheckboxItem>? newDisplayOptions) {
