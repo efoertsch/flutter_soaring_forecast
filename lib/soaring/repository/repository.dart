@@ -340,7 +340,7 @@ class Repository {
       turnpointRegionList.addAll(turnpointRegions.turnpointRegions!);
     }
     String selectedRegion = await getGenericString(
-        key: "SOARING_FORECAST_REGION", defaultValue: DEFAULT_SELECTED_REGION);
+        key: SELECTED_REGION, defaultValue: DEFAULT_SELECTED_REGION);
     return turnpointRegionList
         .firstWhere((region) => region.region == selectedRegion)
         .turnpointFiles;
