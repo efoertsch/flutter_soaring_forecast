@@ -17,7 +17,7 @@ class DisplayTimer {
   }
 
   void tick(_) {
-    print('timer ticked: $_count');
+    //print('timer ticked: $_count');
     _controller.sink.add(_count);
     _count++;
     if (_count >= _limit) {

@@ -132,7 +132,7 @@ class ForecastMapState extends State<ForecastMap>
       return current is RaspInitialState || current is RaspForecastImageSet;
     }, builder: (context, state) {
       if (state is RaspForecastImageSet) {
-        print('Processing RaspForecastImageSet for forecastLegend');
+        // print('Processing RaspForecastImageSet for forecastLegend');
         return InteractiveViewer(
           panEnabled: true,
           maxScale: 4.0,
@@ -162,7 +162,7 @@ class ForecastMapState extends State<ForecastMap>
           state is ForecastOverlayOpacityState ||
           state is RaspMapLatLngBounds) {
         if (state is RaspForecastImageSet) {
-          print('Received RaspForecastImageSet in ForecastMap');
+          // print('Received RaspForecastImageSet in ForecastMap');
           soaringForecastImageSet = state.soaringForecastImageSet;
           updateForecastOverlay();
           return;
@@ -525,7 +525,7 @@ class ForecastMapState extends State<ForecastMap>
   }
 
   void updateForecastOverlay() {
-    print('Using RaspForecastImageSet imageset to display map overlay');
+    //print('Using RaspForecastImageSet imageset to display map overlay');
     if (_firstLayoutComplete) {
       displayForecastNoAnimation();
     }
@@ -533,8 +533,8 @@ class ForecastMapState extends State<ForecastMap>
 
   void displayForecastNoAnimation() {
     if (soaringForecastImageSet != null) {
-      print(
-          "forecast overlay: " + soaringForecastImageSet!.bodyImage!.imageUrl);
+      // print(
+      //     "forecast overlay: " + soaringForecastImageSet!.bodyImage!.imageUrl);
       var imageUrl = soaringForecastImageSet!.bodyImage!.imageUrl;
       var raspUrl = Constants.RASP_BASE_URL + imageUrl;
       var overlayImage = OverlayImage(

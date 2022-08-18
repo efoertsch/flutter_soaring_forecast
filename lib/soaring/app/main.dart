@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_soaring_forecast/soaring/about/about_screen.dart';
 import 'package:flutter_soaring_forecast/soaring/airport_download/airports_downloader.dart';
 import 'package:flutter_soaring_forecast/soaring/app/custom_material_page_route.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_data_bloc.dart';
@@ -173,6 +174,14 @@ class SoaringForecastApp extends StatelessWidget {
             return CustomMaterialPageRoute(
               builder: (context) {
                 return RegionList(selectedRegion: selectedForecast);
+              },
+              settings: settings,
+            );
+          }
+          if (settings.name == AboutInfo.routeName) {
+            return CustomMaterialPageRoute(
+              builder: (context) {
+                return AboutInfo();
               },
               settings: settings,
             );
@@ -353,5 +362,16 @@ class RegionList extends StatelessWidget {
           repository: RepositoryProvider.of<Repository>(context)),
       child: RegionListScreen(selectedRegionName: selectedRegion),
     );
+  }
+}
+
+class AboutInfo extends StatelessWidget {
+  static const routeName = '/aboutScreen';
+
+  AboutInfo();
+
+  @override
+  Widget build(BuildContext context) {
+    return AboutScreen();
   }
 }
