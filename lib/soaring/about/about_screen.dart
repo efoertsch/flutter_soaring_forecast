@@ -113,7 +113,8 @@ class _AboutScreenState extends State<AboutScreen> {
     if (feedback.isNotEmpty) {
       print("Send email");
       Email email = Email(
-          to: ['ericfoertsch@gmail'],
+          //to: ['flightservice@soaringforecast.org'],
+          to: ['ericfoertsch@gmail.com'],
           subject: 'SoaringForecast iOS version feedback',
           body: feedback);
       await EmailLauncher.launch(email);
