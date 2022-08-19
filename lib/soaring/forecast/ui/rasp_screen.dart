@@ -75,9 +75,8 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
   void afterFirstLayout(BuildContext context) {
     // print("First layout complete.");
     // print('Calling series of APIs');
-    _fireEvent(context, InitialRaspRegionEvent());
-    _mapController.onReady
-        .then((value) => _fireEvent(context, MapReadyEvent()));
+    _sendEvent(InitialRaspRegionEvent());
+    _mapController.onReady.then((value) => _sendEvent(MapReadyEvent()));
   }
 
   @override
@@ -143,7 +142,7 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
           elevation: 16,
           onChanged: (String? newValue) {
             // print('Selected model onChanged: $newValue');
-            _fireEvent(context, SelectedRaspModelEvent(newValue!));
+            _sendEvent(SelectedRaspModelEvent(newValue!));
           },
           items: state.modelNames.map<DropdownMenuItem<String>>((String value) {
             return DropdownMenuItem<String>(
@@ -177,8 +176,7 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
           onChanged: (String? newValue) {
             final selectedForecastDate =
                 _forecastDates[_shortDOWs.indexOf(newValue!)];
-            _fireEvent(
-                context, SelectRaspForecastDateEvent(selectedForecastDate));
+            _sendEvent(SelectRaspForecastDateEvent(selectedForecastDate));
           },
           items: _shortDOWs.map<DropdownMenuItem<String>>((String value) {
             return DropdownMenuItem<String>(
@@ -277,7 +275,7 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
                 child: GestureDetector(
                   onTap: () {
                     stopAnimation();
-                    _fireEvent(context, PreviousTimeEvent());
+                    _sendEvent(PreviousTimeEvent());
                     setState(() {});
                   },
                   child: IncrDecrIconWidget.getIncIconWidget('<'),
@@ -321,7 +319,7 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
                 child: GestureDetector(
                   onTap: () {
                     stopAnimation();
-                    _fireEvent(context, NextTimeEvent());
+                    _sendEvent(NextTimeEvent());
                     setState(() {});
                   },
                   child: IncrDecrIconWidget.getIncIconWidget('>'),
@@ -347,10 +345,6 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
             )),
       ],
     );
-  }
-
-  void _fireEvent(BuildContext context, RaspDataEvent event) {
-    BlocProvider.of<RaspDataBloc>(context).add(event);
   }
 
   Widget _widgetForSnackBarMessages() {
@@ -397,7 +391,7 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
       _displayTimer = DisplayTimer(Duration(seconds: 3));
       _overlayPositionCounter = _displayTimer!.stream;
       _tickerSubscription = _overlayPositionCounter!.listen((int counter) {
-        _fireEvent(context, NextTimeEvent());
+        _sendEvent(NextTimeEvent());
       });
       _displayTimer!.setStartAndLimit(_currentImageIndex, _lastImageIndex);
       _displayTimer!.startTimer();
@@ -436,7 +430,7 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
             RaspMenu.clearTask,
             RaspMenu.displayOptions,
             // RaspMenu.mapBackground,
-            RaspMenu.orderForecasts,
+            RaspMenu.reorderForecasts,
             RaspMenu.opacity,
             RaspMenu.selectRegion
           }.map((String choice) {
@@ -455,21 +449,21 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
         arguments: TaskListScreen.SELECT_TASK_OPTION);
     if (result != null && result is int && result > -1) {
       //print('Draw task for ' + result.toString());
-      _fireEvent(context, GetTaskTurnpointsEvent(result));
+      _sendEvent(GetTaskTurnpointsEvent(result));
     }
   }
 
   void handleClick(String value) async {
     switch (value) {
       case RaspMenu.clearTask:
-        _fireEvent(context, ClearTaskEvent());
+        _sendEvent(ClearTaskEvent());
         break;
       case RaspMenu.displayOptions:
         _showMapDisplayOptionsDialog();
         break;
       case RaspMenu.mapBackground:
         break;
-      case RaspMenu.orderForecasts:
+      case RaspMenu.reorderForecasts:
         _displayForecastList();
         break;
       case RaspMenu.opacity:
@@ -545,7 +539,7 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
       print("selected region: result");
       // user switched to another region
       if (result != _selectedRegionName) ;
-      _fireEvent(context, InitialRaspRegionEvent());
+      _sendEvent(InitialRaspRegionEvent());
     }
   }
 

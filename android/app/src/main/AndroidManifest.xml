@@ -15,6 +15,10 @@
         <action android:name="android.intent.action.VIEW" />
         <data android:scheme="https" />
     </intent>
+        <intent>
+            <action android:name="android.intent.action.SEND" />
+            <data android:mimeType="*/*" />
+        </intent>
     </queries>
     <!-- io.flutter.app.FlutterApplication is an android.app.Application that
          calls FlutterMain.startInitialization(this); in its onCreate method.

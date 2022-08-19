@@ -92,7 +92,7 @@ class RaspMenu {
   static const String clearTask = 'Clear Task';
   static const String displayOptions = 'DisplayOptions';
   static const String mapBackground = 'Map Background';
-  static const String orderForecasts = 'Order Forecasts';
+  static const String reorderForecasts = 'Reorder Forecasts';
   static const String opacity = 'Opacity';
   static const String selectRegion = 'Select Region';
 }

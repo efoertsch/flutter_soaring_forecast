@@ -295,7 +295,10 @@ class ForecastMapState extends State<ForecastMap>
   void _updateTaskTurnpoints(List<TaskTurnpoint> taskTurnpoints) {
     print('number of task turnpoints ${taskTurnpoints.length.toString()} ');
     clearTaskFromMap(taskTurnpoints.length > 0);
-    if (taskTurnpoints.length == 0) return;
+    if (taskTurnpoints.length == 0) {
+      _mapController.animatedFitBounds(_mapLatLngBounds);
+      return;
+    }
     List<LatLng> points = <LatLng>[];
     for (var taskTurnpoint in taskTurnpoints) {
       // print('adding taskturnpoint: ${taskTurnpoint.title}');
@@ -485,7 +488,7 @@ class ForecastMapState extends State<ForecastMap>
       height: 200.0,
       point: latLngForecast.latLng,
       builder: (context) => _getLatLngForecastMarker(latLngForecast),
-      anchorPos: AnchorPos.align(AnchorAlign.top),
+      //anchorPos: AnchorPos.align(AnchorAlign.top),
     );
     _latLngMarkers.add(latLngMarker);
     _rebuildMarkerArray();
@@ -519,6 +522,7 @@ class ForecastMapState extends State<ForecastMap>
   void clearTaskFromMap(bool taskDefined) {
     _taskTurnpointCourse.clear();
     _taskMarkers.clear();
+    _rebuildMarkerArray();
     if (taskDefined) {
       southwest = null;
     }
@@ -554,6 +558,8 @@ class ForecastMapState extends State<ForecastMap>
 
   _getLocalForecast(LatLng latLng) {
     widget.stopAnimation();
+    print('Local forecast requested at : ${latLng.latitude.toString()}  :'
+        '  ${latLng.longitude.toString()}');
     _sendEvent(DisplayLocalForecastEvent(latLng));
   }
 
@@ -653,69 +659,72 @@ class ForecastMapState extends State<ForecastMap>
           onEnd: (() {
             if (_forecastOverlaySliderIsVisible) _startHideOpacityTimer();
           }),
-          child: IntrinsicHeight(
-            child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
-                  Container(
-                    color: Colors.white,
-                    child: Center(
-                      child: Padding(
-                        padding: const EdgeInsets.only(left: 8),
-                        child: Text("0",
-                            textAlign: TextAlign.center,
-                            style: Constants.textStyleBoldBlack87FontSize14),
+          child: Visibility(
+            visible: _forecastOverlaySliderIsVisible,
+            child: IntrinsicHeight(
+              child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    Container(
+                      color: Colors.white,
+                      child: Center(
+                        child: Padding(
+                          padding: const EdgeInsets.only(left: 8),
+                          child: Text("0",
+                              textAlign: TextAlign.center,
+                              style: Constants.textStyleBoldBlack87FontSize14),
+                        ),
                       ),
                     ),
-                  ),
-                  Container(
-                    color: Colors.white,
-                    child: Slider(
-                      value: _forecastOverlayOpacity,
-                      max: 100,
-                      min: 0,
-                      divisions: 100,
-                      label: _forecastOverlayOpacity.round().toString(),
-                      onChanged: (double value) {
-                        if (_hideOpacityTimer != null) {
-                          _hideOpacityTimer!.cancel();
-                          _hideOpacityTimer = null;
-                        }
-                        // changing value in setState() doesn't cause overlay opacity change
-                        // so save value and receive updated value from bloc state issue
-                        _sendEvent(SetForecastOverlayOpacityEvent(value));
-                        setState(() {
-                          // but need to set value in setState to redraw slider
-                          _forecastOverlayOpacity = value;
-                        });
-                      },
-                      onChangeEnd: (double value) {
-                        setState(() {
-                          _startHideOpacityTimer();
-                        });
-                      },
-                    ),
-                  ),
-                  Container(
-                    color: Colors.white,
-                    child: Center(
-                      child: Padding(
-                        padding: const EdgeInsets.only(right: 8.0),
-                        child: Text("100",
-                            textAlign: TextAlign.center,
-                            style: Constants.textStyleBoldBlack87FontSize14),
+                    Container(
+                      color: Colors.white,
+                      child: Slider(
+                        value: _forecastOverlayOpacity,
+                        max: 100,
+                        min: 0,
+                        divisions: 100,
+                        label: _forecastOverlayOpacity.round().toString(),
+                        onChanged: (double value) {
+                          if (_hideOpacityTimer != null) {
+                            _hideOpacityTimer!.cancel();
+                            _hideOpacityTimer = null;
+                          }
+                          // changing value in setState() doesn't cause overlay opacity change
+                          // so save value and receive updated value from bloc state issue
+                          _sendEvent(SetForecastOverlayOpacityEvent(value));
+                          setState(() {
+                            // but need to set value in setState to redraw slider
+                            _forecastOverlayOpacity = value;
+                          });
+                        },
+                        onChangeEnd: (double value) {
+                          setState(() {
+                            _startHideOpacityTimer();
+                          });
+                        },
                       ),
                     ),
-                  ),
-                ]),
+                    Container(
+                      color: Colors.white,
+                      child: Center(
+                        child: Padding(
+                          padding: const EdgeInsets.only(right: 8.0),
+                          child: Text("100",
+                              textAlign: TextAlign.center,
+                              style: Constants.textStyleBoldBlack87FontSize14),
+                        ),
+                      ),
+                    ),
+                  ]),
+            ),
           ),
         ));
   }
 
   showOverlayOpacitySlider() {
     setState(() {
-      _forecastOverlaySliderIsVisible = !_forecastOverlaySliderIsVisible;
+      _forecastOverlaySliderIsVisible = true;
     });
   }
 
