@@ -7,6 +7,7 @@ import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart'
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 import 'package:flutter_soaring_forecast/soaring/tasks/bloc/task_event.dart';
 import 'package:flutter_soaring_forecast/soaring/tasks/bloc/task_state.dart';
+import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoint_utils.dart';
 
 class TaskBloc extends Bloc<TaskEvent, TaskState> {
   final Repository repository;
@@ -109,6 +110,10 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
         currentTask = await repository.getTask(event.taskId);
         _taskTurnpoints
             .addAll(await repository.getTaskTurnpoints(event.taskId));
+        for (var taskTurnpoint in _taskTurnpoints) {
+          taskTurnpoint.turnpointColor =
+              await repository.getColorForTurnpoint(taskTurnpoint.code);
+        }
       } catch (e) {
         emit(TaskErrorState(e.toString()));
       }
@@ -134,6 +139,8 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
         code: turnpoint.code,
         latitudeDeg: turnpoint.latitudeDeg,
         longitudeDeg: turnpoint.longitudeDeg);
+    taskTurnpoint.turnpointColor =
+        TurnpointUtils.getColorForTurnpointIcon(turnpoint.style);
     _taskTurnpoints.add(taskTurnpoint);
   }
 

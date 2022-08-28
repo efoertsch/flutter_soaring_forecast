@@ -23,6 +23,7 @@ import 'package:flutter_soaring_forecast/soaring/repository/options/sua_region_f
 import 'package:flutter_soaring_forecast/soaring/repository/options/turnpoint_regions.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/usgs/national_map.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/cup/cup_styles.dart';
+import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoint_utils.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoints_importer.dart';
 import 'package:logger/logger.dart';
 import 'package:path/path.dart';
@@ -328,6 +329,13 @@ class Repository {
   Future<Turnpoint?> getTurnpointByCode(String code) async {
     await makeDatabaseAvailable();
     return _appDatabase!.turnpointDao.getTurnpointByCode(code);
+  }
+
+  Future<Color> getColorForTurnpoint(String turnpointCode) async {
+    Turnpoint? turnpoint = await getTurnpointByCode(turnpointCode);
+    return (turnpoint != null)
+        ? TurnpointUtils.getColorForTurnpointIcon(turnpoint.style)
+        : Colors.red;
   }
 
   //------  Selected turnpoint files available from turnpoint exchange ------

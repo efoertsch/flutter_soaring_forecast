@@ -4,9 +4,9 @@ import 'package:after_layout/after_layout.dart';
 import 'package:cupertino_will_pop_scope/cupertino_will_pop_scope.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_soaring_forecast/main.dart';
 import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
-import 'package:flutter_soaring_forecast/soaring/app/main.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/bloc/turnpoint_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/bloc/turnpoint_event.dart';
@@ -22,8 +22,6 @@ class TurnpointsList extends StatefulWidget {
   final String? viewOption;
   static const String TASK_TURNPOINT_OPTION = 'TaskTurnpointOption';
   final List<Turnpoint> turnpointsForTask = [];
-  String _searchString = "";
-  bool _hasChanges = false;
 
   TurnpointsList({Key? key, String? this.viewOption = null}) : super(key: key);
 
@@ -35,6 +33,8 @@ class _TurnpointsListState extends State<TurnpointsList>
     with AfterLayoutMixin<TurnpointsList> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   bool typing = false;
+  String _searchString = "";
+  bool _hasChanges = false;
 
   // Make sure first layout occurs
   @override
@@ -63,80 +63,90 @@ class _TurnpointsListState extends State<TurnpointsList>
     }
   }
 
-  Scaffold _buildScaffold(BuildContext context) {
-    return Scaffold(
-        key: _scaffoldKey,
-        appBar: getAppBar(),
-        body: BlocConsumer<TurnpointBloc, TurnpointState>(
-            listener: (context, state) {
-          if (state is TurnpointShortMessageState) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                backgroundColor: Colors.green,
-                content: Text(state.shortMsg),
-              ),
-            );
-          }
-        }, buildWhen: (previous, current) {
-          return current is TurnpointsInitialState ||
-              current is SearchingTurnpointsState ||
-              current is TurnpointsLoadedState ||
-              current is TurnpointErrorState ||
-              current is TurnpointSearchMessage ||
-              current is TurnpointSearchErrorState;
-        }, builder: (context, state) {
-          if (state is TurnpointsInitialState) {
-            return CommonWidgets.buildLoading();
-          }
-
-          if (state is SearchingTurnpointsState) {
-            return CommonWidgets.buildLoading();
-          }
-
-          if (state is TurnpointsLoadedState) {
-            if (state.turnpoints.isEmpty) {
-              WidgetsBinding.instance
-                  .addPostFrameCallback((_) => CommonWidgets.showInfoDialog(
-                        context: context,
-                        msg: "No turnpoints found. Would you like to add some?",
-                        title: "No Turnpoints",
-                        button1Text: "No",
-                        button1Function: _cancel,
-                        button2Text: "Yes",
-                        button2Function: _goToSeeYouImport,
-                      ));
-              return Center(
-                child: Text('No turnpoints found.'),
-              );
-            }
-            return _getTurnpointListView(
-                context: context,
-                turnpoints: state.turnpoints,
-                cupStyles: state.cupStyles);
-          }
-
-          if (state is TurnpointErrorState) {
-            WidgetsBinding.instance.addPostFrameCallback((_) =>
-                CommonWidgets.showErrorDialog(
-                    context, 'Turnpoints Error', state.errorMsg));
-          }
-          if (state is TurnpointSearchMessage) {
-            return Center(
-              child: Text(state.msg),
-            );
-          }
-          if (state is TurnpointSearchErrorState) {
-            return Center(
-              child: Text(state.errorMsg),
-            );
-          }
-          return Center(
-            child: Text('Hmmm. Undefined state.'),
-          );
-        }));
+  Widget _buildScaffold(BuildContext context) {
+    return SafeArea(
+      maintainBottomViewPadding: true,
+      child:
+          Scaffold(key: _scaffoldKey, appBar: _getAppBar(), body: _getBody()),
+    );
   }
 
-  AppBar getAppBar() {
+  BlocConsumer<TurnpointBloc, TurnpointState> _getBody() {
+    return BlocConsumer<TurnpointBloc, TurnpointState>(
+        listener: (context, state) {
+      if (state is TurnpointShortMessageState) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.green,
+            content: Text(state.shortMsg),
+          ),
+        );
+      }
+    }, buildWhen: (previous, current) {
+      return current is TurnpointsInitialState ||
+          current is SearchingTurnpointsState ||
+          current is TurnpointsLoadedState ||
+          current is TurnpointErrorState ||
+          current is TurnpointSearchMessage ||
+          current is TurnpointSearchErrorState;
+    }, builder: (context, state) {
+      if (state is TurnpointsInitialState) {
+        return CommonWidgets.buildLoading();
+      }
+
+      // if (state is SearchingTurnpointsState) {
+      //   return CommonWidgets.buildLoading();
+      // }
+
+      if (state is TurnpointsLoadedState) {
+        if (state.turnpoints.isEmpty && _searchString.isEmpty) {
+          WidgetsBinding.instance
+              .addPostFrameCallback((_) => CommonWidgets.showInfoDialog(
+                    context: context,
+                    msg: "No turnpoints found. Would you like to add some?",
+                    title: "No Turnpoints",
+                    button1Text: "No",
+                    button1Function: _cancel,
+                    button2Text: "Yes",
+                    button2Function: _goToSeeYouImport,
+                  ));
+          return Center(
+            child: Text('No turnpoints found.'),
+          );
+        }
+        if (state.turnpoints.isEmpty) {
+          return Center(
+            child: Text('No turnpoints found.'),
+          );
+        }
+        return _getTurnpointListView(
+            context: context,
+            turnpoints: state.turnpoints,
+            cupStyles: state.cupStyles);
+      }
+
+      if (state is TurnpointErrorState) {
+        WidgetsBinding.instance.addPostFrameCallback((_) =>
+            CommonWidgets.showErrorDialog(
+                context, 'Turnpoints Error', state.errorMsg));
+      }
+      if (state is TurnpointSearchMessage) {
+        return Center(
+          child: Text(state.msg),
+        );
+      }
+      if (state is TurnpointSearchErrorState) {
+        return Center(
+          child: Text(state.errorMsg),
+        );
+      }
+      return Center(
+        child: Text('Hmmm. Undefined state.'),
+      );
+    });
+  }
+
+  AppBar _getAppBar() {
     return AppBar(
         title: typing ? getSearchTextBox() : Text("Turnpoints"),
         leading: CommonWidgets.backArrowToHomeScreen(),
@@ -148,8 +158,8 @@ class _TurnpointsListState extends State<TurnpointsList>
       alignment: Alignment.centerLeft,
       color: Colors.white,
       child: TextField(
-        onSubmitted: (searchString) {
-          widget._searchString = searchString;
+        onChanged: (searchString) {
+          _searchString = searchString;
           BlocProvider.of<TurnpointBloc>(context)
               .add(SearchTurnpointsEvent(searchString));
         },
@@ -188,8 +198,8 @@ class _TurnpointsListState extends State<TurnpointsList>
           title: TextButton(
             onPressed: () {
               if (widget.viewOption == TurnpointsList.TASK_TURNPOINT_OPTION) {
-                widget._searchString = "";
-                widget._hasChanges = true;
+                _searchString = "";
+                _hasChanges = true;
                 widget.turnpointsForTask.add(turnpoints[index]);
                 ScaffoldMessenger.of(context).removeCurrentSnackBar();
                 ScaffoldMessenger.of(context).showSnackBar(

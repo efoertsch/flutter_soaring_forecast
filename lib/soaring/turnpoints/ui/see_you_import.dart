@@ -4,8 +4,8 @@ import 'package:after_layout/after_layout.dart';
 import 'package:cupertino_will_pop_scope/cupertino_will_pop_scope.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_soaring_forecast/main.dart';
 import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
-import 'package:flutter_soaring_forecast/soaring/app/main.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/bloc/turnpoint_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/bloc/turnpoint_event.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/bloc/turnpoint_state.dart';
@@ -198,7 +198,7 @@ class _SeeYouImportScreenState extends State<SeeYouImportScreen>
 
   Future<bool> _onWillPop() async {
     ScaffoldMessenger.of(context).removeCurrentSnackBar();
-    Navigator.of(context).popUntil((route) => route.isFirst);
+    Navigator.pop(context);
     return true;
   }
 

@@ -4,9 +4,9 @@ import 'package:after_layout/after_layout.dart';
 import 'package:drag_and_drop_lists/drag_and_drop_lists.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_soaring_forecast/main.dart';
 import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
-import 'package:flutter_soaring_forecast/soaring/app/main.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/task/task.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/taskturnpoint/task_turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
@@ -233,7 +233,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
                   alignment: Alignment.centerLeft,
                   child: IconButton(
                       icon: Icon(Icons.location_searching),
-                      color: Colors.blue,
+                      color: taskTurnpoint.turnpointColor,
                       onPressed: () {
                         _displayTaskTurnpoint(context, taskTurnpoint);
                       }),
