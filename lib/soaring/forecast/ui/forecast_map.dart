@@ -4,9 +4,9 @@ import 'package:after_layout/after_layout.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_soaring_forecast/main.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     as Constants;
-import 'package:flutter_soaring_forecast/soaring/app/main.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/taskturnpoint/task_turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_bloc.dart';
@@ -176,17 +176,17 @@ class ForecastMapState extends State<ForecastMap>
           return;
         }
         if (state is RaspSoundingsState) {
-          print('Received Soundings in ForecastMap');
+          //  print('Received Soundings in ForecastMap');
           _placeSoundingMarkers(state.soundings);
           return;
         }
         if (state is TurnpointsInBoundsState) {
-          print('Received TurnpointsInBoundsState in ForecastMap');
+          //print('Received TurnpointsInBoundsState in ForecastMap');
           _updateTurnpointMarkers(state.turnpoints);
           return;
         }
         if (state is SuaDetailsState) {
-          print('Received SuaDetailsState');
+          // print('Received SuaDetailsState');
           _updateSuaDetails(state.suaDetails);
           return;
         }
@@ -321,9 +321,9 @@ class ForecastMapState extends State<ForecastMap>
     ));
     LatLng southwest = new LatLng(swLat, swLong);
     LatLng northeast = new LatLng(neLat, neLong);
-    _mapController.fitBounds(LatLngBounds(southwest, northeast),
+    _mapController.animatedFitBounds(LatLngBounds(southwest, northeast),
         options: FitBoundsOptions(
-            padding: EdgeInsets.only(left: 15.0, right: 15.0)));
+            padding: EdgeInsets.only(left: 100.0, right: 100.0)));
     //_mapLatLngBounds = LatLngBounds(southwest, northeast);
   }
 

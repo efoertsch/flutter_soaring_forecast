@@ -43,20 +43,28 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
 
   void _searchTurnpointsEvent(
       SearchTurnpointsEvent event, Emitter<TurnpointState> emit) async {
-    if (event.searchString.length < 3) {
-      emit(TurnpointSearchMessage("Enter more than 2 characters"));
-      return;
-    }
+    // if (event.searchString.length < 3) {
+    //   emit(TurnpointSearchMessage("Enter more than 2 characters"));
+    //   return;
+    // }
     emit(SearchingTurnpointsState());
     try {
-      var turnpoints = await repository.findTurnpoints(event.searchString);
-      if (TurnpointUtils.getCupStyles().isEmpty) {
-        final List<CupStyle> cupStyles = await _getCupStyles();
-        TurnpointUtils.setCupStyles(cupStyles);
+      if (event.searchString.isNotEmpty) {
+        var turnpoints = await repository.findTurnpoints(event.searchString);
+        await _getCupStylesIfNeeded();
+        emit(TurnpointsLoadedState(turnpoints, TurnpointUtils.getCupStyles()));
+      } else {
+        await _loadAllTurnpoints(emit);
       }
-      emit(TurnpointsLoadedState(turnpoints, TurnpointUtils.getCupStyles()));
     } catch (e) {
       emit(TurnpointSearchErrorState(e.toString()));
+    }
+  }
+
+  Future<void> _getCupStylesIfNeeded() async {
+    if (TurnpointUtils.getCupStyles().isEmpty) {
+      final List<CupStyle> cupStyles = await _getCupStyles();
+      TurnpointUtils.setCupStyles(cupStyles);
     }
   }
 
@@ -74,10 +82,7 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
     List<Turnpoint> turnpoints = [];
     try {
       turnpoints.addAll(await repository.getAllTurnpoints());
-      if (TurnpointUtils.getCupStyles().isEmpty) {
-        final List<CupStyle> cupStyles = await _getCupStyles();
-        TurnpointUtils.setCupStyles(cupStyles);
-      }
+      await _getCupStylesIfNeeded();
       emit(TurnpointsLoadedState(turnpoints, TurnpointUtils.getCupStyles()));
     } catch (e) {
       emit(TurnpointErrorState(e.toString()));

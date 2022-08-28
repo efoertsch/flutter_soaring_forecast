@@ -1,4 +1,5 @@
 import 'package:floor/floor.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/task/task.dart';
 
 //TODO if any changes run  -  flutter packages pub run build_runner build
@@ -33,6 +34,10 @@ class TaskTurnpoint {
 
   // used for taskTurnpoint display
   late bool lastTurnpoint;
+
+  // Option color for turnpoint icon - green grass, black asphalt, red everything else
+  @ignore
+  Color turnpointColor = Colors.red;
 
   TaskTurnpoint(
       {this.id,

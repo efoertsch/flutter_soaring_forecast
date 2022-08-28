@@ -376,8 +376,8 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
   void _checkForPreviouslySelectedTask(
       MapReadyEvent event, Emitter<RaspDataState> emit) async {
     var taskId = await repository.getCurrentTaskId();
-    await _emitTaskTurnpoints(emit, taskId);
     await _emitRaspDisplayOptions(emit);
+    await _emitTaskTurnpoints(emit, taskId);
   }
 
   void _getTurnpointsForTaskId(
@@ -391,7 +391,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     if (taskId > -1) {
       final List<TaskTurnpoint> taskTurnpoints =
           await _addTaskTurnpointDetails(taskId);
-      print('emitting taskturnpoints');
+      // print('emitting taskturnpoints');
       emit(RaspTaskTurnpoints(taskTurnpoints));
     }
   }

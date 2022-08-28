@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_soaring_forecast/soaring/app/main.dart';
+import 'package:flutter_soaring_forecast/main.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class AppDrawer {

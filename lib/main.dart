@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/about/about_screen.dart';
-import 'package:flutter_soaring_forecast/soaring/airport_download/airports_downloader.dart';
 import 'package:flutter_soaring_forecast/soaring/app/custom_material_page_route.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_data_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/ui/rasp_screen.dart';
@@ -20,17 +19,16 @@ import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_edit_vi
 import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_overhead_view.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoints_list.dart';
 import 'package:flutter_soaring_forecast/soaring/values/strings.dart';
-import 'package:workmanager/workmanager.dart';
 
-void callbackDispatcher() {
-  Workmanager().executeTask((task, inputData) {
-    print('Checking to download airports');
-    var ok = AirportsDownloader(repository: Repository(null))
-        .downloadAirportsIfNeeded();
-    print('AirportsDownloader response : $ok');
-    return Future.value(ok);
-  });
-}
+// void callbackDispatcher() {
+//   Workmanager().executeTask((task, inputData) {
+//     print('Checking to download airports');
+//     var ok = AirportsDownloader(repository: Repository(null))
+//         .downloadAirportsIfNeeded();
+//     print('AirportsDownloader response : $ok');
+//     return Future.value(ok);
+//   });
+// }
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
