@@ -13,19 +13,21 @@ class CommonForecastWidgets {
             top: Radius.circular(20),
           ),
         ),
-        builder: (context) => Column(mainAxisSize: MainAxisSize.min, children: [
-              getForecastDisplayNameAndIcon(forecast),
-              Padding(
-                padding: const EdgeInsets.only(
-                    top: 16, left: 8.0, right: 8.0, bottom: 8.0),
-                child: Text(forecast.forecastDescription,
-                    style: textStyleBlackFontSize18),
-              ),
-              ElevatedButton(
-                child: Text('Close'),
-                onPressed: () => Navigator.pop(context),
-              ),
-            ]));
+        builder: (context) => SafeArea(
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                getForecastDisplayNameAndIcon(forecast),
+                Padding(
+                  padding: const EdgeInsets.only(
+                      top: 16, left: 8.0, right: 8.0, bottom: 8.0),
+                  child: Text(forecast.forecastDescription,
+                      style: textStyleBlackFontSize18),
+                ),
+                ElevatedButton(
+                  child: Text('Close'),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ]),
+            ));
   }
 
   static Row getForecastDisplayNameAndIcon(Forecast forecast,
