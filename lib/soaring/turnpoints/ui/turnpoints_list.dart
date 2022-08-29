@@ -283,7 +283,7 @@ class _TurnpointsListState extends State<TurnpointsList>
               TurnpointMenu.importTurnpoints,
               TurnpointMenu.addTurnpoint,
               TurnpointMenu.exportTurnpoints,
-              TurnpointMenu.emailTurnpoints,
+              //TurnpointMenu.emailTurnpoints,
               TurnpointMenu.clearTurnpointDatabase
             }.map((String choice) {
               return PopupMenuItem<String>(
