@@ -65,60 +65,62 @@ class _ForecastListScreenState extends State<ForecastListScreen> {
     }
   }
 
-  Scaffold _buildScaffold(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        leading: CommonWidgets.backArrowToHomeScreen(),
-        title: Text('Forecasts'),
-        actions: _getForecastMenu(),
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: BlocConsumer<ForecastBloc, ForecastState>(
-            listener: (context, state) {
-              if (state is ForecastShortMessageState) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    backgroundColor: Colors.green,
-                    content: Text(state.shortMsg),
-                  ),
-                );
-              }
-              if (state is ForecastErrorState) {
-                CommonWidgets.showErrorDialog(
-                    context, 'Forecast Error', state.errorMsg);
-              }
-            },
-            buildWhen: (previous, current) {
-              return current is ForecastsLoadingState ||
-                  current is ListOfForecastsState;
-            },
-            builder: (context, state) {
-              if (state is ForecastsLoadingState) {
-                return CommonWidgets.buildLoading();
-              }
-              if (state is ListOfForecastsState) {
-                if (state.forecasts.length == 0) {
-                  return Center(child: Text("Oh-oh! No Forecasts Found!"));
-                } else {
-                  return Column(
-                    children: [
-                      _getCorrectListView(context, state.forecasts),
-                    ],
+  Widget _buildScaffold(BuildContext context) {
+    return SafeArea(
+      child: Scaffold(
+        appBar: AppBar(
+          leading: CommonWidgets.backArrowToHomeScreen(),
+          title: Text('Forecasts'),
+          actions: _getForecastMenu(),
+        ),
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: BlocConsumer<ForecastBloc, ForecastState>(
+              listener: (context, state) {
+                if (state is ForecastShortMessageState) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      backgroundColor: Colors.green,
+                      content: Text(state.shortMsg),
+                    ),
                   );
                 }
-              }
-              if (state is ForecastErrorState) {
-                WidgetsBinding.instance.addPostFrameCallback((_) =>
-                    CommonWidgets.showErrorDialog(
-                        context, 'Forecast Error', state.errorMsg));
-                return Center(
-                    child: Text(
-                        'Oops. Error occurred getting available forecasts.'));
-              }
-              return Center(child: Text("Unhandled State"));
-            },
+                if (state is ForecastErrorState) {
+                  CommonWidgets.showErrorDialog(
+                      context, 'Forecast Error', state.errorMsg);
+                }
+              },
+              buildWhen: (previous, current) {
+                return current is ForecastsLoadingState ||
+                    current is ListOfForecastsState;
+              },
+              builder: (context, state) {
+                if (state is ForecastsLoadingState) {
+                  return CommonWidgets.buildLoading();
+                }
+                if (state is ListOfForecastsState) {
+                  if (state.forecasts.length == 0) {
+                    return Center(child: Text("Oh-oh! No Forecasts Found!"));
+                  } else {
+                    return Column(
+                      children: [
+                        _getCorrectListView(context, state.forecasts),
+                      ],
+                    );
+                  }
+                }
+                if (state is ForecastErrorState) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) =>
+                      CommonWidgets.showErrorDialog(
+                          context, 'Forecast Error', state.errorMsg));
+                  return Center(
+                      child: Text(
+                          'Oops. Error occurred getting available forecasts.'));
+                }
+                return Center(child: Text("Unhandled State"));
+              },
+            ),
           ),
         ),
       ),
