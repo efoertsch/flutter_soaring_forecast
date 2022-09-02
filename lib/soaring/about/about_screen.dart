@@ -23,7 +23,7 @@ class _AboutScreenState extends State<AboutScreen> {
       return ConditionalWillPopScope(
         onWillPop: _onWillPop,
         shouldAddCallback: true,
-        child: _buildScaffold(context),
+        child: _buildSafeArea(context),
       );
     } else {
       //iOS
@@ -33,24 +33,24 @@ class _AboutScreenState extends State<AboutScreen> {
             _onWillPop();
           }
         },
-        child: _buildScaffold(context),
+        child: _buildSafeArea(context),
       );
     }
   }
 
-  Widget _buildScaffold(BuildContext context) {
+  Widget _buildSafeArea(BuildContext context) {
     return SafeArea(
       child: Scaffold(
-        appBar: getAppBar(),
+        appBar: getAppBar(context),
         body: _getBody(),
       ),
     );
   }
 
-  AppBar getAppBar() {
+  AppBar getAppBar(BuildContext context) {
     return AppBar(
       title: Text("About"),
-      leading: CommonWidgets.backArrowToHomeScreen(),
+      leading: BackButton(onPressed: () => Navigator.pop(context)),
       //  actions: _getAppBarMenu(),
     );
   }

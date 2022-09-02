@@ -28,7 +28,7 @@ class _RegionListScreenState extends State<RegionListScreen> {
       return ConditionalWillPopScope(
         onWillPop: _onWillPop,
         shouldAddCallback: true,
-        child: _buildScaffold(context),
+        child: _buildSafeArea(context),
       );
     } else {
       //iOS
@@ -38,61 +38,70 @@ class _RegionListScreenState extends State<RegionListScreen> {
             _onWillPop();
           }
         },
-        child: _buildScaffold(context),
+        child: _buildSafeArea(context),
       );
     }
   }
 
   @override
-  Widget _buildScaffold(BuildContext context) {
+  Widget _buildSafeArea(BuildContext context) {
     BlocProvider.of<RegionDataBloc>(context).add(ListRegionsEvent());
-    return Scaffold(
-      appBar: AppBar(
-        leading: CommonWidgets.backArrowToHomeScreen(),
-        title: Text('Region List'),
+    return SafeArea(
+      child: Scaffold(
+        appBar: _getAppBar(),
+        body: _getBody(),
       ),
-      body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.all(8.0),
-          child: BlocConsumer<RegionDataBloc, RegionDataState>(
-            listener: (context, state) {
-              if (state is RegionErrorState) {
+    );
+  }
+
+  AppBar _getAppBar() {
+    return AppBar(
+      leading: BackButton(
+        onPressed: _onWillPop,
+      ),
+      title: Text('Region List'),
+    );
+  }
+
+  Padding _getBody() {
+    return Padding(
+      padding: EdgeInsets.all(8.0),
+      child: BlocConsumer<RegionDataBloc, RegionDataState>(
+        listener: (context, state) {
+          if (state is RegionErrorState) {
+            CommonWidgets.showErrorDialog(context, 'Region Error', state.error);
+          }
+        },
+        buildWhen: (previous, current) {
+          return current is RegionInitialState ||
+              current is RegionsLoadedState ||
+              current is RegionErrorState;
+        },
+        builder: (context, state) {
+          if (state is RegionInitialState) {
+            return CommonWidgets.buildLoading();
+          }
+          if (state is RegionsLoadedState) {
+            if (state.regions.length == 0) {
+              // WidgetsBinding.instance?.addPostFrameCallback(
+              //     (_) => _showNoTasksFoundDialog(context));
+              return Center(child: Text("No Regions Found"));
+            } else {
+              return Column(
+                children: _getRegionListView(regions: state.regions),
+              );
+            }
+          }
+          if (state is RegionErrorState) {
+            WidgetsBinding.instance.addPostFrameCallback((_) =>
                 CommonWidgets.showErrorDialog(
-                    context, 'Region Error', state.error);
-              }
-            },
-            buildWhen: (previous, current) {
-              return current is RegionInitialState ||
-                  current is RegionsLoadedState ||
-                  current is RegionErrorState;
-            },
-            builder: (context, state) {
-              if (state is RegionInitialState) {
-                return CommonWidgets.buildLoading();
-              }
-              if (state is RegionsLoadedState) {
-                if (state.regions.length == 0) {
-                  // WidgetsBinding.instance?.addPostFrameCallback(
-                  //     (_) => _showNoTasksFoundDialog(context));
-                  return Center(child: Text("No Regions Found"));
-                } else {
-                  return Column(
-                    children: _getRegionListView(regions: state.regions),
-                  );
-                }
-              }
-              if (state is RegionErrorState) {
-                WidgetsBinding.instance.addPostFrameCallback((_) =>
-                    CommonWidgets.showErrorDialog(
-                        context, 'Regions Error', state.error));
-                return Center(
-                    child: Text(
-                        'Oops. Error occurred getting the list of Regions.'));
-              }
-              return Center(child: Text("Unhandled State"));
-            },
-          ),
-        ),
+                    context, 'Regions Error', state.error));
+            return Center(
+                child:
+                    Text('Oops. Error occurred getting the list of Regions.'));
+          }
+          return Center(child: Text("Unhandled State"));
+        },
       ),
     );
   }

@@ -217,6 +217,7 @@ class ForecastMapState extends State<ForecastMap>
       return FlutterMap(
           mapController: _mapController,
           options: MapOptions(
+            interactiveFlags: InteractiveFlag.pinchZoom | InteractiveFlag.drag,
             bounds: _mapLatLngBounds,
             boundsOptions: FitBoundsOptions(padding: EdgeInsets.all(8.0)),
             allowPanning: true,

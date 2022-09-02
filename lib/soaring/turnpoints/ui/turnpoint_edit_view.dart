@@ -81,7 +81,7 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
       return ConditionalWillPopScope(
         onWillPop: _onWillPop,
         shouldAddCallback: true,
-        child: _buildScaffold(context),
+        child: _buildSafeArea(context),
       );
     } else {
       //iOS
@@ -91,20 +91,28 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
             _onWillPop();
           }
         },
-        child: _buildScaffold(context),
+        child: _buildSafeArea(context),
       );
     }
   }
 
-  Widget _buildScaffold(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(TurnpointEditText.screenTitle),
-        leading: CommonWidgets.backArrowToHomeScreen(),
-        actions: _getMenu(),
+  Widget _buildSafeArea(BuildContext context) {
+    return SafeArea(
+      child: Scaffold(
+        appBar: _getAppBar(),
+        body: _getBodyWidget(),
+        bottomNavigationBar: null,
       ),
-      body: _getBodyWidget(),
-      bottomNavigationBar: null,
+    );
+  }
+
+  AppBar _getAppBar() {
+    return AppBar(
+      title: Text(TurnpointEditText.screenTitle),
+      leading: BackButton(
+        onPressed: _onWillPop,
+      ),
+      actions: _getMenu(),
     );
   }
 

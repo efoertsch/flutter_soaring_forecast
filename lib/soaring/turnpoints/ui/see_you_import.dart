@@ -21,6 +21,7 @@ class SeeYouImportScreen extends StatefulWidget {
 
 class _SeeYouImportScreenState extends State<SeeYouImportScreen>
     with AfterLayoutMixin<SeeYouImportScreen> {
+  bool importedTurnpoints = false;
 // Make sure first layout occurs prior to map ready otherwise crash occurs
   @override
   void afterFirstLayout(BuildContext context) {
@@ -33,7 +34,7 @@ class _SeeYouImportScreenState extends State<SeeYouImportScreen>
       return ConditionalWillPopScope(
         onWillPop: _onWillPop,
         shouldAddCallback: true,
-        child: _buildScaffold(context),
+        child: _buildSafeArea(context),
       );
     } else {
       //iOS
@@ -43,125 +44,132 @@ class _SeeYouImportScreenState extends State<SeeYouImportScreen>
             _onWillPop();
           }
         },
-        child: _buildScaffold(context),
+        child: _buildSafeArea(context),
       );
     }
   }
 
-  Scaffold _buildScaffold(BuildContext context) {
-    return Scaffold(
-        appBar: AppBar(
-            leading: CommonWidgets.backArrowToHomeScreen(),
-            title: Text('Turnpoint Import'),
-            actions: getTurnpointMenu()),
-        body: BlocConsumer<TurnpointBloc, TurnpointState>(
-            listener: (context, state) {
-          //TODO handle error msg
-          if (state is TurnpointShortMessageState) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                backgroundColor: Colors.green,
-                content: Text(state.shortMsg),
-              ),
-            );
-          }
-        }, buildWhen: (previous, current) {
-          return current is TurnpointsInitialState ||
-              current is TurnpointFilesFoundState ||
-              current is TurnpointErrorState;
-        }, builder: (context, state) {
-          if (state is TurnpointFilesFoundState) {
-            if (state.turnpointFiles.isEmpty) {
-              return Center(
-                child: Text('No turnpoint files found.'),
-              );
-            }
-            return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(top: 16.0, bottom: 16.0),
-                    child: Center(
-                      child: Text(
-                        "Available Turnpoint Files",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.black, fontSize: 24),
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: ListView.separated(
-                      itemCount: state.turnpointFiles.length,
-                      itemBuilder: (BuildContext context, int index) {
-                        final turnpointFile = state.turnpointFiles[index];
-                        return ListTile(
-                          onTap: () {
-                            _sendEvent(LoadTurnpointFileEvent(turnpointFile));
-                          },
-                          dense: true,
-                          contentPadding: EdgeInsets.symmetric(horizontal: 8.0),
-                          visualDensity:
-                              VisualDensity(horizontal: 0, vertical: -4),
-                          title: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: <Widget>[
-                              Text(
-                                turnpointFile.state,
-                                textAlign: TextAlign.left,
-                                style: TextStyle(
-                                    color: Colors.black, fontSize: 20),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.only(left: 16.0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      turnpointFile.location,
-                                      textAlign: TextAlign.left,
-                                      style: TextStyle(
-                                          color: Colors.black87, fontSize: 20),
-                                    ),
-                                    Text(
-                                      turnpointFile.date,
-                                      textAlign: TextAlign.left,
-                                      style: TextStyle(
-                                          color: Colors.black87, fontSize: 20),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                      separatorBuilder: (context, index) {
-                        return Divider();
-                      },
-                    ),
-                  ),
-                ]);
-          }
-          if (state is TurnpointErrorState) {
-            WidgetsBinding.instance.addPostFrameCallback((_) =>
-                CommonWidgets.showErrorDialog(
-                    context, 'Turnpoints Error', state.errorMsg));
-          }
-          if (state is TurnpointsInitialState) {
-            print('returning CircularProgressIndicator');
-            return Center(child: CircularProgressIndicator());
-          }
-          return Center(
-            child: Text('Hmmm. Undefined state.'),
-          );
-        }));
+  Widget _buildSafeArea(BuildContext context) {
+    return SafeArea(
+      child: Scaffold(appBar: _getAppBar(), body: _getBody()),
+    );
   }
 
-  List<Widget> getTurnpointMenu() {
+  AppBar _getAppBar() {
+    return AppBar(
+        leading: BackButton(
+          onPressed: _onWillPop,
+        ),
+        title: Text('Turnpoint Import'),
+        actions: _getTurnpointMenu());
+  }
+
+  BlocConsumer<TurnpointBloc, TurnpointState> _getBody() {
+    return BlocConsumer<TurnpointBloc, TurnpointState>(
+        listener: (context, state) {
+      //TODO handle error msg
+      if (state is TurnpointShortMessageState) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.green,
+            content: Text(state.shortMsg),
+          ),
+        );
+      }
+    }, buildWhen: (previous, current) {
+      return current is TurnpointsInitialState ||
+          current is TurnpointFilesFoundState ||
+          current is TurnpointErrorState;
+    }, builder: (context, state) {
+      if (state is TurnpointFilesFoundState) {
+        if (state.turnpointFiles.isEmpty) {
+          return Center(
+            child: Text('No turnpoint files found.'),
+          );
+        }
+        return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 16.0, bottom: 16.0),
+            child: Center(
+              child: Text(
+                "Available Turnpoint Files",
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.black, fontSize: 24),
+              ),
+            ),
+          ),
+          Expanded(
+            child: ListView.separated(
+              itemCount: state.turnpointFiles.length,
+              itemBuilder: (BuildContext context, int index) {
+                final turnpointFile = state.turnpointFiles[index];
+                return ListTile(
+                  onTap: () {
+                    _sendEvent(LoadTurnpointFileEvent(turnpointFile));
+                    importedTurnpoints = true;
+                  },
+                  dense: true,
+                  contentPadding: EdgeInsets.symmetric(horizontal: 8.0),
+                  visualDensity: VisualDensity(horizontal: 0, vertical: -4),
+                  title: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        turnpointFile.state,
+                        textAlign: TextAlign.left,
+                        style: TextStyle(color: Colors.black, fontSize: 20),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              turnpointFile.location,
+                              textAlign: TextAlign.left,
+                              style: TextStyle(
+                                  color: Colors.black87, fontSize: 20),
+                            ),
+                            Text(
+                              turnpointFile.date,
+                              textAlign: TextAlign.left,
+                              style: TextStyle(
+                                  color: Colors.black87, fontSize: 20),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+              separatorBuilder: (context, index) {
+                return Divider();
+              },
+            ),
+          ),
+        ]);
+      }
+      if (state is TurnpointErrorState) {
+        WidgetsBinding.instance.addPostFrameCallback((_) =>
+            CommonWidgets.showErrorDialog(
+                context, 'Turnpoints Error', state.errorMsg));
+      }
+      if (state is TurnpointsInitialState) {
+        print('returning CircularProgressIndicator');
+        return Center(child: CircularProgressIndicator());
+      }
+      return Center(
+        child: Text('Hmmm. Undefined state.'),
+      );
+    });
+  }
+
+  List<Widget> _getTurnpointMenu() {
     return <Widget>[
       PopupMenuButton<String>(
         icon: Icon(Icons.more_vert),
-        onSelected: handleClick,
+        onSelected: _handleClick,
         itemBuilder: (BuildContext context) {
           return {
             TurnpointMenu.customImport,
@@ -177,7 +185,7 @@ class _SeeYouImportScreenState extends State<SeeYouImportScreen>
     ];
   }
 
-  void handleClick(String value) {
+  void _handleClick(String value) {
     switch (value) {
       case TurnpointMenu.clearTurnpointDatabase:
         CommonWidgets.showInfoDialog(
@@ -198,7 +206,7 @@ class _SeeYouImportScreenState extends State<SeeYouImportScreen>
 
   Future<bool> _onWillPop() async {
     ScaffoldMessenger.of(context).removeCurrentSnackBar();
-    Navigator.pop(context);
+    Navigator.pop(context, importedTurnpoints);
     return true;
   }
 

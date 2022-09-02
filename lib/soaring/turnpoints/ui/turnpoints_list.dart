@@ -48,7 +48,7 @@ class _TurnpointsListState extends State<TurnpointsList>
       return ConditionalWillPopScope(
         onWillPop: _onWillPop,
         shouldAddCallback: true,
-        child: _buildScaffold(context),
+        child: _buildSafeAread(context),
       );
     } else {
       //iOS
@@ -58,12 +58,12 @@ class _TurnpointsListState extends State<TurnpointsList>
             _onWillPop();
           }
         },
-        child: _buildScaffold(context),
+        child: _buildSafeAread(context),
       );
     }
   }
 
-  Widget _buildScaffold(BuildContext context) {
+  Widget _buildSafeAread(BuildContext context) {
     return SafeArea(
       maintainBottomViewPadding: true,
       child:
@@ -71,7 +71,7 @@ class _TurnpointsListState extends State<TurnpointsList>
     );
   }
 
-  BlocConsumer<TurnpointBloc, TurnpointState> _getBody() {
+  Widget _getBody() {
     return BlocConsumer<TurnpointBloc, TurnpointState>(
         listener: (context, state) {
       if (state is TurnpointShortMessageState) {
@@ -93,10 +93,6 @@ class _TurnpointsListState extends State<TurnpointsList>
       if (state is TurnpointsInitialState) {
         return CommonWidgets.buildLoading();
       }
-
-      // if (state is SearchingTurnpointsState) {
-      //   return CommonWidgets.buildLoading();
-      // }
 
       if (state is TurnpointsLoadedState) {
         if (state.turnpoints.isEmpty && _searchString.isEmpty) {
@@ -149,7 +145,9 @@ class _TurnpointsListState extends State<TurnpointsList>
   AppBar _getAppBar() {
     return AppBar(
         title: typing ? getSearchTextBox() : Text("Turnpoints"),
-        leading: CommonWidgets.backArrowToHomeScreen(),
+        leading: BackButton(
+          onPressed: _onWillPop,
+        ),
         actions: getTurnpointMenu());
   }
 
@@ -302,7 +300,7 @@ class _TurnpointsListState extends State<TurnpointsList>
       case TurnpointMenu.searchTurnpoints:
         break;
       case TurnpointMenu.importTurnpoints:
-        Navigator.pushNamed(context, TurnpointFileImport.routeName);
+        _goToSeeYouImport();
         break;
       case TurnpointMenu.addTurnpoint:
         _addNewTurnpoint();
@@ -313,13 +311,15 @@ class _TurnpointsListState extends State<TurnpointsList>
       case TurnpointMenu.emailTurnpoints:
         break;
       case TurnpointMenu.clearTurnpointDatabase:
-        CommonWidgets.showTwoButtonAlertDialog(context,
-            "Are you sure you want to delete all turnpoints in the database?",
+        CommonWidgets.showInfoDialog(
+            context: context,
             title: "No Turning Back If You Do!",
-            cancelButtonText: "No",
-            cancelButtonFunction: _cancel,
-            continueButtonText: "Yes",
-            continueButtonFunction: _sendDeleteTurnpointsEvent);
+            msg:
+                "Are you sure you want to delete all turnpoints in the database?",
+            button1Text: "No",
+            button1Function: _cancel,
+            button2Text: "Yes",
+            button2Function: _sendDeleteTurnpointsEvent);
 
         break;
     }
@@ -355,10 +355,12 @@ class _TurnpointsListState extends State<TurnpointsList>
   }
 
   _goToSeeYouImport() async {
-    Navigator.pop(context);
+    Navigator.of(context).pop();
     var object =
         await Navigator.pushNamed(context, TurnpointFileImport.routeName);
-    BlocProvider.of<TurnpointBloc>(context).add(TurnpointListEvent());
+    if (object is bool && object) {
+      BlocProvider.of<TurnpointBloc>(context).add(TurnpointListEvent());
+    }
   }
 
   _cancel() {

@@ -81,15 +81,15 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-        key: _scaffoldKey,
-        drawer: AppDrawer.getDrawer(context),
-        appBar: AppBar(
-          title: Text('RASP'),
-          actions: getRaspMenu(),
-        ),
-        body: SafeArea(
-          child: Padding(
+    return SafeArea(
+      child: Scaffold(
+          key: _scaffoldKey,
+          drawer: AppDrawer.getDrawer(context),
+          appBar: AppBar(
+            title: Text('RASP'),
+            actions: getRaspMenu(),
+          ),
+          body: Padding(
             padding: EdgeInsets.all(8.0),
             child:
                 Column(mainAxisAlignment: MainAxisAlignment.start, children: [
@@ -100,10 +100,10 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
               _widgetForSnackBarMessages(),
               _miscStatesHandlerWidget(),
             ]),
+          )
+          // }),
           ),
-        )
-        // }),
-        );
+    );
   }
 
   Widget _getForecastModelsAndDates(BuildContext context) {
