@@ -93,23 +93,29 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
 
   @override
   Widget build(BuildContext context) {
-    return _buildScaffold(context);
+    return _buildSafeArea(context);
   }
 
   @override
-  Widget _buildScaffold(BuildContext context) {
+  Widget _buildSafeArea(BuildContext context) {
     return SafeArea(
       child: Scaffold(
         key: _scaffoldKey,
-        appBar: AppBar(
-          title: _isReadOnly
-              ? Text(TurnpointEditText.viewTurnpoint)
-              : Text(TurnpointEditText.editTurnpoint),
-          leading: CommonWidgets.backArrowToHomeScreen(),
-          actions: _getMenu(),
-        ),
+        appBar: _getAppBar(),
         body: getBodyWidget(),
       ),
+    );
+  }
+
+  AppBar _getAppBar() {
+    return AppBar(
+      title: _isReadOnly
+          ? Text(TurnpointEditText.viewTurnpoint)
+          : Text(TurnpointEditText.editTurnpoint),
+      leading: BackButton(
+        onPressed: _onWillPop,
+      ),
+      actions: _getMenu(),
     );
   }
 
@@ -318,7 +324,7 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
         "creating marker location: ${turnpoint.latitudeDeg} ${turnpoint.longitudeDeg} ");
     _marker = Marker(
       draggable: _draggable,
-      onDrag: _draggable ? _dragListener : null,
+      //onDrag: _draggable ? _dragListener : null,
       onDragEnd: _draggable ? _markerDragListener : null,
       markerId: MarkerId(turnpoint.code),
       position: LatLng(turnpoint.latitudeDeg, turnpoint.longitudeDeg),
@@ -338,10 +344,10 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
         ),
       ),
       PopupMenuButton<String>(
-        onSelected: handleClick,
+        onSelected: _handleClick,
         icon: Icon(Icons.more_vert),
         itemBuilder: (BuildContext context) {
-          return getMenuOptions().map((String choice) {
+          return _getMenuOptions().map((String choice) {
             return PopupMenuItem<String>(
               value: choice,
               child: Text(choice),
@@ -352,9 +358,9 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
     ];
   }
 
-  _dragListener(LatLng latLng) {
-    print("Dagging current lat: ${latLng.latitude} long: ${latLng.longitude}");
-  }
+  // _dragListener(LatLng latLng) {
+  //   print("Dragging current lat: ${latLng.latitude} long: ${latLng.longitude}");
+  // }
 
   _markerDragListener(LatLng latLng) {
     turnpoint.latitudeDeg = latLng.latitude;
@@ -370,15 +376,10 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
         _displaySaveButton = true;
         _displaySaveResetButtons = false;
       }
-      // print(
-      //     "New lat/long after dragging: ${turnpoint.latitudeDeg}, ${turnpoint.latitudeDeg}");
-      // print(
-      //     "_displaySaveButton ${_displaySaveButton} _displaySaveResetButtons ${_displaySaveResetButtons}");
-      // print("draggable : ${_draggable}");
     });
   }
 
-  List<String> getMenuOptions() {
+  List<String> _getMenuOptions() {
     List<String> optionList = [];
     optionList.add(TurnpointEditMenu.toggleLatLongFormat);
     if (!_isReadOnly) {
@@ -387,7 +388,7 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
     return optionList;
   }
 
-  void handleClick(String value) {
+  void _handleClick(String value) {
     switch (value) {
       case TurnpointEditMenu.toggleLatLongFormat:
         setState(() {
@@ -436,5 +437,31 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
     Future.delayed(Duration(milliseconds: delay), () {
       setState(() {});
     });
+  }
+
+  Future<bool> _onWillPop() async {
+    // TODO check for changes
+    if (_displaySaveButton || _displaySaveResetButtons) {
+      CommonWidgets.showInfoDialog(
+          context: context,
+          title: "Unsaved Changes!",
+          msg: "Changes will be lost. Continue?",
+          button1Text: "No",
+          button1Function: _dismissDialogFunction,
+          button2Text: "Yes",
+          button2Function: _cancelUpdateFunction);
+    } else {
+      Navigator.pop(context);
+    }
+    return true;
+  }
+
+  void _dismissDialogFunction() {
+    Navigator.pop(context);
+  }
+
+  void _cancelUpdateFunction() {
+    Navigator.pop(context); // remove dialog
+    Navigator.pop(context); // return to prior screen
   }
 }

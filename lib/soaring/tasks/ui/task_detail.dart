@@ -1,6 +1,5 @@
-import 'dart:io';
-
 import 'package:after_layout/after_layout.dart';
+import 'package:cupertino_will_pop_scope/cupertino_will_pop_scope.dart';
 import 'package:drag_and_drop_lists/drag_and_drop_lists.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -29,6 +28,7 @@ class TaskDetailScreen extends StatefulWidget {
 class _TaskDetailScreenState extends State<TaskDetailScreen>
     with AfterLayoutMixin<TaskDetailScreen> {
   List<DragAndDropList> _taskTurnpointDragAndDropList = [];
+  final TextEditingController textEditingController = TextEditingController();
 
   @override
   void afterFirstLayout(BuildContext context) {
@@ -40,84 +40,90 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
 
   @override
   Widget build(BuildContext context) {
-    if (Platform.isAndroid) {
-      return _buildScaffold(context);
-    } else {
-      //iOS
-      return GestureDetector(
-        behavior: HitTestBehavior.deferToChild,
-        onHorizontalDragUpdate: (details) {
-          if (details.delta.direction >= 0) {
-            Navigator.of(context).pop();
-          }
-        },
-        child: _buildScaffold(context),
-      );
-    }
-  }
-
-  Scaffold _buildScaffold(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Task Detail'),
-        leading: CommonWidgets.backArrowToHomeScreen(),
-        actions: <Widget>[
-          IconButton(icon: Icon(Icons.list), onPressed: null),
-        ],
-      ),
-      body: BlocConsumer<TaskBloc, TaskState>(listener: (context, state) {
-        if (state is TaskShortMessageState) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              backgroundColor: Colors.green,
-              content: Text(state.shortMsg),
-            ),
-          );
-        }
-        if (state is TaskErrorState) {
-          CommonWidgets.showErrorDialog(context, 'Task Error', state.errorMsg);
-        }
-        if (state is TaskModifiedState) {
-          setState(() {
-            widget.displaySaveButton = true;
-          });
-        }
-        if (state is TaskSavedState) {
-          setState(() {
-            widget.displaySaveButton = false;
-          });
-        }
-        if (state is TurnpointFoundState) {
-          displayTurnpointView(context, state);
-        }
-      }, buildWhen: (previous, current) {
-        return current is TasksLoadingState ||
-            current is TasksTurnpointsLoadedState;
-      }, builder: (context, state) {
-        if (state is TasksLoadingState) {
-          return CommonWidgets.buildLoading();
-        }
-        if (state is TasksTurnpointsLoadedState) {
-          return Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.max,
-              children: [
-                _taskTitle(state.task),
-                _taskDistance(state.task),
-                _turnpointsLabel(),
-                _taskTurnpointsListView(state.taskTurnpoints),
-                _spacerBetweenListandTurnpointsButton(),
-                _addTurnpointsButton(),
-              ]);
-        }
-        return Center(child: Text("Unhandled State"));
-      }),
-      floatingActionButton: _displayFloatingActionButton(context),
+    // no right swipe to return as can conflict with right swipe to delete
+    // taskturnpoint
+    return ConditionalWillPopScope(
+      onWillPop: _onWillPop,
+      shouldAddCallback: true,
+      child: _buildSafeArea(context),
     );
   }
 
+  Widget _buildSafeArea(BuildContext context) {
+    return SafeArea(
+      child: Scaffold(
+        resizeToAvoidBottomInset: false,
+        appBar: _getAppBar(),
+        body: _getBody(),
+        floatingActionButton: _displayFloatingActionButton(context),
+      ),
+    );
+  }
+
+  AppBar _getAppBar() {
+    return AppBar(
+      title: Text('Task Detail'),
+      leading: BackButton(
+        onPressed: _onWillPop,
+      ),
+    );
+  }
+
+  BlocConsumer<TaskBloc, TaskState> _getBody() {
+    return BlocConsumer<TaskBloc, TaskState>(listener: (context, state) {
+      if (state is TaskShortMessageState) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.green,
+            content: Text(state.shortMsg),
+          ),
+        );
+      }
+      if (state is TaskErrorState) {
+        CommonWidgets.showErrorDialog(context, 'Task Error', state.errorMsg);
+      }
+      if (state is TaskModifiedState) {
+        setState(() {
+          widget.displaySaveButton = true;
+        });
+      }
+      if (state is TaskSavedState) {
+        setState(() {
+          widget.displaySaveButton = false;
+        });
+      }
+      if (state is TurnpointFoundState) {
+        displayTurnpointView(context, state);
+      }
+    }, buildWhen: (previous, current) {
+      return current is TasksLoadingState ||
+          current is TasksTurnpointsLoadedState;
+    }, builder: (context, state) {
+      if (state is TasksLoadingState) {
+        return CommonWidgets.buildLoading();
+      }
+      if (state is TasksTurnpointsLoadedState) {
+        return Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.max,
+            children: [
+              _taskTitle(state.task),
+              _taskDistance(state.task),
+              _turnpointsLabel(),
+              _taskTurnpointsListView(state.taskTurnpoints),
+              _spacerBetweenListAndTurnpointsButton(),
+              _addTurnpointsButton(),
+            ]);
+      }
+      return Center(child: Text("Unhandled State"));
+    });
+  }
+
   Widget _taskTitle(Task task) {
+    textEditingController.text = task.taskName;
+    textEditingController.selection =
+        TextSelection.collapsed(offset: textEditingController.text.length);
     return Expanded(
       flex: 2,
       child: Row(mainAxisAlignment: MainAxisAlignment.start, children: [
@@ -129,10 +135,13 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
           child: Padding(
             padding: const EdgeInsets.all(8.0),
             child: TextField(
-              controller: TextEditingController()..text = task.taskName,
-              onChanged: (text) => {
+              controller: textEditingController,
+              onChanged: (text) {
+                //task.taskName = text;
+                // textEditingController.selection = TextSelection.collapsed(
+                //     offset: textEditingController.text.length);
                 BlocProvider.of<TaskBloc>(context)
-                    .add(TaskNamedChangedEvent(text))
+                    .add(TaskNamedChangedEvent(text));
               },
             ),
           ),
@@ -202,6 +211,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
     });
   }
 
+  // Creates a row within the listview for task turnpoint info
   DragAndDropItem _createTaskTurnpointItem(TaskTurnpoint taskTurnpoint) {
     return DragAndDropItem(
       child: Dismissible(
@@ -209,6 +219,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
         onDismissed: (direction) {
           BlocProvider.of<TaskBloc>(context)
               .add(SwipeDeletedTaskTurnpointEvent(taskTurnpoint.taskOrder));
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text('Removed ${taskTurnpoint.title}'),
             action: SnackBarAction(
@@ -321,7 +332,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
     );
   }
 
-  Widget _spacerBetweenListandTurnpointsButton() {
+  Widget _spacerBetweenListAndTurnpointsButton() {
     return Spacer();
   }
 
@@ -332,10 +343,10 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
   }
 
   Widget _addTurnpointsButton() {
-    return Padding(
-      padding: const EdgeInsets.only(left: 8.0, top: 8.0, right: 8.0),
-      child: Align(
-        alignment: FractionalOffset.bottomCenter,
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: Padding(
+        padding: const EdgeInsets.only(top: 8.0, left: 8.0, right: 8.0),
         child: ElevatedButton(
           style: ElevatedButton.styleFrom(
             minimumSize: Size(double.infinity,
@@ -363,8 +374,9 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
       visible: widget.displaySaveButton,
       child: FloatingActionButton(
         backgroundColor: Colors.green,
-        child: const Icon(Icons.update),
+        child: const Icon(Icons.save),
         onPressed: () {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
           BlocProvider.of<TaskBloc>(context).add(SaveTaskTurnpointsEvent());
           widget.displaySaveButton = false;
         },
@@ -391,5 +403,31 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
       TurnpointView.routeName,
       arguments: TurnpointOverHeadArgs(turnpoint: state.turnpoint),
     );
+  }
+
+  Future<bool> _onWillPop() async {
+    // TODO check for changes
+    if (widget.displaySaveButton) {
+      CommonWidgets.showInfoDialog(
+          context: context,
+          title: "Unsaved Changes!",
+          msg: "Changes will be lost. Continue?",
+          button1Text: "No",
+          button1Function: _dismissDialogFunction,
+          button2Text: "Yes",
+          button2Function: _cancelUpdateFunction);
+    } else {
+      Navigator.pop(context);
+    }
+    return true;
+  }
+
+  void _dismissDialogFunction() {
+    Navigator.pop(context);
+  }
+
+  void _cancelUpdateFunction() {
+    Navigator.pop(context); // remove dialog
+    Navigator.pop(context); // return to prior screen
   }
 }

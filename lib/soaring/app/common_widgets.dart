@@ -15,6 +15,19 @@ class CommonWidgets {
     );
   }
 
+  static Widget backArrow(
+      {required BuildContext context, Function? backFunction}) {
+    return BackButton(
+      onPressed: () {
+        if (backFunction != null) {
+          backFunction();
+        } else {
+          Navigator.pop(context);
+        }
+      },
+    );
+  }
+
   static Widget buildLoading() {
     return Center(
       child: CircularProgressIndicator(),
@@ -47,7 +60,7 @@ class CommonWidgets {
     );
   }
 
-  static Future<void> showInfoDialog(
+  static showInfoDialog(
       {required final BuildContext context,
       required final String title,
       required final String msg,
@@ -55,26 +68,74 @@ class CommonWidgets {
       required final Function button1Function,
       final String? button2Text,
       final Function? button2Function}) async {
-    return showDialog<void>(
+    // set up the AlertDialog
+    AlertDialog alert = AlertDialog(
+      title: Text(title),
+      content: SingleChildScrollView(
+        child: ListBody(
+          children: <Widget>[Text(msg)],
+        ),
+      ),
+      actions: composeDialogButtons(
+          button1Text: button1Text,
+          button1Function: button1Function,
+          button2Text: button2Text,
+          button2Function: button2Function),
+    );
+
+    // show the dialog
+    showDialog(
       context: context,
-      barrierDismissible: false, // user must tap button!
+      barrierDismissible: false,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(title),
-          content: SingleChildScrollView(
-            child: ListBody(
-              children: <Widget>[Text(msg)],
-            ),
-          ),
-          actions: composeDialogButtons(
-              button1Text: button1Text,
-              button1Function: button1Function,
-              button2Text: button2Text,
-              button2Function: button2Function),
-        );
+        return WillPopScope(onWillPop: () async => false, child: alert);
       },
     );
   }
+
+  // static showTwoButtonAlertDialog(
+  //     {required final BuildContext context,
+  //     required final String title,
+  //     required final String msg,
+  //     required final String button1Text,
+  //     required final Function button1Function,
+  //     final String? button2Text,
+  //     final Function? button2Function}) {
+  //   // set up the buttons
+  //   Widget cancelButton = TextButton(
+  //       child: Text(button1Text),
+  //       onPressed: () {
+  //         if (button1Function != null) {
+  //           button1Function();
+  //         }
+  //       });
+  //   Widget continueButton = TextButton(
+  //       child: Text(button2Text),
+  //       onPressed: () {
+  //         if (button2Function != null) {
+  //           button2Function();
+  //         }
+  //       });
+  //
+  //   // set up the AlertDialog
+  //   AlertDialog alert = AlertDialog(
+  //     title: Text(title),
+  //     content: Text(msg),
+  //     actions: [
+  //       cancelButton,
+  //       continueButton,
+  //     ],
+  //   );
+  //
+  //   // show the dialog
+  //   showDialog(
+  //     context: context,
+  //     barrierDismissible: false,
+  //     builder: (BuildContext context) {
+  //       return WillPopScope(onWillPop: () async => false, child: alert);
+  //     },
+  //   );
+  // }
 
   static List<Widget> composeDialogButtons(
       {required final String button1Text,
@@ -97,48 +158,6 @@ class CommonWidgets {
           }));
     }
     return buttonWidgets;
-  }
-
-  static showTwoButtonAlertDialog(BuildContext context, String alertMsg,
-      {String title = "AlertDialog",
-      String cancelButtonText = "Cancel",
-      String continueButtonText = "OK",
-      final Function? cancelButtonFunction,
-      final Function? continueButtonFunction}) {
-    // set up the buttons
-    Widget cancelButton = TextButton(
-        child: Text(cancelButtonText),
-        onPressed: () {
-          if (cancelButtonFunction != null) {
-            cancelButtonFunction();
-          }
-        });
-    Widget continueButton = TextButton(
-        child: Text(continueButtonText),
-        onPressed: () {
-          if (continueButtonFunction != null) {
-            continueButtonFunction();
-          }
-        });
-
-    // set up the AlertDialog
-    AlertDialog alert = AlertDialog(
-      title: Text(title),
-      content: Text(alertMsg),
-      actions: [
-        cancelButton,
-        continueButton,
-      ],
-    );
-
-    // show the dialog
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return WillPopScope(onWillPop: () async => false, child: alert);
-      },
-    );
   }
 
   static SnackBar getSnackBarForMessage(String msg) {

@@ -287,15 +287,17 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
   }
 
   void _createTaskName() {
-    StringBuffer defaultTaskName = StringBuffer();
-    String shortName = "";
-    _taskTurnpoints.forEach((taskTurnpoint) {
-      shortName = taskTurnpoint.title.length >= 4
-          ? taskTurnpoint.title.substring(0, 4)
-          : taskTurnpoint.title;
-      defaultTaskName
-          .write(defaultTaskName.isEmpty ? shortName : '-' + shortName);
-    });
-    currentTask.taskName = defaultTaskName.toString();
+    if (currentTask.taskName.isEmpty) {
+      StringBuffer defaultTaskName = StringBuffer();
+      String shortName = "";
+      _taskTurnpoints.forEach((taskTurnpoint) {
+        shortName = taskTurnpoint.title.length >= 4
+            ? taskTurnpoint.title.substring(0, 4)
+            : taskTurnpoint.title;
+        defaultTaskName
+            .write(defaultTaskName.isEmpty ? shortName : '-' + shortName);
+      });
+      currentTask.taskName = defaultTaskName.toString();
+    }
   }
 }

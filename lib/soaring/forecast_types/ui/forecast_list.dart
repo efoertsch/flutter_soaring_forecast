@@ -50,7 +50,7 @@ class _ForecastListScreenState extends State<ForecastListScreen> {
       return ConditionalWillPopScope(
         onWillPop: _onWillPop,
         shouldAddCallback: true,
-        child: _buildScaffold(context),
+        child: _buildSafeArea(context),
       );
     } else {
       //iOS
@@ -60,75 +60,100 @@ class _ForecastListScreenState extends State<ForecastListScreen> {
             _onWillPop();
           }
         },
-        child: _buildScaffold(context),
+        child: _buildSafeArea(context),
       );
     }
   }
 
-  Widget _buildScaffold(BuildContext context) {
+  Widget _buildSafeArea(BuildContext context) {
     return SafeArea(
       child: Scaffold(
-        appBar: AppBar(
-          leading: CommonWidgets.backArrowToHomeScreen(),
-          title: Text('Forecasts'),
-          actions: _getForecastMenu(),
-        ),
-        body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: BlocConsumer<ForecastBloc, ForecastState>(
-              listener: (context, state) {
-                if (state is ForecastShortMessageState) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      backgroundColor: Colors.green,
-                      content: Text(state.shortMsg),
-                    ),
-                  );
-                }
-                if (state is ForecastErrorState) {
-                  CommonWidgets.showErrorDialog(
-                      context, 'Forecast Error', state.errorMsg);
-                }
-              },
-              buildWhen: (previous, current) {
-                return current is ForecastsLoadingState ||
-                    current is ListOfForecastsState;
-              },
-              builder: (context, state) {
-                if (state is ForecastsLoadingState) {
-                  return CommonWidgets.buildLoading();
-                }
-                if (state is ListOfForecastsState) {
-                  if (state.forecasts.length == 0) {
-                    return Center(child: Text("Oh-oh! No Forecasts Found!"));
-                  } else {
-                    return Column(
-                      children: [
-                        _getCorrectListView(context, state.forecasts),
-                      ],
-                    );
-                  }
-                }
-                if (state is ForecastErrorState) {
-                  WidgetsBinding.instance.addPostFrameCallback((_) =>
-                      CommonWidgets.showErrorDialog(
-                          context, 'Forecast Error', state.errorMsg));
-                  return Center(
-                      child: Text(
-                          'Oops. Error occurred getting available forecasts.'));
-                }
-                return Center(child: Text("Unhandled State"));
-              },
-            ),
-          ),
-        ),
+        appBar: _getAppBar(),
+        body: _getBody(),
       ),
     );
   }
 
+  AppBar _getAppBar() {
+    return AppBar(
+      leading: BackButton(
+        onPressed: _onWillPop,
+      ),
+      title: Text('Forecasts'),
+      actions: _getMenuOnlyIfReordering(),
+    );
+  }
+
+  List<Widget>? _getMenuOnlyIfReordering() {
+    if (_onlyListForecasts()) {
+      return null;
+    } else {
+      return _getForecastMenu();
+    }
+  }
+
+  // Return true if only listing forecasts to make selection
+  // Return false if we are allowing drag/drop reordering of forecasts
+  bool _onlyListForecasts() {
+    return (widget.forecastArgs != null &&
+        widget.forecastArgs!.forecast != null);
+  }
+
+  Padding _getBody() {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: BlocConsumer<ForecastBloc, ForecastState>(
+        listener: (context, state) {
+          if (state is ForecastShortMessageState) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                backgroundColor: Colors.green,
+                content: Text(state.shortMsg),
+              ),
+            );
+          }
+          if (state is ForecastErrorState) {
+            CommonWidgets.showErrorDialog(
+                context, 'Forecast Error', state.errorMsg);
+          }
+        },
+        buildWhen: (previous, current) {
+          return current is ForecastsLoadingState ||
+              current is ListOfForecastsState;
+        },
+        builder: (context, state) {
+          if (state is ForecastsLoadingState) {
+            return CommonWidgets.buildLoading();
+          }
+          if (state is ListOfForecastsState) {
+            if (state.forecasts.length == 0) {
+              return Center(child: Text("Oh-oh! No Forecasts Found!"));
+            } else {
+              return Column(
+                children: [
+                  _getCorrectListView(context, state.forecasts),
+                ],
+              );
+            }
+          }
+          if (state is ForecastErrorState) {
+            WidgetsBinding.instance.addPostFrameCallback((_) =>
+                CommonWidgets.showErrorDialog(
+                    context, 'Forecast Error', state.errorMsg));
+            return Center(
+                child:
+                    Text('Oops. Error occurred getting available forecasts.'));
+          }
+          return Center(child: Text("Unhandled State"));
+        },
+      ),
+    );
+  }
+
+  /// Either just provide list view for user to select forecast or
+  /// provide drag/drop list for reordering forecast
   Widget _getCorrectListView(BuildContext context, List<Forecast> forecasts) {
-    if (widget.forecastArgs != null && widget.forecastArgs!.forecast != null) {
+    if (_onlyListForecasts()) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         itemScrollController.jumpTo(
             index: forecasts.indexOf(widget.forecastArgs!.forecast!));
