@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 class AboutScreen extends StatefulWidget {
   const AboutScreen({Key? key}) : super(key: key);
@@ -56,6 +57,52 @@ class _AboutScreenState extends State<AboutScreen> {
   }
 
   Widget _getBody() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [_displayVersion(), _getAboutText()],
+    );
+  }
+
+  Widget _displayVersion() {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: _getVersionText(),
+    );
+  }
+
+  FutureBuilder<PackageInfo> _getVersionText() {
+    return FutureBuilder<PackageInfo>(
+        future: _queryPackageInfo(),
+        builder: (BuildContext context, AsyncSnapshot<PackageInfo> snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: Text('Please wait, its loading...'));
+          } else {
+            if (snapshot.hasError) {
+              return Center(child: Text('Error: ${snapshot.error}'));
+            } else {
+              final PackageInfo? packageInfo = snapshot.data;
+              if (packageInfo != null) {
+                String version = packageInfo.version;
+                String buildNumber = packageInfo.buildNumber;
+                return Text("Version: ${version}  Build: ${buildNumber}",
+                    style: Theme.of(context).textTheme.subtitle1);
+              } else {
+                return Center(child: Text('Error: could not get build info'));
+              }
+            }
+          }
+          ;
+        });
+  }
+
+  Future<PackageInfo> _queryPackageInfo() async {
+    final packageInfo = await PackageInfo.fromPlatform();
+    return packageInfo;
+  }
+
+  FutureBuilder<String> _getAboutText() {
     return FutureBuilder<String>(
       future: _loadAboutHtml(),
       builder: (BuildContext context, AsyncSnapshot<String> snapshot) {
