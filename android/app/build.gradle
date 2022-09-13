@@ -37,7 +37,7 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
+        // TODO: Switch to existing Android SoaringForecast application Id once flutter version reaches parity with Android version
         applicationId "soaringforecast.org.flutter_soaring_forecast"
         minSdkVersion 20
         targetSdkVersion 33

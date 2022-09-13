@@ -1,0 +1,6 @@
+0,gfs,GFS
+1,namConus,NAM
+2,geos5,GEOS5
+3,iconGlobal,IconGlobal
+4,iconEu,IconEu
+5,satellite,Satellite

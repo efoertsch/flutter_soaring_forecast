@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://unpkg.com/leaflet@1.4.0/dist/leaflet.js"></script>
+    <script src="https://api.windy.com/assets/map-forecast/libBoot.js"></script>
+    <style>
+    #windy {
+      width: 100%;
+      height: 500px;   <!-- XXXHEIGHTXXX -->;
+    }
+  </style>
+</head>
+<body>
+<div id="windy"></div>
+<style>
+    #windy #mobile-ovr-select,
+    #windy #embed-zoom {
+      display: none !important;
+    }
+</style>
+
+<script type="text/javascript">
+
+Print.postMessage("Running windy.html javascript");
+
+var windyStore;
+var windyMap;
+var taskLayerGroup;
+var turnpointIcon;
+var turnpointPolyLine;
+var mapMarker = [];
+var mapPolyLine = [];
+var taskLayerGroup;
+var origWindyMapLabels;
+
+function setWindMap(store, map){
+  windyStore = store;
+  windyMap = map;
+  // could not define icon until WindyAPI initialized
+  turnpointIcon = new L.DivIcon.SVGIcon( { "color":"rgb(255,0,0)" ,"fillOpacity": 1});
+  turnpointPolyLine = {
+                    color: 'red',
+                    weight: 2,
+                    opacity: 1,
+                    zIndex: 1000,
+                    className: 'polyTrack'};
+
+  Print.postMessage("calling getTaskTurnpointsForMap()");
+  getTaskTurnpointsForMap();
+}
+
+function setBaseLayerToDefault(){
+  windyMap.baseLayer.setUrl("https://tiles-s.windy.com/tiles/v8.1/darkmap/{z}/{x}/{y}.png");
+  windyMap.addLayer(origWindyMapLabels);
+}
+
+function setBaseLayerToGoogleMap(){
+  windyMap.baseLayer.options.subdomains = ["mt0", "mt1", "mt2", "mt3"];
+  windyMap.baseLayer.setUrl("https://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}");
+  windyMap.baseLayer.setOpacity(0.5);
+   windyMap.removeLayer(W.labelsLayer);
+}
+
+function setBaseLayerToArcGisMap(){
+  windyMap.baseLayer.setUrl("https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}");
+  // windyMap.options.maxZoom = 18;
+  windyMap.baseLayer.setOpacity(0.5);
+ windyMap.removeLayer(W.labelsLayer);
+}
+
+function setModel(model){
+  Print.postMessage('Requesting product:' + model);
+  windyStore.set('product',model);
+}
+
+function setLayer(layer){
+  Print.postMessage('Requesting layer:' + layer);
+  windyStore.set('overlay', layer);
+}
+
+function setAltitude(altitude){
+  Print.postMessage('Requesting level:' + altitude);
+  windyStore.set('level', altitude);
+}
+
+function removeTaskFromMap() {
+  if (windyMap && taskLayerGroup){
+     windyMap.removeLayer(taskLayerGroup);
+  }
+  if (mapMarker) {
+    mapMarker.length = 0;
+  }
+  if (mapPolyLine){
+    mapPolyLine.length = 0;
+  }
+}
+
+function androidConnected() {
+ //Print.postMessage("Android:" + android);
+  return true;
+  if (typeof android !== "undefined" && android !== null){
+    return true;
+  } else {
+    alert("Not viewing in webview");
+    return false;
+  }
+}
+
+function redrawCompleted(){
+  if (androidConnected()){
+    android.redrawCompleted();
+  }
+}
+
+function getWindyKey() {
+Print.postMessage("Using Key: 'y852QwXYurm70lQozoV2rGSLQXoltuQc'");
+ return 'y852QwXYurm70lQozoV2rGSLQXoltuQc';   // for testing only
+  if (androidConnected()) {
+    return android.getWindyKey();
+  }
+}
+
+function getLat() {
+return 43.1393051;
+  if (androidConnected()) {
+    Print.postMessage("lat = " + android.getLat());
+    return android.getLat();
+  }
+}
+
+function getLong() {
+return -72.076004;
+  if (androidConnected()) {
+    Print.postMessage("long = " + android.getLong());
+    return android.getLong();
+  }
+}
+
+function getZoom() {
+return 7;
+  if (androidConnected()) {
+    return android.getZoom();
+  }
+}
+
+function mapLoaded(){
+  if (androidConnected()){
+    android.mapLoaded();
+  }
+}
+
+// Call this once when map is loaded to see if task needs to be drawn
+function getTaskTurnpointsForMap() {
+  if (androidConnected()) {
+    Print.postMessage("calling android.getTaskTurnpointsForMap()");
+    android.getTaskTurnpointsForMap();
+  }
+}
+
+// Called by app to pass in turnpoints
+function drawTask(taskTurnpoints) {
+  Print.postMessage("drawTask(taskTurnpoints)");
+  logTaskTurnpoints(taskTurnpoints);
+  removeTaskFromMap();
+  createMarkersAndPolyLine(taskTurnpoints);
+}
+
+// !!!.toFixed(1) gives (currently) error on end of taskTurnpoints[i].distanceFromStartingPoint on Chrome !!!
+function createMarkersAndPolyLine(taskTurnpoints) {
+  if (taskTurnpoints != null) {
+    for (i = 0; i < taskTurnpoints.length; i++) {
+      var latLong = [taskTurnpoints[i].latitudeDeg, taskTurnpoints[i].longitudeDeg];
+      mapPolyLine.push(latLong);
+      var marker = L.marker(latLong,{icon: turnpointIcon});
+      // !!! Remove .toFixed(1) if testing on Chrome !!!
+      marker.bindPopup(taskTurnpoints[i].title + "\n( " + taskTurnpoints[i].distanceFromStartingPoint.toFixed(1) +"km)");
+      mapMarker.push(marker);
+    }
+    taskLayerGroup = L.layerGroup(mapMarker).addLayer(L.polyline(mapPolyLine,turnpointPolyLine));
+    taskLayerGroup.addTo(windyMap);
+    Print.postMessage("Done with plotting turnpoints");
+  }
+}
+
+function logTaskTurnpoints(taskTurnpoints){
+  if (taskTurnpoints != null  && taskTurnpoints.length > 0) {
+    for (i = 0; i < taskTurnpoints.length; i++) {
+      var latLong = [taskTurnpoints[i].latitudeDeg, taskTurnpoints[i].longitudeDeg];
+      Print.postMessage("lat/long:" + taskTurnpoints[i].latitudeDeg + "/" + taskTurnpoints[i].longitudeDeg);
+      Print.postMessage("title" + taskTurnpoints[i].title);
+      Print.postMessage("distance from starting" + taskTurnpoints[i].distanceFromStartingPoint.toFixed(1));
+      mapPolyLine.push(latLong);
+    }
+  } else {
+    Print.postMessage("taskTurnpoints null or empty");
+  }
+}
+
+const options = {
+  // Required: API key
+  key: getWindyKey(),
+  // Put additional console output
+  verbose: true,
+  // Optional: Initial state of the map
+  lat: getLat(),
+  lon: getLong(),
+  zoom: getZoom(),
+  isolines: 'pressure'
+};
+Print.postMessage("Initializing Windy API with key" + getWindyKey());
+// Initialize Windy API
+windyInit(options, windyAPI => {
+  // windyAPI is ready, and contain 'map', 'store',
+  // 'picker' and other usefull stuff
+  // .map is instance of Leaflet map
+  const {
+    map,
+    utils,
+    picker,
+    pickerMobile,
+    overlays,
+    broadcast,
+    store
+  } = windyAPI;
+
+  origWindyMapLabels = W.labelsLayer;
+
+  // workaround - mobilePicker has bug so this tells windy to use desktopPicker
+  var mobileMadeFalse = false;
+  if (W.rootScope.isMobile) {
+    W.rootScope.isMobile = false;
+    mobileMadeFalse = true;
+  }
+  picker.on('pickerOpened', (e) => {
+  if (mobileMadeFalse) {
+     document.getElementsByClassName("picker-lines noselect")[0].parentNode.style.marginTop = "-70px";
+     document.getElementsByClassName("picker-drag-me")[0].style.display = "none";
+  }
+  });
+  // end of workaround
+
+  broadcast.on('redrawFinished',(e) => {
+    redrawCompleted();
+  });
+
+  // Observing change of .store value
+  store.on('isImperial', isImperial => {
+    Print.postMessage(`isImperial was changed: ${ isImperial }`);
+  });
+
+  setWindMap(store, map);
+  windyAPI.store.set('isImperial',false);
+  windyAPI.store.set('isImperial',true);
+  Print.postMessage(" isImperial:" + windyAPI.store.get('isImperial'));
+  //windyAPI.store.set('metric_temp', '°F');
+  Print.postMessage(" isImperial:" + windyAPI.store.get('isImperial'));
+  Print.postMessage(" temp units:" + windyAPI.store.get('metric_temp'));
+  Print.postMessage("store.layer:" + store.get('overlay'));
+  Print.postMessage("levels:" + windyAPI.store.get('availLevels'));
+  Print.postMessage("Allowed products: " + windyAPI.store.getAllowed('product'));
+  Print.postMessage("Allowed overlays: " + windyAPI.store.getAllowed('overlay'));
+  Print.postMessage("Allowed levels: " + windyAPI.store.getAllowed('level'));
+});
+</script>
+<script>
+/* Need to put in this file as webview will give error when this html loaded via webView.loadData()
+  and this javascript below in local file */
+L.DivIcon.SVGIcon = L.DivIcon.extend({
+// set https://github.com/iatkin/leaflet-svgicon
+//Leaflet-SVGIcon
+//SVG icon for any marker class
+//Ilya Atkin
+//ilya.atkin@unh.edu
+    options: {
+        "circleText": "",
+        "className": "svg-icon",
+        "circleAnchor": null, //defaults to [iconSize.x/2, iconSize.x/2]
+        "circleColor": null, //defaults to color
+        "circleOpacity": null, // defaults to opacity
+        "circleFillColor": "rgb(255,255,255)",
+        "circleFillOpacity": null, //default to opacity
+        "circleRatio": 0.5,
+        "circleWeight": null, //defaults to weight
+        "color": "rgb(0,102,255)",
+        "fillColor": null, // defaults to color
+        "fillOpacity": 0.4,
+        "fontColor": "rgb(0, 0, 0)",
+        "fontOpacity": "1",
+        "fontSize": null, // defaults to iconSize.x/4
+        "iconAnchor": null, //defaults to [iconSize.x/2, iconSize.y] (point tip)
+        "iconSize": L.point(32,48),
+        "opacity": 1,
+        "popupAnchor": null,
+        "weight": 2
+    },
+    initialize: function(options) {
+        options = L.Util.setOptions(this, options)
+
+        //iconSize needs to be converted to a Point object if it is not passed as one
+        options.iconSize = L.point(options.iconSize)
+
+        //in addition to setting option dependant defaults, Point-based options are converted to Point objects
+        if (!options.circleAnchor) {
+            options.circleAnchor = L.point(Number(options.iconSize.x)/2, Number(options.iconSize.x)/2)
+        }
+        else {
+            options.circleAnchor = L.point(options.circleAnchor)
+        }
+        if (!options.circleColor) {
+            options.circleColor = options.color
+        }
+        if (!options.circleFillOpacity) {
+            options.circleFillOpacity = options.opacity
+        }
+        if (!options.circleOpacity) {
+            options.circleOpacity = options.opacity
+        }
+        if (!options.circleWeight) {
+            options.circleWeight = options.weight
+        }
+        if (!options.fillColor) {
+            options.fillColor = options.color
+        }
+        if (!options.fontSize) {
+            options.fontSize = Number(options.iconSize.x/4)
+        }
+        if (!options.iconAnchor) {
+            options.iconAnchor = L.point(Number(options.iconSize.x)/2, Number(options.iconSize.y))
+        }
+        else {
+            options.iconAnchor = L.point(options.iconAnchor)
+        }
+        if (!options.popupAnchor) {
+            options.popupAnchor = L.point(0, (-0.75)*(options.iconSize.y))
+        }
+        else {
+            options.popupAnchor = L.point(options.popupAnchor)
+        }
+
+        var path = this._createPath()
+        var circle = this._createCircle()
+
+        options.html = this._createSVG()
+    },
+    _createCircle: function() {
+        var cx = Number(this.options.circleAnchor.x)
+        var cy = Number(this.options.circleAnchor.y)
+        var radius = this.options.iconSize.x/2 * Number(this.options.circleRatio)
+        var fill = this.options.circleFillColor
+        var fillOpacity = this.options.circleFillOpacity
+        var stroke = this.options.circleColor
+        var strokeOpacity = this.options.circleOpacity
+        var strokeWidth = this.options.circleWeight
+        var className = this.options.className + "-circle"
+
+        var circle = '<circle class="' + className + '" cx="' + cx + '" cy="' + cy + '" r="' + radius +
+            '" fill="' + fill + '" fill-opacity="'+ fillOpacity +
+            '" stroke="' + stroke + '" stroke-opacity=' + strokeOpacity + '" stroke-width="' + strokeWidth + '"/>'
+
+        return circle
+    },
+    _createPathDescription: function() {
+        var height = Number(this.options.iconSize.y)
+        var width = Number(this.options.iconSize.x)
+        var weight = Number(this.options.weight)
+        var margin = weight / 2
+
+        var startPoint = "M " + margin + " " + (width/2) + " "
+        var leftLine = "L " + (width/2) + " " + (height - weight) + " "
+        var rightLine = "L " + (width - margin) + " " + (width/2) + " "
+        var arc = "A " + (width/4) + " " + (width/4) + " 0 0 0 " + margin + " " + (width/2) + " Z"
+
+        var d = startPoint + leftLine + rightLine + arc
+
+        return d
+    },
+    _createPath: function() {
+        var pathDescription = this._createPathDescription()
+        var strokeWidth = this.options.weight
+        var stroke = this.options.color
+        var strokeOpacity = this.options.Opacity
+        var fill = this.options.fillColor
+        var fillOpacity = this.options.fillOpacity
+        var className = this.options.className + "-path"
+
+        var path = '<path class="' + className + '" d="' + pathDescription +
+            '" stroke-width="' + strokeWidth + '" stroke="' + stroke + '" stroke-opacity="' + strokeOpacity +
+            '" fill="' + fill + '" fill-opacity="' + fillOpacity + '"/>'
+
+        return path
+    },
+    _createSVG: function() {
+        var path = this._createPath()
+        var circle = this._createCircle()
+        var text = this._createText()
+        var className = this.options.className + "-svg"
+
+        var style = "width:" + this.options.iconSize.x + "px; height:" + this.options.iconSize.y + "px;"
+
+        var svg = '<svg xmlns="http://www.w3.org/2000/svg" version="1.1" class="' + className + '" style="' + style + '">' + path + circle + text + '</svg>'
+
+        return svg
+    },
+    _createText: function() {
+        var fontSize = this.options.fontSize + "px"
+        var lineHeight = Number(this.options.fontSize)
+
+        var x = Number(this.options.iconSize.x) / 2
+        var y = x + (lineHeight * 0.35) //35% was found experimentally
+        var circleText = this.options.circleText
+        var textColor = this.options.fontColor.replace("rgb(", "rgba(").replace(")", "," + this.options.fontOpacity + ")")
+
+        var text = '<text text-anchor="middle" x="' + x + '" y="' + y + '" style="font-size: ' + fontSize + '" fill="' + textColor + '">' + circleText + '</text>'
+
+        return text
+    }
+})
+
+L.divIcon.svgIcon = function(options) {
+    return new L.DivIcon.SVGIcon(options)
+}
+
+L.Marker.SVGMarker = L.Marker.extend({
+    options: {
+        "iconFactory": L.divIcon.svgIcon,
+        "iconOptions": {}
+    },
+    initialize: function(latlng, options) {
+        options = L.Util.setOptions(this, options)
+        options.icon = options.iconFactory(options.iconOptions)
+        this._latlng = latlng
+    },
+    onAdd: function(map) {
+        L.Marker.prototype.onAdd.call(this, map)
+    },
+    setStyle: function(style) {
+        if (this._icon) {
+            var svg = this._icon.children[0]
+            var iconBody = this._icon.children[0].children[0]
+            var iconCircle = this._icon.children[0].children[1]
+
+            if (style.color && !style.iconOptions) {
+                var stroke = style.color.replace("rgb","rgba").replace(")", ","+this.options.icon.options.opacity+")")
+                var fill = style.color.replace("rgb","rgba").replace(")", ","+this.options.icon.options.fillOpacity+")")
+                iconBody.setAttribute("stroke", stroke)
+                iconBody.setAttribute("fill", fill)
+                iconCircle.setAttribute("stroke", stroke)
+
+                this.options.icon.fillColor = fill
+                this.options.icon.color = stroke
+                this.options.icon.circleColor = stroke
+            }
+            if (style.opacity) {
+                this.setOpacity(style.opacity)
+            }
+            if (style.iconOptions) {
+                if (style.color) { style.iconOptions.color = style.color }
+                var iconOptions = L.Util.setOptions(this.options.icon, style.iconOptions)
+                this.setIcon(L.divIcon.svgIcon(iconOptions))
+            }
+        }
+    }
+})
+
+L.marker.svgMarker = function(latlng, options) {
+    return new L.Marker.SVGMarker(latlng, options)
+
+}
+</script>
+</body>
+</html>

@@ -37,12 +37,12 @@ class AppDrawer {
               Navigator.popAndPushNamed(context, TaskList.routeName);
             },
           ),
-          // ListTile(
-          //   title: Text('Windy'),
-          //   onTap: () {
-          //     Navigator.pop(context);
-          //   },
-          // ),
+          ListTile(
+            title: Text('Windy'),
+            onTap: () {
+              Navigator.popAndPushNamed(context, WindyScreen.routeName);
+            },
+          ),
           ListTile(
             title: Text('SkySight'),
             onTap: () {

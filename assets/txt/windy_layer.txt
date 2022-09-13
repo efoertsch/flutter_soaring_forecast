@@ -1,0 +1,5 @@
+0,wind,Wind,1
+1,temp,Temp,1
+2,clouds,Clouds,0
+3,rain,Rain,0
+4,pressure,Pressure,0

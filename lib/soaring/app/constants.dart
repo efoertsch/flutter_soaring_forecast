@@ -49,6 +49,7 @@ class PreferenceOption {
   final String key;
   final String displayText;
   bool selected;
+
   PreferenceOption(
       {required this.key, required this.displayText, this.selected = false});
 }
@@ -82,6 +83,7 @@ enum SUAColor {
   classProhibited(suaClassType: "PROHIBITED", airspaceColor: Color(0x800000FF));
 
   const SUAColor({required this.suaClassType, required this.airspaceColor});
+
   final String suaClassType;
   final Color airspaceColor;
 }
@@ -175,6 +177,12 @@ class TurnpointEditText {
   static const String reset = "Reset";
   static const String saveLocation = "Save Location";
   static String close = "Close";
+}
+
+class WindyMenu {
+  static const String selectTask = 'Select Task';
+  static const String clearTask = "Clear Task";
+  static const String TopoMap = 'Topo Map';
 }
 
 // Turnpoint icon colors for type of runway

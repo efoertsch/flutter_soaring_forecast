@@ -85,28 +85,35 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
       child: Scaffold(
           key: _scaffoldKey,
           drawer: AppDrawer.getDrawer(context),
-          appBar: AppBar(
-            title: Text('RASP'),
-            actions: getRaspMenu(),
-          ),
-          body: Padding(
-            padding: EdgeInsets.all(8.0),
-            child:
-                Column(mainAxisAlignment: MainAxisAlignment.start, children: [
-              _getForecastModelsAndDates(context),
-              _getForecastTypes(context),
-              _displayForecastTime(context),
-              _getForecastWindow(),
-              _widgetForSnackBarMessages(),
-              _miscStatesHandlerWidget(),
-            ]),
-          )
+          appBar: _getAppBar(),
+          body: _getBody(context)
           // }),
           ),
     );
   }
 
-  Widget _getForecastModelsAndDates(BuildContext context) {
+  AppBar _getAppBar() {
+    return AppBar(
+      title: Text('RASP'),
+      actions: _getRaspMenu(),
+    );
+  }
+
+  Padding _getBody(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.all(8.0),
+      child: Column(mainAxisAlignment: MainAxisAlignment.start, children: [
+        _getForecastModelsAndDates(),
+        _getForecastTypes(),
+        _displayForecastTime(),
+        _getForecastWindow(),
+        _widgetForSnackBarMessages(),
+        _miscStatesHandlerWidget(),
+      ]),
+    );
+  }
+
+  Widget _getForecastModelsAndDates() {
     //print('creating/updating main ForecastModelsAndDates');
     return Row(
       mainAxisAlignment: MainAxisAlignment.start,
@@ -119,7 +126,7 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
             flex: 7,
             child: Padding(
               padding: EdgeInsets.only(left: 16.0),
-              child: forecastDatesDropDownList(context),
+              child: forecastDatesDropDownList(),
             )),
       ],
     );
@@ -158,7 +165,7 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
   }
 
 // Display forecast dates for selected model (eg. GFS)
-  Widget forecastDatesDropDownList(BuildContext context) {
+  Widget forecastDatesDropDownList() {
     return BlocBuilder<RaspDataBloc, RaspDataState>(
         buildWhen: (previous, current) {
       return current is RaspInitialState || current is RaspModelDates;
@@ -192,7 +199,7 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
   }
 
 // Display description of forecast types (eq. 'Thermal Updraft Velocity (W*)' for wstar)
-  Widget _getForecastTypes(BuildContext context) {
+  Widget _getForecastTypes() {
     return BlocBuilder<RaspDataBloc, RaspDataState>(
         buildWhen: (previous, current) {
       return current is RaspInitialState || current is RaspForecasts;
@@ -258,7 +265,7 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
   }
 
 // Display forecast time for model and date
-  Widget _displayForecastTime(BuildContext context) {
+  Widget _displayForecastTime() {
     //print('creating/updating ForecastTime');
     return Row(
       mainAxisAlignment: MainAxisAlignment.start,
@@ -414,10 +421,11 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
     }
   }
 
-  List<Widget> getRaspMenu() {
+  List<Widget> _getRaspMenu() {
     return <Widget>[
       TextButton(
-        child: const Text('SELECT TASK', style: TextStyle(color: Colors.white)),
+        child: const Text(RaspMenu.selectTask,
+            style: TextStyle(color: Colors.white)),
         onPressed: () {
           _selectTask();
         },

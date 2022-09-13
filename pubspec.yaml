@@ -30,6 +30,7 @@ dependencies:
   flutter_bloc: ^8.0.1
   equatable: ^2.0.3
   webview_flutter: ^3.0.4
+  flutter_inappwebview: ^5.4.3+7
   url_launcher: ^6.1.5
   pinch_zoom: ^1.0.0
   sprintf: ^6.0.0
@@ -74,6 +75,7 @@ dependencies:
   cupertino_icons: ^1.0.5
 
 
+
 #https://pub.dev/packages/flutter_launcher_icons
 flutter_icons:
   android: "launcher_icon"
@@ -107,6 +109,7 @@ flutter:
     - assets/svg/
     - assets/png/
     - assets/html/
+    - assets/txt/
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

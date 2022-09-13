@@ -6,7 +6,9 @@ import 'package:dio/dio.dart';
 import 'package:floor/floor.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_map/src/geo/latlng_bounds.dart';
+import 'package:flutter_soaring_forecast/auth/secrets.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     as Constants;
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
@@ -25,6 +27,9 @@ import 'package:flutter_soaring_forecast/soaring/repository/usgs/national_map.da
 import 'package:flutter_soaring_forecast/soaring/turnpoints/cup/cup_styles.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoint_utils.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoints_importer.dart';
+import 'package:flutter_soaring_forecast/soaring/windy/data/windy_altitude.dart';
+import 'package:flutter_soaring_forecast/soaring/windy/data/windy_layer.dart';
+import 'package:flutter_soaring_forecast/soaring/windy/data/windy_model.dart';
 import 'package:logger/logger.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
@@ -109,7 +114,7 @@ class Repository {
     for (int i = 0; i < region.dates!.length; ++i) {
       try {
         ForecastModels forecastModels =
-            await _raspClient.getForecastModels(region.name!, dates[i]);
+            await getforecastModelsForRegionAndDate(region.name!, dates[i]);
         region.addForecastModelsForDate(
             forecastModels, dates[i], printdates[i]);
       } catch (error, stackTrace) {
@@ -118,6 +123,11 @@ class Repository {
     }
     return new Future<Region>.value(region);
   }
+
+  // Date in yyyy-mm-dd format
+  Future<ForecastModels> getforecastModelsForRegionAndDate(
+          String regionName, String date) async =>
+      await _raspClient.getForecastModels(regionName, date);
 
   /// Get the list of forecasts that are generated.
   /// Note we use a customized list held locally.
@@ -642,6 +652,43 @@ class Repository {
   Future<void> _deleteFileFromAppDocsDirectory(String filename) async {
     final file = await _getAppDocsFile(filename);
     await file.delete();
+  }
+
+  // Methods for Windy options
+
+  Future<String> getWindyKey() async {
+    return windyKey;
+  }
+
+  Future<List<WindyModel>> getWindyModels() async {
+    final list = <WindyModel>[];
+    final string = await rootBundle.loadString('assets/txt/windy_model.txt');
+    string.split("\n").forEach((element) {
+      list.add(WindyModel(element));
+    });
+    return list;
+  }
+
+  Future<List<WindyLayer>> getWindyLayers() async {
+    final list = <WindyLayer>[];
+    final string = await rootBundle.loadString('assets/txt/windy_layer.txt');
+    string.split("\n").forEach((element) {
+      list.add(WindyLayer(element));
+    });
+    return list;
+  }
+
+  Future<List<WindyAltitude>> getWindyAltitudes() async {
+    final list = <WindyAltitude>[];
+    final string = await rootBundle.loadString('assets/txt/windy_altitude.txt');
+    string.split("\n").forEach((element) {
+      list.add(WindyAltitude(element));
+    });
+    return list;
+  }
+
+  Future<String> getCustomWindyHtml() async {
+    return await rootBundle.loadString('assets/html/windy.html');
   }
 
   // ----- Shared preferences --------------------------
