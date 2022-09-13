@@ -12,6 +12,7 @@ abstract class TaskDao extends BaseDao<Task> {
   @Query("Select * from task where id = :taskId")
   Future<Task?> getTask(int taskId);
 
+  // Current sqlite code never returns record key - always get null
   @Query("Delete from task where id = :taskId")
   Future<int?> deleteTask(int taskId);
 

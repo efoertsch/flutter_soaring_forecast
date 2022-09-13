@@ -8,6 +8,7 @@ import 'package:flutter_soaring_forecast/soaring/floor/task/task.dart';
     childColumns: ['taskId'],
     parentColumns: ['id'],
     entity: Task,
+    onDelete: ForeignKeyAction.cascade,
   )
 ])
 class TaskTurnpoint {

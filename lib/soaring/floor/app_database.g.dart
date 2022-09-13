@@ -92,7 +92,7 @@ class _$AppDatabase extends AppDatabase {
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `task` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `taskName` TEXT NOT NULL, `distance` REAL NOT NULL, `taskOrder` INTEGER NOT NULL)');
         await database.execute(
-            'CREATE TABLE IF NOT EXISTS `taskturnpoint` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `taskId` INTEGER, `taskOrder` INTEGER NOT NULL, `title` TEXT NOT NULL, `code` TEXT NOT NULL, `latitudeDeg` REAL NOT NULL, `longitudeDeg` REAL NOT NULL, `distanceFromPriorTurnpoint` REAL NOT NULL, `distanceFromStartingPoint` REAL NOT NULL, `lastTurnpoint` INTEGER NOT NULL, FOREIGN KEY (`taskId`) REFERENCES `task` (`id`) ON UPDATE NO ACTION ON DELETE NO ACTION)');
+            'CREATE TABLE IF NOT EXISTS `taskturnpoint` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `taskId` INTEGER, `taskOrder` INTEGER NOT NULL, `title` TEXT NOT NULL, `code` TEXT NOT NULL, `latitudeDeg` REAL NOT NULL, `longitudeDeg` REAL NOT NULL, `distanceFromPriorTurnpoint` REAL NOT NULL, `distanceFromStartingPoint` REAL NOT NULL, `lastTurnpoint` INTEGER NOT NULL, FOREIGN KEY (`taskId`) REFERENCES `task` (`id`) ON UPDATE NO ACTION ON DELETE CASCADE)');
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `turnpoint` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `title` TEXT NOT NULL, `code` TEXT NOT NULL, `country` TEXT NOT NULL, `latitudeDeg` REAL NOT NULL, `longitudeDeg` REAL NOT NULL, `elevation` TEXT NOT NULL, `style` TEXT NOT NULL, `direction` TEXT NOT NULL, `length` TEXT NOT NULL, `frequency` TEXT NOT NULL, `description` TEXT NOT NULL, `runwayWidth` TEXT NOT NULL)');
         await database

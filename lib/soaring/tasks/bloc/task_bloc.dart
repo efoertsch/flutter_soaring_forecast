@@ -69,9 +69,13 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
   }
 
   void _removeTaskFromTaskList(
-      SwipeDeletedTaskEvent event, Emitter<TaskState> emit) {
+      SwipeDeletedTaskEvent event, Emitter<TaskState> emit) async {
     Task task = _tasks[event.index];
-    repository.deleteTask(task.id!);
+    try {
+      await repository.deleteTask(task.id!);
+    } catch (e) {
+      print("Delete task exception: ${e.toString()}");
+    }
     _tasks.removeAt(event.index);
     _updateTaskList(emit);
   }
