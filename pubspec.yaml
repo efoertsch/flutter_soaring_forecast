@@ -63,7 +63,7 @@ dependencies:
 
   flutter_map: ^2.2.0 # or the latest version on Pub, current used for rasp map
   #map_controller: 0.9.1  # used to process/display SUA plus handle state with showing/removing markers
-  google_maps_flutter: ^2.1.12 # used for overhead view of turnpoints
+  google_maps_flutter: ^2.2.0 # used for overhead view of turnpoints
 
   flutter:
     sdk: flutter

@@ -1,17 +1,18 @@
-import 'dart:async';
-
 import 'package:after_layout/after_layout.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:flutter_soaring_forecast/main.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
 import 'package:flutter_soaring_forecast/soaring/app/custom_styles.dart';
+import 'package:flutter_soaring_forecast/soaring/tasks/ui/task_list.dart';
 import 'package:flutter_soaring_forecast/soaring/windy/bloc/windy_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/windy/bloc/windy_event.dart';
 import 'package:flutter_soaring_forecast/soaring/windy/bloc/windy_state.dart';
 import 'package:flutter_soaring_forecast/soaring/windy/data/windy_altitude.dart';
 import 'package:flutter_soaring_forecast/soaring/windy/data/windy_layer.dart';
 import 'package:flutter_soaring_forecast/soaring/windy/data/windy_model.dart';
+import 'package:latlong2/latlong.dart';
 
 class WindyForecast extends StatefulWidget {
   WindyForecast({Key? key}) : super(key: key);
@@ -25,17 +26,24 @@ class WindyForecastState extends State<WindyForecast>
   InAppWebViewController? webViewController;
   InAppWebViewGroupOptions options = InAppWebViewGroupOptions(
       crossPlatform: InAppWebViewOptions(
+        javaScriptEnabled: true,
+        disableHorizontalScroll: true,
+        disableVerticalScroll: true,
         useShouldOverrideUrlLoading: true,
         mediaPlaybackRequiresUserGesture: false,
       ),
       android: AndroidInAppWebViewOptions(
-        useHybridComposition: true,
+        useHybridComposition: false,
       ),
       ios: IOSInAppWebViewOptions(
         allowsInlineMediaPlayback: true,
       ));
+  late final String key;
+  late final LatLng latLng;
+  final int zoom = 7;
+  var windyWidgetSize = Size.zero;
+  double height = 1;
 
-  // Make sure first layout occurs prior to map ready otherwise crash occurs
   @override
   void afterFirstLayout(BuildContext context) {
     _sendEvent(WindyInitEvent());
@@ -46,13 +54,13 @@ class WindyForecastState extends State<WindyForecast>
     return SafeArea(
       child: Scaffold(
         resizeToAvoidBottomInset: false,
-        appBar: _getAppBar(),
+        appBar: _getAppBar(context),
         body: _getBody(),
       ),
     );
   }
 
-  AppBar _getAppBar() {
+  AppBar _getAppBar(BuildContext context) {
     return AppBar(
       title: Text('Windy'),
       leading: BackButton(
@@ -66,7 +74,6 @@ class WindyForecastState extends State<WindyForecast>
     return Column(children: [
       _getDropDownOptions(),
       _getWindyWebView(),
-      _getWindyListener(),
     ]);
   }
 
@@ -112,7 +119,7 @@ class WindyForecastState extends State<WindyForecast>
   void handleClick(String value) async {
     switch (value) {
       case WindyMenu.clearTask:
-        // TODO display TopoMap if checked
+        // TODO clear task if checked
         break;
       case WindyMenu.TopoMap:
         // TODO display TopoMap if checked
@@ -129,42 +136,6 @@ class WindyForecastState extends State<WindyForecast>
       //  setCommand(JAVASCRIPT_START + "setBaseLayerToArcGisMap()");
       return true;
     }
-  }
-
-  Widget _getWindyWebView() {
-    return Expanded(
-      child: InAppWebView(
-        onWebViewCreated: (controller) {
-          webViewController = controller;
-          webViewController!.loadFile(assetFilePath: 'assets/html/windy.html');
-        },
-        navigationDelegate: (navigation) {
-          final host = Uri.parse(navigation.url).host;
-          if (!navigation.url.startsWith("file:") &&
-              !host.contains('windy.com')) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  'Blocking navigation to $host',
-                ),
-              ),
-            );
-            return NavigationDecision.prevent;
-          }
-          return NavigationDecision.navigate;
-        },
-        javascriptMode: JavascriptMode.unrestricted,
-        javascriptChannels: _createJavascriptChannels(context),
-      ),
-    );
-  }
-
-  Widget _getWindyListener() {
-    return BlocListener<WindyBloc, WindyState>(listener: (context, state) {
-      if (state is WindyHtmlState) {
-        _loadCustomWindyHTML(state.html);
-      }
-    });
   }
 
   Widget _getWindyModelDropDown() {
@@ -185,7 +156,7 @@ class WindyForecastState extends State<WindyForecast>
             elevation: 16,
             onChanged: (WindyModel? newValue) {
               // print('Selected model onChanged: $newValue');
-              _sendEvent(WindyModelEvent(newValue!));
+              _sendEvent(WindyModelEvent(newValue!.id));
             },
             items: models.map<DropdownMenuItem<WindyModel>>((WindyModel value) {
               return DropdownMenuItem<WindyModel>(
@@ -222,7 +193,7 @@ class WindyForecastState extends State<WindyForecast>
               elevation: 16,
               onChanged: (WindyLayer? newValue) {
                 // print('Selected model onChanged: $newValue');
-                _sendEvent(WindyLayerEvent(newValue!));
+                _sendEvent(WindyLayerEvent(newValue!.id));
               },
               items:
                   layers.map<DropdownMenuItem<WindyLayer>>((WindyLayer value) {
@@ -261,7 +232,7 @@ class WindyForecastState extends State<WindyForecast>
               iconSize: 24,
               elevation: 16,
               onChanged: (WindyAltitude? newValue) {
-                _sendEvent(WindyAltitudeEvent(newValue!));
+                _sendEvent(WindyAltitudeEvent(newValue!.id));
               },
               items: altitudes
                   .map<DropdownMenuItem<WindyAltitude>>((WindyAltitude value) {
@@ -272,43 +243,111 @@ class WindyForecastState extends State<WindyForecast>
               }).toList(),
             );
           } else {
-            return Text("Getting Alitudes");
+            return Text("Getting Altitudes");
           }
         }),
       ),
     );
   }
 
-  Future<void> _returnJavaScriptResult(WebViewController controller) async {
-    final userAgent =
-        await controller.runJavascriptReturningResult('navigator.userAgent');
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(userAgent),
-    ));
+  Widget _getWindyWebView() {
+    return BlocConsumer<WindyBloc, WindyState>(listener: (context, state) {
+      if (state is WindyKeyState) {
+        key = state.key;
+      }
+      if (state is WindyLatLngState) {
+        latLng = state.latLng;
+      }
+      if (state is WindyHtmlState) {
+        webViewController!.loadData(data: state.html);
+      }
+    }, buildWhen: (context, state) {
+      return (state is WindyHtmlState || state is WindyKeyState);
+    }, builder: (context, state) {
+      return Expanded(
+        child: InAppWebView(
+          onWebViewCreated: (controller) {
+            webViewController = controller;
+            _addJavaScriptHandlers();
+          },
+          shouldOverrideUrlLoading: (controller, navigationAction) async {
+            var url = navigationAction.request.url!.toString();
+            if (url.startsWith("file:") || url.contains('windy.com')) {
+              return NavigationActionPolicy.ALLOW;
+            }
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Blocking navigation to $url',
+                ),
+              ),
+            );
+            return NavigationActionPolicy.CANCEL;
+          },
+        ),
+      );
+    });
   }
 
-  Set<JavascriptChannel> _createJavascriptChannels(BuildContext context) {
-    return {
-      JavascriptChannel(
-        name: 'Print',
-        onMessageReceived: (message) {
-          print(message.message);
-          // ScaffoldMessenger.of(context)
-          //     .showSnackBar(SnackBar(content: Text(message.message)));
-        },
-      ),
-    };
+  void _selectTask() async {
+    final result = await Navigator.pushNamed(context, TaskList.routeName,
+        arguments: TaskListScreen.SELECT_TASK_OPTION);
+    if (result != null && result is int && result > -1) {
+      //print('Draw task for ' + result.toString());
+      _sendEvent(SelectTaskEvent(result));
+    }
   }
 
-  void _selectTask() {}
+  void _clearTask() {
+    _sendEvent(ClearTaskEvent());
+  }
 
   void _sendEvent(WindyEvent event) {
     BlocProvider.of<WindyBloc>(context).add(event);
   }
 
-  void _loadCustomWindyHTML(String html) {
-    (widget.webViewController as WebViewController)
-        .loloadHtmlString(html, baseUrl: 'windy.com');
+  void _addJavaScriptHandlers() {
+    webViewController!.addJavaScriptHandler(
+        handlerName: "Print",
+        callback: (args) {
+          print("Print called with arg:" + args.toString());
+        });
+    webViewController!.addJavaScriptHandler(
+        handlerName: "getWindyKey",
+        callback: (args) {
+          return key;
+        });
+    webViewController!.addJavaScriptHandler(
+        handlerName: "getLat",
+        callback: (args) {
+          print("getLat called");
+          return latLng.latitude.toString();
+        });
+    webViewController!.addJavaScriptHandler(
+        handlerName: "getLong",
+        callback: (args) {
+          print("getLong called");
+          return latLng.longitude.toString();
+        });
+    webViewController!.addJavaScriptHandler(
+        handlerName: "getZoom",
+        callback: (args) {
+          print("getZoom called");
+          return zoom;
+        });
+    webViewController!.addJavaScriptHandler(
+        handlerName: "redrawCompleted",
+        callback: (args) {
+          print("redrawCompleted");
+          return zoom;
+        });
+    webViewController!.addJavaScriptHandler(
+        handlerName: "newHeight",
+        callback: (List<dynamic> arguments) async {
+          int? height = arguments.isNotEmpty
+              ? arguments[0]
+              : await webViewController!.getContentHeight();
+          if (mounted) setState(() => this.height = height!.toDouble());
+        });
   }
 }

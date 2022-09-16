@@ -81,7 +81,7 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
       return ConditionalWillPopScope(
         onWillPop: _onWillPop,
         shouldAddCallback: true,
-        child: _buildSafeArea(context),
+        child: _buildSafeArea(),
       );
     } else {
       //iOS
@@ -91,12 +91,12 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
             _onWillPop();
           }
         },
-        child: _buildSafeArea(context),
+        child: _buildSafeArea(),
       );
     }
   }
 
-  Widget _buildSafeArea(BuildContext context) {
+  Widget _buildSafeArea() {
     return SafeArea(
       child: Scaffold(
         appBar: _getAppBar(),

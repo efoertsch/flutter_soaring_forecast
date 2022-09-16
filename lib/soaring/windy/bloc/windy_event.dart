@@ -1,8 +1,5 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_soaring_forecast/soaring/windy/data/windy_altitude.dart';
-import 'package:flutter_soaring_forecast/soaring/windy/data/windy_layer.dart';
-import 'package:flutter_soaring_forecast/soaring/windy/data/windy_model.dart';
 
 @immutable
 abstract class WindyEvent extends Equatable {}
@@ -16,22 +13,42 @@ class WindyInitEvent extends WindyEvent {
 }
 
 class WindyModelEvent extends WindyEvent {
-  final WindyModel windyModel;
-  WindyModelEvent(this.windyModel);
+  final int index;
+  WindyModelEvent(this.index);
   @override
-  List<Object?> get props => [windyModel];
+  List<Object?> get props => [index];
 }
 
 class WindyAltitudeEvent extends WindyEvent {
-  final WindyAltitude windyAltitude;
-  WindyAltitudeEvent(this.windyAltitude);
+  final int index;
+  WindyAltitudeEvent(this.index);
   @override
-  List<Object?> get props => [windyAltitude];
+  List<Object?> get props => [index];
 }
 
 class WindyLayerEvent extends WindyEvent {
-  final WindyLayer windyLayer;
-  WindyLayerEvent(this.windyLayer);
+  final int index;
+  WindyLayerEvent(this.index);
   @override
-  List<Object?> get props => [windyLayer];
+  List<Object?> get props => [index];
+}
+
+class SelectTaskEvent extends WindyEvent {
+  final int taskId;
+  SelectTaskEvent(this.taskId);
+  @override
+  List<Object?> get props => [taskId];
+}
+
+class ClearTaskEvent extends WindyEvent {
+  ClearTaskEvent();
+  @override
+  List<Object?> get props => [];
+}
+
+class WindyWidgetSizeEvent extends WindyEvent {
+  final Size size;
+  WindyWidgetSizeEvent(this.size);
+  @override
+  List<Object?> get props => [size];
 }

@@ -654,7 +654,7 @@ class Repository {
     await file.delete();
   }
 
-  // Methods for Windy options
+  //-------------- Methods for Windy options  -----------------------------------
 
   Future<String> getWindyKey() async {
     return windyKey;

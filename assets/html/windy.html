@@ -6,12 +6,16 @@
     <style>
     #windy {
       width: 100%;
-      height: 500px;   <!-- XXXHEIGHTXXX -->;
+      height: 1000px ;  <!--XXXHEIGHTXXXpx-->;  <!--1000px;-->
     }
   </style>
 </head>
+<meta name="viewport" content="width=device-width user-scalable=no zoom=1.1">
 <body>
-<div id="windy"></div>
+<div class="container" id="_flutter_target_do_not_delete">
+    <div id="windy"></div>
+</div>
+
 <style>
     #windy #mobile-ovr-select,
     #windy #embed-zoom {
@@ -20,6 +24,13 @@
 </style>
 
 <script type="text/javascript">
+
+function outputsize() {
+  if (typeof window.flutter_inappwebview !== "undefined" && typeof window.flutter_inappwebview.callHandler !== "undefined")
+     window.flutter_inappwebview.callHandler('newHeight', document.getElementById("_flutter_target_do_not_delete").offsetHeight);
+  }
+new ResizeObserver(outputsize).observe(_flutter_target_do_not_delete)
+
 
 Print.postMessage("Running windy.html javascript");
 
@@ -32,6 +43,11 @@ var mapMarker = [];
 var mapPolyLine = [];
 var taskLayerGroup;
 var origWindyMapLabels;
+var isFlutterInAppWebViewReady = false;
+
+window.addEventListener("flutterInAppWebViewPlatformReady", function(event) {
+ isFlutterInAppWebViewReady = true;
+});
 
 function setWindMap(store, map){
   windyStore = store;
@@ -95,63 +111,58 @@ function removeTaskFromMap() {
   }
 }
 
-function androidConnected() {
- //Print.postMessage("Android:" + android);
-  return true;
-  if (typeof android !== "undefined" && android !== null){
-    return true;
-  } else {
-    alert("Not viewing in webview");
-    return false;
-  }
-}
 
 function redrawCompleted(){
-  if (androidConnected()){
-    android.redrawCompleted();
+  if (isFlutterInAppWebViewReady){
+  window.flutter_inappwebview.callHandler('redrawCompleted');
   }
 }
 
 function getWindyKey() {
-Print.postMessage("Using Key: 'y852QwXYurm70lQozoV2rGSLQXoltuQc'");
- return 'y852QwXYurm70lQozoV2rGSLQXoltuQc';   // for testing only
-  if (androidConnected()) {
-    return android.getWindyKey();
+<!--Print.postMessage("Using Key: 'y852QwXYurm70lQozoV2rGSLQXoltuQc'");-->
+<!-- return 'y852QwXYurm70lQozoV2rGSLQXoltuQc';   // for testing only-->
+ var key;
+  if (isFlutterInAppWebViewReady) {
+    window.flutter_inappwebview.callHandler('getWindyKey').then(function(result){
+    key = result;
   }
+  return key;
 }
 
 function getLat() {
-return 43.1393051;
-  if (androidConnected()) {
-    Print.postMessage("lat = " + android.getLat());
-    return android.getLat();
+<!--return 43.1393051; -->
+  var lat = 43.1393051;
+  if (isFlutterInAppWebViewReady) {
+     window.flutter_inappwebview.callHandler('getLat').then(function(result){
+     lat = result;
   }
+  return lat;
 }
 
 function getLong() {
-return -72.076004;
-  if (androidConnected()) {
+<!--return -72.076004-->;
+  if (isFlutterInAppWebViewReady) {
     Print.postMessage("long = " + android.getLong());
     return android.getLong();
   }
 }
 
 function getZoom() {
-return 7;
-  if (androidConnected()) {
+<!--return 7;-->
+  if (isFlutterInAppWebViewReady) {
     return android.getZoom();
   }
 }
 
 function mapLoaded(){
-  if (androidConnected()){
+  if (isFlutterInAppWebViewReady){
     android.mapLoaded();
   }
 }
 
 // Call this once when map is loaded to see if task needs to be drawn
 function getTaskTurnpointsForMap() {
-  if (androidConnected()) {
+  if (isFlutterInAppWebViewReady) {
     Print.postMessage("calling android.getTaskTurnpointsForMap()");
     android.getTaskTurnpointsForMap();
   }

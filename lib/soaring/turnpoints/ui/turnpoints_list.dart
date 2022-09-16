@@ -48,7 +48,7 @@ class _TurnpointsListState extends State<TurnpointsList>
       return ConditionalWillPopScope(
         onWillPop: _onWillPop,
         shouldAddCallback: true,
-        child: _buildSafeAread(context),
+        child: _buildSafeAread(),
       );
     } else {
       //iOS
@@ -58,12 +58,12 @@ class _TurnpointsListState extends State<TurnpointsList>
             _onWillPop();
           }
         },
-        child: _buildSafeAread(context),
+        child: _buildSafeAread(),
       );
     }
   }
 
-  Widget _buildSafeAread(BuildContext context) {
+  Widget _buildSafeAread() {
     return SafeArea(
       maintainBottomViewPadding: true,
       child:
