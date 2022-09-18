@@ -33,6 +33,12 @@ class WindyLayerEvent extends WindyEvent {
   List<Object?> get props => [index];
 }
 
+class DisplayTaskIfAnyEvent extends WindyEvent {
+  DisplayTaskIfAnyEvent();
+  @override
+  List<Object?> get props => [];
+}
+
 class SelectTaskEvent extends WindyEvent {
   final int taskId;
   SelectTaskEvent(this.taskId);

@@ -20,6 +20,7 @@ class WindyBloc extends Bloc<WindyEvent, WindyState> {
   late final List<WindyModel> models;
   late final List<WindyAltitude> altitudes;
   late final List<WindyLayer> layers;
+  late final String key;
 
   WindyBloc({required this.repository}) : super(WindyLoadingState()) {
     on<WindyInitEvent>(_getWindyInitData);
@@ -27,22 +28,23 @@ class WindyBloc extends Bloc<WindyEvent, WindyState> {
     on<WindyModelEvent>(_setWindyModel);
     on<WindyAltitudeEvent>(_setWindyAltitude);
     on<WindyLayerEvent>(_setWindyLayer);
+    on<DisplayTaskIfAnyEvent>(_displayTaskIfAny);
     on<SelectTaskEvent>(_selectTask);
     on<ClearTaskEvent>(_clearTask);
   }
 
   FutureOr<void> _getWindyInitData(
       WindyInitEvent event, Emitter<WindyState> emit) async {
-    final key = await _getWindyApiKey();
+    key = await _getWindyApiKey();
     emit(WindyKeyState(key));
     final latLng = await _getRegionLatLng();
     emit(WindyLatLngState(latLng));
-
     models = await repository.getWindyModels();
     emit(WindyModelListState(models));
     layers = await repository.getWindyLayers();
     emit(WindyLayerListState(layers));
     altitudes = await repository.getWindyAltitudes();
+    _setAltitudeVisiblity(emit, 0);
     emit(WindyAltitudeListState(altitudes));
     await _emitWindyHtml(emit);
   }
@@ -61,13 +63,27 @@ class WindyBloc extends Bloc<WindyEvent, WindyState> {
   }
 
   FutureOr<void> _setWindyLayer(
-      WindyLayerEvent event, Emitter<WindyState> emit) {}
+      WindyLayerEvent event, Emitter<WindyState> emit) {
+    emit(WindyJavaScriptState(
+        "setLayer(" + "'" + layers[event.index].code + "')"));
+    _setAltitudeVisiblity(emit, event.index);
+  }
 
   FutureOr<void> _setWindyAltitude(
-      WindyAltitudeEvent event, Emitter<WindyState> emit) {}
+      WindyAltitudeEvent event, Emitter<WindyState> emit) {
+    emit(WindyJavaScriptState(
+        "setAltitude(" + "'" + altitudes[event.index].windyCode + "')"));
+  }
+
+  void _setAltitudeVisiblity(Emitter<WindyState> emit, int index) {
+    emit(WindyAltitudeVisibleState(layers[index].byAltitude));
+  }
 
   FutureOr<void> _setWindyModel(
-      WindyModelEvent event, Emitter<WindyState> emit) {}
+      WindyModelEvent event, Emitter<WindyState> emit) {
+    emit(WindyJavaScriptState(
+        "setModel(" + "'" + models[event.index].code + "')"));
+  }
 
   _sendJavaScriptCommand(Emitter<WindyState> emit, String javaScript) {
     emit(WindyJavaScriptState(javaScript));
@@ -77,6 +93,10 @@ class WindyBloc extends Bloc<WindyEvent, WindyState> {
       SelectTaskEvent event, Emitter<WindyState> emit) async {
     int taskId = event.taskId;
     repository.setCurrentTaskId(taskId);
+    await _loadTask(taskId, emit);
+  }
+
+  Future<void> _loadTask(int taskId, Emitter<WindyState> emit) async {
     if (taskId > -1) {
       final List<TaskTurnpoint> taskTurnpoints =
           await repository.getTaskTurnpoints(taskId);
@@ -98,7 +118,14 @@ class WindyBloc extends Bloc<WindyEvent, WindyState> {
 
   FutureOr<void> _emitWindyHtml(Emitter<WindyState> emit) async {
     final customWindyHtml = await repository.getCustomWindyHtml();
-    //customWindyHtml.replaceFirst("XXXHEIGHTXXX", event.size.height.toString());
     emit(WindyHtmlState(customWindyHtml));
+  }
+
+  FutureOr<void> _displayTaskIfAny(
+      DisplayTaskIfAnyEvent event, Emitter<WindyState> emit) async {
+    final taskId = await repository.getCurrentTaskId();
+    if (taskId > -1) {
+      await _loadTask(taskId, emit);
+    }
   }
 }

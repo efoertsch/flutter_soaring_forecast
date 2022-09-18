@@ -12,9 +12,8 @@
 </head>
 <meta name="viewport" content="width=device-width user-scalable=no zoom=1.1">
 <body>
-<div class="container" id="_flutter_target_do_not_delete">
-    <div id="windy"></div>
-</div>
+<div class="container" id="_flutter_target_do_not_delete"></div>
+<div id="windy"></div>
 
 <style>
     #windy #mobile-ovr-select,
@@ -32,8 +31,6 @@ function outputsize() {
 new ResizeObserver(outputsize).observe(_flutter_target_do_not_delete)
 
 
-Print.postMessage("Running windy.html javascript");
-
 var windyStore;
 var windyMap;
 var taskLayerGroup;
@@ -49,6 +46,17 @@ window.addEventListener("flutterInAppWebViewPlatformReady", function(event) {
  isFlutterInAppWebViewReady = true;
 });
 
+function sendMsgToApp(msg){
+  console.log(msg)
+   if (isFlutterInAppWebViewReady){
+      window.flutter_inappwebview.callHandler('print', msg);
+   }
+}
+
+sendMsgToApp("Running windy.html javascript");
+
+
+
 function setWindMap(store, map){
   windyStore = store;
   windyMap = map;
@@ -61,7 +69,7 @@ function setWindMap(store, map){
                     zIndex: 1000,
                     className: 'polyTrack'};
 
-  Print.postMessage("calling getTaskTurnpointsForMap()");
+  sendMsgToApp("calling getTaskTurnpointsForMap()");
   getTaskTurnpointsForMap();
 }
 
@@ -85,17 +93,17 @@ function setBaseLayerToArcGisMap(){
 }
 
 function setModel(model){
-  Print.postMessage('Requesting product:' + model);
+  sendMsgToApp('Requesting product:' + model);
   windyStore.set('product',model);
 }
 
 function setLayer(layer){
-  Print.postMessage('Requesting layer:' + layer);
+  sendMsgToApp('Requesting layer:' + layer);
   windyStore.set('overlay', layer);
 }
 
 function setAltitude(altitude){
-  Print.postMessage('Requesting level:' + altitude);
+  sendMsgToApp('Requesting level:' + altitude);
   windyStore.set('level', altitude);
 }
 
@@ -114,17 +122,19 @@ function removeTaskFromMap() {
 
 function redrawCompleted(){
   if (isFlutterInAppWebViewReady){
-  window.flutter_inappwebview.callHandler('redrawCompleted');
+     window.flutter_inappwebview.callHandler('redrawCompleted');
   }
 }
 
 function getWindyKey() {
-<!--Print.postMessage("Using Key: 'y852QwXYurm70lQozoV2rGSLQXoltuQc'");-->
-<!-- return 'y852QwXYurm70lQozoV2rGSLQXoltuQc';   // for testing only-->
+<!--sendMsgToApp("Using Key: 'y852QwXYurm70lQozoV2rGSLQXoltuQc'");-->
+ return 'y852QwXYurm70lQozoV2rGSLQXoltuQc';   // for testing only
  var key;
   if (isFlutterInAppWebViewReady) {
     window.flutter_inappwebview.callHandler('getWindyKey').then(function(result){
-    key = result;
+       sendMsgToApp("called getWindyKey(): " + result);
+       key = result;
+    });
   }
   return key;
 }
@@ -134,43 +144,52 @@ function getLat() {
   var lat = 43.1393051;
   if (isFlutterInAppWebViewReady) {
      window.flutter_inappwebview.callHandler('getLat').then(function(result){
-     lat = result;
+        sendMsgToApp("called getLat(): " + result);
+        lat = result;
+     });
   }
   return lat;
 }
 
 function getLong() {
-<!--return -72.076004-->;
+var long =  -72.076004;
   if (isFlutterInAppWebViewReady) {
-    Print.postMessage("long = " + android.getLong());
-    return android.getLong();
+     window.flutter_inappwebview.callHandler('getLong').then(function(result){
+        sendMsgToApp("called getLong(): " + result);
+        long =  result;
+     });
   }
+  return long;
 }
 
 function getZoom() {
-<!--return 7;-->
+var zoom = 7;
   if (isFlutterInAppWebViewReady) {
-    return android.getZoom();
+    window.flutter_inappwebview.callHandler('getZoom').then(function(result){
+       sendMsgToApp("called getZoom(): " + result);
+       zoom =  result;
+    });
   }
+  return zoom;
 }
 
-function mapLoaded(){
-  if (isFlutterInAppWebViewReady){
-    android.mapLoaded();
-  }
-}
+<!--function mapLoaded(){-->
+<!--  if (isFlutterInAppWebViewReady){-->
+<!--    window.flutter_inappwebview.callHandler('mapLoaded');-->
+<!--  }-->
+<!--}-->
 
 // Call this once when map is loaded to see if task needs to be drawn
 function getTaskTurnpointsForMap() {
   if (isFlutterInAppWebViewReady) {
-    Print.postMessage("calling android.getTaskTurnpointsForMap()");
-    android.getTaskTurnpointsForMap();
+    sendMsgToApp("calling getTaskTurnpointsForMap()");
+     window.flutter_inappwebview.callHandler('getTaskTurnpointsForMap');
   }
 }
 
 // Called by app to pass in turnpoints
 function drawTask(taskTurnpoints) {
-  Print.postMessage("drawTask(taskTurnpoints)");
+  sendMsgToApp("drawTask(taskTurnpoints)");
   logTaskTurnpoints(taskTurnpoints);
   removeTaskFromMap();
   createMarkersAndPolyLine(taskTurnpoints);
@@ -189,7 +208,7 @@ function createMarkersAndPolyLine(taskTurnpoints) {
     }
     taskLayerGroup = L.layerGroup(mapMarker).addLayer(L.polyline(mapPolyLine,turnpointPolyLine));
     taskLayerGroup.addTo(windyMap);
-    Print.postMessage("Done with plotting turnpoints");
+    sendMsgToApp("Done with plotting turnpoints");
   }
 }
 
@@ -197,13 +216,13 @@ function logTaskTurnpoints(taskTurnpoints){
   if (taskTurnpoints != null  && taskTurnpoints.length > 0) {
     for (i = 0; i < taskTurnpoints.length; i++) {
       var latLong = [taskTurnpoints[i].latitudeDeg, taskTurnpoints[i].longitudeDeg];
-      Print.postMessage("lat/long:" + taskTurnpoints[i].latitudeDeg + "/" + taskTurnpoints[i].longitudeDeg);
-      Print.postMessage("title" + taskTurnpoints[i].title);
-      Print.postMessage("distance from starting" + taskTurnpoints[i].distanceFromStartingPoint.toFixed(1));
+      sendMsgToApp("lat/long:" + taskTurnpoints[i].latitudeDeg + "/" + taskTurnpoints[i].longitudeDeg);
+      sendMsgToApp("title" + taskTurnpoints[i].title);
+      sendMsgToApp("distance from starting" + taskTurnpoints[i].distanceFromStartingPoint.toFixed(1));
       mapPolyLine.push(latLong);
     }
   } else {
-    Print.postMessage("taskTurnpoints null or empty");
+    sendMsgToApp("taskTurnpoints null or empty");
   }
 }
 
@@ -218,7 +237,7 @@ const options = {
   zoom: getZoom(),
   isolines: 'pressure'
 };
-Print.postMessage("Initializing Windy API with key" + getWindyKey());
+sendMsgToApp("Initializing Windy API with key" + getWindyKey());
 // Initialize Windy API
 windyInit(options, windyAPI => {
   // windyAPI is ready, and contain 'map', 'store',
@@ -256,21 +275,21 @@ windyInit(options, windyAPI => {
 
   // Observing change of .store value
   store.on('isImperial', isImperial => {
-    Print.postMessage(`isImperial was changed: ${ isImperial }`);
+    sendMsgToApp(`isImperial was changed: ${ isImperial }`);
   });
 
   setWindMap(store, map);
   windyAPI.store.set('isImperial',false);
   windyAPI.store.set('isImperial',true);
-  Print.postMessage(" isImperial:" + windyAPI.store.get('isImperial'));
+  sendMsgToApp(" isImperial:" + windyAPI.store.get('isImperial'));
   //windyAPI.store.set('metric_temp', '°F');
-  Print.postMessage(" isImperial:" + windyAPI.store.get('isImperial'));
-  Print.postMessage(" temp units:" + windyAPI.store.get('metric_temp'));
-  Print.postMessage("store.layer:" + store.get('overlay'));
-  Print.postMessage("levels:" + windyAPI.store.get('availLevels'));
-  Print.postMessage("Allowed products: " + windyAPI.store.getAllowed('product'));
-  Print.postMessage("Allowed overlays: " + windyAPI.store.getAllowed('overlay'));
-  Print.postMessage("Allowed levels: " + windyAPI.store.getAllowed('level'));
+  sendMsgToApp(" isImperial:" + windyAPI.store.get('isImperial'));
+  sendMsgToApp(" temp units:" + windyAPI.store.get('metric_temp'));
+  sendMsgToApp("store.layer:" + store.get('overlay'));
+  sendMsgToApp("levels:" + windyAPI.store.get('availLevels'));
+  sendMsgToApp("Allowed products: " + windyAPI.store.getAllowed('product'));
+  sendMsgToApp("Allowed overlays: " + windyAPI.store.getAllowed('overlay'));
+  sendMsgToApp("Allowed levels: " + windyAPI.store.getAllowed('level'));
 });
 </script>
 <script>

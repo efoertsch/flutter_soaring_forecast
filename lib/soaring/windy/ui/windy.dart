@@ -13,6 +13,7 @@ import 'package:flutter_soaring_forecast/soaring/windy/data/windy_altitude.dart'
 import 'package:flutter_soaring_forecast/soaring/windy/data/windy_layer.dart';
 import 'package:flutter_soaring_forecast/soaring/windy/data/windy_model.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class WindyForecast extends StatefulWidget {
   WindyForecast({Key? key}) : super(key: key);
@@ -74,6 +75,7 @@ class WindyForecastState extends State<WindyForecast>
     return Column(children: [
       _getDropDownOptions(),
       _getWindyWebView(),
+      _getWindyScriptJavaScriptWidget(),
     ]);
   }
 
@@ -139,15 +141,15 @@ class WindyForecastState extends State<WindyForecast>
   }
 
   Widget _getWindyModelDropDown() {
-    return Expanded(
-      flex: 2,
-      child: BlocBuilder<WindyBloc, WindyState>(buildWhen: (previous, current) {
-        return current is WindyLoadingState || current is WindyModelListState;
-      }, builder: (context, state) {
-        //print('creating/updating forecastDatesDropDown');
-        if (state is WindyModelListState) {
-          final List<WindyModel> models = state.models;
-          return DropdownButton<WindyModel>(
+    return BlocBuilder<WindyBloc, WindyState>(buildWhen: (previous, current) {
+      return current is WindyLoadingState || current is WindyModelListState;
+    }, builder: (context, state) {
+      //print('creating/updating forecastDatesDropDown');
+      if (state is WindyModelListState) {
+        final List<WindyModel> models = state.models;
+        return Expanded(
+          flex: 2,
+          child: DropdownButton<WindyModel>(
             style: CustomStyle.bold18(context),
             value: (models[0]),
             hint: Text('Select Model'),
@@ -164,27 +166,26 @@ class WindyForecastState extends State<WindyForecast>
                 child: Text(value.name),
               );
             }).toList(),
-          );
-        } else {
-          return Text("Getting Models");
-        }
-      }),
-    );
+          ),
+        );
+      } else {
+        return Text("Getting Models");
+      }
+    });
   }
 
   Widget _getWindyLayerDropdown() {
-    return Expanded(
-      flex: 2,
-      child: Padding(
-        padding: EdgeInsets.only(left: 16.0),
-        child:
-            BlocBuilder<WindyBloc, WindyState>(buildWhen: (previous, current) {
-          return current is WindyLoadingState || current is WindyLayerListState;
-        }, builder: (context, state) {
-          //print('creating/updating forecastDatesDropDown');
-          if (state is WindyLayerListState) {
-            final List<WindyLayer> layers = state.layers;
-            return DropdownButton<WindyLayer>(
+    return BlocBuilder<WindyBloc, WindyState>(buildWhen: (previous, current) {
+      return current is WindyLoadingState || current is WindyLayerListState;
+    }, builder: (context, state) {
+      //print('creating/updating forecastDatesDropDown');
+      if (state is WindyLayerListState) {
+        final List<WindyLayer> layers = state.layers;
+        return Expanded(
+          flex: 2,
+          child: Padding(
+            padding: EdgeInsets.only(left: 16.0),
+            child: DropdownButton<WindyLayer>(
               style: CustomStyle.bold18(context),
               value: (layers[0]),
               hint: Text('Select Model'),
@@ -202,29 +203,27 @@ class WindyForecastState extends State<WindyForecast>
                   child: Text(value.name),
                 );
               }).toList(),
-            );
-          } else {
-            return Text("Getting Layers");
-          }
-        }),
-      ),
-    );
+            ),
+          ),
+        );
+      } else {
+        return Text("Getting Layers");
+      }
+    });
   }
 
   Widget _getWindyAltitude() {
-    return Expanded(
-      flex: 2,
-      child: Padding(
-        padding: EdgeInsets.only(left: 16.0),
-        child:
-            BlocBuilder<WindyBloc, WindyState>(buildWhen: (previous, current) {
-          return current is WindyLoadingState ||
-              current is WindyAltitudeListState;
-        }, builder: (context, state) {
-          //print('creating/updating forecastDatesDropDown');
-          if (state is WindyAltitudeListState) {
-            final List<WindyAltitude> altitudes = state.altitudes;
-            return DropdownButton<WindyAltitude>(
+    return BlocBuilder<WindyBloc, WindyState>(buildWhen: (previous, current) {
+      return current is WindyLoadingState || current is WindyAltitudeListState;
+    }, builder: (context, state) {
+      //print('creating/updating forecastDatesDropDown');
+      if (state is WindyAltitudeListState) {
+        final List<WindyAltitude> altitudes = state.altitudes;
+        return Expanded(
+          flex: 2,
+          child: Padding(
+            padding: EdgeInsets.only(left: 16.0),
+            child: DropdownButton<WindyAltitude>(
               style: CustomStyle.bold18(context),
               value: (altitudes[0]),
               hint: Text('Select Altitude'),
@@ -241,13 +240,13 @@ class WindyForecastState extends State<WindyForecast>
                   child: Text(value.imperial.toUpperCase()),
                 );
               }).toList(),
-            );
-          } else {
-            return Text("Getting Altitudes");
-          }
-        }),
-      ),
-    );
+            ),
+          ),
+        );
+      } else {
+        return Text("Getting Altitudes");
+      }
+    });
   }
 
   Widget _getWindyWebView() {
@@ -259,34 +258,55 @@ class WindyForecastState extends State<WindyForecast>
         latLng = state.latLng;
       }
       if (state is WindyHtmlState) {
-        webViewController!.loadData(data: state.html);
+        webViewController!.loadData(
+          data: state.html,
+          //  allowingReadAccessTo: Uri.parse("file://assets/html/windy.html"),
+          baseUrl: Uri.parse("https://www.windy.com"),
+        );
       }
     }, buildWhen: (context, state) {
-      return (state is WindyHtmlState || state is WindyKeyState);
+      return (state is WindyKeyState);
     }, builder: (context, state) {
       return Expanded(
-        child: InAppWebView(
-          onWebViewCreated: (controller) {
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 8.0),
+          child: InAppWebView(onWebViewCreated: (controller) {
             webViewController = controller;
             _addJavaScriptHandlers();
-          },
-          shouldOverrideUrlLoading: (controller, navigationAction) async {
+          }, shouldOverrideUrlLoading: (controller, navigationAction) async {
             var url = navigationAction.request.url!.toString();
-            if (url.startsWith("file:") || url.contains('windy.com')) {
+            if (url.startsWith("https://www.windy.com")) {
+              launchUrl(Uri.parse(url));
+              return NavigationActionPolicy.CANCEL;
+            }
+            if (url.startsWith("file:") || url.contains("windy.com")) {
               return NavigationActionPolicy.ALLOW;
             }
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  'Blocking navigation to $url',
-                ),
-              ),
-            );
             return NavigationActionPolicy.CANCEL;
-          },
+          }, onLoadStart: (controller, url) {
+            print("started $url");
+            // setState(() {
+            //   this.url = url;
+            // });
+          }),
         ),
       );
     });
+  }
+
+  Widget _getWindyScriptJavaScriptWidget() {
+    return BlocListener<WindyBloc, WindyState>(
+      listenWhen: (previousState, state) {
+        return (state is WindyJavaScriptState);
+      },
+      listener: (context, state) {
+        if (state is WindyJavaScriptState) {
+          webViewController!
+              .callAsyncJavaScript(functionBody: state.javaScript);
+        }
+      },
+      child: SizedBox.shrink(),
+    );
   }
 
   void _selectTask() async {
@@ -308,13 +328,14 @@ class WindyForecastState extends State<WindyForecast>
 
   void _addJavaScriptHandlers() {
     webViewController!.addJavaScriptHandler(
-        handlerName: "Print",
+        handlerName: "print",
         callback: (args) {
           print("Print called with arg:" + args.toString());
         });
     webViewController!.addJavaScriptHandler(
         handlerName: "getWindyKey",
         callback: (args) {
+          print("getWindyKey called");
           return key;
         });
     webViewController!.addJavaScriptHandler(
@@ -341,13 +362,19 @@ class WindyForecastState extends State<WindyForecast>
           print("redrawCompleted");
           return zoom;
         });
+    // webViewController!.addJavaScriptHandler(
+    //     handlerName: "newHeight",
+    //     callback: (List<dynamic> arguments) async {
+    //       int? height = arguments.isNotEmpty
+    //           ? arguments[0]
+    //           : await webViewController!.getContentHeight();
+    //       if (mounted) setState(() => this.height = height!.toDouble());
+    //     });
+
     webViewController!.addJavaScriptHandler(
-        handlerName: "newHeight",
+        handlerName: "getTaskTurnpointsForMap",
         callback: (List<dynamic> arguments) async {
-          int? height = arguments.isNotEmpty
-              ? arguments[0]
-              : await webViewController!.getContentHeight();
-          if (mounted) setState(() => this.height = height!.toDouble());
+          _sendEvent(DisplayTaskIfAnyEvent());
         });
   }
 }

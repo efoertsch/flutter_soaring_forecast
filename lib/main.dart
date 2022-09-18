@@ -35,6 +35,10 @@ import 'package:flutter_soaring_forecast/soaring/windy/ui/windy.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // if (Platform.isAndroid) {
+  //   await AndroidInAppWebViewController.setWebContentsDebuggingEnabled(true);
+  // }
+
   // Workmanager().initialize(
   //     callbackDispatcher, // The top level function, aka callbackDispatcher
   //     isInDebugMode:

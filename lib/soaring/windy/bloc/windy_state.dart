@@ -67,3 +67,10 @@ class WindyJavaScriptState extends WindyState {
   @override
   List<Object?> get props => [javaScript];
 }
+
+class WindyAltitudeVisibleState extends WindyState {
+  final bool visible;
+  WindyAltitudeVisibleState(this.visible);
+  @override
+  List<Object?> get props => [visible];
+}
