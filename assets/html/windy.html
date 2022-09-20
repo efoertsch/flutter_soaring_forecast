@@ -6,14 +6,15 @@
     <style>
     #windy {
       width: 100%;
-      height: 1000px ;  <!--XXXHEIGHTXXXpx-->;  <!--1000px;-->
+      height: 686px ;  <!--XXXHEIGHTXXXpx-->;  <!--1000px;-->
     }
   </style>
 </head>
-<meta name="viewport" content="width=device-width user-scalable=no zoom=1.1">
+<meta name="viewport" content="width=device-width  user-scalable=no zoom=1.0">
 <body>
-<div class="container" id="_flutter_target_do_not_delete"></div>
+<div class="container" id="_flutter_target_do_not_delete">
 <div id="windy"></div>
+</div>
 
 <style>
     #windy #mobile-ovr-select,
@@ -26,6 +27,7 @@
 
 function outputsize() {
   if (typeof window.flutter_inappwebview !== "undefined" && typeof window.flutter_inappwebview.callHandler !== "undefined")
+    console.log("webview height: " + document.getElementById("_flutter_target_do_not_delete").offsetHeight);
      window.flutter_inappwebview.callHandler('newHeight', document.getElementById("_flutter_target_do_not_delete").offsetHeight);
   }
 new ResizeObserver(outputsize).observe(_flutter_target_do_not_delete)
@@ -41,9 +43,16 @@ var mapPolyLine = [];
 var taskLayerGroup;
 var origWindyMapLabels;
 var isFlutterInAppWebViewReady = false;
+var windyKey;
+var lat;
+var long;
+var zoom;
 
 window.addEventListener("flutterInAppWebViewPlatformReady", function(event) {
  isFlutterInAppWebViewReady = true;
+ sendMsgToApp("isFlutterInAppWebViewReady = true");
+ getWindyStartupParms();
+
 });
 
 function sendMsgToApp(msg){
@@ -54,7 +63,6 @@ function sendMsgToApp(msg){
 }
 
 sendMsgToApp("Running windy.html javascript");
-
 
 
 function setWindMap(store, map){
@@ -126,51 +134,19 @@ function redrawCompleted(){
   }
 }
 
-function getWindyKey() {
-<!--sendMsgToApp("Using Key: 'y852QwXYurm70lQozoV2rGSLQXoltuQc'");-->
- return 'y852QwXYurm70lQozoV2rGSLQXoltuQc';   // for testing only
- var key;
+function getWindyStartupParms() {
+  console.log("in getWindyStartupParms - isFlutterInAppWebViewReady =" + isFlutterInAppWebViewReady);
   if (isFlutterInAppWebViewReady) {
-    window.flutter_inappwebview.callHandler('getWindyKey').then(function(result){
-       sendMsgToApp("called getWindyKey(): " + result);
-       key = result;
+     window.flutter_inappwebview.callHandler('getWindyStartupParms').then(function(result){
+      sendMsgToApp("called getWindyStartupParms(): " + result.toString);
+      windyKey = result['key'];
+      lat = result['lat'];
+      long = result['long'];
+      zoom = result['zoom']
+      console.log("WindyStartupParms key:" + windyKey + "  lat:" + lat + " long:" + long + " zoom:" + zoom);
+      fireUpWindy() ;
     });
   }
-  return key;
-}
-
-function getLat() {
-<!--return 43.1393051; -->
-  var lat = 43.1393051;
-  if (isFlutterInAppWebViewReady) {
-     window.flutter_inappwebview.callHandler('getLat').then(function(result){
-        sendMsgToApp("called getLat(): " + result);
-        lat = result;
-     });
-  }
-  return lat;
-}
-
-function getLong() {
-var long =  -72.076004;
-  if (isFlutterInAppWebViewReady) {
-     window.flutter_inappwebview.callHandler('getLong').then(function(result){
-        sendMsgToApp("called getLong(): " + result);
-        long =  result;
-     });
-  }
-  return long;
-}
-
-function getZoom() {
-var zoom = 7;
-  if (isFlutterInAppWebViewReady) {
-    window.flutter_inappwebview.callHandler('getZoom').then(function(result){
-       sendMsgToApp("called getZoom(): " + result);
-       zoom =  result;
-    });
-  }
-  return zoom;
 }
 
 <!--function mapLoaded(){-->
@@ -226,71 +202,77 @@ function logTaskTurnpoints(taskTurnpoints){
   }
 }
 
-const options = {
-  // Required: API key
-  key: getWindyKey(),
-  // Put additional console output
-  verbose: true,
-  // Optional: Initial state of the map
-  lat: getLat(),
-  lon: getLong(),
-  zoom: getZoom(),
-  isolines: 'pressure'
-};
-sendMsgToApp("Initializing Windy API with key" + getWindyKey());
-// Initialize Windy API
-windyInit(options, windyAPI => {
-  // windyAPI is ready, and contain 'map', 'store',
-  // 'picker' and other usefull stuff
-  // .map is instance of Leaflet map
-  const {
-    map,
-    utils,
-    picker,
-    pickerMobile,
-    overlays,
-    broadcast,
-    store
-  } = windyAPI;
 
-  origWindyMapLabels = W.labelsLayer;
+function fireUpWindy() {
+   sendMsgToApp("Firing up Windy API with key" + windyKey);
+   const options = {
+     // Required: API key
+     key: windyKey,
+     // Put additional console output
+     verbose: true,
+     // Optional: Initial state of the map
+     lat: lat,
+     lon: long,
+     zoom: zoom,
+     isolines: 'pressure'
+   };
 
-  // workaround - mobilePicker has bug so this tells windy to use desktopPicker
-  var mobileMadeFalse = false;
-  if (W.rootScope.isMobile) {
-    W.rootScope.isMobile = false;
-    mobileMadeFalse = true;
-  }
-  picker.on('pickerOpened', (e) => {
-  if (mobileMadeFalse) {
-     document.getElementsByClassName("picker-lines noselect")[0].parentNode.style.marginTop = "-70px";
-     document.getElementsByClassName("picker-drag-me")[0].style.display = "none";
-  }
-  });
-  // end of workaround
 
-  broadcast.on('redrawFinished',(e) => {
-    redrawCompleted();
-  });
+   // Initialize Windy API
+   windyInit(options, windyAPI => {
+     // windyAPI is ready, and contain 'map', 'store',
+     // 'picker' and other usefull stuff
+     // .map is instance of Leaflet map
+     const {
+       map,
+       utils,
+       picker,
+       pickerMobile,
+       overlays,
+       broadcast,
+       store
+     } = windyAPI;
 
-  // Observing change of .store value
-  store.on('isImperial', isImperial => {
-    sendMsgToApp(`isImperial was changed: ${ isImperial }`);
-  });
+     origWindyMapLabels = W.labelsLayer;
 
-  setWindMap(store, map);
-  windyAPI.store.set('isImperial',false);
-  windyAPI.store.set('isImperial',true);
-  sendMsgToApp(" isImperial:" + windyAPI.store.get('isImperial'));
-  //windyAPI.store.set('metric_temp', '°F');
-  sendMsgToApp(" isImperial:" + windyAPI.store.get('isImperial'));
-  sendMsgToApp(" temp units:" + windyAPI.store.get('metric_temp'));
-  sendMsgToApp("store.layer:" + store.get('overlay'));
-  sendMsgToApp("levels:" + windyAPI.store.get('availLevels'));
-  sendMsgToApp("Allowed products: " + windyAPI.store.getAllowed('product'));
-  sendMsgToApp("Allowed overlays: " + windyAPI.store.getAllowed('overlay'));
-  sendMsgToApp("Allowed levels: " + windyAPI.store.getAllowed('level'));
-});
+     // workaround - mobilePicker has bug so this tells windy to use desktopPicker
+     var mobileMadeFalse = false;
+     if (W.rootScope.isMobile) {
+       W.rootScope.isMobile = false;
+       mobileMadeFalse = true;
+     }
+     picker.on('pickerOpened', (e) => {
+     if (mobileMadeFalse) {
+        document.getElementsByClassName("picker-lines noselect")[0].parentNode.style.marginTop = "-70px";
+        document.getElementsByClassName("picker-drag-me")[0].style.display = "none";
+     }
+     });
+     // end of workaround
+
+     broadcast.on('redrawFinished',(e) => {
+       redrawCompleted();
+     });
+
+     // Observing change of .store value
+     store.on('isImperial', isImperial => {
+       sendMsgToApp(`isImperial was changed: ${ isImperial }`);
+     });
+
+     setWindMap(store, map);
+     windyAPI.store.set('isImperial',false);
+     windyAPI.store.set('isImperial',true);
+     sendMsgToApp(" isImperial:" + windyAPI.store.get('isImperial'));
+     //windyAPI.store.set('metric_temp', '°F');
+     sendMsgToApp(" isImperial:" + windyAPI.store.get('isImperial'));
+     sendMsgToApp(" temp units:" + windyAPI.store.get('metric_temp'));
+     sendMsgToApp("store.layer:" + store.get('overlay'));
+     sendMsgToApp("levels:" + windyAPI.store.get('availLevels'));
+     sendMsgToApp("Allowed products: " + windyAPI.store.getAllowed('product'));
+     sendMsgToApp("Allowed overlays: " + windyAPI.store.getAllowed('overlay'));
+     sendMsgToApp("Allowed levels: " + windyAPI.store.getAllowed('level'));
+     outputsize();
+   });
+}
 </script>
 <script>
 /* Need to put in this file as webview will give error when this html loaded via webView.loadData()

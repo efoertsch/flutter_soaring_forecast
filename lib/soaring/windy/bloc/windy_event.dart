@@ -33,6 +33,11 @@ class WindyLayerEvent extends WindyEvent {
   List<Object?> get props => [index];
 }
 
+class LoadWindyHTMLEvent extends WindyEvent {
+  @override
+  List<Object?> get props => [];
+}
+
 class DisplayTaskIfAnyEvent extends WindyEvent {
   DisplayTaskIfAnyEvent();
   @override

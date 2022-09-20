@@ -1,4 +1,4 @@
-0,surface,Surface,surface
+0,Surface,Surface,surface
 1,100m,330ft, 100m
 2,300m,1000ft,975h
 3,600m,2000ft,950h

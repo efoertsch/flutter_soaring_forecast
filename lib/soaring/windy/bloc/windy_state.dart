@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_soaring_forecast/soaring/windy/data/windy_altitude.dart';
 import 'package:flutter_soaring_forecast/soaring/windy/data/windy_layer.dart';
 import 'package:flutter_soaring_forecast/soaring/windy/data/windy_model.dart';
+import 'package:flutter_soaring_forecast/soaring/windy/data/windy_startup_parms.dart';
 import 'package:latlong2/latlong.dart';
 
 @immutable
@@ -45,12 +46,11 @@ class WindyHtmlState extends WindyState {
   List<Object?> get props => [html];
 }
 
-class WindyKeyState extends WindyState {
-  final String key;
-  WindyKeyState(String this.key);
-
+class WindyStartupParmsState extends WindyState {
+  final WindyStartupParms windyStartupParms;
+  WindyStartupParmsState(this.windyStartupParms);
   @override
-  List<Object?> get props => [key];
+  List<Object?> get props => [windyStartupParms];
 }
 
 class WindyLatLngState extends WindyState {
