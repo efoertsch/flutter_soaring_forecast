@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
+// https://stackoverflow.com/questions/49307677/how-to-get-height-of-a-widget
+
 typedef void OnWidgetSizeChange(Size size);
 
 class MeasureSizeRenderObject extends RenderProxyBox {

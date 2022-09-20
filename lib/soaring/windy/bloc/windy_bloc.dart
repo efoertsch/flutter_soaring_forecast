@@ -23,12 +23,11 @@ class WindyBloc extends Bloc<WindyEvent, WindyState> {
   late final List<WindyModel> models;
   late final List<WindyAltitude> altitudes;
   late final List<WindyLayer> layers;
-  final int zoom = 7;
+  final int zoom = 8;
 
   WindyBloc({required this.repository}) : super(WindyLoadingState()) {
     on<WindyInitEvent>(_getWindyInitData);
     on<LoadWindyHTMLEvent>(_getWindyHTML);
-    on<WindyWidgetSizeEvent>(_setWindyWidgetSize);
     on<WindyModelEvent>(_setWindyModel);
     on<WindyAltitudeEvent>(_setWindyAltitude);
     on<WindyLayerEvent>(_setWindyLayer);
@@ -122,10 +121,11 @@ class WindyBloc extends Bloc<WindyEvent, WindyState> {
     _sendJavaScriptCommand(emit, "drawTask()");
   }
 
-  FutureOr<void> _setWindyWidgetSize(
-      WindyWidgetSizeEvent event, Emitter<WindyState> emit) async {
-    final customWindyHtml = await repository.getCustomWindyHtml();
-    customWindyHtml.replaceFirst("XXXHEIGHTXXX", event.size.height.toString());
+  FutureOr<void> _getWindyHTML(
+      LoadWindyHTMLEvent event, Emitter<WindyState> emit) async {
+    final baseWindyHtml = await repository.getCustomWindyHtml();
+    final customWindyHtml = baseWindyHtml.replaceFirst(
+        "XXXHEIGHTXXX", event.widgetHeight.toString());
     emit(WindyHtmlState(customWindyHtml));
   }
 
@@ -135,11 +135,5 @@ class WindyBloc extends Bloc<WindyEvent, WindyState> {
     if (taskId > -1) {
       await _loadTask(taskId, emit);
     }
-  }
-
-  FutureOr<void> _getWindyHTML(
-      LoadWindyHTMLEvent event, Emitter<WindyState> emit) async {
-    final customWindyHtml = await repository.getCustomWindyHtml();
-    emit(WindyHtmlState(customWindyHtml));
   }
 }

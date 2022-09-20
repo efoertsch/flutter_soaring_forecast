@@ -5,6 +5,7 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_soaring_forecast/main.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
 import 'package:flutter_soaring_forecast/soaring/app/custom_styles.dart';
+import 'package:flutter_soaring_forecast/soaring/app/measure_size_render_object.dart';
 import 'package:flutter_soaring_forecast/soaring/tasks/ui/task_list.dart';
 import 'package:flutter_soaring_forecast/soaring/windy/bloc/windy_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/windy/bloc/windy_event.dart';
@@ -42,12 +43,12 @@ class WindyForecastState extends State<WindyForecast>
       ));
 
   WindyStartupParms? windyStartupParms;
-  var windyWidgetSize = Size.zero;
-  double height = 1;
-  bool _webViewBuilt = false;
-  int modelIndex = 0;
-  int layerIndex = 0;
-  int altitudeIndex = 0;
+  int _modelIndex = 0;
+  int _layerIndex = 0;
+  int _altitudeIndex = 0;
+
+  bool _windyHTMLoaded = false;
+  int _windyWidgetHeight = 1;
 
   @override
   void afterFirstLayout(BuildContext context) {
@@ -78,6 +79,7 @@ class WindyForecastState extends State<WindyForecast>
   Widget _getBody() {
     return Column(children: [
       _getDropDownOptions(),
+      //_getSizeForWindyView()
       _getWindyWebView(),
       _getWindyListener(),
       _getWindyScriptJavaScriptWidget()
@@ -156,15 +158,15 @@ class WindyForecastState extends State<WindyForecast>
           flex: 2,
           child: DropdownButton<WindyModel>(
             style: CustomStyle.bold18(context),
-            value: (models[modelIndex]),
+            value: (models[_modelIndex]),
             hint: Text('Select Model'),
             isExpanded: true,
             iconSize: 24,
             elevation: 16,
             onChanged: (WindyModel? newValue) {
               setState(() {
-                modelIndex = newValue!.id;
-                _sendEvent(WindyModelEvent(modelIndex));
+                _modelIndex = newValue!.id;
+                _sendEvent(WindyModelEvent(_modelIndex));
               });
             },
             items: models.map<DropdownMenuItem<WindyModel>>((WindyModel value) {
@@ -194,7 +196,7 @@ class WindyForecastState extends State<WindyForecast>
             padding: EdgeInsets.only(left: 16.0),
             child: DropdownButton<WindyLayer>(
               style: CustomStyle.bold18(context),
-              value: (layers[layerIndex]),
+              value: (layers[_layerIndex]),
               hint: Text('Select Model'),
               isExpanded: true,
               iconSize: 24,
@@ -202,8 +204,8 @@ class WindyForecastState extends State<WindyForecast>
               onChanged: (WindyLayer? newValue) {
                 // print('Selected model onChanged: $newValue');
                 setState(() {
-                  layerIndex = newValue!.id;
-                  _sendEvent(WindyLayerEvent(layerIndex));
+                  _layerIndex = newValue!.id;
+                  _sendEvent(WindyLayerEvent(_layerIndex));
                 });
               },
               items:
@@ -235,15 +237,15 @@ class WindyForecastState extends State<WindyForecast>
             padding: EdgeInsets.only(left: 16.0),
             child: DropdownButton<WindyAltitude>(
               style: CustomStyle.bold18(context),
-              value: (altitudes[altitudeIndex]),
+              value: (altitudes[_altitudeIndex]),
               hint: Text('Select Altitude'),
               isExpanded: true,
               iconSize: 24,
               elevation: 16,
               onChanged: (WindyAltitude? newValue) {
                 setState(() {
-                  altitudeIndex = newValue!.id;
-                  _sendEvent(WindyAltitudeEvent(altitudeIndex));
+                  _altitudeIndex = newValue!.id;
+                  _sendEvent(WindyAltitudeEvent(_altitudeIndex));
                 });
               },
               items: altitudes
@@ -262,61 +264,73 @@ class WindyForecastState extends State<WindyForecast>
     });
   }
 
+  Widget _getWindyListener() {
+    return BlocListener<WindyBloc, WindyState>(
+      listener: (context, state) {
+        if (state is WindyHtmlState) {
+          webViewController!.loadData(
+            data: (state as WindyHtmlState).html,
+            //  allowingReadAccessTo: Uri.parse("file://assets/html/windy.html"),
+            baseUrl: Uri.parse("https://www.windy.com"),
+          );
+        }
+      },
+      child: SizedBox.shrink(),
+    );
+  }
+
   Widget _getWindyWebView() {
     return BlocConsumer<WindyBloc, WindyState>(listener: (context, state) {
       if (state is WindyStartupParmsState) {
         windyStartupParms = state.windyStartupParms;
       }
-      if (state is WindyHtmlState) {
-        webViewController!.loadData(
-          data: state.html,
-          //  allowingReadAccessTo: Uri.parse("file://assets/html/windy.html"),
-          baseUrl: Uri.parse("https://www.windy.com"),
-        );
-      }
     }, buildWhen: (context, state) {
-      return _webViewBuilt == false;
+      return state is WindyStartupParmsState;
     }, builder: (context, state) {
       return Expanded(
         child: Padding(
           padding: const EdgeInsets.only(bottom: 8.0),
-          child: Container(
-            height: height,
-            child: InAppWebView(onWebViewCreated: (controller) {
-              webViewController = controller;
-              webViewController!.addJavaScriptHandler(
-                  handlerName: "newHeight",
-                  callback: (List<dynamic> arguments) async {
-                    int? height = arguments.isNotEmpty
-                        ? await webViewController!
-                            .getContentHeight() //arguments[0]
-                        : await webViewController!.getContentHeight();
-                    if (mounted)
-                      setState(() => this.height = height!.toDouble());
-                  });
-              _addJavaScriptHandlers();
-              _sendEvent(LoadWindyHTMLEvent());
-              _webViewBuilt = true;
-            }, shouldOverrideUrlLoading: (controller, navigationAction) async {
-              var url = navigationAction.request.url!.toString();
-              if (url.startsWith("https://www.windy.com")) {
-                launchUrl(Uri.parse(url));
-                return NavigationActionPolicy.CANCEL;
-              }
-              if (url.startsWith("file:") || url.contains("windy.com")) {
-                return NavigationActionPolicy.ALLOW;
-              }
-              return NavigationActionPolicy.CANCEL;
-            }, onLoadStart: (controller, url) {
-              print("started $url");
-              // setState(() {
-              //   this.url = url;
-              // });
-            }),
+          child: MeasureSize(
+            onChange: (Size size) {
+              setState(() {
+                _windyWidgetHeight = size.height.toInt();
+                _sendWindyWidgetHeight(_windyWidgetHeight);
+              });
+            },
+            child: Container(
+              height: _windyWidgetHeight!.toDouble(),
+              child: InAppWebView(
+                onWebViewCreated: (controller) {
+                  webViewController = controller;
+                  _addJavaScriptHandlers();
+                  _sendWindyWidgetHeight(_windyWidgetHeight);
+                },
+                shouldOverrideUrlLoading: (controller, navigationAction) async {
+                  var url = navigationAction.request.url!.toString();
+                  if (url.startsWith("https://www.windy.com")) {
+                    launchUrl(Uri.parse(url));
+                    return NavigationActionPolicy.CANCEL;
+                  }
+                  if (url.startsWith("file:") || url.contains("windy.com")) {
+                    return NavigationActionPolicy.ALLOW;
+                  }
+                  return NavigationActionPolicy.CANCEL;
+                },
+                onLoadStart: (controller, url) {
+                  print("started $url");
+                },
+              ),
+            ),
           ),
         ),
       );
     });
+  }
+
+  void _sendWindyWidgetHeight(int height) {
+    if (height > 0) {
+      _sendEvent(LoadWindyHTMLEvent(height));
+    }
   }
 
   Widget _getWindyScriptJavaScriptWidget() {
@@ -351,23 +365,23 @@ class WindyForecastState extends State<WindyForecast>
     BlocProvider.of<WindyBloc>(context).add(event);
   }
 
-  Widget _getWindyListener() {
-    return BlocListener<WindyBloc, WindyState>(
-      listener: (context, state) {
-        if (state is WindyHtmlState) {
-          webViewController!.loadData(data: state.html);
-        }
-      },
-      child: SizedBox.shrink(),
-    );
-  }
-
   void _addJavaScriptHandlers() {
     webViewController!.addJavaScriptHandler(
         handlerName: "print",
         callback: (args) {
           print("Print called with arg:" + args.toString());
         });
+    // webViewController!.addJavaScriptHandler(
+    //     handlerName: "newHeight",
+    //     callback: (List<dynamic> arguments) async {
+    //       int? height = arguments.isNotEmpty
+    //           ? await webViewController!.getContentHeight() //arguments[0]
+    //           : await webViewController!.getContentHeight();
+    //       if (mounted) setState(() => this._windyWidgetHeight = height!);
+    //       if (!_windyHTMLoaded) {
+    //         _sendWindyWidgetHeight(height!);
+    //       }
+    //     });
     webViewController!.addJavaScriptHandler(
         handlerName: "getWindyStartupParms",
         callback: (args) {

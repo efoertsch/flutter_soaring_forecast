@@ -34,8 +34,11 @@ class WindyLayerEvent extends WindyEvent {
 }
 
 class LoadWindyHTMLEvent extends WindyEvent {
+  final int widgetHeight;
+  LoadWindyHTMLEvent(this.widgetHeight);
+
   @override
-  List<Object?> get props => [];
+  List<Object?> get props => [widgetHeight];
 }
 
 class DisplayTaskIfAnyEvent extends WindyEvent {
@@ -55,11 +58,4 @@ class ClearTaskEvent extends WindyEvent {
   ClearTaskEvent();
   @override
   List<Object?> get props => [];
-}
-
-class WindyWidgetSizeEvent extends WindyEvent {
-  final Size size;
-  WindyWidgetSizeEvent(this.size);
-  @override
-  List<Object?> get props => [size];
 }
