@@ -1,9 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/task/task.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/taskturnpoint/task_turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
@@ -38,9 +36,9 @@ class WindyBloc extends Bloc<WindyEvent, WindyState> {
 
   FutureOr<void> _getWindyInitData(
       WindyInitEvent event, Emitter<WindyState> emit) async {
-    if (Platform.isAndroid) {
-      await AndroidInAppWebViewController.setWebContentsDebuggingEnabled(true);
-    }
+    // if (Platform.isAndroid) {
+    //   await AndroidInAppWebViewController.setWebContentsDebuggingEnabled(true);
+    // }
     models = await repository.getWindyModels();
     emit(WindyModelListState(models));
     layers = await repository.getWindyLayers();

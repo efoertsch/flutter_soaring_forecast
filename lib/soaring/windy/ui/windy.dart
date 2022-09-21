@@ -79,7 +79,6 @@ class WindyForecastState extends State<WindyForecast>
   Widget _getBody() {
     return Column(children: [
       _getDropDownOptions(),
-      //_getSizeForWindyView()
       _getWindyWebView(),
       _getWindyListener(),
       _getWindyScriptJavaScriptWidget()
@@ -273,6 +272,7 @@ class WindyForecastState extends State<WindyForecast>
             //  allowingReadAccessTo: Uri.parse("file://assets/html/windy.html"),
             baseUrl: Uri.parse("https://www.windy.com"),
           );
+          print("Loading WindyHTML");
         }
       },
       child: SizedBox.shrink(),
@@ -293,17 +293,18 @@ class WindyForecastState extends State<WindyForecast>
           child: MeasureSize(
             onChange: (Size size) {
               setState(() {
-                _windyWidgetHeight = size.height.toInt();
-                _sendWindyWidgetHeight(_windyWidgetHeight);
+                // Need to reduce size so windy legend visible at bottom
+                _windyWidgetHeight = size.height.toInt() - 16;
+                _sendWindyWidgetHeight(webViewController, _windyWidgetHeight);
               });
             },
             child: Container(
-              height: _windyWidgetHeight!.toDouble(),
+              height: _windyWidgetHeight.toDouble(),
               child: InAppWebView(
                 onWebViewCreated: (controller) {
                   webViewController = controller;
                   _addJavaScriptHandlers();
-                  _sendWindyWidgetHeight(_windyWidgetHeight);
+                  _sendWindyWidgetHeight(webViewController, _windyWidgetHeight);
                 },
                 shouldOverrideUrlLoading: (controller, navigationAction) async {
                   var url = navigationAction.request.url!.toString();
@@ -327,8 +328,9 @@ class WindyForecastState extends State<WindyForecast>
     });
   }
 
-  void _sendWindyWidgetHeight(int height) {
-    if (height > 0) {
+  void _sendWindyWidgetHeight(
+      InAppWebViewController? inAppWebViewController, int height) {
+    if (inAppWebViewController != null && height > 0) {
       _sendEvent(LoadWindyHTMLEvent(height));
     }
   }
