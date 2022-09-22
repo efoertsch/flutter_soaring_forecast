@@ -131,6 +131,8 @@ class WindyBloc extends Bloc<WindyEvent, WindyState> {
           await repository.getTaskTurnpoints(taskId);
       final jsonString = jsonEncode(taskTurnpoints);
       _sendJavaScriptCommand(emit, "drawTask(" + jsonString + ")");
+      // bit of hack. Let UI know task sent to javascript method
+      emit(TaskDrawnState(true));
     }
   }
 

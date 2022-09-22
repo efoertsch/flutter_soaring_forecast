@@ -26,20 +26,21 @@ class WindyForecastState extends State<WindyForecast>
     with AfterLayoutMixin<WindyForecast> {
   InAppWebViewController? webViewController;
   InAppWebViewGroupOptions options = InAppWebViewGroupOptions(
-      crossPlatform: InAppWebViewOptions(
-        supportZoom: false,
-        javaScriptEnabled: true,
-        disableHorizontalScroll: true,
-        disableVerticalScroll: true,
-        useShouldOverrideUrlLoading: true,
-        mediaPlaybackRequiresUserGesture: false,
-      ),
-      android: AndroidInAppWebViewOptions(
-        useHybridComposition: false,
-      ),
-      ios: IOSInAppWebViewOptions(
-        allowsInlineMediaPlayback: true,
-      ));
+    crossPlatform: InAppWebViewOptions(
+      javaScriptEnabled: true,
+      disableHorizontalScroll: true,
+      disableVerticalScroll: true,
+      useShouldOverrideUrlLoading: true,
+      mediaPlaybackRequiresUserGesture: false,
+      supportZoom: true,
+    ),
+    android: AndroidInAppWebViewOptions(
+        //  useHybridComposition: false,
+        builtInZoomControls: true),
+    // ios: IOSInAppWebViewOptions(
+    //   allowsInlineMediaPlayback: true,
+    //),
+  );
 
   WindyStartupParms? windyStartupParms;
   int _modelIndex = 0;
@@ -47,6 +48,8 @@ class WindyForecastState extends State<WindyForecast>
   int _altitudeIndex = 0;
   int _windyWidgetHeight = 1;
   bool topoMapChecked = false;
+
+  bool _enabledPopUpMenu = false;
 
   @override
   void afterFirstLayout(BuildContext context) {
@@ -106,6 +109,7 @@ class WindyForecastState extends State<WindyForecast>
         },
       ),
       PopupMenuButton<bool>(
+          enabled: _enabledPopUpMenu,
           itemBuilder: (context) => [
                 PopupMenuItem(
                   child: InkWell(
@@ -271,6 +275,11 @@ class WindyForecastState extends State<WindyForecast>
           );
           print("Loading WindyHTML");
         }
+        if (state is TaskDrawnState) {
+          setState(() {
+            _enabledPopUpMenu = state.taskDrawn;
+          });
+        }
       },
       child: SizedBox.shrink(),
     );
@@ -307,8 +316,7 @@ class WindyForecastState extends State<WindyForecast>
                 shouldOverrideUrlLoading: (controller, navigationAction) async {
                   var url = navigationAction.request.url!.toString();
                   if (url.startsWith("https://www.windy.com")) {
-                    launchWebBrowser("www.windy.com", "",
-                        launchAsExternal: true);
+                    launchWebBrowser("www.windy.com", "");
                     return NavigationActionPolicy.CANCEL;
                   }
                   if (url.startsWith("file:") || url.contains("windy.com")) {
@@ -360,6 +368,9 @@ class WindyForecastState extends State<WindyForecast>
 
   void _clearTask() {
     _sendEvent(ClearTaskEvent());
+    setState(() {
+      _enabledPopUpMenu = false;
+    });
   }
 
   void _sendEvent(WindyEvent event) {

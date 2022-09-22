@@ -84,3 +84,10 @@ class WindyTaskTurnpoints extends WindyState {
   @override
   List<Object?> get props => [taskTurnpoints];
 }
+
+class TaskDrawnState extends WindyState {
+  final bool taskDrawn;
+  TaskDrawnState(this.taskDrawn);
+  @override
+  List<Object?> get props => [];
+}
