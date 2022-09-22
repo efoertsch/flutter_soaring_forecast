@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_soaring_forecast/main.dart';
-import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
 import 'package:flutter_soaring_forecast/soaring/app/custom_styles.dart';
 import 'package:flutter_soaring_forecast/soaring/app/measure_size_render_object.dart';
 import 'package:flutter_soaring_forecast/soaring/tasks/ui/task_list.dart';
@@ -46,9 +45,8 @@ class WindyForecastState extends State<WindyForecast>
   int _modelIndex = 0;
   int _layerIndex = 0;
   int _altitudeIndex = 0;
-
-  bool _windyHTMLoaded = false;
   int _windyWidgetHeight = 1;
+  bool topoMapChecked = false;
 
   @override
   void afterFirstLayout(BuildContext context) {
@@ -107,32 +105,31 @@ class WindyForecastState extends State<WindyForecast>
           _selectTask();
         },
       ),
-      PopupMenuButton<String>(
-        onSelected: handleClick,
-        icon: Icon(Icons.more_vert),
-        itemBuilder: (BuildContext context) {
-          return {
-            WindyMenu.TopoMap,
-          }.map((String choice) {
-            return PopupMenuItem<String>(
-              value: choice,
-              child: Text(choice),
-            );
-          }).toList();
-        },
-      ),
+      PopupMenuButton<bool>(
+          itemBuilder: (context) => [
+                PopupMenuItem(
+                  child: InkWell(
+                      child: Text("Clear Task"),
+                      onTap: () {
+                        _clearTask();
+                        Navigator.pop(context);
+                      }),
+                ),
+                // Can't switch maps - not sure if can't do it with new windy API
+                // or a problem on my end.
+                // CommonWidgets.getCheckBoxMenuItem(
+                //     context: context,
+                //     isChecked: topoMapChecked,
+                //     menuText: "TopoMap",
+                //     setStateCallBack: _toggleBaseMap),
+              ]),
     ];
   }
 
-  void handleClick(String value) async {
-    switch (value) {
-      case WindyMenu.clearTask:
-        // TODO clear task if checked
-        break;
-      case WindyMenu.TopoMap:
-        // TODO display TopoMap if checked
-        break;
-    }
+  void _toggleBaseMap(bool isChecked) {
+    topoMapChecked = isChecked;
+    print("ToggleBaseMap: " + isChecked.toString());
+    _sendEvent(DisplayTopoMapTypeEvent(isChecked));
   }
 
   bool displayTopoMap(bool checked) {
@@ -371,19 +368,8 @@ class WindyForecastState extends State<WindyForecast>
     webViewController!.addJavaScriptHandler(
         handlerName: "print",
         callback: (args) {
-          print("Print called with arg:" + args.toString());
+          print("debug from webview:" + args.toString());
         });
-    // webViewController!.addJavaScriptHandler(
-    //     handlerName: "newHeight",
-    //     callback: (List<dynamic> arguments) async {
-    //       int? height = arguments.isNotEmpty
-    //           ? await webViewController!.getContentHeight() //arguments[0]
-    //           : await webViewController!.getContentHeight();
-    //       if (mounted) setState(() => this._windyWidgetHeight = height!);
-    //       if (!_windyHTMLoaded) {
-    //         _sendWindyWidgetHeight(height!);
-    //       }
-    //     });
     webViewController!.addJavaScriptHandler(
         handlerName: "getWindyStartupParms",
         callback: (args) {

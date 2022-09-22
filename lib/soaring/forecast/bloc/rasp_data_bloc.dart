@@ -392,6 +392,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
       final List<TaskTurnpoint> taskTurnpoints =
           await _addTaskTurnpointDetails(taskId);
       // print('emitting taskturnpoints');
+
       emit(RaspTaskTurnpoints(taskTurnpoints));
     }
   }

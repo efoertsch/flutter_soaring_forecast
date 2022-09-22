@@ -59,3 +59,10 @@ class ClearTaskEvent extends WindyEvent {
   @override
   List<Object?> get props => [];
 }
+
+class DisplayTopoMapTypeEvent extends WindyEvent {
+  final bool displayTopoMap;
+  DisplayTopoMapTypeEvent(this.displayTopoMap);
+  @override
+  List<Object?> get props => [displayTopoMap];
+}

@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_soaring_forecast/soaring/floor/taskturnpoint/task_turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/windy/data/windy_altitude.dart';
 import 'package:flutter_soaring_forecast/soaring/windy/data/windy_layer.dart';
 import 'package:flutter_soaring_forecast/soaring/windy/data/windy_model.dart';
@@ -73,4 +74,13 @@ class WindyAltitudeVisibleState extends WindyState {
   WindyAltitudeVisibleState(this.visible);
   @override
   List<Object?> get props => [visible];
+}
+
+class WindyTaskTurnpoints extends WindyState {
+  final List<TaskTurnpoint> taskTurnpoints;
+
+  WindyTaskTurnpoints(this.taskTurnpoints);
+
+  @override
+  List<Object?> get props => [taskTurnpoints];
 }

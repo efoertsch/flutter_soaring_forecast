@@ -32,6 +32,7 @@ class WindyBloc extends Bloc<WindyEvent, WindyState> {
     on<DisplayTaskIfAnyEvent>(_displayTaskIfAny);
     on<SelectTaskEvent>(_selectTask);
     on<ClearTaskEvent>(_clearTask);
+    on<DisplayTopoMapTypeEvent>(_displayTopoMap);
   }
 
   FutureOr<void> _getWindyInitData(
@@ -95,7 +96,17 @@ class WindyBloc extends Bloc<WindyEvent, WindyState> {
         "setModel(" + "'" + models[event.index].code + "')"));
   }
 
-  _sendJavaScriptCommand(Emitter<WindyState> emit, String javaScript) {
+  FutureOr<void> _displayTopoMap(
+      DisplayTopoMapTypeEvent event, Emitter<WindyState> emit) {
+    if (event.displayTopoMap) {
+      emit(WindyJavaScriptState("setBaseLayerToArcGisMap()"));
+    } else {
+      emit(WindyJavaScriptState("setBaseLayerToDefault()"));
+    }
+  }
+
+  FutureOr<void> _sendJavaScriptCommand(
+      Emitter<WindyState> emit, String javaScript) async {
     emit(WindyJavaScriptState(javaScript));
   }
 
@@ -104,6 +115,14 @@ class WindyBloc extends Bloc<WindyEvent, WindyState> {
     int taskId = event.taskId;
     repository.setCurrentTaskId(taskId);
     await _loadTask(taskId, emit);
+  }
+
+  FutureOr<void> _displayTaskIfAny(
+      DisplayTaskIfAnyEvent event, Emitter<WindyState> emit) async {
+    final taskId = await repository.getCurrentTaskId();
+    if (taskId > -1) {
+      await _loadTask(taskId, emit);
+    }
   }
 
   Future<void> _loadTask(int taskId, Emitter<WindyState> emit) async {
@@ -115,7 +134,8 @@ class WindyBloc extends Bloc<WindyEvent, WindyState> {
     }
   }
 
-  FutureOr<void> _clearTask(ClearTaskEvent event, Emitter<WindyState> emit) {
+  FutureOr<void> _clearTask(
+      ClearTaskEvent event, Emitter<WindyState> emit) async {
     _sendJavaScriptCommand(emit, "drawTask()");
   }
 
@@ -125,13 +145,5 @@ class WindyBloc extends Bloc<WindyEvent, WindyState> {
     final customWindyHtml = baseWindyHtml.replaceFirst(
         "XXXHEIGHTXXX", event.widgetHeight.toString());
     emit(WindyHtmlState(customWindyHtml));
-  }
-
-  FutureOr<void> _displayTaskIfAny(
-      DisplayTaskIfAnyEvent event, Emitter<WindyState> emit) async {
-    final taskId = await repository.getCurrentTaskId();
-    if (taskId > -1) {
-      await _loadTask(taskId, emit);
-    }
   }
 }

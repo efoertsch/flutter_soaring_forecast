@@ -260,6 +260,36 @@ class CommonWidgets {
           );
         });
   }
+
+  static PopupMenuItem<bool> getCheckBoxMenuItem({
+    required BuildContext context,
+    required bool isChecked,
+    required String menuText,
+    required Function setStateCallBack,
+  }) {
+    return PopupMenuItem(
+      child: Row(children: <Widget>[
+        Text(menuText),
+        //https://stackoverflow.com/questions/67007911/check-box-in-drop-down-list-flutter
+        StatefulBuilder(
+          builder: (_context, _setState) {
+            return Checkbox(
+              value: isChecked,
+              onChanged: (bool? value) {
+                Navigator.pop(context);
+                // note here we call stateSetter from the StatefulBuilder!
+                _setState(() {
+                  isChecked = value!;
+                  // reverse the value
+                  setStateCallBack(isChecked);
+                });
+              },
+            );
+          },
+        ),
+      ]),
+    );
+  }
 }
 
 class CheckboxItem {

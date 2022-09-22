@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_soaring_forecast/soaring/about/about_screen.dart';
 import 'package:flutter_soaring_forecast/soaring/app/custom_material_page_route.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_data_bloc.dart';
@@ -34,6 +37,10 @@ import 'package:flutter_soaring_forecast/soaring/windy/ui/windy.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  if (Platform.isAndroid) {
+    await AndroidInAppWebViewController.setWebContentsDebuggingEnabled(true);
+  }
 
   // Workmanager().initialize(
   //     callbackDispatcher, // The top level function, aka callbackDispatcher
