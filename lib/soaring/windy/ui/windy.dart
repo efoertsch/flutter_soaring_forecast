@@ -5,6 +5,7 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_soaring_forecast/main.dart';
 import 'package:flutter_soaring_forecast/soaring/app/custom_styles.dart';
 import 'package:flutter_soaring_forecast/soaring/app/measure_size_render_object.dart';
+import 'package:flutter_soaring_forecast/soaring/app/web_launcher.dart';
 import 'package:flutter_soaring_forecast/soaring/tasks/ui/task_list.dart';
 import 'package:flutter_soaring_forecast/soaring/windy/bloc/windy_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/windy/bloc/windy_event.dart';
@@ -13,7 +14,6 @@ import 'package:flutter_soaring_forecast/soaring/windy/data/windy_altitude.dart'
 import 'package:flutter_soaring_forecast/soaring/windy/data/windy_layer.dart';
 import 'package:flutter_soaring_forecast/soaring/windy/data/windy_model.dart';
 import 'package:flutter_soaring_forecast/soaring/windy/data/windy_startup_parms.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class WindyForecast extends StatefulWidget {
   WindyForecast({Key? key}) : super(key: key);
@@ -298,6 +298,7 @@ class WindyForecastState extends State<WindyForecast>
             child: Container(
               height: _windyWidgetHeight.toDouble(),
               child: InAppWebView(
+                initialOptions: options,
                 onWebViewCreated: (controller) {
                   webViewController = controller;
                   _addJavaScriptHandlers();
@@ -306,7 +307,8 @@ class WindyForecastState extends State<WindyForecast>
                 shouldOverrideUrlLoading: (controller, navigationAction) async {
                   var url = navigationAction.request.url!.toString();
                   if (url.startsWith("https://www.windy.com")) {
-                    launchUrl(Uri.parse(url));
+                    launchWebBrowser("www.windy.com", "",
+                        launchAsExternal: true);
                     return NavigationActionPolicy.CANCEL;
                   }
                   if (url.startsWith("file:") || url.contains("windy.com")) {

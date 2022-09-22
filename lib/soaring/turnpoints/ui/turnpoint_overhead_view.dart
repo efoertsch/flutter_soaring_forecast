@@ -7,7 +7,7 @@ import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     as Constants;
-import 'package:flutter_soaring_forecast/soaring/app/web_mixin.dart';
+import 'package:flutter_soaring_forecast/soaring/app/web_launcher.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoint_utils.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_soaring_forecast/main.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'web_launcher.dart';
+
 class AppDrawer {
   static Widget getDrawer(BuildContext context) {
     return Drawer(
@@ -45,16 +47,19 @@ class AppDrawer {
           ),
           ListTile(
             title: Text('SkySight'),
-            onTap: () {
+            onTap: () async {
+              await launchWebBrowser("skysight.io", "");
               Navigator.pop(context);
-              _launchWebBrowser("https://skysight.io/");
+              //_launchWebBrowser("https://skysight.io/");
             },
           ),
           ListTile(
             title: Text('Dr Jacks'),
-            onTap: () {
+            onTap: () async {
               Navigator.pop(context);
-              _launchWebBrowser("http://www.drjack.info/BLIP/univiewer.html");
+              launchWebBrowser("www.drjack.info", "BLIP/univiewer.html",
+                  useHttp: true);
+              // _launchWebBrowser("http://www.drjack.info/BLIP/univiewer.html");
             },
           ),
 //           ListTile(
