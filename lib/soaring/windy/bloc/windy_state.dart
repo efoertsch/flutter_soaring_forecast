@@ -15,6 +15,11 @@ class WindyLoadingState extends WindyState {
   List<Object?> get props => [];
 }
 
+class WindyInitComplete extends WindyState {
+  @override
+  List<Object?> get props => [];
+}
+
 class WindyModelListState extends WindyState {
   final List<WindyModel> models;
   WindyModelListState(List<WindyModel> this.models);

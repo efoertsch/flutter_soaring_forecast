@@ -1,7 +1,10 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:after_layout/after_layout.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_soaring_forecast/main.dart';
 import 'package:flutter_soaring_forecast/soaring/app/custom_styles.dart';
 import 'package:flutter_soaring_forecast/soaring/app/measure_size_render_object.dart';
@@ -13,7 +16,7 @@ import 'package:flutter_soaring_forecast/soaring/windy/bloc/windy_state.dart';
 import 'package:flutter_soaring_forecast/soaring/windy/data/windy_altitude.dart';
 import 'package:flutter_soaring_forecast/soaring/windy/data/windy_layer.dart';
 import 'package:flutter_soaring_forecast/soaring/windy/data/windy_model.dart';
-import 'package:flutter_soaring_forecast/soaring/windy/data/windy_startup_parms.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
 class WindyForecast extends StatefulWidget {
   WindyForecast({Key? key}) : super(key: key);
@@ -24,25 +27,10 @@ class WindyForecast extends StatefulWidget {
 
 class WindyForecastState extends State<WindyForecast>
     with AfterLayoutMixin<WindyForecast> {
-  InAppWebViewController? webViewController;
-  InAppWebViewGroupOptions options = InAppWebViewGroupOptions(
-    crossPlatform: InAppWebViewOptions(
-      javaScriptEnabled: true,
-      disableHorizontalScroll: true,
-      disableVerticalScroll: true,
-      useShouldOverrideUrlLoading: true,
-      mediaPlaybackRequiresUserGesture: false,
-      supportZoom: true,
-    ),
-    android: AndroidInAppWebViewOptions(
-        //  useHybridComposition: false,
-        builtInZoomControls: true),
-    // ios: IOSInAppWebViewOptions(
-    //   allowsInlineMediaPlayback: true,
-    //),
-  );
+  final Completer<WebViewController> _controller =
+      Completer<WebViewController>();
+  WebViewController? _webViewController;
 
-  WindyStartupParms? windyStartupParms;
   int _modelIndex = 0;
   int _layerIndex = 0;
   int _altitudeIndex = 0;
@@ -50,6 +38,16 @@ class WindyForecastState extends State<WindyForecast>
   bool topoMapChecked = false;
 
   bool _enabledPopUpMenu = false;
+
+  bool _windyHtmlLoaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (Platform.isAndroid) {
+      WebView.platform = SurfaceAndroidWebView();
+    }
+  }
 
   @override
   void afterFirstLayout(BuildContext context) {
@@ -132,7 +130,7 @@ class WindyForecastState extends State<WindyForecast>
 
   void _toggleBaseMap(bool isChecked) {
     topoMapChecked = isChecked;
-    print("ToggleBaseMap: " + isChecked.toString());
+    debugPrint("ToggleBaseMap: " + isChecked.toString());
     _sendEvent(DisplayTopoMapTypeEvent(isChecked));
   }
 
@@ -151,7 +149,7 @@ class WindyForecastState extends State<WindyForecast>
     return BlocBuilder<WindyBloc, WindyState>(buildWhen: (previous, current) {
       return current is WindyLoadingState || current is WindyModelListState;
     }, builder: (context, state) {
-      //print('creating/updating forecastDatesDropDown');
+      //debugPrint('creating/updating forecastDatesDropDown');
       if (state is WindyModelListState) {
         final List<WindyModel> models = state.models;
         return Expanded(
@@ -187,7 +185,7 @@ class WindyForecastState extends State<WindyForecast>
     return BlocBuilder<WindyBloc, WindyState>(buildWhen: (previous, current) {
       return current is WindyLoadingState || current is WindyLayerListState;
     }, builder: (context, state) {
-      //print('creating/updating forecastDatesDropDown');
+      //debugPrint('creating/updating forecastDatesDropDown');
       if (state is WindyLayerListState) {
         final List<WindyLayer> layers = state.layers;
         return Expanded(
@@ -202,7 +200,7 @@ class WindyForecastState extends State<WindyForecast>
               iconSize: 24,
               elevation: 16,
               onChanged: (WindyLayer? newValue) {
-                // print('Selected model onChanged: $newValue');
+                // debugPrint('Selected model onChanged: $newValue');
                 setState(() {
                   _layerIndex = newValue!.id;
                   _sendEvent(WindyLayerEvent(_layerIndex));
@@ -228,7 +226,7 @@ class WindyForecastState extends State<WindyForecast>
     return BlocBuilder<WindyBloc, WindyState>(buildWhen: (previous, current) {
       return current is WindyLoadingState || current is WindyAltitudeListState;
     }, builder: (context, state) {
-      //print('creating/updating forecastDatesDropDown');
+      //debugPrint('creating/updating forecastDatesDropDown');
       if (state is WindyAltitudeListState) {
         final List<WindyAltitude> altitudes = state.altitudes;
         return Expanded(
@@ -267,13 +265,9 @@ class WindyForecastState extends State<WindyForecast>
   Widget _getWindyListener() {
     return BlocListener<WindyBloc, WindyState>(
       listener: (context, state) {
-        if (state is WindyHtmlState) {
-          webViewController!.loadData(
-            data: (state as WindyHtmlState).html,
-            //  allowingReadAccessTo: Uri.parse("file://assets/html/windy.html"),
-            baseUrl: Uri.parse("https://www.windy.com"),
-          );
-          print("Loading WindyHTML");
+        if (state is WindyHtmlState && !_windyHtmlLoaded) {
+          loadWindyHtml(state.html);
+          debugPrint("Loading WindyHTML");
         }
         if (state is TaskDrawnState) {
           setState(() {
@@ -285,59 +279,70 @@ class WindyForecastState extends State<WindyForecast>
     );
   }
 
-  Widget _getWindyWebView() {
-    return BlocConsumer<WindyBloc, WindyState>(listener: (context, state) {
-      if (state is WindyStartupParmsState) {
-        windyStartupParms = state.windyStartupParms;
-      }
-    }, buildWhen: (context, state) {
-      return state is WindyStartupParmsState;
-    }, builder: (context, state) {
-      return Expanded(
-        child: Padding(
-          padding: const EdgeInsets.only(bottom: 8.0),
-          child: MeasureSize(
-            onChange: (Size size) {
-              setState(() {
-                // Need to reduce size so windy legend visible at bottom
-                _windyWidgetHeight = size.height.toInt() - 16;
-                _sendWindyWidgetHeight(webViewController, _windyWidgetHeight);
-              });
-            },
-            child: Container(
-              height: _windyWidgetHeight.toDouble(),
-              child: InAppWebView(
-                initialOptions: options,
-                onWebViewCreated: (controller) {
-                  webViewController = controller;
-                  _addJavaScriptHandlers();
-                  _sendWindyWidgetHeight(webViewController, _windyWidgetHeight);
-                },
-                shouldOverrideUrlLoading: (controller, navigationAction) async {
-                  var url = navigationAction.request.url!.toString();
-                  if (url.startsWith("https://www.windy.com")) {
-                    launchWebBrowser("www.windy.com", "");
-                    return NavigationActionPolicy.CANCEL;
-                  }
-                  if (url.startsWith("file:") || url.contains("windy.com")) {
-                    return NavigationActionPolicy.ALLOW;
-                  }
-                  return NavigationActionPolicy.CANCEL;
-                },
-                onLoadStart: (controller, url) {
-                  print("started $url");
-                },
-              ),
-            ),
-          ),
-        ),
-      );
-    });
+  // Don't execute until webview created and webcontroller ready
+  void loadWindyHtml(String html) async {
+    if (!_windyHtmlLoaded) {
+      await _webViewController!.loadHtmlString(html, baseUrl: "www.windy.com");
+      _windyHtmlLoaded = true;
+    }
   }
 
-  void _sendWindyWidgetHeight(
-      InAppWebViewController? inAppWebViewController, int height) {
-    if (inAppWebViewController != null && height > 0) {
+  Widget _getWindyWebView() {
+    return BlocConsumer<WindyBloc, WindyState>(
+        listener: (context, state) {},
+        buildWhen: (context, state) {
+          return state is WindyInitComplete;
+        },
+        builder: (context, state) {
+          return Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 8.0),
+              child: MeasureSize(
+                onChange: (Size size) {
+                  setState(() {
+                    // Need to reduce size so windy legend visible at bottom
+                    _windyWidgetHeight = size.height.toInt() - 16;
+                    _sendWindyWidgetHeight(
+                        _webViewController, _windyWidgetHeight);
+                    debugPrint(
+                        "windyWidgetHeight: " + _windyWidgetHeight.toString());
+                  });
+                },
+                child: Container(
+                  height: _windyWidgetHeight.toDouble(),
+                  child: WebView(
+                    javascriptChannels: _getJavascriptChannels(),
+                    debuggingEnabled: !kReleaseMode,
+                    javascriptMode: JavascriptMode.unrestricted,
+                    onWebViewCreated: (WebViewController webViewController) {
+                      //_controller.complete(webViewController);
+                      _webViewController = webViewController;
+                      _sendWindyWidgetHeight(
+                          webViewController, _windyWidgetHeight);
+                    },
+                    navigationDelegate: (NavigationRequest request) {
+                      var url = request.url!.toString();
+                      if (url.startsWith("https://www.windy.com")) {
+                        launchWebBrowser("www.windy.com", "");
+                        return NavigationDecision.prevent;
+                      }
+                      if (url.startsWith("file:") ||
+                          url.contains("windy.com")) {
+                        return NavigationDecision.navigate;
+                      }
+                      return NavigationDecision.prevent;
+                    },
+                  ),
+                ),
+              ),
+            ),
+          );
+        });
+  }
+
+  Future<void> _sendWindyWidgetHeight(
+      WebViewController? webViewController, int height) async {
+    if (webViewController != null && height > 0) {
       _sendEvent(LoadWindyHTMLEvent(height));
     }
   }
@@ -349,19 +354,22 @@ class WindyForecastState extends State<WindyForecast>
       },
       listener: (context, state) {
         if (state is WindyJavaScriptState) {
-          webViewController!
-              .callAsyncJavaScript(functionBody: state.javaScript);
+          runJavaScript(state.javaScript);
         }
       },
       child: SizedBox.shrink(),
     );
   }
 
+  Future<void> runJavaScript(String javaScript) async {
+    await _webViewController!.runJavascript(javaScript);
+  }
+
   void _selectTask() async {
     final result = await Navigator.pushNamed(context, TaskList.routeName,
         arguments: TaskListScreen.SELECT_TASK_OPTION);
     if (result != null && result is int && result > -1) {
-      //print('Draw task for ' + result.toString());
+      //debugPrint('Draw task for ' + result.toString());
       _sendEvent(SelectTaskEvent(result));
     }
   }
@@ -377,26 +385,29 @@ class WindyForecastState extends State<WindyForecast>
     BlocProvider.of<WindyBloc>(context).add(event);
   }
 
-  void _addJavaScriptHandlers() {
-    webViewController!.addJavaScriptHandler(
-        handlerName: "print",
-        callback: (args) {
-          print("debug from webview:" + args.toString());
-        });
-    webViewController!.addJavaScriptHandler(
-        handlerName: "getWindyStartupParms",
-        callback: (args) {
-          return windyStartupParms!.toJson();
-        });
-    webViewController!.addJavaScriptHandler(
-        handlerName: "redrawCompleted",
-        callback: (args) {
-          print("redrawCompleted");
-        });
-    webViewController!.addJavaScriptHandler(
-        handlerName: "getTaskTurnpointsForMap",
-        callback: (List<dynamic> arguments) async {
-          _sendEvent(DisplayTaskIfAnyEvent());
-        });
+  Set<JavascriptChannel> _getJavascriptChannels() {
+    return Set.from([
+      JavascriptChannel(
+          name: "print",
+          onMessageReceived: (JavascriptMessage message) {
+            debugPrint("debug from webview:" + message.message);
+          }),
+      JavascriptChannel(
+          name: "htmlLoaded",
+          onMessageReceived: (JavascriptMessage message) {
+            debugPrint("htmlLoaded callback:" + message.message);
+            _sendEvent(AssignWindyStartupParms());
+          }),
+      JavascriptChannel(
+          name: "redrawCompleted",
+          onMessageReceived: (JavascriptMessage message) {
+            debugPrint("redrawCompleted");
+          }),
+      JavascriptChannel(
+          name: "getTaskTurnpointsForMap",
+          onMessageReceived: (JavascriptMessage message) {
+            _sendEvent(DisplayTaskIfAnyEvent());
+          }),
+    ]);
   }
 }

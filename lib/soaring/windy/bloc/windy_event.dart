@@ -66,3 +66,8 @@ class DisplayTopoMapTypeEvent extends WindyEvent {
   @override
   List<Object?> get props => [displayTopoMap];
 }
+
+class AssignWindyStartupParms extends WindyEvent {
+  @override
+  List<Object?> get props => [];
+}

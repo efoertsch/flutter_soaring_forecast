@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/task/task.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/taskturnpoint/task_turnpoint.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_models.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 import 'package:flutter_soaring_forecast/soaring/windy/bloc/windy_event.dart';
 import 'package:flutter_soaring_forecast/soaring/windy/bloc/windy_state.dart';
@@ -12,7 +13,6 @@ import 'package:flutter_soaring_forecast/soaring/windy/data/windy_layer.dart';
 import 'package:flutter_soaring_forecast/soaring/windy/data/windy_model.dart';
 import 'package:flutter_soaring_forecast/soaring/windy/data/windy_startup_parms.dart';
 import 'package:intl/intl.dart';
-import 'package:latlong2/latlong.dart';
 
 class WindyBloc extends Bloc<WindyEvent, WindyState> {
   final Repository repository;
@@ -33,6 +33,7 @@ class WindyBloc extends Bloc<WindyEvent, WindyState> {
     on<SelectTaskEvent>(_selectTask);
     on<ClearTaskEvent>(_clearTask);
     on<DisplayTopoMapTypeEvent>(_displayTopoMap);
+    on<AssignWindyStartupParms>(_assignWindyStartupParms);
   }
 
   FutureOr<void> _getWindyInitData(
@@ -47,26 +48,15 @@ class WindyBloc extends Bloc<WindyEvent, WindyState> {
     altitudes = await repository.getWindyAltitudes();
     _setAltitudeVisiblity(emit, 0);
     emit(WindyAltitudeListState(altitudes));
-    await _getInitialWindyStartupParms(emit);
+    emit(WindyInitComplete());
   }
 
-  Future<void> _getInitialWindyStartupParms(Emitter<WindyState> emit) async {
-    final windyKey = await _getWindyApiKey();
-    final latLng = await _getRegionLatLng();
-    emit(WindyStartupParmsState(WindyStartupParms(
-        key: windyKey,
-        lat: latLng.latitude,
-        long: latLng.longitude,
-        zoom: zoom)));
-  }
-
-  Future<LatLng> _getRegionLatLng() async {
+  Future<Model> _getRegionLatLngBounds() async {
     final regionName = await repository.getSelectedRegionName();
     final date = DateFormat('yyyy-MM-dd').format(DateTime.now());
     final forecastModels =
         await repository.getforecastModelsForRegionAndDate(regionName, date);
-    final firstModel = forecastModels.models[0];
-    return LatLng(firstModel.center[0], firstModel.center[1]);
+    return forecastModels.models[0];
   }
 
   Future<String> _getWindyApiKey() async {
@@ -107,6 +97,7 @@ class WindyBloc extends Bloc<WindyEvent, WindyState> {
 
   FutureOr<void> _sendJavaScriptCommand(
       Emitter<WindyState> emit, String javaScript) async {
+    print("Sending Javascript command:" + javaScript);
     emit(WindyJavaScriptState(javaScript));
   }
 
@@ -147,5 +138,19 @@ class WindyBloc extends Bloc<WindyEvent, WindyState> {
     final customWindyHtml = baseWindyHtml.replaceFirst(
         "XXXHEIGHTXXX", event.widgetHeight.toString());
     emit(WindyHtmlState(customWindyHtml));
+  }
+
+  FutureOr<void> _assignWindyStartupParms(
+      AssignWindyStartupParms event, Emitter<WindyState> emit) async {
+    final windyKey = await _getWindyApiKey();
+    final model = await _getRegionLatLngBounds();
+    final windyStartupParms = WindyStartupParms(
+        key: windyKey,
+        lat: model.center[0],
+        long: model.center[1],
+        mapLatLngBounds: model.latLngBounds,
+        zoom: zoom);
+    final jsonString = jsonEncode(windyStartupParms);
+    _sendJavaScriptCommand(emit, "assignWindyStartupParms(" + jsonString + ")");
   }
 }

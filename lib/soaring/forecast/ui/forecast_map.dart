@@ -46,11 +46,7 @@ class ForecastMapState extends State<ForecastMap>
   final _taskMarkers = <Marker>[];
   final List<Marker> _latLngMarkers = <Marker>[];
 
-  //Default values - NewEngland lat/lng of course!
-  final LatLng _center = LatLng(43.1394043, -72.0759888);
-  static final LatLngBounds _NewEnglandMapLatLngBounds = LatLngBounds(
-      LatLng(41.2665329, -73.6473083), LatLng(45.0120811, -70.5046997));
-  LatLngBounds _mapLatLngBounds = _NewEnglandMapLatLngBounds;
+  LatLngBounds _mapLatLngBounds = Constants.NewEnglandMapLatLngBounds;
 
   /// Use to center task route in googleMap frame
   LatLng? southwest;

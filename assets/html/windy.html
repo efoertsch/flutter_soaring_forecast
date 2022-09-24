@@ -5,23 +5,21 @@
     <script src="https://api.windy.com/assets/map-forecast/libBoot.js"></script>
     <style>
     #windy {
-      width: 100%;
-      height: XXXHEIGHTXXXpx;
+       width: 100%;
+       height: XXXHEIGHTXXXpx;
     }
     .turnpoint_label {
-    position: absolute;
-    width:100px;
-    heigt:35px
-    font-size:15px;
-}
+       position: absolute;
+       width:110px;
+       heigth:35px;
+       font-size:15px;
+    }
   </style>
 </head>
-<meta name="viewport" content="width=device-width">
-<body>
-<div class="container" id="_flutter_target_do_not_delete">
-<div id="windy"></div>
-</div>
 
+<body>
+<meta name="viewport" content="width=device-width">
+<div id="windy"></div>
 <style>
     #windy #mobile-ovr-select,
     #windy #embed-zoom {
@@ -30,14 +28,6 @@
 </style>
 
 <script type="text/javascript">
-
-function outputsize() {
-  if (typeof window.flutter_inappwebview !== "undefined" && typeof window.flutter_inappwebview.callHandler !== "undefined")
-    console.log("webview height: " + document.getElementById("_flutter_target_do_not_delete").offsetHeight);
-     window.flutter_inappwebview.callHandler('newHeight', document.getElementById("_flutter_target_do_not_delete").offsetHeight);
-  }
-new ResizeObserver(outputsize).observe(_flutter_target_do_not_delete)
-
 
 var windyStore;
 var windyMap;
@@ -48,32 +38,28 @@ var mapMarker = [];
 var mapPolyLine = [];
 var taskLayerGroup;
 var origWindyMapLabels;
-var isFlutterInAppWebViewReady = false;
+var webViewIsReady = false;
 var windyKey;
+var mapLatLngBounds;
 var lat;
 var long;
 var zoom;
 
-window.addEventListener("flutterInAppWebViewPlatformReady", function(event) {
- isFlutterInAppWebViewReady = true;
- sendMsgToApp("isFlutterInAppWebViewReady = true");
- getWindyStartupParms();
-
-});
 
 function sendMsgToApp(msg){
-  console.log(msg)
-   if (isFlutterInAppWebViewReady){
-      window.flutter_inappwebview.callHandler('print', msg);
-   }
+  console.log(msg);
+  print.postMessage(msg);
 }
 
+
 sendMsgToApp("Running windy.html javascript");
+htmlLoaded.postMessage("From windy.html. I am loaded!");
 
 
 function setWindMap(store, map){
   windyStore = store;
   windyMap = map;
+  //windyMap.fitBounds(mapLatLngBounds);
   // could not define icon until WindyAPI initialized
   //turnpointIcon = new L.DivIcon.SVGIcon( { "color":"rgb(255,0,0)" ,"fillOpacity": 1});
   turnpointPolyLine = {
@@ -84,7 +70,7 @@ function setWindMap(store, map){
                     className: 'polyTrack'};
 
   sendMsgToApp("calling getTaskTurnpointsForMap()");
-  getTaskTurnpointsForMap();
+  getTaskTurnpointsForMap.postMessage("Let'er rip");
 }
 
 function setBaseLayerToDefault(){
@@ -136,40 +122,28 @@ function removeTaskFromMap() {
   }
 }
 
-
-function redrawCompleted(){
-  if (isFlutterInAppWebViewReady){
-     window.flutter_inappwebview.callHandler('redrawCompleted');
-  }
-}
-
-function getWindyStartupParms() {
-  console.log("in getWindyStartupParms - isFlutterInAppWebViewReady =" + isFlutterInAppWebViewReady);
-  if (isFlutterInAppWebViewReady) {
-     window.flutter_inappwebview.callHandler('getWindyStartupParms').then(function(result){
-      sendMsgToApp("called getWindyStartupParms(): " + result.toString);
-      windyKey = result['key'];
-      lat = result['lat'];
-      long = result['long'];
-      zoom = result['zoom']
-      //console.log("WindyStartupParms key:" + windyKey + "  lat:" + lat + " long:" + long + " zoom:" + zoom);
+function assignWindyStartupParms(windyStartupParms){
+   sendMsgToApp("assigning Windy startup parms: " + windyStartupParms.toString());
+      windyKey = windyStartupParms['key'];
+     // bounds = windyStartupParms['mapLatLngBounds'];
+      swCorner = windyStartupParms['mapLatLngBounds'][0][0]['coordinates'];
+      sendMsgToApp('swCorner:' + swCorner.toString());
+        neCorner = windyStartupParms['mapLatLngBounds'][1][0]['coordinates'];
+      sendMsgToApp('neCorner:' + neCorner.toString());
+     // mapLatLngBounds = L.latLngBounds(swCorner, neCorner);
+      lat = windyStartupParms['lat'];
+      long = windyStartupParms['long'];
+      zoom = windyStartupParms['zoom']
+      //sendMsgToApp("WindyStartupParms key: " + windyKey +  " swCorner:" + swCorner.toString()
+       //    " neCorner:" + neCorner.toString() +  " zoom:" + zoom);
       fireUpWindy() ;
-    });
-  }
 }
 
-// Call this once when map is loaded to see if task needs to be drawn
-function getTaskTurnpointsForMap() {
-  if (isFlutterInAppWebViewReady) {
-    sendMsgToApp("calling getTaskTurnpointsForMap()");
-     window.flutter_inappwebview.callHandler('getTaskTurnpointsForMap');
-  }
-}
 
 // Called by app to pass in turnpoints
 function drawTask(taskTurnpoints) {
   sendMsgToApp("drawTask(taskTurnpoints)");
-  logTaskTurnpoints(taskTurnpoints);
+ // logTaskTurnpoints(taskTurnpoints);
   removeTaskFromMap();
   createMarkersAndPolyLine(taskTurnpoints);
 }
@@ -209,7 +183,6 @@ function logTaskTurnpoints(taskTurnpoints){
   }
 }
 
-
 function fireUpWindy() {
    sendMsgToApp("Firing up Windy API with key" + windyKey);
    const options = {
@@ -223,7 +196,6 @@ function fireUpWindy() {
      zoom: zoom,
      isolines: 'pressure'
    };
-
 
    // Initialize Windy API
    windyInit(options, windyAPI => {
@@ -257,7 +229,7 @@ function fireUpWindy() {
      // end of workaround
 
      broadcast.on('redrawFinished',(e) => {
-       redrawCompleted();
+       redrawCompleted.postMessage("windy redraw completed");
      });
 
      // Observing change of .store value
@@ -277,9 +249,10 @@ function fireUpWindy() {
      sendMsgToApp("Allowed products: " + windyAPI.store.getAllowed('product'));
      sendMsgToApp("Allowed overlays: " + windyAPI.store.getAllowed('overlay'));
      sendMsgToApp("Allowed levels: " + windyAPI.store.getAllowed('level'));
-     outputsize();
+    // outputsize();
    });
 }
+
 </script>
 </body>
 </html>
