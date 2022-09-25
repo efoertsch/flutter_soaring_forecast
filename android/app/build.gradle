@@ -37,13 +37,14 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
+        // TODO: Switch to existing Android SoaringForecast application Id once flutter version reaches parity with Android version
         applicationId "soaringforecast.org.flutter_soaring_forecast"
         minSdkVersion 20
         targetSdkVersion 33
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        multiDexEnabled true
     }
 
     buildTypes {
@@ -61,14 +62,15 @@ flutter {
 
 dependencies {
 
+    implementation 'androidx.multidex:multidex:2.0.1'
     // Added following to try to resolve compile problem when webview added to project
     implementation "androidx.versionedparcelable:versionedparcelable:1.1.1"
-    implementation "androidx.lifecycle:lifecycle-runtime:2.4.1"
-    implementation "androidx.core:core:1.8.0"
+    implementation "androidx.lifecycle:lifecycle-runtime:2.5.1"
+    implementation "androidx.core:core:1.9.0"
     implementation "androidx.drawerlayout:drawerlayout:1.1.1"
-    implementation "androidx.lifecycle:lifecycle-viewmodel:2.4.1"
+    implementation "androidx.lifecycle:lifecycle-viewmodel:2.5.1"
     implementation "androidx.legacy:legacy-support-core-ui:1.0.0"
-    implementation "androidx.fragment:fragment:1.4.1"
+    implementation "androidx.fragment:fragment:1.5.2"
     implementation 'androidx.work:work-runtime-ktx:2.7.1'
 
     // These were added by flutter on project creation

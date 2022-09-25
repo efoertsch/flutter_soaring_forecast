@@ -8,7 +8,7 @@ import 'package:flutter_soaring_forecast/main.dart';
 import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
 import 'package:flutter_soaring_forecast/soaring/app/custom_styles.dart';
-import 'package:flutter_soaring_forecast/soaring/app/web_mixin.dart';
+import 'package:flutter_soaring_forecast/soaring/app/web_launcher.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/bloc/turnpoint_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/bloc/turnpoint_event.dart';
@@ -81,7 +81,7 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
       return ConditionalWillPopScope(
         onWillPop: _onWillPop,
         shouldAddCallback: true,
-        child: _buildSafeArea(context),
+        child: _buildSafeArea(),
       );
     } else {
       //iOS
@@ -91,12 +91,12 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
             _onWillPop();
           }
         },
-        child: _buildSafeArea(context),
+        child: _buildSafeArea(),
       );
     }
   }
 
-  Widget _buildSafeArea(BuildContext context) {
+  Widget _buildSafeArea() {
     return SafeArea(
       child: Scaffold(
         appBar: _getAppBar(),

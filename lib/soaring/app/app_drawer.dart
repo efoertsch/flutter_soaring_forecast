@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_soaring_forecast/main.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'web_launcher.dart';
+
 class AppDrawer {
-  static Widget getDrawer(BuildContext context) {
+  static Widget getDrawer(BuildContext context,
+      {Function? refreshTaskDisplayFunction}) {
     return Drawer(
 // Add a ListView to the drawer. This ensures the user can scroll
 // through the options in the drawer if there isn't enough vertical
@@ -37,24 +40,32 @@ class AppDrawer {
               Navigator.popAndPushNamed(context, TaskList.routeName);
             },
           ),
-          // ListTile(
-          //   title: Text('Windy'),
-          //   onTap: () {
-          //     Navigator.pop(context);
-          //   },
-          // ),
+          ListTile(
+            title: Text('Windy'),
+            onTap: () async {
+              var possibleTaskChange = await Navigator.popAndPushNamed(
+                  context, WindyScreen.routeName);
+              if (refreshTaskDisplayFunction != null &&
+                  possibleTaskChange != null &&
+                  (possibleTaskChange is bool)) {
+                refreshTaskDisplayFunction(possibleTaskChange);
+              }
+            },
+          ),
           ListTile(
             title: Text('SkySight'),
-            onTap: () {
+            onTap: () async {
+              await launchWebBrowser("skysight.io", "");
               Navigator.pop(context);
-              _launchWebBrowser("https://skysight.io/");
             },
           ),
           ListTile(
             title: Text('Dr Jacks'),
-            onTap: () {
+            onTap: () async {
               Navigator.pop(context);
-              _launchWebBrowser("http://www.drjack.info/BLIP/univiewer.html");
+              launchWebBrowser("www.drjack.info", "BLIP/univiewer.html",
+                  useHttp: true);
+              // _launchWebBrowser("http://www.drjack.info/BLIP/univiewer.html");
             },
           ),
 //           ListTile(

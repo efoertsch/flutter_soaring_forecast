@@ -51,4 +51,17 @@ class TaskTurnpoint {
       this.distanceFromPriorTurnpoint = 0.0,
       this.distanceFromStartingPoint = 0.0,
       this.lastTurnpoint = false});
+
+  Map toJson() => {
+        'id': id,
+        "taskId": taskId,
+        "taskOrder": taskOrder,
+        "title": title,
+        "code": code,
+        "latitudeDeg": latitudeDeg,
+        "longitudeDeg": longitudeDeg,
+        "distanceFromPriorTurnpoint": distanceFromPriorTurnpoint,
+        "distanceFromStartingPoint": distanceFromStartingPoint,
+        "lastTurnpoint": lastTurnpoint
+      };
 }

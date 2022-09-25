@@ -1,8 +1,10 @@
 library constants;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:latlong2/latlong.dart';
 
 //-------- Non translatable values --------------------------------------------
 /// Hold any system wide constants
@@ -15,6 +17,10 @@ const String AIRPORT_URL = 'http://ourairports.com/data/airports.csv';
 const double metersToFeet = 3.28084;
 const String ft = "ft";
 const String NEW_LINE = '\n';
+
+final LatLng NewEnglandMapCenter = LatLng(43.1394043, -72.0759888);
+final LatLngBounds NewEnglandMapLatLngBounds = LatLngBounds(
+    LatLng(41.2665329, -73.6473083), LatLng(45.0120811, -70.5046997));
 
 enum ImageTypes { body, head, side, foot }
 
@@ -49,6 +55,7 @@ class PreferenceOption {
   final String key;
   final String displayText;
   bool selected;
+
   PreferenceOption(
       {required this.key, required this.displayText, this.selected = false});
 }
@@ -82,6 +89,7 @@ enum SUAColor {
   classProhibited(suaClassType: "PROHIBITED", airspaceColor: Color(0x800000FF));
 
   const SUAColor({required this.suaClassType, required this.airspaceColor});
+
   final String suaClassType;
   final Color airspaceColor;
 }
@@ -175,6 +183,12 @@ class TurnpointEditText {
   static const String reset = "Reset";
   static const String saveLocation = "Save Location";
   static String close = "Close";
+}
+
+class WindyMenu {
+  static const String selectTask = 'Select Task';
+  static const String clearTask = "Clear Task";
+  static const String TopoMap = 'Topo Map';
 }
 
 // Turnpoint icon colors for type of runway

@@ -6,6 +6,7 @@ android/app/src/main/res/values-night/
 lib/generated_plugin_registrant.dart
 local.properties
 web/
+lib/auth/secrets.dart
 
 
 # Below lists are what I think A.S. defaulted for flutter (or at least I don't recall updating

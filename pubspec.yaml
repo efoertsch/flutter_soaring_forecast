@@ -30,6 +30,7 @@ dependencies:
   flutter_bloc: ^8.0.1
   equatable: ^2.0.3
   webview_flutter: ^3.0.4
+  #flutter_inappwebview: ^5.4.3+7
   url_launcher: ^6.1.5
   pinch_zoom: ^1.0.0
   sprintf: ^6.0.0
@@ -62,7 +63,7 @@ dependencies:
 
   flutter_map: ^2.2.0 # or the latest version on Pub, current used for rasp map
   #map_controller: 0.9.1  # used to process/display SUA plus handle state with showing/removing markers
-  google_maps_flutter: ^2.1.12 # used for overhead view of turnpoints
+  google_maps_flutter: ^2.2.0 # used for overhead view of turnpoints
 
   flutter:
     sdk: flutter
@@ -72,6 +73,7 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.5
+
 
 
 #https://pub.dev/packages/flutter_launcher_icons
@@ -107,6 +109,7 @@ flutter:
     - assets/svg/
     - assets/png/
     - assets/html/
+    - assets/txt/
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

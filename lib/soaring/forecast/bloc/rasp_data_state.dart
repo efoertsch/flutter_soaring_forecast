@@ -10,8 +10,6 @@ import 'package:flutter_soaring_forecast/soaring/repository/options/special_use_
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/regions.dart';
 
-import '../forecast_data/LatLngForecast.dart';
-
 /// https://medium.com/flutter-community/flutter-bloc-pattern-for-dummies-like-me-c22d40f05a56
 /// Event In - State Out
 ///
@@ -48,7 +46,7 @@ class RaspForecastModels extends RaspDataState {
   List<Object?> get props => [modelNames, selectedModelName];
 }
 
-//  list of forecast dates available for hte selected forecast model and the
+//  list of forecast dates available for the selected forecast model and the
 //  default selected date.
 class RaspModelDates extends RaspDataState {
   final List<String> forecastDates; // array of dates like  2019-12-19

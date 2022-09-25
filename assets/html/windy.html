@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://unpkg.com/leaflet@1.4.0/dist/leaflet.js"></script>
+    <script src="https://api.windy.com/assets/map-forecast/libBoot.js"></script>
+    <style>
+    #windy {
+       width: 100%;
+       height: XXXHEIGHTXXXpx;
+    }
+    .turnpoint_label {
+       position: absolute;
+       width:110px;
+       heigth:35px;
+       font-size:15px;
+    }
+  </style>
+</head>
+
+<body>
+<meta name="viewport" content="width=device-width">
+<div id="windy"></div>
+<style>
+    #windy #mobile-ovr-select,
+    #windy #embed-zoom {
+      display: none !important;
+    }
+</style>
+
+<script type="text/javascript">
+
+var windyStore;
+var windyMap;
+var taskLayerGroup;
+var turnpointIcon;
+var turnpointPolyLine;
+var mapMarker = [];
+var mapPolyLine = [];
+var taskLayerGroup;
+var origWindyMapLabels;
+var webViewIsReady = false;
+var windyKey;
+var mapLatLngBounds;
+var lat;
+var long;
+var zoom;
+
+var swLat;
+var swLng;
+var neLat;
+var neLng;
+
+
+function sendMsgToApp(msg){
+  console.log(msg);
+  print.postMessage(msg);
+}
+
+
+sendMsgToApp("Running windy.html javascript");
+htmlLoaded.postMessage("From windy.html. I am loaded!");
+
+
+function setWindMap(store, map){
+  windyStore = store;
+  windyMap = map;
+  windyMap.fitBounds(mapLatLngBounds);
+  // could not define icon until WindyAPI initialized
+  //turnpointIcon = new L.DivIcon.SVGIcon( { "color":"rgb(255,0,0)" ,"fillOpacity": 1});
+  turnpointPolyLine = {
+                    color: 'red',
+                    weight: 2,
+                    opacity: 1,
+                    zIndex: 1000,
+                    className: 'polyTrack'};
+
+  sendMsgToApp("calling getTaskTurnpointsForMap()");
+  getTaskTurnpointsForMap.postMessage("Let'er rip");
+}
+
+function setBaseLayerToDefault(){
+  sendMsgToApp("setting map to default");
+  windyMap.baseLayer.setUrl("https://tiles-s.windy.com/tiles/v8.1/darkmap/{z}/{x}/{y}.png");
+  windyMap.addLayer(origWindyMapLabels);
+}
+
+function setBaseLayerToGoogleMap(){
+  sendMsgToApp("setting map to google");
+  windyMap.baseLayer.options.subdomains = ["mt0", "mt1", "mt2", "mt3"];
+  windyMap.baseLayer.setUrl("https://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}");
+  windyMap.baseLayer.setOpacity(0.5);
+   //windyMap.removeLayer(W.labelsLayer);
+}
+
+function setBaseLayerToArcGisMap(){
+  sendMsgToApp("setting map to topo map");
+  windyMap.baseLayer.setUrl("https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}");
+  // windyMap.options.maxZoom = 18;
+  windyMap.baseLayer.setOpacity(0.2);
+ //windyMap.removeLayer(W.labelsLayer);
+}
+
+function setModel(model){
+  sendMsgToApp('Requesting product:' + model);
+  windyStore.set('product',model);
+}
+
+function setLayer(layer){
+  sendMsgToApp('Requesting layer:' + layer);
+  windyStore.set('overlay', layer);
+}
+
+function setAltitude(altitude){
+  sendMsgToApp('Requesting level:' + altitude);
+  windyStore.set('level', altitude);
+}
+
+function removeTaskFromMap() {
+  if (windyMap && taskLayerGroup){
+     windyMap.removeLayer(taskLayerGroup);
+  }
+  if (mapMarker) {
+    mapMarker.length = 0;
+  }
+  if (mapPolyLine){
+    mapPolyLine.length = 0;
+  }
+}
+
+// note that flutter sending bounds JSON with "coordinates":[lat, lng] which leaflet likes
+// but I think is reverse of geoJson format.
+function assignWindyStartupParms(windyStartupParms){
+   sendMsgToApp("assigning Windy startup parms: " + windyStartupParms.toString());
+      windyKey = windyStartupParms['key'];
+      swCorner = windyStartupParms['mapLatLngBounds'][0][0]['coordinates'];
+      sendMsgToApp('swCorner:' + swCorner.toString());
+      neCorner = windyStartupParms['mapLatLngBounds'][1][0]['coordinates'];
+      sendMsgToApp('neCorner:' + neCorner.toString());
+      mapLatLngBounds = L.latLngBounds(swCorner, neCorner);
+      sendMsgToApp("mapLatLngBounds  sw:"
+                    + mapLatLngBounds.getSouthWest().toString() + "  " +
+                     mapLatLngBounds.getNorthEast().toString());
+      lat = windyStartupParms['lat'];
+      long = windyStartupParms['long'];
+      zoom = windyStartupParms['zoom']
+      //sendMsgToApp("WindyStartupParms key: " + windyKey +  " swCorner:" + swCorner.toString()
+       //    " neCorner:" + neCorner.toString() +  " zoom:" + zoom);
+      fireUpWindy() ;
+}
+
+
+// Called by app to pass in turnpoints
+function drawTask(taskTurnpoints) {
+  sendMsgToApp("drawTask(taskTurnpoints)");
+ // logTaskTurnpoints(taskTurnpoints);
+  removeTaskFromMap();
+  createMarkersAndPolyLine(taskTurnpoints);
+}
+
+// !!!.toFixed(1) gives (currently) error on end of taskTurnpoints[i].distanceFromStartingPoint on Chrome !!!
+function createMarkersAndPolyLine(taskTurnpoints) {
+  if (taskTurnpoints != null) {
+    for (i = 0; i < taskTurnpoints.length; i++) {
+      calculateNewBounds(i, taskTurnpoints[i].latitudeDeg, taskTurnpoints[i].longitudeDeg);
+      var latLong = [taskTurnpoints[i].latitudeDeg, taskTurnpoints[i].longitudeDeg];
+      mapPolyLine.push(latLong);
+      var marker = L.marker(latLong,{ opacity: 0.01 });
+      marker.bindTooltip(shortenString(taskTurnpoints[i].title,10) + "<br> "
+         + taskTurnpoints[i].distanceFromPriorTurnpoint.toFixed(1) + "/"
+         + taskTurnpoints[i].distanceFromStartingPoint.toFixed(1) +"km"
+      , {permanent: true, className: "turnpoint_label", offset: [0,0],direction:'center' });
+      // !!! Remove .toFixed(1) if testing on Chrome !!!
+      //marker.bindPopup(taskTurnpoints[i].title + "<br>" + taskTurnpoints[i].distanceFromStartingPoint.toFixed(1) +"km)");
+      mapMarker.push(marker);
+    }
+    taskLayerGroup = L.layerGroup(mapMarker).addLayer(L.polyline(mapPolyLine,turnpointPolyLine));
+    taskLayerGroup.addTo(windyMap);
+    sendMsgToApp("fixing task map bounds");
+    bounds = L.latLngBounds(L.latLng(swLat, swLng), L.latLng(neLat, neLng)).pad(.3);
+    sendMsgToApp("set map bounds: " + JSON.stringify(bounds));
+    windyMap.fitBounds(bounds);
+    sendMsgToApp("fitted task map bounds");
+    sendMsgToApp("Done with plotting turnpoints");
+  }
+}
+
+function calculateNewBounds(index, latitudeDeg, longitudeDeg) {
+   if (index == 0){
+     swLat = latitudeDeg;
+     swLng = longitudeDeg;
+     neLat = latitudeDeg;
+     neLng = longitudeDeg;
+     return;
+   }
+   if (latitudeDeg < swLat) swLat = latitudeDeg;
+   if (longitudeDeg < swLng) swLng = longitudeDeg;
+   if (latitudeDeg > neLat) neLat = latitudeDeg;
+   if (longitudeDeg > neLng) neLng = longitudeDeg;
+
+}
+
+function shortenString(string, maxLen){
+   if (string.length < maxLen) return string;
+   else return string.substr(0,maxLen);
+   }
+
+function logTaskTurnpoints(taskTurnpoints){
+  if (taskTurnpoints != null  && taskTurnpoints.length > 0) {
+    for (i = 0; i < taskTurnpoints.length; i++) {
+      var latLong = [taskTurnpoints[i].latitudeDeg, taskTurnpoints[i].longitudeDeg];
+      sendMsgToApp("lat/long:" + taskTurnpoints[i].latitudeDeg + "/" + taskTurnpoints[i].longitudeDeg);
+      sendMsgToApp("title" + taskTurnpoints[i].title);
+      sendMsgToApp("distance from starting" + taskTurnpoints[i].distanceFromStartingPoint.toFixed(1));
+      mapPolyLine.push(latLong);
+    }
+  } else {
+    sendMsgToApp("taskTurnpoints null or empty");
+  }
+}
+
+function fireUpWindy() {
+   sendMsgToApp("Firing up Windy API with key" + windyKey);
+   const options = {
+     // Required: API key
+     key: windyKey,
+     // Put additional console output
+     verbose: true,
+     // Optional: Initial state of the map
+     lat: lat,
+     lon: long,
+     zoom: zoom,
+     isolines: 'pressure'
+   };
+
+   // Initialize Windy API
+   windyInit(options, windyAPI => {
+     // windyAPI is ready, and contain 'map', 'store',
+     // 'picker' and other usefull stuff
+     // .map is instance of Leaflet map
+     const {
+       map,
+       utils,
+       picker,
+       pickerMobile,
+       overlays,
+       broadcast,
+       store
+     } = windyAPI;
+
+     origWindyMapLabels = W.labelsLayer;
+
+     // workaround - mobilePicker has bug so this tells windy to use desktopPicker
+     var mobileMadeFalse = false;
+     if (W.rootScope.isMobile) {
+       W.rootScope.isMobile = false;
+       mobileMadeFalse = true;
+     }
+     picker.on('pickerOpened', (e) => {
+     if (mobileMadeFalse) {
+        document.getElementsByClassName("picker-lines noselect")[0].parentNode.style.marginTop = "-70px";
+        document.getElementsByClassName("picker-drag-me")[0].style.display = "none";
+     }
+     });
+     // end of workaround
+
+     broadcast.on('redrawFinished',(e) => {
+       redrawCompleted.postMessage("windy redraw completed");
+     });
+
+     // Observing change of .store value
+     store.on('isImperial', isImperial => {
+       sendMsgToApp(`isImperial was changed: ${ isImperial }`);
+     });
+
+     setWindMap(store, map);
+     windyAPI.store.set('isImperial',false);
+     windyAPI.store.set('isImperial',true);
+     sendMsgToApp(" isImperial:" + windyAPI.store.get('isImperial'));
+     //windyAPI.store.set('metric_temp', '°F');
+     sendMsgToApp(" isImperial:" + windyAPI.store.get('isImperial'));
+     sendMsgToApp(" temp units:" + windyAPI.store.get('metric_temp'));
+     sendMsgToApp("store.layer:" + store.get('overlay'));
+     sendMsgToApp("levels:" + windyAPI.store.get('availLevels'));
+     sendMsgToApp("Allowed products: " + windyAPI.store.getAllowed('product'));
+     sendMsgToApp("Allowed overlays: " + windyAPI.store.getAllowed('overlay'));
+     sendMsgToApp("Allowed levels: " + windyAPI.store.getAllowed('level'));
+    // outputsize();
+   });
+}
+
+</script>
+</body>
+</html>

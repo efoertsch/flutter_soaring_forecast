@@ -152,3 +152,8 @@ class SetForecastOverlayOpacityEvent extends RaspDataEvent {
   @override
   List<Object?> get props => [forecastOverlayOpacity];
 }
+
+class RefreshTaskEvent extends RaspDataEvent {
+  @override
+  List<Object?> get props => [];
+}

@@ -34,11 +34,14 @@ class RaspScreen extends StatefulWidget {
 }
 
 //TODO - keep more data details in Bloc,
-class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
+class _RaspScreenState extends State<RaspScreen>
+    with TickerProviderStateMixin, WidgetsBindingObserver {
   final abbrevDateformatter = DateFormat('E, MMM dd');
   late final MapController _mapController;
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _forecastMapStateKey = GlobalKey<ForecastMapState>();
+  late List<PreferenceOption> _raspDisplayOptions;
+  late String _selectedRegionName;
 
 // TODO internationalize literals
   String _pauseAnimationLabel = "Pause";
@@ -54,27 +57,48 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
   Stream<int>? _overlayPositionCounter;
   StreamSubscription<int>? _tickerSubscription;
 
-  late List<PreferenceOption> _raspDisplayOptions;
-  late String _selectedRegionName;
+  AppLifecycleState? _appLifecycleState;
 
   // Executed only when class created
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _mapController = MapController();
   }
 
   @override
   void dispose() {
     stopAnimation();
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    switch (state) {
+      case AppLifecycleState.resumed:
+        debugPrint("app in resumed");
+        break;
+      case AppLifecycleState.inactive:
+        debugPrint("app in inactive");
+        stopAnimation();
+        break;
+      case AppLifecycleState.paused:
+        debugPrint("app in paused");
+        stopAnimation();
+        break;
+      case AppLifecycleState.detached:
+        debugPrint("app in detached");
+        break;
+    }
   }
 
   // Make sure first layout occurs prior to map ready otherwise crash occurs
   @override
   void afterFirstLayout(BuildContext context) {
-    // print("First layout complete.");
-    // print('Calling series of APIs');
+    // debugPrint("First layout complete.");
+    // debugPrint('Calling series of APIs');
     _sendEvent(InitialRaspRegionEvent());
     _mapController.onReady.then((value) => _sendEvent(MapReadyEvent()));
   }
@@ -84,30 +108,38 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
     return SafeArea(
       child: Scaffold(
           key: _scaffoldKey,
-          drawer: AppDrawer.getDrawer(context),
-          appBar: AppBar(
-            title: Text('RASP'),
-            actions: getRaspMenu(),
-          ),
-          body: Padding(
-            padding: EdgeInsets.all(8.0),
-            child:
-                Column(mainAxisAlignment: MainAxisAlignment.start, children: [
-              _getForecastModelsAndDates(context),
-              _getForecastTypes(context),
-              _displayForecastTime(context),
-              _getForecastWindow(),
-              _widgetForSnackBarMessages(),
-              _miscStatesHandlerWidget(),
-            ]),
-          )
+          drawer: AppDrawer.getDrawer(context,
+              refreshTaskDisplayFunction: checkForUpdatedTaskOnReturnFromWindy),
+          appBar: _getAppBar(),
+          body: _getBody(context)
           // }),
           ),
     );
   }
 
-  Widget _getForecastModelsAndDates(BuildContext context) {
-    //print('creating/updating main ForecastModelsAndDates');
+  AppBar _getAppBar() {
+    return AppBar(
+      title: Text('RASP'),
+      actions: _getRaspMenu(),
+    );
+  }
+
+  Padding _getBody(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.all(8.0),
+      child: Column(mainAxisAlignment: MainAxisAlignment.start, children: [
+        _getForecastModelsAndDates(),
+        _getForecastTypes(),
+        _displayForecastTime(),
+        _getForecastWindow(),
+        _widgetForSnackBarMessages(),
+        _miscStatesHandlerWidget(),
+      ]),
+    );
+  }
+
+  Widget _getForecastModelsAndDates() {
+    //debugPrint('creating/updating main ForecastModelsAndDates');
     return Row(
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
@@ -119,7 +151,7 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
             flex: 7,
             child: Padding(
               padding: EdgeInsets.only(left: 16.0),
-              child: forecastDatesDropDownList(context),
+              child: forecastDatesDropDownList(),
             )),
       ],
     );
@@ -131,7 +163,7 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
         buildWhen: (previous, current) {
       return current is RaspInitialState || current is RaspForecastModels;
     }, builder: (context, state) {
-      //print('creating/updating forecastModelDropDown');
+      //debugPrint('creating/updating forecastModelDropDown');
       if (state is RaspForecastModels) {
         return DropdownButton<String>(
           style: CustomStyle.bold18(context),
@@ -141,7 +173,7 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
           iconSize: 24,
           elevation: 16,
           onChanged: (String? newValue) {
-            // print('Selected model onChanged: $newValue');
+            // debugPrint('Selected model onChanged: $newValue');
             _sendEvent(SelectedRaspModelEvent(newValue!));
           },
           items: state.modelNames.map<DropdownMenuItem<String>>((String value) {
@@ -158,12 +190,12 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
   }
 
 // Display forecast dates for selected model (eg. GFS)
-  Widget forecastDatesDropDownList(BuildContext context) {
+  Widget forecastDatesDropDownList() {
     return BlocBuilder<RaspDataBloc, RaspDataState>(
         buildWhen: (previous, current) {
       return current is RaspInitialState || current is RaspModelDates;
     }, builder: (context, state) {
-      //print('creating/updating forecastDatesDropDown');
+      //debugPrint('creating/updating forecastDatesDropDown');
       if (state is RaspModelDates) {
         final _shortDOWs = _reformatDatesToDOW(state.forecastDates);
         final _selectedForecastDOW =
@@ -192,12 +224,12 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
   }
 
 // Display description of forecast types (eq. 'Thermal Updraft Velocity (W*)' for wstar)
-  Widget _getForecastTypes(BuildContext context) {
+  Widget _getForecastTypes() {
     return BlocBuilder<RaspDataBloc, RaspDataState>(
         buildWhen: (previous, current) {
       return current is RaspInitialState || current is RaspForecasts;
     }, builder: (context, state) {
-      //print('creating/updating ForecastTypes');
+      //debugPrint('creating/updating ForecastTypes');
       if (state is RaspForecasts) {
         return _getSelectedForecastDisplay(context, state.selectedForecast);
         //_getForecastDropDown(context, state);
@@ -258,8 +290,8 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
   }
 
 // Display forecast time for model and date
-  Widget _displayForecastTime(BuildContext context) {
-    //print('creating/updating ForecastTime');
+  Widget _displayForecastTime() {
+    //debugPrint('creating/updating ForecastTime');
     return Row(
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
@@ -289,7 +321,7 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
                     current is SoundingForecastImageSet;
               }, builder: (context, state) {
                 var localTime;
-                //print('creating/updating ForecastTime value');
+                //debugPrint('creating/updating ForecastTime value');
                 if (state is RaspForecastImageSet ||
                     state is SoundingForecastImageSet) {
                   if (state is RaspForecastImageSet) {
@@ -374,7 +406,7 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
     return BlocConsumer<RaspDataBloc, RaspDataState>(
         listener: (context, state) {
       if (state is RaspDisplayOptionsState) {
-        // print("Received RaspDisplayOptionsState");
+        // debugPrint("Received RaspDisplayOptionsState");
         _raspDisplayOptions = state.displayOptions;
       }
       if (state is SelectedRegionNameState) {
@@ -395,15 +427,15 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
       });
       _displayTimer!.setStartAndLimit(_currentImageIndex, _lastImageIndex);
       _displayTimer!.startTimer();
-      //print('Started timer');
+      //debugPrint('Started timer');
     } else {
-      //print('Stopping timer');
+      //debugPrint('Stopping timer');
       if (_tickerSubscription != null) {
         _tickerSubscription!.cancel();
         _displayTimer!.cancelTimer();
         _displayTimer = null;
       }
-      // print('Stopped timer');
+      // debugPrint('Stopped timer');
     }
   }
 
@@ -414,10 +446,11 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
     }
   }
 
-  List<Widget> getRaspMenu() {
+  List<Widget> _getRaspMenu() {
     return <Widget>[
       TextButton(
-        child: const Text('SELECT TASK', style: TextStyle(color: Colors.white)),
+        child: const Text(RaspMenu.selectTask,
+            style: TextStyle(color: Colors.white)),
         onPressed: () {
           _selectTask();
         },
@@ -448,7 +481,7 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
     final result = await Navigator.pushNamed(context, TaskList.routeName,
         arguments: TaskListScreen.SELECT_TASK_OPTION);
     if (result != null && result is int && result > -1) {
-      //print('Draw task for ' + result.toString());
+      //debugPrint('Draw task for ' + result.toString());
       _sendEvent(GetTaskTurnpointsEvent(result));
     }
   }
@@ -536,7 +569,7 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
     final result = await Navigator.pushNamed(context, RegionList.routeName,
         arguments: _selectedRegionName);
     if (result != null && result is String) {
-      print("selected region: result");
+      debugPrint("selected region: result");
       // user switched to another region
       if (result != _selectedRegionName) ;
       _sendEvent(InitialRaspRegionEvent());
@@ -571,5 +604,11 @@ class _RaspScreenState extends State<RaspScreen> with TickerProviderStateMixin {
       }
     });
     return shortDOWs;
+  }
+
+  void checkForUpdatedTaskOnReturnFromWindy(bool possibleTaskChange) {
+    if (possibleTaskChange) {
+      _sendEvent(MapReadyEvent());
+    }
   }
 }

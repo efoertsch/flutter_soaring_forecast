@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/about/about_screen.dart';
@@ -19,6 +20,8 @@ import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_edit_vi
 import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_overhead_view.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoints_list.dart';
 import 'package:flutter_soaring_forecast/soaring/values/strings.dart';
+import 'package:flutter_soaring_forecast/soaring/windy/bloc/windy_bloc.dart';
+import 'package:flutter_soaring_forecast/soaring/windy/ui/windy.dart';
 
 // void callbackDispatcher() {
 //   Workmanager().executeTask((task, inputData) {
@@ -32,7 +35,10 @@ import 'package:flutter_soaring_forecast/soaring/values/strings.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
+  // In release mode this will override Flutter debugPrint() so nothing printed to logs
+  if (kReleaseMode) {
+    debugPrint = (String? message, {int? wrapWidth}) {};
+  }
   // Workmanager().initialize(
   //     callbackDispatcher, // The top level function, aka callbackDispatcher
   //     isInDebugMode:
@@ -180,6 +186,15 @@ class SoaringForecastApp extends StatelessWidget {
             return CustomMaterialPageRoute(
               builder: (context) {
                 return AboutInfo();
+              },
+              settings: settings,
+            );
+          }
+
+          if (settings.name == WindyScreen.routeName) {
+            return CustomMaterialPageRoute(
+              builder: (context) {
+                return WindyScreen();
               },
               settings: settings,
             );
@@ -371,5 +386,17 @@ class AboutInfo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AboutScreen();
+  }
+}
+
+class WindyScreen extends StatelessWidget {
+  static const routeName = '/Windy';
+
+  Widget build(BuildContext context) {
+    return BlocProvider<WindyBloc>(
+      create: (BuildContext context) =>
+          WindyBloc(repository: RepositoryProvider.of<Repository>(context)),
+      child: WindyForecast(),
+    );
   }
 }

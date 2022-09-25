@@ -46,11 +46,7 @@ class ForecastMapState extends State<ForecastMap>
   final _taskMarkers = <Marker>[];
   final List<Marker> _latLngMarkers = <Marker>[];
 
-  //Default values - NewEngland lat/lng of course!
-  final LatLng _center = LatLng(43.1394043, -72.0759888);
-  static final LatLngBounds _NewEnglandMapLatLngBounds = LatLngBounds(
-      LatLng(41.2665329, -73.6473083), LatLng(45.0120811, -70.5046997));
-  LatLngBounds _mapLatLngBounds = _NewEnglandMapLatLngBounds;
+  LatLngBounds _mapLatLngBounds = Constants.NewEnglandMapLatLngBounds;
 
   /// Use to center task route in googleMap frame
   LatLng? southwest;
@@ -322,9 +318,13 @@ class ForecastMapState extends State<ForecastMap>
     ));
     LatLng southwest = new LatLng(swLat, swLong);
     LatLng northeast = new LatLng(neLat, neLong);
-    _mapController.animatedFitBounds(LatLngBounds(southwest, northeast),
-        options: FitBoundsOptions(
-            padding: EdgeInsets.only(left: 100.0, right: 100.0)));
+    final latLngBounds = LatLngBounds(southwest, northeast);
+    latLngBounds.pad(.2);
+    _mapController.animatedFitBounds(
+      latLngBounds,
+      // options: FitBoundsOptions(
+      //     padding: EdgeInsets.only(left: 100.0, right: 100.0))
+    );
     //_mapLatLngBounds = LatLngBounds(southwest, northeast);
   }
 

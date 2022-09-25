@@ -28,7 +28,8 @@
     <application
         android:label="flutter_soaring_forecast"
         android:icon="@mipmap/launcher_icon"
-        android:requestLegacyExternalStorage="true">
+        android:requestLegacyExternalStorage="true"
+        android:usesCleartextTraffic="true">
 
 
         <activity
@@ -43,6 +44,7 @@
                  until Flutter renders its first frame. It can be removed if
                  there is no splash screen (such as the default splash screen
                  defined in @style/LaunchTheme). -->
+            android:networkSecurityConfig="@xml/network_security_config"
 
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
