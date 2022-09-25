@@ -45,6 +45,11 @@ var lat;
 var long;
 var zoom;
 
+var swLat;
+var swLng;
+var neLat;
+var neLng;
+
 
 function sendMsgToApp(msg){
   console.log(msg);
@@ -59,7 +64,7 @@ htmlLoaded.postMessage("From windy.html. I am loaded!");
 function setWindMap(store, map){
   windyStore = store;
   windyMap = map;
-  //windyMap.fitBounds(mapLatLngBounds);
+  windyMap.fitBounds(mapLatLngBounds);
   // could not define icon until WindyAPI initialized
   //turnpointIcon = new L.DivIcon.SVGIcon( { "color":"rgb(255,0,0)" ,"fillOpacity": 1});
   turnpointPolyLine = {
@@ -122,15 +127,19 @@ function removeTaskFromMap() {
   }
 }
 
+// note that flutter sending bounds JSON with "coordinates":[lat, lng] which leaflet likes
+// but I think is reverse of geoJson format.
 function assignWindyStartupParms(windyStartupParms){
    sendMsgToApp("assigning Windy startup parms: " + windyStartupParms.toString());
       windyKey = windyStartupParms['key'];
-     // bounds = windyStartupParms['mapLatLngBounds'];
       swCorner = windyStartupParms['mapLatLngBounds'][0][0]['coordinates'];
       sendMsgToApp('swCorner:' + swCorner.toString());
-        neCorner = windyStartupParms['mapLatLngBounds'][1][0]['coordinates'];
+      neCorner = windyStartupParms['mapLatLngBounds'][1][0]['coordinates'];
       sendMsgToApp('neCorner:' + neCorner.toString());
-     // mapLatLngBounds = L.latLngBounds(swCorner, neCorner);
+      mapLatLngBounds = L.latLngBounds(swCorner, neCorner);
+      sendMsgToApp("mapLatLngBounds  sw:"
+                    + mapLatLngBounds.getSouthWest().toString() + "  " +
+                     mapLatLngBounds.getNorthEast().toString());
       lat = windyStartupParms['lat'];
       long = windyStartupParms['long'];
       zoom = windyStartupParms['zoom']
@@ -152,10 +161,11 @@ function drawTask(taskTurnpoints) {
 function createMarkersAndPolyLine(taskTurnpoints) {
   if (taskTurnpoints != null) {
     for (i = 0; i < taskTurnpoints.length; i++) {
+      calculateNewBounds(i, taskTurnpoints[i].latitudeDeg, taskTurnpoints[i].longitudeDeg);
       var latLong = [taskTurnpoints[i].latitudeDeg, taskTurnpoints[i].longitudeDeg];
       mapPolyLine.push(latLong);
       var marker = L.marker(latLong,{ opacity: 0.01 });
-      marker.bindTooltip(taskTurnpoints[i].title + "<br> "
+      marker.bindTooltip(shortenString(taskTurnpoints[i].title,10) + "<br> "
          + taskTurnpoints[i].distanceFromPriorTurnpoint.toFixed(1) + "/"
          + taskTurnpoints[i].distanceFromStartingPoint.toFixed(1) +"km"
       , {permanent: true, className: "turnpoint_label", offset: [0,0],direction:'center' });
@@ -165,9 +175,34 @@ function createMarkersAndPolyLine(taskTurnpoints) {
     }
     taskLayerGroup = L.layerGroup(mapMarker).addLayer(L.polyline(mapPolyLine,turnpointPolyLine));
     taskLayerGroup.addTo(windyMap);
+    sendMsgToApp("fixing task map bounds");
+    bounds = L.latLngBounds(L.latLng(swLat, swLng), L.latLng(neLat, neLng)).pad(.3);
+    sendMsgToApp("set map bounds: " + JSON.stringify(bounds));
+    windyMap.fitBounds(bounds);
+    sendMsgToApp("fitted task map bounds");
     sendMsgToApp("Done with plotting turnpoints");
   }
 }
+
+function calculateNewBounds(index, latitudeDeg, longitudeDeg) {
+   if (index == 0){
+     swLat = latitudeDeg;
+     swLng = longitudeDeg;
+     neLat = latitudeDeg;
+     neLng = longitudeDeg;
+     return;
+   }
+   if (latitudeDeg < swLat) swLat = latitudeDeg;
+   if (longitudeDeg < swLng) swLng = longitudeDeg;
+   if (latitudeDeg > neLat) neLat = latitudeDeg;
+   if (longitudeDeg > neLng) neLng = longitudeDeg;
+
+}
+
+function shortenString(string, maxLen){
+   if (string.length < maxLen) return string;
+   else return string.substr(0,maxLen);
+   }
 
 function logTaskTurnpoints(taskTurnpoints){
   if (taskTurnpoints != null  && taskTurnpoints.length > 0) {

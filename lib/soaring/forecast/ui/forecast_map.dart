@@ -318,9 +318,13 @@ class ForecastMapState extends State<ForecastMap>
     ));
     LatLng southwest = new LatLng(swLat, swLong);
     LatLng northeast = new LatLng(neLat, neLong);
-    _mapController.animatedFitBounds(LatLngBounds(southwest, northeast),
-        options: FitBoundsOptions(
-            padding: EdgeInsets.only(left: 100.0, right: 100.0)));
+    final latLngBounds = LatLngBounds(southwest, northeast);
+    latLngBounds.pad(.2);
+    _mapController.animatedFitBounds(
+      latLngBounds,
+      // options: FitBoundsOptions(
+      //     padding: EdgeInsets.only(left: 100.0, right: 100.0))
+    );
     //_mapLatLngBounds = LatLngBounds(southwest, northeast);
   }
 

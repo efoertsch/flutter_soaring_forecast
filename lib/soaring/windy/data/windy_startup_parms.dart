@@ -1,4 +1,5 @@
 import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 
 class WindyStartupParms {
   late final String key;
@@ -14,18 +15,25 @@ class WindyStartupParms {
       required this.mapLatLngBounds,
       required this.zoom});
 
+  // note  that bounds.southWest.toJson reverse lat/lng to lng/lat giving something like
+  //  [{"coordinates":[-73.6473083,41.2665329]}] which screws up leaflet
+  // so create json as [lat,lng]
   Map toJson() => {
         'key': key,
         "lat": lat,
         "long": long,
         "mapLatLngBounds": [
           [
-            mapLatLngBounds.southWest!.toJson(),
+            toLatLongJson(mapLatLngBounds.southWest!),
           ],
           [
-            mapLatLngBounds.northEast!.toJson(),
+            toLatLongJson(mapLatLngBounds.northEast!),
           ]
         ],
         "zoom": zoom
+      };
+
+  Map<String, dynamic> toLatLongJson(LatLng latLng) => {
+        'coordinates': [latLng.latitude, latLng.longitude]
       };
 }

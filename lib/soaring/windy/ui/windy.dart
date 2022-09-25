@@ -41,12 +41,19 @@ class WindyForecastState extends State<WindyForecast>
 
   bool _windyHtmlLoaded = false;
 
+  bool _possibleTaskChange = false;
+
   @override
   void initState() {
     super.initState();
     if (Platform.isAndroid) {
       WebView.platform = SurfaceAndroidWebView();
     }
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 
   @override
@@ -69,8 +76,7 @@ class WindyForecastState extends State<WindyForecast>
     return AppBar(
       title: Text('Windy'),
       leading: BackButton(
-        onPressed: () => Navigator.pop(context),
-      ),
+          onPressed: () => Navigator.of(context).pop(_possibleTaskChange)),
       actions: _getWindyMenu(),
     );
   }
@@ -314,6 +320,14 @@ class WindyForecastState extends State<WindyForecast>
                     javascriptChannels: _getJavascriptChannels(),
                     debuggingEnabled: !kReleaseMode,
                     javascriptMode: JavascriptMode.unrestricted,
+                    // For some reason using onPageFinished to trigger startup
+                    // does not work when windy displayed, then goback, then display
+                    // windy screen 2nd time
+                    // onPageFinished: (url) {
+                    //   debugPrint(
+                    //       "Finished loading page. url:" + url.toString());
+                    //   _sendEvent(AssignWindyStartupParms());
+                    // },
                     onWebViewCreated: (WebViewController webViewController) {
                       //_controller.complete(webViewController);
                       _webViewController = webViewController;
@@ -371,6 +385,7 @@ class WindyForecastState extends State<WindyForecast>
     if (result != null && result is int && result > -1) {
       //debugPrint('Draw task for ' + result.toString());
       _sendEvent(SelectTaskEvent(result));
+      _possibleTaskChange = true;
     }
   }
 
@@ -378,6 +393,7 @@ class WindyForecastState extends State<WindyForecast>
     _sendEvent(ClearTaskEvent());
     setState(() {
       _enabledPopUpMenu = false;
+      _possibleTaskChange = true;
     });
   }
 

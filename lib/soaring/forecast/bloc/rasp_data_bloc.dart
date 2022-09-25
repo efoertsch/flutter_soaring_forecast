@@ -65,6 +65,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     on<DisplaySoundingsEvent>(_processSoundingsEvent);
     on<SetForecastOverlayOpacityEvent>(_setForecastOverlayOpacity);
     on<LoadForecastTypesEvents>(_reloadForecastTypes);
+    on<RefreshTaskEvent>(_checkForUpdatedTask);
   }
 
   void _processInitialRaspRegionEvent(
@@ -375,8 +376,12 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
 
   void _checkForPreviouslySelectedTask(
       MapReadyEvent event, Emitter<RaspDataState> emit) async {
-    var taskId = await repository.getCurrentTaskId();
     await _emitRaspDisplayOptions(emit);
+    await _emitCurrentTask(emit);
+  }
+
+  Future<void> _emitCurrentTask(Emitter<RaspDataState> emit) async {
+    var taskId = await repository.getCurrentTaskId();
     await _emitTaskTurnpoints(emit, taskId);
   }
 
@@ -388,13 +393,12 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
 
   FutureOr<void> _emitTaskTurnpoints(
       Emitter<RaspDataState> emit, int taskId) async {
+    final List<TaskTurnpoint> taskTurnpoints = <TaskTurnpoint>[];
     if (taskId > -1) {
-      final List<TaskTurnpoint> taskTurnpoints =
-          await _addTaskTurnpointDetails(taskId);
+      taskTurnpoints.addAll(await _addTaskTurnpointDetails(taskId));
       // print('emitting taskturnpoints');
-
-      emit(RaspTaskTurnpoints(taskTurnpoints));
     }
+    emit(RaspTaskTurnpoints(taskTurnpoints));
   }
 
   _emitRaspDisplayOptions(Emitter<RaspDataState> emit) async {
@@ -601,5 +605,10 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     await _loadForecastTypes();
     _selectedForecast = currentSelectedForecast;
     _emitForecasts(emit);
+  }
+
+  FutureOr<void> _checkForUpdatedTask(
+      RefreshTaskEvent event, Emitter<RaspDataState> emit) {
+    _emitCurrentTask(emit);
   }
 }
