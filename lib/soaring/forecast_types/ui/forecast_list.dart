@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:cupertino_will_pop_scope/cupertino_will_pop_scope.dart';
-import 'package:drag_and_drop_lists/drag_and_drop_lists.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
@@ -173,7 +172,6 @@ class _ForecastListScreenState extends State<ForecastListScreen> {
           shrinkWrap: true,
           itemCount: forecasts.length,
           itemBuilder: (context, index) => _getForecastDisplayRow(
-              context: context,
               forecast: forecasts[index],
               onTapText: () => _returnSelectedForecast(forecasts[index])),
           itemScrollController: itemScrollController,
@@ -185,50 +183,41 @@ class _ForecastListScreenState extends State<ForecastListScreen> {
 
   Widget _getDragAndDropListView(
       BuildContext context, List<Forecast> forecasts) {
-    List<DragAndDropList> forecastDragAndDropList = [];
-    List<DragAndDropItem> forecastDragAndDropItems = [];
-    forecasts.forEach((forecast) {
-      forecastDragAndDropItems.add(_createForecastItem(context, forecast));
-    });
-    forecastDragAndDropList
-        .add(DragAndDropList(children: forecastDragAndDropItems));
     return Expanded(
-      flex: 15,
-      child: Align(
-        alignment: Alignment.topLeft,
-        child: DragAndDropLists(
-          children: forecastDragAndDropList,
-          onItemReorder: _onItemReorder,
-          onListReorder: _onListReorder,
+      child: ReorderableListView(
+          children: _getForecastListWidgets(forecasts),
+          onReorder: (int oldIndex, int newIndex) {
+            // ReorderableListView has known index bug
+            if (newIndex > forecasts.length) newIndex = forecasts.length;
+            if (oldIndex < newIndex) newIndex--;
+            _reorderedList = true;
+            BlocProvider.of<ForecastBloc>(context)
+                .add(SwitchOrderOfForecastsEvent(oldIndex, newIndex));
+          }),
+    );
+  }
+
+  List<Widget> _getForecastListWidgets(List<Forecast> forecasts) {
+    final forecastListWidgets = <Widget>[];
+    forecasts.forEach((forecast) {
+      forecastListWidgets.add(
+        Expanded(
+          flex: 15,
+          child: Align(
+            alignment: Alignment.topLeft,
+            child: Padding(
+              padding: const EdgeInsets.only(top: 8.0),
+              child: _getForecastDisplayRow(forecast: forecast),
+            ),
+          ),
         ),
-      ),
-    );
+      );
+    });
+    return forecastListWidgets;
   }
 
-  _onItemReorder(
-      int oldItemIndex, int oldListIndex, int newItemIndex, int newListIndex) {
-    _reorderedList = true;
-    BlocProvider.of<ForecastBloc>(context)
-        .add(SwitchOrderOfForecastsEvent(oldItemIndex, newItemIndex));
-  }
-
-  _onListReorder(int oldListIndex, int newListIndex) {
-    // don't have more that 1 list so no reorder
-  }
-
-  DragAndDropItem _createForecastItem(BuildContext context, Forecast forecast) {
-    return DragAndDropItem(
-      child: Padding(
-        padding: const EdgeInsets.only(top: 8.0),
-        child: _getForecastDisplayRow(context: context, forecast: forecast),
-      ),
-    );
-  }
-
-  Row _getForecastDisplayRow(
-      {required BuildContext context,
-      required Forecast forecast,
-      Function? onTapText = null}) {
+  Widget _getForecastDisplayRow(
+      {required Forecast forecast, Function? onTapText = null}) {
     return Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
       Expanded(
         flex: 10,
