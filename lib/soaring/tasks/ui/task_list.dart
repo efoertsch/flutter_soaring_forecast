@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:drag_and_drop_lists/drag_and_drop_lists.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/main.dart';
@@ -118,115 +117,118 @@ class TaskListScreen extends StatelessWidget {
   }
 
   Widget _getTaskListView(List<Task> tasks) {
-    if (tasks.length == 0) {
-      return Center(
-        child: Text('No tasks found'),
-      );
-    }
-    List<DragAndDropList> taskDragAndDropList = [];
-    List<DragAndDropItem> taskDragAndDropItems = [];
-    tasks.forEach((task) {
-      taskDragAndDropItems.add(_createTaskItem(task));
-    });
-    taskDragAndDropList.add(DragAndDropList(children: taskDragAndDropItems));
     return Expanded(
-      flex: 15,
-      child: Align(
-        alignment: Alignment.topLeft,
-        child: DragAndDropLists(
-          children: taskDragAndDropList,
-          onItemReorder: _onItemReorder,
-          onListReorder: _onListReorder,
-        ),
-      ),
+      child: ReorderableListView(
+          children: _getTaskListWidgets(tasks),
+          onReorder: (int oldIndex, int newIndex) {
+            // ReorderableListView has known index bug
+            if (newIndex > tasks.length) newIndex = tasks.length;
+            if (oldIndex < newIndex) newIndex--;
+            BlocProvider.of<TaskBloc>(_context)
+                .add(SwitchOrderOfTasksEvent(oldIndex, newIndex));
+          }),
     );
   }
 
-  _onItemReorder(
-      int oldItemIndex, int oldListIndex, int newItemIndex, int newListIndex) {
-    BlocProvider.of<TaskBloc>(_context)
-        .add(SwitchOrderOfTasksEvent(oldItemIndex, newItemIndex));
+  List<Widget> _getTaskListWidgets(List<Task> tasks) {
+    final taskListWidgets = <Widget>[];
+    tasks.forEach((task) {
+      taskListWidgets.add(
+        Align(
+          key: Key('${task.taskOrder}'),
+          alignment: Alignment.topLeft,
+          child: _createTaskItem(task),
+        ),
+      );
+    });
+    return taskListWidgets;
   }
 
-  _onListReorder(int oldListIndex, int newListIndex) {
-    // don't have more that 1 list so no reorder
-  }
-
-  DragAndDropItem _createTaskItem(Task task) {
-    return DragAndDropItem(
-      child: Dismissible(
-        key: UniqueKey(),
-        onDismissed: (direction) {
-          BlocProvider.of<TaskBloc>(_context)
-              .add(SwipeDeletedTaskEvent(task.taskOrder));
-          ScaffoldMessenger.of(_context).showSnackBar(SnackBar(
-            content: Text('Removed ${task.taskName}'),
-            action: SnackBarAction(
-              label: 'Undo',
-              onPressed: () {
-                BlocProvider.of<TaskBloc>(_context).add(AddBackTaskEvent(task));
-              },
-            ),
-          ));
-        },
-        child: Padding(
-          padding: const EdgeInsets.only(top: 8.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                Expanded(
-                  flex: 10,
-                  child: Material(
-                    color: Colors.white.withOpacity(0.0),
-                    child: InkWell(
-                      onTap: () {
-                        if (viewOption == TaskListScreen.SELECT_TASK_OPTION) {
-                          Navigator.of(_context).pop(task.id);
-                        }
-                      },
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.only(left: 8.0),
-                            child: Text(
-                              task.taskName,
-                              textAlign: TextAlign.left,
-                              style: textStyleBlackFontSize20,
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.only(left: 16.0),
-                            child: Text(
-                              task.distance.toStringAsFixed(1) + 'km',
-                              textAlign: TextAlign.left,
-                              style: textStyleBlack87FontSize15,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(left: 8.0, right: 8.0),
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: IconButton(
-                      icon: Icon(Icons.edit),
-                      onPressed: () => _goToTaskDetail(_context, task.id!),
-                    ),
-                  ),
-                ),
-              ]),
-              Padding(
-                padding: const EdgeInsets.only(top: 8.0),
-                child: const Divider(
-                    height: 2, thickness: 2, color: Colors.black12),
-              )
-            ],
+  Widget _createTaskItem(Task task) {
+    return Dismissible(
+      background: Container(
+        color: Colors.red,
+        padding: EdgeInsets.only(left: 20.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: <Widget>[
+            Icon(
+              Icons.delete,
+            )
+          ],
+        ),
+      ),
+      key: UniqueKey(),
+      onDismissed: (direction) {
+        BlocProvider.of<TaskBloc>(_context)
+            .add(SwipeDeletedTaskEvent(task.taskOrder));
+        ScaffoldMessenger.of(_context).showSnackBar(SnackBar(
+          content: Text('Removed ${task.taskName}'),
+          action: SnackBarAction(
+            label: 'Undo',
+            onPressed: () {
+              BlocProvider.of<TaskBloc>(_context).add(AddBackTaskEvent(task));
+            },
           ),
+        ));
+      },
+      child: Padding(
+        padding: const EdgeInsets.only(top: 8.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+              Expanded(
+                flex: 10,
+                child: Material(
+                  color: Colors.white.withOpacity(0.0),
+                  child: InkWell(
+                    onTap: () {
+                      if (viewOption == TaskListScreen.SELECT_TASK_OPTION) {
+                        Navigator.of(_context).pop(task.id);
+                      }
+                    },
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(left: 8.0),
+                          child: Text(
+                            task.taskName,
+                            textAlign: TextAlign.left,
+                            style: textStyleBlackFontSize20,
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(left: 16.0),
+                          child: Text(
+                            task.distance.toStringAsFixed(1) + 'km',
+                            textAlign: TextAlign.left,
+                            style: textStyleBlack87FontSize15,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(left: 8.0, right: 8.0),
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: IconButton(
+                    icon: Icon(Icons.edit),
+                    onPressed: () => _goToTaskDetail(_context, task.id!),
+                  ),
+                ),
+              ),
+            ]),
+            Padding(
+              padding: const EdgeInsets.only(top: 8.0),
+              child:
+                  const Divider(height: 2, thickness: 2, color: Colors.black12),
+            )
+          ],
         ),
       ),
     );
