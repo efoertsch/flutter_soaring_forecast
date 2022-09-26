@@ -232,13 +232,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.0.1"
-  drag_and_drop_lists:
-    dependency: "direct main"
-    description:
-      name: drag_and_drop_lists
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "0.3.3"
   email_launcher:
     dependency: "direct main"
     description:
