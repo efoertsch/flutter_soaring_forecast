@@ -128,11 +128,7 @@ class _ForecastListScreenState extends State<ForecastListScreen> {
             if (state.forecasts.length == 0) {
               return Center(child: Text("Oh-oh! No Forecasts Found!"));
             } else {
-              return Column(
-                children: [
-                  _getCorrectListView(context, state.forecasts),
-                ],
-              );
+              return _getCorrectListView(context, state.forecasts);
             }
           }
           if (state is ForecastErrorState) {
@@ -164,51 +160,45 @@ class _ForecastListScreenState extends State<ForecastListScreen> {
 
   Widget _getScrollToPositionListView(
       BuildContext context, List<Forecast> forecasts) {
-    return Expanded(
-      flex: 15,
-      child: Align(
-        alignment: Alignment.topLeft,
-        child: ScrollablePositionedList.builder(
-          shrinkWrap: true,
-          itemCount: forecasts.length,
-          itemBuilder: (context, index) => _getForecastDisplayRow(
-              forecast: forecasts[index],
-              onTapText: () => _returnSelectedForecast(forecasts[index])),
-          itemScrollController: itemScrollController,
-          itemPositionsListener: itemPositionsListener,
-        ),
+    return Align(
+      alignment: Alignment.topLeft,
+      child: ScrollablePositionedList.builder(
+        shrinkWrap: true,
+        itemCount: forecasts.length,
+        itemBuilder: (context, index) => _getForecastDisplayRow(
+            forecast: forecasts[index],
+            onTapText: () => _returnSelectedForecast(forecasts[index])),
+        itemScrollController: itemScrollController,
+        itemPositionsListener: itemPositionsListener,
       ),
     );
   }
 
   Widget _getDragAndDropListView(
       BuildContext context, List<Forecast> forecasts) {
-    return Expanded(
-      child: ReorderableListView(
-          children: _getForecastListWidgets(forecasts),
-          onReorder: (int oldIndex, int newIndex) {
-            // ReorderableListView has known index bug
-            if (newIndex > forecasts.length) newIndex = forecasts.length;
-            if (oldIndex < newIndex) newIndex--;
-            _reorderedList = true;
-            BlocProvider.of<ForecastBloc>(context)
-                .add(SwitchOrderOfForecastsEvent(oldIndex, newIndex));
-          }),
-    );
+    return ReorderableListView(
+        children: _getForecastListWidgets(forecasts),
+        onReorder: (int oldIndex, int newIndex) {
+          // ReorderableListView has known index bug
+          if (newIndex > forecasts.length) newIndex = forecasts.length;
+          if (oldIndex < newIndex) newIndex--;
+          _reorderedList = true;
+          BlocProvider.of<ForecastBloc>(context)
+              .add(SwitchOrderOfForecastsEvent(oldIndex, newIndex));
+        });
   }
 
   List<Widget> _getForecastListWidgets(List<Forecast> forecasts) {
     final forecastListWidgets = <Widget>[];
+    int index = 0;
     forecasts.forEach((forecast) {
       forecastListWidgets.add(
-        Expanded(
-          flex: 15,
-          child: Align(
-            alignment: Alignment.topLeft,
-            child: Padding(
-              padding: const EdgeInsets.only(top: 8.0),
-              child: _getForecastDisplayRow(forecast: forecast),
-            ),
+        Align(
+          key: Key("${index++}"),
+          alignment: Alignment.topLeft,
+          child: Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: _getForecastDisplayRow(forecast: forecast),
           ),
         ),
       );
