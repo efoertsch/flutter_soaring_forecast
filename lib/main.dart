@@ -64,6 +64,7 @@ class SoaringForecastApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+        debugShowCheckedModeBanner: false,
         // theme: ThemeData(
         //   // force iOS behaviour on Android (for testing)
         //   // (or toggle platform via Flutter Inspector)

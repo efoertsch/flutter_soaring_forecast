@@ -110,7 +110,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
               _taskDistance(state.task),
               _turnpointsLabel(),
               _taskTurnpointsListView(state.taskTurnpoints),
-              _spacerBetweenListAndTurnpointsButton(),
+              //_spacerBetweenListAndTurnpointsButton(),
               _addTurnpointsButton(),
             ]);
       }
@@ -327,7 +327,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
   }
 
   Widget _spacerBetweenListAndTurnpointsButton() {
-    return Spacer();
+    return Spacer(flex: 1);
   }
 
   void _displayTaskTurnpoint(
