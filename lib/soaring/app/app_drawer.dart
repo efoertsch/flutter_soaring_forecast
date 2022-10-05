@@ -86,15 +86,12 @@ class AppDrawer {
 //               Navigator.pop(context);
 //             },
 //           ),
-//           ListTile(
-//             title: Text('GEOS NE'),
-//             onTap: () {
-// // Update the state of the app
-// // ...
-// // Then close the drawer
-//               Navigator.pop(context);
-//             },
-//           ),
+          ListTile(
+            title: Text('GEOS NE'),
+            onTap: () {
+              Navigator.popAndPushNamed(context, Geos.routeName);
+            },
+          ),
 //           ListTile(
 //             title: Text('Airport List'),
 //             onTap: () {

@@ -13,6 +13,10 @@ const String BASE_URL = 'https://www.soargbsc.net/';
 const String RASP_BASE_URL = BASE_URL + 'rasp/';
 const String RASP_OPTIONS_BASE_URL = 'https://soargbsc.com/soaringforecast/';
 const String AIRPORT_URL = 'http://ourairports.com/data/airports.csv';
+const String GEOS_GIF =
+    "https://cdn.star.nesdis.noaa.gov/GOES16/ABI/GIFS/GOES16-NE-GEOCOLOR-600x600.gif";
+const String GEOS_CURRENT =
+    "https://cdn.star.nesdis.noaa.gov/GOES16/ABI/SECTOR/ne/GEOCOLOR/2400x2400.jpg";
 
 const double metersToFeet = 3.28084;
 const String ft = "ft";
@@ -189,6 +193,18 @@ class WindyMenu {
   static const String selectTask = 'Select Task';
   static const String clearTask = "Clear Task";
   static const String TopoMap = 'Topo Map';
+}
+
+class GeosMenu {
+  static const String loop = "LOOP";
+  static const String noaa = "NOAA";
+  static const String current = "CURRENT";
+}
+
+class NoaaMenu {
+  static const String loop = "LOOP";
+  static const String geos = "GEOS";
+  static const String current = "CURRENT";
 }
 
 // Turnpoint icon colors for type of runway

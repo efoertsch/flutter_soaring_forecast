@@ -58,6 +58,11 @@ class Repository {
   static const String FORECAST_LIST = "FORECAST_LIST";
   static const String FORECAST_OVERLAY_OPACITY = 'FORECAST_OVERLAY_OPACITY';
   static const String CURRENT_TASK_ID = "CURRENT_TASK_ID";
+  static const String SATELLITE_TYPE = "SATELLITE_TYPE";
+  static const String SATELLITE_REGION = "SATELLITE_REGION";
+
+  late final String satelliteRegionUS;
+  late final String satelliteTypeVis;
 
   Repository._();
 
