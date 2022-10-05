@@ -46,20 +46,6 @@ class _GeosScreenState extends State<GeosScreen> {
           });
         },
       ),
-      PopupMenuButton<String>(
-        onSelected: handleClick,
-        icon: Icon(Icons.more_vert),
-        itemBuilder: (BuildContext context) {
-          return {
-            GeosMenu.noaa,
-          }.map((String choice) {
-            return PopupMenuItem<String>(
-              value: choice,
-              child: Text(choice),
-            );
-          }).toList();
-        },
-      ),
     ];
   }
 
