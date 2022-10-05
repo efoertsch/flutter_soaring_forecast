@@ -44,8 +44,8 @@ class WindyBloc extends Bloc<WindyEvent, WindyState> {
     _layers = await repository.getWindyLayers();
     emit(WindyLayerListState(_layers));
     _altitudes = await repository.getWindyAltitudes();
-    _setAltitudeVisiblity(emit, 0);
     emit(WindyAltitudeListState(_altitudes));
+    _setAltitudeVisiblity(emit, 0);
     emit(WindyInitComplete());
   }
 
