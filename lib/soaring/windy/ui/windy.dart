@@ -36,12 +36,11 @@ class WindyForecastState extends State<WindyForecast>
   int _altitudeIndex = 0;
   int _windyWidgetHeight = 1;
   bool topoMapChecked = false;
-
   bool _enabledPopUpMenu = false;
-
   bool _windyHtmlLoaded = false;
-
   bool _possibleTaskChange = false;
+  List<WindyAltitude> _altitudes = <WindyAltitude>[];
+  bool _windyAltitudeVisible = true;
 
   @override
   void initState() {
@@ -228,37 +227,48 @@ class WindyForecastState extends State<WindyForecast>
     });
   }
 
+  // Note must be list of altitudes before setting visibility
   Widget _getWindyAltitude() {
-    return BlocBuilder<WindyBloc, WindyState>(buildWhen: (previous, current) {
-      return current is WindyLoadingState || current is WindyAltitudeListState;
-    }, builder: (context, state) {
-      //debugPrint('creating/updating forecastDatesDropDown');
+    return BlocConsumer<WindyBloc, WindyState>(listener: (context, state) {
       if (state is WindyAltitudeListState) {
-        final List<WindyAltitude> altitudes = state.altitudes;
+        _altitudes = state.altitudes;
+      } else if (state is WindyAltitudeVisibleState) {
+        _windyAltitudeVisible = state.visible;
+      }
+    }, buildWhen: (previous, current) {
+      return current is WindyLoadingState ||
+          current is WindyAltitudeListState ||
+          current is WindyAltitudeVisibleState;
+    }, builder: (context, state) {
+      if (state is WindyAltitudeListState ||
+          state is WindyAltitudeVisibleState) {
         return Expanded(
           flex: 2,
           child: Padding(
             padding: EdgeInsets.only(left: 16.0),
-            child: DropdownButton<WindyAltitude>(
-              style: CustomStyle.bold18(context),
-              value: (altitudes[_altitudeIndex]),
-              hint: Text('Select Altitude'),
-              isExpanded: true,
-              iconSize: 24,
-              elevation: 16,
-              onChanged: (WindyAltitude? newValue) {
-                setState(() {
-                  _altitudeIndex = newValue!.id;
-                  _sendEvent(WindyAltitudeEvent(_altitudeIndex));
-                });
-              },
-              items: altitudes
-                  .map<DropdownMenuItem<WindyAltitude>>((WindyAltitude value) {
-                return DropdownMenuItem<WindyAltitude>(
-                  value: value,
-                  child: Text(value.imperial.toUpperCase()),
-                );
-              }).toList(),
+            child: Visibility(
+              visible: _windyAltitudeVisible,
+              child: DropdownButton<WindyAltitude>(
+                style: CustomStyle.bold18(context),
+                value: (_altitudes[_altitudeIndex]),
+                hint: Text('Select Altitude'),
+                isExpanded: true,
+                iconSize: 24,
+                elevation: 16,
+                onChanged: (WindyAltitude? newValue) {
+                  setState(() {
+                    _altitudeIndex = newValue!.id;
+                    _sendEvent(WindyAltitudeEvent(_altitudeIndex));
+                  });
+                },
+                items: _altitudes.map<DropdownMenuItem<WindyAltitude>>(
+                    (WindyAltitude value) {
+                  return DropdownMenuItem<WindyAltitude>(
+                    value: value,
+                    child: Text(value.imperial.toUpperCase()),
+                  );
+                }).toList(),
+              ),
             ),
           ),
         );
