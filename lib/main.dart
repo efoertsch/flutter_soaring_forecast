@@ -10,6 +10,7 @@ import 'package:flutter_soaring_forecast/soaring/forecast_types/ui/forecast_list
 import 'package:flutter_soaring_forecast/soaring/region/bloc/region_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/region/ui/region_list_screen.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
+import 'package:flutter_soaring_forecast/soaring/satellite/geos/geos.dart';
 import 'package:flutter_soaring_forecast/soaring/tasks/bloc/task_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/tasks/ui/task_detail.dart';
 import 'package:flutter_soaring_forecast/soaring/tasks/ui/task_list.dart';
@@ -183,6 +184,16 @@ class SoaringForecastApp extends StatelessWidget {
               settings: settings,
             );
           }
+
+          if (settings.name == Geos.routeName) {
+            return CustomMaterialPageRoute(
+              builder: (context) {
+                return GeosScreen();
+              },
+              settings: settings,
+            );
+          }
+
           if (settings.name == AboutInfo.routeName) {
             return CustomMaterialPageRoute(
               builder: (context) {
@@ -376,6 +387,17 @@ class RegionList extends StatelessWidget {
           repository: RepositoryProvider.of<Repository>(context)),
       child: RegionListScreen(selectedRegionName: selectedRegion),
     );
+  }
+}
+
+class Geos extends StatelessWidget {
+  static const routeName = '/geos';
+
+  Geos();
+
+  @override
+  Widget build(BuildContext context) {
+    return GeosScreen();
   }
 }
 

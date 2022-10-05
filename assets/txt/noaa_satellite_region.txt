@@ -1,0 +1,23 @@
+0,us,CONUS US
+1,alb,Albany NY
+2,bwi,Baltimore MD
+3,clt,Charlotte NC
+4,tpa,Tampa FL
+5,dtw,Detroit MI
+6,evv,Evansville IN
+7,mgm,Montgomery AL
+8,msp,Minneapolis MN
+19,lit,Little Rock AR
+10,pir,Pierre SD
+11,ict,Wichita KS
+12,aus,Austin TX
+13,cod,Cody WY
+14,den,Denver CO
+15,abq,Albuquerque NM
+16,lws,Lewiston ID
+17,wmc,Winnemuca NV
+18,las,Las Vegas NV
+19,hi,Hawaii
+20,ak,Alaska
+21,gulf,Gulf of Mexico
+22,carib,Caribbean

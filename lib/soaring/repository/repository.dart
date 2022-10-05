@@ -24,6 +24,8 @@ import 'package:flutter_soaring_forecast/soaring/repository/options/special_use_
 import 'package:flutter_soaring_forecast/soaring/repository/options/sua_region_files.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/turnpoint_regions.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/usgs/national_map.dart';
+import 'package:flutter_soaring_forecast/soaring/satellite/noaa/data/satellite_region.dart';
+import 'package:flutter_soaring_forecast/soaring/satellite/noaa/data/satellite_type.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/cup/cup_styles.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoint_utils.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoints_importer.dart';
@@ -58,6 +60,11 @@ class Repository {
   static const String FORECAST_LIST = "FORECAST_LIST";
   static const String FORECAST_OVERLAY_OPACITY = 'FORECAST_OVERLAY_OPACITY';
   static const String CURRENT_TASK_ID = "CURRENT_TASK_ID";
+  static const String SATELLITE_TYPE = "SATELLITE_TYPE";
+  static const String SATELLITE_REGION = "SATELLITE_REGION";
+
+  late final String satelliteRegionUS;
+  late final String satelliteTypeVis;
 
   Repository._();
 
@@ -689,6 +696,53 @@ class Repository {
 
   Future<String> getCustomWindyHtml() async {
     return await rootBundle.loadString('assets/html/windy.html');
+  }
+
+  // -----  NOAA Satellite settings --------------------
+  Future<List<SatelliteType>> getNoaaSatelliteTypes() async {
+    final list = <SatelliteType>[];
+    final string =
+        await rootBundle.loadString('assets/txt/noaa_satellite_type.txt');
+    string.split("\n").forEach((element) {
+      list.add(SatelliteType(element));
+    });
+    return list;
+  }
+
+  // Hack - Need to call getNoaaSatelliteRegions before calling this
+  Future<SatelliteType> getSelectedNoaaSatelliteType() async {
+    return SatelliteType(await getGenericString(
+        key: SATELLITE_TYPE, defaultValue: satelliteTypeVis));
+  }
+
+  // Hack - Need to call getNoaaSatelliteRegions before calling this
+  void saveSelectedNoaaSatelliteType(SatelliteType satelliteType) async {
+    await saveGenericString(
+        key: SATELLITE_TYPE, value: satelliteType.toStore());
+  }
+
+  Future<List<SatelliteRegion>> getNoaaSatelliteRegions() async {
+    final list = <SatelliteRegion>[];
+    final string =
+        await rootBundle.loadString('assets/txt/noaa_satellite_region.txt');
+    string.split("\n").forEach((element) {
+      list.add(SatelliteRegion(element));
+    });
+    satelliteRegionUS =
+        list.singleWhere((element) => element.code == "us").toStore();
+    return list;
+  }
+
+  // Hack - Need to call getNoaaSatelliteRegions before calling this
+  Future<SatelliteRegion> getSelectedNoaaSatelliteRegion() async {
+    return SatelliteRegion(await getGenericString(
+        key: SATELLITE_REGION, defaultValue: satelliteRegionUS));
+  }
+
+  // Hack - Need to call getNoaaSatelliteRegions before calling this
+  void saveSelectedNoaaSatelliteRegion(SatelliteRegion satelliteRegion) async {
+    await saveGenericString(
+        key: SATELLITE_REGION, value: satelliteRegion.toStore());
   }
 
   // ----- Shared preferences --------------------------

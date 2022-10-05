@@ -1,0 +1,5 @@
+0,vis,Visible
+1,wv,Water Vapor
+2,irbw,Infrared(BW)
+3,ircol,Infrared(Color)
+4,irnws,Infrared(NWS)
