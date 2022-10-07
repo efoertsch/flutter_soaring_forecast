@@ -381,7 +381,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
   void _getTurnpointsForTask() async {
     final result = await Navigator.pushNamed(
       context,
-      TurnpointsForTask.routeName,
+      TurnpointsForTaskRouteBuilder.routeName,
       arguments: TurnpointsList.TASK_TURNPOINT_OPTION,
     );
     if (result is List<Turnpoint>) {
@@ -394,7 +394,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
       BuildContext context, TurnpointFoundState state) async {
     final result = await Navigator.pushNamed(
       context,
-      TurnpointView.routeName,
+      TurnpointViewRouteBuilder.routeName,
       arguments: TurnpointOverHeadArgs(turnpoint: state.turnpoint),
     );
   }

@@ -48,7 +48,7 @@ class _TurnpointsListState extends State<TurnpointsList>
       return ConditionalWillPopScope(
         onWillPop: _onWillPop,
         shouldAddCallback: true,
-        child: _buildSafeAread(),
+        child: _buildSafeArea(),
       );
     } else {
       //iOS
@@ -58,12 +58,12 @@ class _TurnpointsListState extends State<TurnpointsList>
             _onWillPop();
           }
         },
-        child: _buildSafeAread(),
+        child: _buildSafeArea(),
       );
     }
   }
 
-  Widget _buildSafeAread() {
+  Widget _buildSafeArea() {
     return SafeArea(
       maintainBottomViewPadding: true,
       child:
@@ -144,14 +144,14 @@ class _TurnpointsListState extends State<TurnpointsList>
 
   AppBar _getAppBar() {
     return AppBar(
-        title: typing ? getSearchTextBox() : Text("Turnpoints"),
+        title: typing ? _getSearchTextBox() : Text("Turnpoints"),
         leading: BackButton(
           onPressed: _onWillPop,
         ),
         actions: getTurnpointMenu());
   }
 
-  Widget getSearchTextBox() {
+  Widget _getSearchTextBox() {
     return Container(
       alignment: Alignment.centerLeft,
       color: Colors.white,
@@ -189,7 +189,7 @@ class _TurnpointsListState extends State<TurnpointsList>
                 turnpoints[index].style),
             onPressed: () => Navigator.pushNamed(
               context,
-              TurnpointView.routeName,
+              TurnpointViewRouteBuilder.routeName,
               arguments: TurnpointOverHeadArgs(turnpoint: turnpoints[index]),
             ),
           ),
@@ -240,7 +240,8 @@ class _TurnpointsListState extends State<TurnpointsList>
 
   Future<void> _displayTurnpointDetails(
       BuildContext context, List<Turnpoint> turnpoints, int index) async {
-    var value = await Navigator.pushNamed(context, TurnpointEdit.routeName,
+    var value = await Navigator.pushNamed(
+        context, TurnpointEditRouteBuilder.routeName,
         arguments: turnpoints[index].id);
     processTurnpointEditResult(value);
   }
@@ -326,7 +327,8 @@ class _TurnpointsListState extends State<TurnpointsList>
   }
 
   Future<void> _addNewTurnpoint() async {
-    var object = await Navigator.pushNamed(context, TurnpointEdit.routeName,
+    var object = await Navigator.pushNamed(
+        context, TurnpointEditRouteBuilder.routeName,
         arguments: null);
     processTurnpointEditResult(object);
   }
@@ -356,8 +358,8 @@ class _TurnpointsListState extends State<TurnpointsList>
 
   _goToSeeYouImport() async {
     Navigator.of(context).pop();
-    var object =
-        await Navigator.pushNamed(context, TurnpointFileImport.routeName);
+    var object = await Navigator.pushNamed(
+        context, TurnpointFileImportRouteBuilder.routeName);
     if (object is bool && object) {
       BlocProvider.of<TurnpointBloc>(context).add(TurnpointListEvent());
     }

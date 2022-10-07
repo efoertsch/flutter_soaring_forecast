@@ -60,6 +60,8 @@ class Repository {
   static const String CURRENT_TASK_ID = "CURRENT_TASK_ID";
   static const String SATELLITE_TYPE = "SATELLITE_TYPE";
   static const String SATELLITE_REGION = "SATELLITE_REGION";
+  static const String AIRPORT_CODES_FOR_METAR = "AIRPORT_CODES_FOR_METAR_TAF";
+  static const String ICAO_CODE_DELIMITER = " ";
 
   late final String satelliteRegionUS;
   late final String satelliteTypeVis;
@@ -253,7 +255,9 @@ class Repository {
 
   Future<int> getCountOfAirports() async {
     await makeDatabaseAvailable();
-    return await _appDatabase!.airportDao.getCountOfAirports() ?? 0;
+    int? count = await Sqflite.firstIntValue(
+        await _appDatabase!.database.rawQuery('SELECT count(*) FROM airport'));
+    return count ?? 0;
   }
 
   @transaction
@@ -265,7 +269,53 @@ class Repository {
   @transaction
   Future<List<int?>> insertAllAirports(List<Airport> airports) async {
     await makeDatabaseAvailable();
-    return _appDatabase!.airportDao.insertAll(airports);
+    return await _appDatabase!.airportDao.insertAll(airports);
+  }
+
+  Future<List<Airport>?> findAirports(String searchTerm) async {
+    await makeDatabaseAvailable();
+    return await _appDatabase!.airportDao.findAirports('%' + searchTerm + '%');
+  }
+
+  Future<String> getSelectedAirportCodesAsString() async {
+    return await getGenericString(
+        key: AIRPORT_CODES_FOR_METAR, defaultValue: "");
+  }
+
+  void saveSelectedAirportCodes(String icaoCodes) async {
+    await saveGenericString(key: AIRPORT_CODES_FOR_METAR, value: icaoCodes);
+  }
+
+  Future<List<Airport>?> getSelectedAirports(List<String> icaoCodes) async {
+    await makeDatabaseAvailable();
+    return await _appDatabase!.airportDao.selectIcaoIdAirports(icaoCodes);
+  }
+
+  /**
+   * @return List of icao airport codes eg KORH, KBOS, ...
+   */
+  Future<List<String>> getSelectedAirportCodesList() async {
+    String airportCodes = await getSelectedAirportCodesAsString();
+    return airportCodes.trim().split("\\s+");
+  }
+
+  void addAirportCodeToSelectedIcaoCodes(String icaoCode) async {
+    String oldIcaoCodes = await getSelectedAirportCodesAsString();
+    if (!oldIcaoCodes.contains(icaoCode)) {
+      final newSelectedIcaoCodes =
+          oldIcaoCodes + ICAO_CODE_DELIMITER + icaoCode;
+      saveSelectedAirportCodes(newSelectedIcaoCodes);
+    }
+  }
+
+  void storeNewAirportOrder(List<Airport> airports) async {
+    final sb = new StringBuffer();
+    airports.forEach((airport) {
+      sb.write(airport.ident);
+      sb.write(ICAO_CODE_DELIMITER);
+    });
+
+    saveSelectedAirportCodes(sb.toString());
   }
 
   // ----- Turnpoints ----------------------------------

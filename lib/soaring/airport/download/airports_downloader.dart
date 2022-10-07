@@ -1,4 +1,5 @@
 import 'package:csv/csv.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     as Constants;
 import 'package:flutter_soaring_forecast/soaring/floor/airport/airport.dart';
@@ -22,26 +23,26 @@ class AirportsDownloader {
 
     var numberAirports = await repository.getCountOfAirports();
     if (numberAirports < 2000) {
-      print('Too few airports in database so trying again');
+      debugPrint('Too few airports in database so trying again');
       var listOfAirports = await getDownloadedListOfAirports();
       totalUSAirportsDownloaded = listOfAirports.length;
-      print(
+      debugPrint(
           'Total number of US airports downloaded: $totalUSAirportsDownloaded');
       if (listOfAirports.length > 0) {
         repository.deleteAllAirports();
-        print("Deleted all airports from database");
+        debugPrint("Deleted all airports from database");
       }
       var insertedResponse = await repository.insertAllAirports(listOfAirports);
       var totalInserted = insertedResponse.fold<int>(0, (previous, current) {
-        print('airport insert result: $current');
-        return previous + (current ?? 0);
+        //debugPrint('airport insert result: $current');
+        return previous + (current != null ? 1 : 0);
       });
 
-      print('Number airports inserted : $totalInserted');
+      debugPrint('Number airports inserted : $totalInserted');
       return (totalUSAirportsDownloaded == totalInserted && totalInserted > 0);
     } else {
       // Assume prior download worked successfully
-      print('Number of airports in database: $numberAirports. '
+      debugPrint('Number of airports in database: $numberAirports. '
           'Assuming prior download worked ok');
       return true;
     }
@@ -66,14 +67,14 @@ class AirportsDownloader {
           maybeBadRow = airport;
           listofAirports.add(airport);
         } else {
-          print('bypassing airport row:  $row}');
+          // debugPrint('bypassing airport row:  $row}');
         }
         ++count;
       }
     } catch (e, s) {
-      print('Maybe bad row: ${maybeBadRow.toString()}');
-      print('Exception $e');
-      print('Stacktrace $s');
+      debugPrint('Maybe bad row: ${maybeBadRow.toString()}');
+      debugPrint('Exception $e');
+      debugPrint('Stacktrace $s');
     }
     return listofAirports;
   }
@@ -88,7 +89,7 @@ class AirportsDownloader {
       ).convert(response.body);
       // for (var row in rowsAsListOfValues) {
       //   for (var value in row) {
-      //     print(value);
+      //     debugPrint(value);
       //   }
       //   break;
       // }
@@ -176,11 +177,11 @@ class AirportsDownloader {
 //           .transform(LineSplitter()); // Convert stream to individual lines.
 //       try {
 //         await for (var line in lines) {
-//           print('$line: ${line.length} characters');
+//           debugPrint('$line: ${line.length} characters');
 //         }
-//         print('File is now closed.');
+//         debugPrint('File is now closed.');
 //       } catch (e) {
-//         print('Error: $e');
+//         debugPrint('Error: $e');
 //       }
 //     }
 //
@@ -189,7 +190,7 @@ class AirportsDownloader {
 //       var dio = Dio();
 //       var response = await dio.download(Constants.AIRPORT_URL, csv_file,
 //           deleteOnError: true);
-//       print("airports.csv download response : ${response.statusCode}");
+//       debugPrint("airports.csv download response : ${response.statusCode}");
 //       return (response.statusCode == 200);
 //     }
 //
@@ -204,15 +205,15 @@ class AirportsDownloader {
 //           .transform(LineSplitter()); // Convert stream to individual lines.
 //       try {
 //         await for (var line in lines) {
-//           print('$line: ${line.length} characters');
+//           debugPrint('$line: ${line.length} characters');
 //           if (lineNumber > startAt) {
 //             processAirport(csvConverter.convert(line));
 //           }
 //           lineNumber++;
 //         }
-//         print('File is now closed.');
+//         debugPrint('File is now closed.');
 //       } catch (e) {
-//         print('Error: $e');
+//         debugPrint('Error: $e');
 //       }
 //     }
 

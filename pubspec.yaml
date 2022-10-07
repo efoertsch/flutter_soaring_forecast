@@ -57,7 +57,7 @@ dependencies:
 
   mockito: ^5.3.0
   http: ^0.13.5
-  #workmanager: ^0.5.0
+  workmanager: ^0.5.0     # to help download airports file (used for METAR/TAF
   flutter_launcher_icons: ^0.10.0
 
   flutter_map: ^2.2.0 # or the latest version on Pub, current used for rasp map

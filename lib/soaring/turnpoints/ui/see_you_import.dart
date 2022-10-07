@@ -211,7 +211,8 @@ class _SeeYouImportScreenState extends State<SeeYouImportScreen>
   }
 
   void _goToCustomSeeYouImport() async {
-    await Navigator.pushNamed(context, CustomTurnpointFileImport.routeName);
+    await Navigator.pushNamed(
+        context, CustomTurnpointFileImportRouteBuilder.routeName);
   }
 
   _cancel() {

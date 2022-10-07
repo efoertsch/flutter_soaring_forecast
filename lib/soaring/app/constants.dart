@@ -201,10 +201,9 @@ class GeosMenu {
   static const String current = "CURRENT";
 }
 
-class NoaaMenu {
-  static const String loop = "LOOP";
-  static const String geos = "GEOS";
-  static const String current = "CURRENT";
+class MetarTafMenu {
+  static const String list = "List";
+  static const String add = "Add";
 }
 
 // Turnpoint icon colors for type of runway
