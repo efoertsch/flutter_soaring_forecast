@@ -28,10 +28,10 @@ class AddAirportToSelectList extends AirportEvent {
   List<Object?> get props => [airport];
 }
 
-class SwitchOrderOfAirportsEvent extends AirportEvent {
+class SwitchOrderOfSelectedAirportsEvent extends AirportEvent {
   final int oldIndex;
   final int newIndex;
-  SwitchOrderOfAirportsEvent(this.oldIndex, this.newIndex);
+  SwitchOrderOfSelectedAirportsEvent(this.oldIndex, this.newIndex);
   @override
   List<Object?> get props => [oldIndex, newIndex];
 }

@@ -74,8 +74,8 @@ class _AirportMetarTafState extends State<AirportMetarTaf>
         icon: Icon(Icons.more_vert),
         itemBuilder: (BuildContext context) {
           return {
-            MetarTafMenu.list,
             MetarTafMenu.add,
+            MetarTafMenu.list,
           }.map((String choice) {
             return PopupMenuItem<String>(
               value: choice,
@@ -123,7 +123,7 @@ class _AirportMetarTafState extends State<AirportMetarTaf>
             child: Text('No airports selected yet.'),
           );
         }
-        return _getAirportListView(context: context, airports: state.airports);
+        return _getAirportsListView(context: context, airports: state.airports);
       }
 
       if (state is AirportsErrorState) {
@@ -137,67 +137,22 @@ class _AirportMetarTafState extends State<AirportMetarTaf>
     });
   }
 
-  Widget _getAirportListView(
+  Widget _getAirportsListView(
       {required BuildContext context, required List<Airport> airports}) {
-    return Expanded(
-        child: ReorderableListView(
-      children: _getAirportList(airports),
-      onReorder: (int oldIndex, int newIndex) {
-        // ReorderableListView has known index bug
-        if (newIndex > airports.length) newIndex = airports.length;
-        if (oldIndex < newIndex) newIndex--;
-        BlocProvider.of<AirportBloc>(context)
-            .add(SwitchOrderOfAirportsEvent(oldIndex, newIndex));
-      },
-    ));
-  }
-
-  List<Widget> _getAirportList(List<Airport> airports) {
-    final airportsWidgetList = <Widget>[];
-    int index = 0;
-    airports.forEach((airport) {
-      airportsWidgetList.add(
-        Align(
-          key: Key('${index++}'),
-          alignment: Alignment.topLeft,
-          child: _createAirportItem(airport),
-        ),
-      );
-    });
-    return airportsWidgetList;
-  }
-
-  Widget _createAirportItem(Airport airport) {
-    return Dismissible(
-      background: Container(
-        color: Colors.red,
-        padding: EdgeInsets.only(left: 20.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: <Widget>[
-            Icon(
-              Icons.delete,
-            )
-          ],
-        ),
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: ListView.separated(
+        itemCount: airports.length,
+        itemBuilder: (BuildContext context, int index) {
+          return getAirportWidget(airports[index]);
+        },
+        separatorBuilder: (context, index) {
+          return Divider(
+            height: 4,
+            thickness: 2,
+          );
+        },
       ),
-      key: UniqueKey(),
-      onDismissed: (direction) {
-        BlocProvider.of<AirportBloc>(context)
-            .add(SwipeDeletedAirportEvent(airport));
-        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Removed ${airport.name}'),
-          action: SnackBarAction(
-            label: 'Undo',
-            onPressed: () {
-              BlocProvider.of<AirportBloc>(context)
-                  .add(AddBackAirportEvent(airport));
-            },
-          ),
-        ));
-      },
-      child: getAirportWidget(airport),
     );
   }
 
@@ -216,7 +171,7 @@ class _AirportMetarTafState extends State<AirportMetarTaf>
     _sendEvent(GetSelectedAirportsList());
   }
 
-  void _showSelectedAirports() async {
+  Future<void> _showSelectedAirports() async {
     await Navigator.pushNamed(context, SelectedAirportsRouteBuilder.routeName,
         arguments: null);
     _sendEvent(GetSelectedAirportsList());

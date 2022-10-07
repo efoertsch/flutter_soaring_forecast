@@ -66,6 +66,17 @@ class _SelectedAirportsListState extends State<SelectedAirportsList>
         actions: getAirportMenu());
   }
 
+  List<Widget> getAirportMenu() {
+    return <Widget>[
+      TextButton(
+        child: Text("ADD"),
+        onPressed: () {
+          _addNewAirport();
+        },
+      )
+    ];
+  }
+
   Widget _getBody() {
     return BlocConsumer<AirportBloc, AirportState>(listener: (context, state) {
       if (state is AirportShortMessageState) {
@@ -107,17 +118,19 @@ class _SelectedAirportsListState extends State<SelectedAirportsList>
 
   Widget _getAirportListView(
       {required BuildContext context, required List<Airport> airports}) {
-    return Expanded(
-        child: ReorderableListView(
-      children: _getAirportList(airports),
-      onReorder: (int oldIndex, int newIndex) {
-        // ReorderableListView has known index bug
-        if (newIndex > airports.length) newIndex = airports.length;
-        if (oldIndex < newIndex) newIndex--;
-        BlocProvider.of<AirportBloc>(context)
-            .add(SwitchOrderOfAirportsEvent(oldIndex, newIndex));
-      },
-    ));
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: ReorderableListView(
+        children: _getAirportList(airports),
+        onReorder: (int oldIndex, int newIndex) {
+          // ReorderableListView has known index bug
+          if (newIndex > airports.length) newIndex = airports.length;
+          if (oldIndex < newIndex) newIndex--;
+          BlocProvider.of<AirportBloc>(context)
+              .add(SwitchOrderOfSelectedAirportsEvent(oldIndex, newIndex));
+        },
+      ),
+    );
   }
 
   List<Widget> _getAirportList(List<Airport> airports) {
@@ -126,11 +139,12 @@ class _SelectedAirportsListState extends State<SelectedAirportsList>
     airports.forEach((airport) {
       airportsWidgetList.add(
         Align(
-          key: Key('${index++}'),
+          key: Key('${index}'),
           alignment: Alignment.topLeft,
           child: _createAirportItem(airport),
         ),
       );
+      ++index;
     });
     return airportsWidgetList;
   }
@@ -165,19 +179,17 @@ class _SelectedAirportsListState extends State<SelectedAirportsList>
           ),
         ));
       },
-      child: getAirportWidget(airport),
+      child: Column(
+        children: [
+          Container(
+              alignment: Alignment.centerLeft,
+              child: getAirportWidget(airport)),
+          Divider(
+            thickness: 2,
+          ),
+        ],
+      ),
     );
-  }
-
-  List<Widget> getAirportMenu() {
-    return <Widget>[
-      TextButton(
-        child: Text("ADD"),
-        onPressed: () {
-          _addNewAirport();
-        },
-      )
-    ];
   }
 
   Future<void> _addNewAirport() async {

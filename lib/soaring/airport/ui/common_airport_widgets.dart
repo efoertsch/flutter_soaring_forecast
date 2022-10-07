@@ -3,62 +3,46 @@ import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/airport/airport.dart';
 
 Widget getAirportWidget(Airport airport) {
-  return Column(
-    children: [
-      Row(
-        mainAxisAlignment: MainAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Expanded(
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                airport.ident,
-                textAlign: TextAlign.left,
-                style: textStyleBoldBlackFontSize16,
-              ),
+  return Padding(
+    padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Flexible(
+          flex: 3,
+          child: Text(
+            airport.ident,
+            textAlign: TextAlign.left,
+            style: textStyleBoldBlackFontSize20,
+          ),
+        ),
+        Flexible(
+          flex: 7,
+          child: Padding(
+            padding: const EdgeInsets.only(left: 8.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  airport.name,
+                  textAlign: TextAlign.left,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 2,
+                  softWrap: true,
+                  style: textStyleBoldBlackFontSize20,
+                ),
+                Text(
+                  airport.municipality + ' ' + airport.state,
+                  textAlign: TextAlign.right,
+                  style: textStyleBoldBlack87FontSize14,
+                ),
+              ],
             ),
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.start,
-            mainAxisSize: MainAxisSize.max,
-            children: <Widget>[
-              Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Align(
-                      alignment: Alignment.centerRight,
-                      child: Text(
-                        airport.name,
-                        textAlign: TextAlign.right,
-                        style: textStyleBoldBlack87FontSize14,
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: Align(
-                      alignment: Alignment.centerRight,
-                      child: Text(
-                        airport.municipality + ' ' + airport.state,
-                        textAlign: TextAlign.right,
-                        style: textStyleBoldBlack87FontSize14,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ],
-      ),
-      Padding(
-        padding: const EdgeInsets.only(left: 8.0, right: 8.0),
-        child: Divider(
-          thickness: 2,
         ),
-      ),
-    ],
+      ],
+    ),
   );
 }

@@ -296,7 +296,7 @@ class Repository {
    */
   Future<List<String>> getSelectedAirportCodesList() async {
     String airportCodes = await getSelectedAirportCodesAsString();
-    return airportCodes.trim().split("\\s+");
+    return airportCodes.trim().split(" ");
   }
 
   void addAirportCodeToSelectedIcaoCodes(String icaoCode) async {

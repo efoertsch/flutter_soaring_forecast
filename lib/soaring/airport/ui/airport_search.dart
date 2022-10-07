@@ -134,14 +134,29 @@ class _AirportsSearchState extends State<AirportsSearch> {
 
   Widget _getAirportsListView(
       {required BuildContext context, required List<Airport> airports}) {
-    return ListView.separated(
-      itemCount: airports.length,
-      itemBuilder: (BuildContext context, int index) {
-        return getAirportWidget(airports[index]);
-      },
-      separatorBuilder: (context, index) {
-        return Divider();
-      },
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: ListView.separated(
+        itemCount: airports.length,
+        itemBuilder: (BuildContext context, int index) {
+          return _getClickableAirportWidget(airports, index);
+        },
+        separatorBuilder: (context, index) {
+          return Divider(
+            height: 4,
+            thickness: 2,
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _getClickableAirportWidget(List<Airport> airports, int index) {
+    return InkWell(
+      child: getAirportWidget(airports[index]),
+      onTap: (() {
+        _sendEvent(AddAirportToSelectList(airports[index]));
+      }),
     );
   }
 

@@ -239,6 +239,15 @@ class SoaringForecastApp extends StatelessWidget {
             );
           }
 
+          if (settings.name == SelectedAirportsRouteBuilder.routeName) {
+            return CustomMaterialPageRoute(
+              builder: (context) {
+                return SelectedAirportsRouteBuilder();
+              },
+              settings: settings,
+            );
+          }
+
           assert(false, 'Need to implement ${settings.name}');
           return null;
         });
