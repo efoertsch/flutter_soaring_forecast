@@ -141,7 +141,7 @@ class _SelectedAirportsListState extends State<SelectedAirportsList>
         Align(
           key: Key('${index}'),
           alignment: Alignment.topLeft,
-          child: _createAirportItem(airport),
+          child: _createAirportItem(airport, index),
         ),
       );
       ++index;
@@ -149,7 +149,7 @@ class _SelectedAirportsListState extends State<SelectedAirportsList>
     return airportsWidgetList;
   }
 
-  Widget _createAirportItem(Airport airport) {
+  Widget _createAirportItem(Airport airport, int index) {
     return Dismissible(
       background: Container(
         color: Colors.red,
@@ -174,7 +174,7 @@ class _SelectedAirportsListState extends State<SelectedAirportsList>
             label: 'Undo',
             onPressed: () {
               BlocProvider.of<AirportBloc>(context)
-                  .add(AddBackAirportEvent(airport));
+                  .add(AddBackAirportEvent(airport, index));
             },
           ),
         ));

@@ -19,6 +19,9 @@ import 'package:flutter_soaring_forecast/soaring/floor/taskturnpoint/task_turnpo
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/ImageCacheManager.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/one800wxbrief/metar.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/one800wxbrief/one800wxbrief_api.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/one800wxbrief/taf.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/rasp_options_api.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/special_use_airspace.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/sua_region_files.dart';
@@ -50,6 +53,7 @@ class Repository {
   static late RaspClient _raspClient;
   static late RaspOptionsClient _raspOptionsClient;
   static UsgsClient? _usgsClient;
+  static One800WxBriefClient? _one800WxBriefClient;
   static AppDatabase? _appDatabase;
   static var logger = Logger();
 
@@ -746,6 +750,28 @@ class Repository {
     return await rootBundle.loadString('assets/html/windy.html');
   }
 
+  //------ 1800wxbrief ---------------------------------
+
+  Future<Metar> getMetar({required String location}) async {
+    if (_one800WxBriefClient == null) {
+      _one800WxBriefClient = One800WxBriefClient(_dio);
+    }
+    final authorization = _getWxBriefAuthorization();
+    return await _one800WxBriefClient!.getMETAR(authorization, location);
+  }
+
+  Future<Taf> getTaf({required String location}) async {
+    if (_one800WxBriefClient == null) {
+      _one800WxBriefClient = One800WxBriefClient(_dio);
+    }
+    final authorization = _getWxBriefAuthorization();
+    return await _one800WxBriefClient!.getTAF(authorization, location);
+  }
+
+  String _getWxBriefAuthorization() {
+    var bytes = utf8.encode(One800WXBriefID + ":" + One800WXBriefPassword);
+    return base64.encode(bytes);
+  }
   // ----- Shared preferences --------------------------
   // Make sure keys are unique among calling routines!
 

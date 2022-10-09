@@ -16,6 +16,8 @@ class AirportBloc extends Bloc<AirportEvent, AirportState> {
     on<GetSelectedAirportsList>(_getSelectedAirports);
     on<AddAirportToSelectList>(_addAirportToSelectList);
     on<SwitchOrderOfSelectedAirportsEvent>(_switchOrderOfSelectedAirports);
+    on<SwipeDeletedAirportEvent>(_deleteAirport);
+    on<AddBackAirportEvent>(_addBackAirportToList);
   }
 
   FutureOr<void> _searchForAirports(
@@ -68,5 +70,19 @@ class AirportBloc extends Bloc<AirportEvent, AirportState> {
       repository.saveSelectedAirportCodes(airportIdents.join(" "));
     }
     await _emitSelectedAirports(airportIdents, emit);
+  }
+
+  FutureOr<void> _deleteAirport(
+      SwipeDeletedAirportEvent event, Emitter<AirportState> emit) async {
+    final airportIdents = await repository.getSelectedAirportCodesList();
+    airportIdents.remove(event.airport.ident);
+    repository.saveSelectedAirportCodes(airportIdents.join(" "));
+  }
+
+  FutureOr<void> _addBackAirportToList(
+      AddBackAirportEvent event, Emitter<AirportState> emit) async {
+    final airportIdents = await repository.getSelectedAirportCodesList();
+    airportIdents.insert(event.index, event.airport.ident);
+    repository.saveSelectedAirportCodes(airportIdents.join(" "));
   }
 }

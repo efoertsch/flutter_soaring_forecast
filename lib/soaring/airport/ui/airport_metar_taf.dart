@@ -8,15 +8,17 @@ import 'package:flutter_soaring_forecast/main.dart';
 import 'package:flutter_soaring_forecast/soaring/airport/bloc/airport_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/airport/bloc/airport_event.dart';
 import 'package:flutter_soaring_forecast/soaring/airport/bloc/airport_state.dart';
-import 'package:flutter_soaring_forecast/soaring/airport/ui/common_airport_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/airport/airport.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 
 class AirportMetarTaf extends StatefulWidget {
   final List<Airport> selectedAirports = [];
+  final Repository repository;
 
-  AirportMetarTaf({Key? key}) : super(key: key);
+  AirportMetarTaf({Key? key, required Repository this.repository})
+      : super(key: key);
 
   @override
   State<AirportMetarTaf> createState() => _AirportMetarTafState();
@@ -144,7 +146,7 @@ class _AirportMetarTafState extends State<AirportMetarTaf>
       child: ListView.separated(
         itemCount: airports.length,
         itemBuilder: (BuildContext context, int index) {
-          return getAirportWidget(airports[index]);
+          return _getAirportMetarAndTafWidget(airports[index]);
         },
         separatorBuilder: (context, index) {
           return Divider(
@@ -176,4 +178,111 @@ class _AirportMetarTafState extends State<AirportMetarTaf>
         arguments: null);
     _sendEvent(GetSelectedAirportsList());
   }
+
+  Widget _getAirportMetarAndTafWidget(Airport airport) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                  flex: 4,
+                  child: Text(
+                    airport.name,
+                    overflow: TextOverflow.ellipsis,
+                  )),
+              Expanded(flex: 2, child: Text(airport.ident)),
+              Expanded(flex: 2, child: Text("Elev:  ${airport.elevationFt} ft"))
+            ],
+          ),
+          Container(
+              width: MediaQuery.of(context).size.width,
+              decoration:
+                  BoxDecoration(border: Border.all(color: Colors.blueAccent)),
+              child: Column(
+                children: [
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'METAR',
+                    ),
+                  ),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'TAF',
+                      textAlign: TextAlign.left,
+                    ),
+                  ),
+                ],
+              )),
+        ],
+      ),
+    );
+  }
+
+// Widget getMetarFutureBuilder(String icaoId, String metarOrTaf) {
+//   return FutureBuilder<String>(
+//       future: _getMetarOrTafFuture(icaoId, metarOrTaf) , // a previously-obtained Future<String> or null
+//       builder: (BuildContext context, AsyncSnapshot<String>snapshot) {
+//         List<Widget> children;
+//         if (snapshot.hasData) {
+//           children = <Widget>[
+//             Padding(
+//               padding: const EdgeInsets.only(top: 16),
+//               child: Text(snapshot!.data!),
+//             ),
+//           ];
+//         } else if (snapshot.hasError) {
+//           children = <Widget>[
+//             const Icon(
+//               Icons.error_outline,
+//               color: Colors.red,
+//               size: 60,
+//             ),
+//             Padding(
+//               padding: const EdgeInsets.only(top: 16),
+//               child: Text('Error: ${snapshot.error}'),
+//             ),
+//           ];
+//         } else {  // working on it
+//           children = const <Widget>[
+//             SizedBox(
+//               width: 60,
+//               height: 60,
+//               child: CircularProgressIndicator(),
+//             ),
+//             Padding(
+//               padding: EdgeInsets.only(top: 16),
+//               child: Text('Awaiting result...'),
+//             ),
+//           ];
+//         }
+//       });
+// }
+//
+// Future<String> _getMetarOrTafFuture(String icaoId, String metarOrTaf) async {
+//   if (metarOrTaf == "METAR"){
+//     var metar = await widget.repository.getMetar(location: icaoId);
+//     if (metar.returnStatus ?? false){
+//       return metar.plainText!;
+//     } else {
+//       final sb = StringBuffer();
+//       if (metar.returnCodedMessage != null) {
+//         metar.returnCodedMessage!.forEach((codedMessage) {
+//           sb.write(codedMessage.code ?? "");
+//           sb.write(" ");
+//           sb.write(codedMessage.message ?? " ");
+//         });
+//         return sb.toString();
+//       }
+//       else {
+//         return "Unspecified error occurred";
+//       }
+//     }
+//
+//   }
+//
+// }
 }

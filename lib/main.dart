@@ -467,7 +467,8 @@ class AirportMetarTafRouteBuilder extends StatelessWidget {
     return BlocProvider<AirportBloc>(
       create: (BuildContext context) =>
           AirportBloc(repository: RepositoryProvider.of<Repository>(context)),
-      child: AirportMetarTaf(),
+      child: AirportMetarTaf(
+          repository: RepositoryProvider.of<Repository>(context)),
     );
   }
 }

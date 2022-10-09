@@ -18,6 +18,8 @@ const String GEOS_GIF =
 const String GEOS_CURRENT =
     "https://cdn.star.nesdis.noaa.gov/GOES16/ABI/SECTOR/ne/GEOCOLOR/2400x2400.jpg";
 
+const String WXBRIEF_URL = "https://lmfsweb.afss.com/Website/rest/";
+
 const double metersToFeet = 3.28084;
 const String ft = "ft";
 const String NEW_LINE = '\n';

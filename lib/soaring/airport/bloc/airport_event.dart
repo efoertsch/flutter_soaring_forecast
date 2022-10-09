@@ -47,7 +47,8 @@ class SwipeDeletedAirportEvent extends AirportEvent {
 
 class AddBackAirportEvent extends AirportEvent {
   final Airport airport;
-  AddBackAirportEvent(this.airport);
+  final int index;
+  AddBackAirportEvent(this.airport, this.index);
   @override
   // TODO: implement props
   List<Object?> get props => [airport];

@@ -156,6 +156,10 @@ class _AirportsSearchState extends State<AirportsSearch> {
       child: getAirportWidget(airports[index]),
       onTap: (() {
         _sendEvent(AddAirportToSelectList(airports[index]));
+        ScaffoldMessenger.of(context).removeCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+            CommonWidgets.getSnackBarForMessage(
+                airports[index].ident + ' added to list.'));
       }),
     );
   }
