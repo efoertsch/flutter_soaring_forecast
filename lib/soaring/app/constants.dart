@@ -208,6 +208,13 @@ class MetarTafMenu {
   static const String add = "Add";
 }
 
+class MetarOrTAF {
+  static const String METAR = "METAR";
+  static const String TAF = "TAF";
+  static const String FETCHING_INFORMATION = "Fetching information";
+  static const String UNDEFINED_ERROR = "Undefined error";
+}
+
 // Turnpoint icon colors for type of runway
 const Color grassRunway = Color(0xFF3CB043);
 const Color asphaltRunway = Colors.black;

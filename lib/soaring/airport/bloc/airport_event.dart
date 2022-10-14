@@ -19,6 +19,11 @@ class GetSelectedAirportsList extends AirportEvent {
   List<Object?> get props => [];
 }
 
+class GetAirportMetarAndTafs extends AirportEvent {
+  @override
+  List<Object?> get props => [];
+}
+
 class AddAirportToSelectList extends AirportEvent {
   final Airport airport;
 

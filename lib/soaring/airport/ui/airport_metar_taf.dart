@@ -11,6 +11,7 @@ import 'package:flutter_soaring_forecast/soaring/airport/bloc/airport_state.dart
 import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/airport/airport.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/one800wxbrief/metar_taf_response.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 
 class AirportMetarTaf extends StatefulWidget {
@@ -202,19 +203,10 @@ class _AirportMetarTafState extends State<AirportMetarTaf>
                   BoxDecoration(border: Border.all(color: Colors.blueAccent)),
               child: Column(
                 children: [
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      'METAR',
-                    ),
-                  ),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      'TAF',
-                      textAlign: TextAlign.left,
-                    ),
-                  ),
+                  _getMetarOrTAFWidget(
+                      ident: airport.ident, type: MetarOrTAF.METAR),
+                  _getMetarOrTAFWidget(
+                      ident: airport.ident, type: MetarOrTAF.TAF),
                 ],
               )),
         ],
@@ -222,67 +214,52 @@ class _AirportMetarTafState extends State<AirportMetarTaf>
     );
   }
 
-// Widget getMetarFutureBuilder(String icaoId, String metarOrTaf) {
-//   return FutureBuilder<String>(
-//       future: _getMetarOrTafFuture(icaoId, metarOrTaf) , // a previously-obtained Future<String> or null
-//       builder: (BuildContext context, AsyncSnapshot<String>snapshot) {
-//         List<Widget> children;
-//         if (snapshot.hasData) {
-//           children = <Widget>[
-//             Padding(
-//               padding: const EdgeInsets.only(top: 16),
-//               child: Text(snapshot!.data!),
-//             ),
-//           ];
-//         } else if (snapshot.hasError) {
-//           children = <Widget>[
-//             const Icon(
-//               Icons.error_outline,
-//               color: Colors.red,
-//               size: 60,
-//             ),
-//             Padding(
-//               padding: const EdgeInsets.only(top: 16),
-//               child: Text('Error: ${snapshot.error}'),
-//             ),
-//           ];
-//         } else {  // working on it
-//           children = const <Widget>[
-//             SizedBox(
-//               width: 60,
-//               height: 60,
-//               child: CircularProgressIndicator(),
-//             ),
-//             Padding(
-//               padding: EdgeInsets.only(top: 16),
-//               child: Text('Awaiting result...'),
-//             ),
-//           ];
-//         }
-//       });
-// }
-//
-// Future<String> _getMetarOrTafFuture(String icaoId, String metarOrTaf) async {
-//   if (metarOrTaf == "METAR"){
-//     var metar = await widget.repository.getMetar(location: icaoId);
-//     if (metar.returnStatus ?? false){
-//       return metar.plainText!;
-//     } else {
-//       final sb = StringBuffer();
-//       if (metar.returnCodedMessage != null) {
-//         metar.returnCodedMessage!.forEach((codedMessage) {
-//           sb.write(codedMessage.code ?? "");
-//           sb.write(" ");
-//           sb.write(codedMessage.message ?? " ");
-//         });
-//         return sb.toString();
-//       }
-//       else {
-//         return "Unspecified error occurred";
-//       }
-//     }
-//
-//   }
-//
-// }
+  Widget _getMetarOrTAFWidget(
+      {required final ident, required final String type}) {
+    String _response = MetarOrTAF.FETCHING_INFORMATION;
+    bool firstTime = true;
+    return BlocConsumer<AirportBloc, AirportState>(listener: (context, state) {
+      if (state is AirportMetarTafState) {
+        if (state.location == ident && state.type == type) {
+          _response = _getMetartOrTafResponse(state.metarTafResponse);
+        }
+      }
+    }, buildWhen: (previous, current) {
+      return ((current is AirportMetarTafState &&
+              current.location == ident &&
+              current.type == type) ||
+          firstTime);
+    }, builder: (context, state) {
+      firstTime = false;
+      return Column(
+        children: [
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              type,
+            ),
+          ),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              _response,
+            ),
+          ),
+        ],
+      );
+    });
+  }
+
+  String _getMetartOrTafResponse(MetarTafResponse metarTafResponse) {
+    if (metarTafResponse.returnStatus ?? false) {
+      return metarTafResponse.plainText ?? MetarOrTAF.UNDEFINED_ERROR;
+    } else if (metarTafResponse.returnCodedMessage != null) {
+      final sb = StringBuffer();
+      metarTafResponse.returnCodedMessage!.forEach((codedMessage) {
+        sb.write("${codedMessage.code} : ${codedMessage.message}");
+      });
+      return sb.toString();
+    }
+    return MetarOrTAF.UNDEFINED_ERROR;
+  }
 }

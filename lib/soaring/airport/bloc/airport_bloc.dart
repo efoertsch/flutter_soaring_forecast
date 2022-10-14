@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/airport/bloc/airport_event.dart';
 import 'package:flutter_soaring_forecast/soaring/airport/bloc/airport_state.dart';
+import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/airport/airport.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 
@@ -12,6 +13,7 @@ class AirportBloc extends Bloc<AirportEvent, AirportState> {
 //TaskState get initialState => TasksLoadingState();
 
   AirportBloc({required this.repository}) : super(AirportsInitialState()) {
+    on<GetAirportMetarAndTafs>(_getAirportMetarAndTafs);
     on<SearchAirportsEvent>(_searchForAirports);
     on<GetSelectedAirportsList>(_getSelectedAirports);
     on<AddAirportToSelectList>(_addAirportToSelectList);
@@ -84,5 +86,33 @@ class AirportBloc extends Bloc<AirportEvent, AirportState> {
     final airportIdents = await repository.getSelectedAirportCodesList();
     airportIdents.insert(event.index, event.airport.ident);
     repository.saveSelectedAirportCodes(airportIdents.join(" "));
+  }
+
+  FutureOr<void> _getAirportMetarAndTafs(
+      GetAirportMetarAndTafs event, Emitter<AirportState> emit) async {
+    final airportIdents = await repository.getSelectedAirportCodesList();
+    _emitSelectedAirports(airportIdents, emit);
+    final List<Future> futureFunctions = [];
+    airportIdents.forEach((airport) {
+      futureFunctions.add(
+          _getAirportMetarOrTaf(location: airport, type: MetarOrTAF.METAR));
+      futureFunctions
+          .add(_getAirportMetarOrTaf(location: airport, type: MetarOrTAF.TAF));
+    });
+    await Future.wait(futureFunctions).then((airportMetarTafState) {
+      emit(airportMetarTafState as AirportMetarTafState);
+    });
+  }
+
+  Future<AirportMetarTafState> _getAirportMetarOrTaf(
+      {required final String location, required final String type}) async {
+    if (type == MetarOrTAF.METAR) {
+      final metar = await repository.getMetar(location: location);
+      return AirportMetarTafState(location, type, metar);
+    } else {
+      // (type == MetarOrTAF.TAF)
+      final taf = await repository.getTaf(location: location);
+      return (AirportMetarTafState(location, type, taf));
+    }
   }
 }
