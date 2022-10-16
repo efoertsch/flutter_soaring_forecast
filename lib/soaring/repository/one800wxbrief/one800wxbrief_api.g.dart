@@ -21,7 +21,7 @@ class _One800WxBriefClient implements One800WxBriefClient {
   String? baseUrl;
 
   @override
-  Future<Metar> getMETAR(
+  Future<MetarTafResponse> getMETAR(
     basicBase64,
     airport,
   ) async {
@@ -34,8 +34,8 @@ class _One800WxBriefClient implements One800WxBriefClient {
     };
     _headers.removeWhere((k, v) => v == null);
     final _data = <String, dynamic>{};
-    final _result =
-        await _dio.fetch<Map<String, dynamic>>(_setStreamType<Metar>(Options(
+    final _result = await _dio
+        .fetch<Map<String, dynamic>>(_setStreamType<MetarTafResponse>(Options(
       method: 'GET',
       headers: _headers,
       extra: _extra,
@@ -48,12 +48,12 @@ class _One800WxBriefClient implements One800WxBriefClient {
               data: _data,
             )
             .copyWith(baseUrl: baseUrl ?? _dio.options.baseUrl)));
-    final value = Metar.fromJson(_result.data!);
+    final value = MetarTafResponse.fromJson(_result.data!);
     return value;
   }
 
   @override
-  Future<Taf> getTAF(
+  Future<MetarTafResponse> getTAF(
     basicBase64,
     airport,
   ) async {
@@ -66,8 +66,8 @@ class _One800WxBriefClient implements One800WxBriefClient {
     };
     _headers.removeWhere((k, v) => v == null);
     final _data = <String, dynamic>{};
-    final _result =
-        await _dio.fetch<Map<String, dynamic>>(_setStreamType<Taf>(Options(
+    final _result = await _dio
+        .fetch<Map<String, dynamic>>(_setStreamType<MetarTafResponse>(Options(
       method: 'GET',
       headers: _headers,
       extra: _extra,
@@ -80,7 +80,7 @@ class _One800WxBriefClient implements One800WxBriefClient {
               data: _data,
             )
             .copyWith(baseUrl: baseUrl ?? _dio.options.baseUrl)));
-    final value = Taf.fromJson(_result.data!);
+    final value = MetarTafResponse.fromJson(_result.data!);
     return value;
   }
 

@@ -1,9 +1,8 @@
 import 'package:dio/dio.dart' hide Headers;
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     as Constants;
-import 'package:flutter_soaring_forecast/soaring/repository/one800wxbrief/metar.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/one800wxbrief/metar_taf_response.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/one800wxbrief/route_briefing.dart';
-import 'package:flutter_soaring_forecast/soaring/repository/one800wxbrief/taf.dart';
 import 'package:retrofit/retrofit.dart';
 
 part 'one800wxbrief_api.g.dart';
@@ -20,7 +19,7 @@ abstract class One800WxBriefClient {
     "Content-Type": "application/x-www-form-urlencoded",
     "User-Agent": "Soaring Forecast FFSP Interface"
   })
-  Future<Metar> getMETAR(@Header("Authorization") String basicBase64,
+  Future<MetarTafResponse> getMETAR(@Header("Authorization") String basicBase64,
       @Query("location") String airport);
 
   // Get a METAR (mainly for testing 1800wxbrief api. App get METARS from other source
@@ -29,7 +28,7 @@ abstract class One800WxBriefClient {
     "Content-Type": "application/x-www-form-urlencoded",
     "User-Agent": "Soaring Forecast FFSP Interface"
   })
-  Future<Taf> getTAF(@Header("Authorization") String basicBase64,
+  Future<MetarTafResponse> getTAF(@Header("Authorization") String basicBase64,
       @Query("location") String airport);
 
   @POST("FP/routeBriefing")

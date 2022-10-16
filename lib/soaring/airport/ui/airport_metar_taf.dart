@@ -30,7 +30,7 @@ class _AirportMetarTafState extends State<AirportMetarTaf>
   // Make sure first layout occurs
   @override
   void afterFirstLayout(BuildContext context) {
-    BlocProvider.of<AirportBloc>(context).add(GetSelectedAirportsList());
+    BlocProvider.of<AirportBloc>(context).add(GetAirportMetarAndTafs());
   }
 
   @override

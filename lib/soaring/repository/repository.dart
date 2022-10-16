@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
+import 'package:dio_logging_interceptor/dio_logging_interceptor.dart';
 import 'package:floor/floor.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -19,9 +20,8 @@ import 'package:flutter_soaring_forecast/soaring/floor/taskturnpoint/task_turnpo
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/ImageCacheManager.dart';
-import 'package:flutter_soaring_forecast/soaring/repository/one800wxbrief/metar.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/one800wxbrief/metar_taf_response.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/one800wxbrief/one800wxbrief_api.dart';
-import 'package:flutter_soaring_forecast/soaring/repository/one800wxbrief/taf.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/rasp_options_api.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/special_use_airspace.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/sua_region_files.dart';
@@ -33,7 +33,7 @@ import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoints_importer.
 import 'package:flutter_soaring_forecast/soaring/windy/data/windy_altitude.dart';
 import 'package:flutter_soaring_forecast/soaring/windy/data/windy_layer.dart';
 import 'package:flutter_soaring_forecast/soaring/windy/data/windy_model.dart';
-import 'package:logger/logger.dart';
+import 'package:logger/logger.dart' as DLogger; // Level conflict with Dio
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:retrofit/dio.dart';
@@ -55,7 +55,7 @@ class Repository {
   static UsgsClient? _usgsClient;
   static One800WxBriefClient? _one800WxBriefClient;
   static AppDatabase? _appDatabase;
-  static var logger = Logger();
+  static var logger = DLogger.Logger();
 
   static const String SELECTED_REGION = "SELECTED_REGION";
   static const String DEFAULT_SELECTED_REGION = "NewEngland";
@@ -80,12 +80,12 @@ class Repository {
       // _dio.interceptors.add(LogInterceptor(responseBody: true));
       _dio.options.receiveTimeout = 300000;
       _dio.options.followRedirects = true;
-      // _dio.interceptors.add(
-      //   DioLoggingInterceptor(
-      //     level: Level.body,
-      //     compact: false,
-      //   ),
-      // );
+      _dio.interceptors.add(
+        DioLoggingInterceptor(
+          level: Level.body,
+          compact: false,
+        ),
+      );
       _raspClient = RaspClient(_dio);
       _raspOptionsClient = RaspOptionsClient(_dio);
     }
@@ -636,7 +636,7 @@ class Repository {
           // and if OK save them to file
           if (suaString != null) {
             sua = SUA.fromJson(json.decode(suaString));
-            File file = await _writeStringToAppDocsFile(
+            await _writeStringToAppDocsFile(
                 region + '_' + suaFileName, suaString);
             // and delete the old file
             if (oldSuaFilename != null) {
@@ -752,7 +752,7 @@ class Repository {
 
   //------ 1800wxbrief ---------------------------------
 
-  Future<Metar> getMetar({required String location}) async {
+  Future<MetarTafResponse> getMetar({required String location}) async {
     if (_one800WxBriefClient == null) {
       _one800WxBriefClient = One800WxBriefClient(_dio);
     }
@@ -760,7 +760,7 @@ class Repository {
     return await _one800WxBriefClient!.getMETAR(authorization, location);
   }
 
-  Future<Taf> getTaf({required String location}) async {
+  Future<MetarTafResponse> getTaf({required String location}) async {
     if (_one800WxBriefClient == null) {
       _one800WxBriefClient = One800WxBriefClient(_dio);
     }
@@ -770,7 +770,7 @@ class Repository {
 
   String _getWxBriefAuthorization() {
     var bytes = utf8.encode(One800WXBriefID + ":" + One800WXBriefPassword);
-    return base64.encode(bytes);
+    return "Basic " + base64.encode(bytes);
   }
   // ----- Shared preferences --------------------------
   // Make sure keys are unique among calling routines!

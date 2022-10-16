@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/airport/bloc/airport_event.dart';
 import 'package:flutter_soaring_forecast/soaring/airport/bloc/airport_state.dart';
@@ -99,8 +100,16 @@ class AirportBloc extends Bloc<AirportEvent, AirportState> {
       futureFunctions
           .add(_getAirportMetarOrTaf(location: airport, type: MetarOrTAF.TAF));
     });
-    await Future.wait(futureFunctions).then((airportMetarTafState) {
-      emit(airportMetarTafState as AirportMetarTafState);
+    await Future.wait(futureFunctions).then((airportMetarTafStateList) {
+      for (final item in airportMetarTafStateList) {
+        if (item is AirportMetarTafState) {
+          emit(item);
+        } else {
+          debugPrint(item.toString());
+        }
+      }
+    }, onError: (err) {
+      debugPrint(err.toString());
     });
   }
 
