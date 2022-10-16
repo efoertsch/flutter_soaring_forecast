@@ -142,18 +142,26 @@ class _AirportMetarTafState extends State<AirportMetarTaf>
 
   Widget _getAirportsListView(
       {required BuildContext context, required List<Airport> airports}) {
+    final metarTafWidgets = <Widget>[];
+    airports.forEach((airport) {
+      metarTafWidgets.add(_getAirportMetarAndTafWidget(airport));
+    });
+
     return Padding(
       padding: const EdgeInsets.all(8.0),
-      child: ListView.separated(
-        itemCount: airports.length,
-        itemBuilder: (BuildContext context, int index) {
-          return _getAirportMetarAndTafWidget(airports[index]);
-        },
-        separatorBuilder: (context, index) {
-          return Divider(
-            height: 4,
-            thickness: 2,
-          );
+      // not using ListView. If airport off screen, listview won't draw and state
+      // not processed.
+      child: LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints viewportConstraints) {
+          return SingleChildScrollView(
+              child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: viewportConstraints.maxHeight,
+            ),
+            child: Column(
+              children: metarTafWidgets,
+            ),
+          ));
         },
       ),
     );
@@ -192,9 +200,26 @@ class _AirportMetarTafState extends State<AirportMetarTaf>
                   child: Text(
                     airport.name,
                     overflow: TextOverflow.ellipsis,
+                    style: textStyleBlackFontSize20,
                   )),
-              Expanded(flex: 2, child: Text(airport.ident)),
-              Expanded(flex: 2, child: Text("Elev:  ${airport.elevationFt} ft"))
+              Expanded(
+                  flex: 2,
+                  child: Padding(
+                    child: Text(
+                      airport.ident,
+                      style: textStyleBlackFontSize18,
+                    ),
+                    padding: const EdgeInsets.only(left: 4.0),
+                  )),
+              Expanded(
+                  flex: 4,
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 4.0),
+                    child: Text(
+                      "Elev:  ${airport.elevationFt} ft",
+                      style: textStyleBlackFontSize18,
+                    ),
+                  ))
             ],
           ),
           Container(
@@ -209,6 +234,13 @@ class _AirportMetarTafState extends State<AirportMetarTaf>
                       ident: airport.ident, type: MetarOrTAF.TAF),
                 ],
               )),
+          Padding(
+            padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
+            child: Divider(
+              height: 4,
+              thickness: 2,
+            ),
+          )
         ],
       ),
     );
@@ -235,14 +267,22 @@ class _AirportMetarTafState extends State<AirportMetarTaf>
         children: [
           Align(
             alignment: Alignment.centerLeft,
-            child: Text(
-              type,
+            child: Padding(
+              padding: const EdgeInsets.only(left: 4.0),
+              child: Text(
+                style: textStyleBlackFontSize18,
+                type,
+              ),
             ),
           ),
           Align(
             alignment: Alignment.centerLeft,
-            child: Text(
-              _response,
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text(
+                _response,
+                style: textStyleBlackFontSize14,
+              ),
             ),
           ),
         ],
