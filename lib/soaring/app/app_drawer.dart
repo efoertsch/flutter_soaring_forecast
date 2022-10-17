@@ -29,6 +29,12 @@ class AppDrawer {
             ),
           ),
           ListTile(
+              title: Text('Airport METAR/TAF'),
+              onTap: () {
+                Navigator.popAndPushNamed(
+                    context, AirportMetarTafRouteBuilder.routeName);
+              }),
+          ListTile(
               title: Text('Turnpoints'),
               onTap: () {
                 Navigator.popAndPushNamed(
@@ -37,14 +43,15 @@ class AppDrawer {
           ListTile(
             title: Text('Task List'),
             onTap: () {
-              Navigator.popAndPushNamed(context, TaskList.routeName);
+              Navigator.popAndPushNamed(
+                  context, TaskListRouteBuilder.routeName);
             },
           ),
           ListTile(
             title: Text('Windy'),
             onTap: () async {
               var possibleTaskChange = await Navigator.popAndPushNamed(
-                  context, WindyScreen.routeName);
+                  context, WindyRouteBuilder.routeName);
               if (refreshTaskDisplayFunction != null &&
                   possibleTaskChange != null &&
                   (possibleTaskChange is bool)) {
@@ -89,7 +96,7 @@ class AppDrawer {
           ListTile(
             title: Text('GEOS NE'),
             onTap: () {
-              Navigator.popAndPushNamed(context, Geos.routeName);
+              Navigator.popAndPushNamed(context, GeosRouteBuilder.routeName);
             },
           ),
 //           ListTile(
@@ -113,7 +120,8 @@ class AppDrawer {
           ListTile(
             title: Text('About'),
             onTap: () {
-              Navigator.popAndPushNamed(context, AboutInfo.routeName);
+              Navigator.popAndPushNamed(
+                  context, AboutInfoRouteBuilder.routeName);
             },
           ),
         ],

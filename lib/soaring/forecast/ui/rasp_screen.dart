@@ -478,7 +478,8 @@ class _RaspScreenState extends State<RaspScreen>
   }
 
   _selectTask() async {
-    final result = await Navigator.pushNamed(context, TaskList.routeName,
+    final result = await Navigator.pushNamed(
+        context, TaskListRouteBuilder.routeName,
         arguments: TaskListScreen.SELECT_TASK_OPTION);
     if (result != null && result is int && result > -1) {
       //debugPrint('Draw task for ' + result.toString());
@@ -509,7 +510,8 @@ class _RaspScreenState extends State<RaspScreen>
   }
 
   Future<void> _displayForecastList({Forecast? forecast = null}) async {
-    final result = await Navigator.pushNamed(context, ForecastList.routeName,
+    final result = await Navigator.pushNamed(
+        context, ForecastListRouteBuilder.routeName,
         arguments: ForecastListArgs(forecast: forecast));
     if (result != null) {
       if (result is ReturnedForecastArgs) {
@@ -527,7 +529,7 @@ class _RaspScreenState extends State<RaspScreen>
       BuildContext context, TurnpointFoundState state) async {
     final result = await Navigator.pushNamed(
       context,
-      TurnpointView.routeName,
+      TurnpointViewRouteBuilder.routeName,
       arguments: TurnpointOverHeadArgs(turnpoint: state.turnpoint),
     );
   }
@@ -566,7 +568,8 @@ class _RaspScreenState extends State<RaspScreen>
   }
 
   void _showRegionListScreen() async {
-    final result = await Navigator.pushNamed(context, RegionList.routeName,
+    final result = await Navigator.pushNamed(
+        context, RegionListRouteBuilder.routeName,
         arguments: _selectedRegionName);
     if (result != null && result is String) {
       debugPrint("selected region: result");

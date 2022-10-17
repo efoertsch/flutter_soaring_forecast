@@ -18,6 +18,8 @@ const String GEOS_GIF =
 const String GEOS_CURRENT =
     "https://cdn.star.nesdis.noaa.gov/GOES16/ABI/SECTOR/ne/GEOCOLOR/2400x2400.jpg";
 
+const String WXBRIEF_URL = "https://lmfsweb.afss.com/Website/rest/";
+
 const double metersToFeet = 3.28084;
 const String ft = "ft";
 const String NEW_LINE = '\n';
@@ -201,10 +203,20 @@ class GeosMenu {
   static const String current = "CURRENT";
 }
 
-class NoaaMenu {
-  static const String loop = "LOOP";
-  static const String geos = "GEOS";
-  static const String current = "CURRENT";
+class MetarTafMenu {
+  static const String list = "List";
+  static const String add = "Add";
+}
+
+class AirportMenu {
+  static const String refresh = "Refresh";
+}
+
+class MetarOrTAF {
+  static const String METAR = "METAR";
+  static const String TAF = "TAF";
+  static const String FETCHING_INFORMATION = "Fetching information";
+  static const String UNDEFINED_ERROR = "Undefined error";
 }
 
 // Turnpoint icon colors for type of runway

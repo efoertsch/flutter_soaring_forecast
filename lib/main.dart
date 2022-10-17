@@ -1,7 +1,14 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/about/about_screen.dart';
+import 'package:flutter_soaring_forecast/soaring/airport/bloc/airport_bloc.dart';
+import 'package:flutter_soaring_forecast/soaring/airport/download/airports_downloader.dart';
+import 'package:flutter_soaring_forecast/soaring/airport/ui/airport_metar_taf.dart';
+import 'package:flutter_soaring_forecast/soaring/airport/ui/airport_search.dart';
+import 'package:flutter_soaring_forecast/soaring/airport/ui/selected_airports_list.dart';
 import 'package:flutter_soaring_forecast/soaring/app/custom_material_page_route.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_data_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/ui/rasp_screen.dart';
@@ -23,16 +30,28 @@ import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoints_list.d
 import 'package:flutter_soaring_forecast/soaring/values/strings.dart';
 import 'package:flutter_soaring_forecast/soaring/windy/bloc/windy_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/windy/ui/windy.dart';
+import 'package:workmanager/workmanager.dart';
 
-// void callbackDispatcher() {
-//   Workmanager().executeTask((task, inputData) {
-//     print('Checking to download airports');
-//     var ok = AirportsDownloader(repository: Repository(null))
-//         .downloadAirportsIfNeeded();
-//     print('AirportsDownloader response : $ok');
-//     return Future.value(ok);
-//   });
-// }
+// https://github.com/fluttercommunity/flutter_workmanager#customisation-android-only
+@pragma(
+    'vm:entry-point') // Mandatory if the App is obfuscated or using Flutter 3.1+
+void callbackDispatcher() {
+  Workmanager().executeTask((task, inputData) async {
+    if (task == Workmanager.iOSBackgroundTask) {
+      debugPrint("The iOS background fetch was triggered");
+    }
+    try {
+      debugPrint('Checking to download airports');
+      var ok = AirportsDownloader(repository: Repository(null))
+          .downloadAirportsIfNeeded();
+      debugPrint('AirportsDownloader response : $ok');
+      return Future.value(ok);
+    } catch (err) {
+      debugPrint(err.toString());
+      throw Exception(err);
+    }
+  });
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -40,12 +59,17 @@ void main() async {
   if (kReleaseMode) {
     debugPrint = (String? message, {int? wrapWidth}) {};
   }
-  // Workmanager().initialize(
-  //     callbackDispatcher, // The top level function, aka callbackDispatcher
-  //     isInDebugMode:
-  //         true // If enabled it will post a notification whenever the task is running. Handy for debugging tasks
-  //     );
-  //Workmanager().registerOneOffTask("1", "airportsDownload");
+
+  if (Platform.isAndroid) {
+    Workmanager().initialize(
+        callbackDispatcher, // The top level function, aka callbackDispatcher
+        isInDebugMode:
+            !kReleaseMode // If enabled it will post a notification whenever the task is running. Handy for debugging tasks
+        );
+    Workmanager()
+        .registerOneOffTask("oneTimeDownload", "workmanager.background.task");
+  }
+
   runApp(RepositorySetup());
 }
 
@@ -83,58 +107,58 @@ class SoaringForecastApp extends StatelessWidget {
         //   ),
         // ),
         title: Strings.appTitle,
-        home: SoaringForecast(),
-        initialRoute: SoaringForecast.routeName,
+        home: SoaringForecastRouteBuilder(),
+        initialRoute: SoaringForecastRouteBuilder.routeName,
         onGenerateRoute: (settings) {
-          if (settings.name == TaskList.routeName) {
+          if (settings.name == TaskListRouteBuilder.routeName) {
             var option = null;
             if (settings.arguments != null) {
               option = settings.arguments as String;
             }
             return CustomMaterialPageRoute(
               builder: (context) {
-                return TaskList(viewOption: option);
+                return TaskListRouteBuilder(viewOption: option);
               },
               settings: settings,
             );
           }
-          if (settings.name == TurnpointView.routeName) {
+          if (settings.name == TurnpointViewRouteBuilder.routeName) {
             final turnpointOverheadArgs =
                 settings.arguments as TurnpointOverHeadArgs;
             return CustomMaterialPageRoute(
               builder: (context) {
-                return TurnpointView(
+                return TurnpointViewRouteBuilder(
                     turnpointOverHeadArgs: turnpointOverheadArgs);
               },
               settings: settings,
             );
           }
 
-          if (settings.name == TurnpointEdit.routeName) {
+          if (settings.name == TurnpointEditRouteBuilder.routeName) {
             int? turnpointId =
                 (settings.arguments == null ? null : settings.arguments as int);
             return CustomMaterialPageRoute(
               builder: (context) {
-                return TurnpointEdit(turnpointId: turnpointId);
+                return TurnpointEditRouteBuilder(turnpointId: turnpointId);
               },
               settings: settings,
             );
           }
 
-          if (settings.name == TaskDetail.routeName) {
+          if (settings.name == TaskDetailRouteBuilder.routeName) {
             final taskId = settings.arguments as int;
             return CustomMaterialPageRoute(
               builder: (context) {
-                return TaskDetail(taskId: taskId);
+                return TaskDetailRouteBuilder(taskId: taskId);
               },
               settings: settings,
             );
           }
-          if (settings.name == TurnpointsForTask.routeName) {
+          if (settings.name == TurnpointsForTaskRouteBuilder.routeName) {
             final viewOption = settings.arguments as String;
             return CustomMaterialPageRoute(
               builder: (context) {
-                return TurnpointsForTask(viewOption: viewOption);
+                return TurnpointsForTaskRouteBuilder(viewOption: viewOption);
               },
               settings: settings,
             );
@@ -149,43 +173,44 @@ class SoaringForecastApp extends StatelessWidget {
             );
           }
 
-          if (settings.name == TurnpointFileImport.routeName) {
+          if (settings.name == TurnpointFileImportRouteBuilder.routeName) {
             return CustomMaterialPageRoute(
               builder: (context) {
-                return TurnpointFileImport();
+                return TurnpointFileImportRouteBuilder();
               },
               settings: settings,
             );
           }
 
-          if (settings.name == CustomTurnpointFileImport.routeName) {
+          if (settings.name ==
+              CustomTurnpointFileImportRouteBuilder.routeName) {
             return CustomMaterialPageRoute(
               builder: (context) {
-                return CustomTurnpointFileImport();
+                return CustomTurnpointFileImportRouteBuilder();
               },
               settings: settings,
             );
           }
-          if (settings.name == ForecastList.routeName) {
+          if (settings.name == ForecastListRouteBuilder.routeName) {
             final forecastArgs = settings.arguments as ForecastListArgs;
             return CustomMaterialPageRoute(
               builder: (context) {
-                return ForecastList(forecastArgs: forecastArgs);
+                return ForecastListRouteBuilder(forecastArgs: forecastArgs);
               },
               settings: settings,
             );
           }
-          if (settings.name == RegionList.routeName) {
+          if (settings.name == RegionListRouteBuilder.routeName) {
             final selectedForecast = settings.arguments as String;
             return CustomMaterialPageRoute(
               builder: (context) {
-                return RegionList(selectedRegion: selectedForecast);
+                return RegionListRouteBuilder(selectedRegion: selectedForecast);
               },
               settings: settings,
             );
           }
 
-          if (settings.name == Geos.routeName) {
+          if (settings.name == GeosRouteBuilder.routeName) {
             return CustomMaterialPageRoute(
               builder: (context) {
                 return GeosScreen();
@@ -194,19 +219,46 @@ class SoaringForecastApp extends StatelessWidget {
             );
           }
 
-          if (settings.name == AboutInfo.routeName) {
+          if (settings.name == AboutInfoRouteBuilder.routeName) {
             return CustomMaterialPageRoute(
               builder: (context) {
-                return AboutInfo();
+                return AboutInfoRouteBuilder();
               },
               settings: settings,
             );
           }
 
-          if (settings.name == WindyScreen.routeName) {
+          if (settings.name == WindyRouteBuilder.routeName) {
             return CustomMaterialPageRoute(
               builder: (context) {
-                return WindyScreen();
+                return WindyRouteBuilder();
+              },
+              settings: settings,
+            );
+          }
+
+          if (settings.name == AirportMetarTafRouteBuilder.routeName) {
+            return CustomMaterialPageRoute(
+              builder: (context) {
+                return AirportMetarTafRouteBuilder();
+              },
+              settings: settings,
+            );
+          }
+
+          if (settings.name == AirportsSearchRouteBuilder.routeName) {
+            return CustomMaterialPageRoute(
+              builder: (context) {
+                return AirportsSearchRouteBuilder();
+              },
+              settings: settings,
+            );
+          }
+
+          if (settings.name == SelectedAirportsRouteBuilder.routeName) {
+            return CustomMaterialPageRoute(
+              builder: (context) {
+                return SelectedAirportsRouteBuilder();
               },
               settings: settings,
             );
@@ -218,7 +270,7 @@ class SoaringForecastApp extends StatelessWidget {
   }
 }
 
-class SoaringForecast extends StatelessWidget {
+class SoaringForecastRouteBuilder extends StatelessWidget {
   static const routeName = '/';
 
   @override
@@ -246,11 +298,11 @@ class TurnpointListRouteBuilder extends StatelessWidget {
   }
 }
 
-class TurnpointsForTask extends StatelessWidget {
+class TurnpointsForTaskRouteBuilder extends StatelessWidget {
   static const routeName = '/turnpointsForTask';
   final String? viewOption;
 
-  TurnpointsForTask({this.viewOption});
+  TurnpointsForTaskRouteBuilder({this.viewOption});
 
   @override
   Widget build(BuildContext context) {
@@ -262,10 +314,10 @@ class TurnpointsForTask extends StatelessWidget {
   }
 }
 
-class TurnpointFileImport extends StatelessWidget {
+class TurnpointFileImportRouteBuilder extends StatelessWidget {
   static const routeName = '/turnpointImport';
 
-  TurnpointFileImport();
+  TurnpointFileImportRouteBuilder();
 
   @override
   Widget build(BuildContext context) {
@@ -277,10 +329,10 @@ class TurnpointFileImport extends StatelessWidget {
   }
 }
 
-class CustomTurnpointFileImport extends StatelessWidget {
+class CustomTurnpointFileImportRouteBuilder extends StatelessWidget {
   static const routeName = '/customTurnpointImport';
 
-  CustomTurnpointFileImport();
+  CustomTurnpointFileImportRouteBuilder();
 
   @override
   Widget build(BuildContext context) {
@@ -292,11 +344,11 @@ class CustomTurnpointFileImport extends StatelessWidget {
   }
 }
 
-class TurnpointView extends StatelessWidget {
+class TurnpointViewRouteBuilder extends StatelessWidget {
   static const routeName = '/ViewTurnpoint';
   final TurnpointOverHeadArgs turnpointOverHeadArgs;
 
-  TurnpointView({required this.turnpointOverHeadArgs});
+  TurnpointViewRouteBuilder({required this.turnpointOverHeadArgs});
 
   @override
   Widget build(BuildContext context) {
@@ -308,11 +360,11 @@ class TurnpointView extends StatelessWidget {
   }
 }
 
-class TurnpointEdit extends StatelessWidget {
+class TurnpointEditRouteBuilder extends StatelessWidget {
   static const routeName = '/editTurnpoint';
   final int? turnpointId;
 
-  TurnpointEdit({this.turnpointId});
+  TurnpointEditRouteBuilder({this.turnpointId});
 
   @override
   Widget build(BuildContext context) {
@@ -325,11 +377,11 @@ class TurnpointEdit extends StatelessWidget {
 
 //-------------------------------------------------------------
 // Task related
-class TaskList extends StatelessWidget {
+class TaskListRouteBuilder extends StatelessWidget {
   static const routeName = '/ViewTask';
   final String? viewOption;
 
-  TaskList({this.viewOption = null});
+  TaskListRouteBuilder({this.viewOption = null});
 
   Widget build(BuildContext context) {
     return BlocProvider<TaskBloc>(
@@ -340,11 +392,11 @@ class TaskList extends StatelessWidget {
   }
 }
 
-class TaskDetail extends StatelessWidget {
+class TaskDetailRouteBuilder extends StatelessWidget {
   static const routeName = '/ViewTaskDetail';
   final int taskId;
 
-  TaskDetail({required this.taskId});
+  TaskDetailRouteBuilder({required this.taskId});
 
   Widget build(BuildContext context) {
     return BlocProvider<TaskBloc>(
@@ -357,11 +409,11 @@ class TaskDetail extends StatelessWidget {
 
 //-------------------------------------------------------------
 // Forecast related
-class ForecastList extends StatelessWidget {
+class ForecastListRouteBuilder extends StatelessWidget {
   static const routeName = '/ViewForecastList';
   final ForecastListArgs? forecastArgs;
 
-  ForecastList({this.forecastArgs = null});
+  ForecastListRouteBuilder({this.forecastArgs = null});
 
   Widget build(BuildContext context) {
     return BlocProvider<ForecastBloc>(
@@ -374,12 +426,13 @@ class ForecastList extends StatelessWidget {
 
 //-------------------------------------------------------------
 // Regions
-class RegionList extends StatelessWidget {
+class RegionListRouteBuilder extends StatelessWidget {
   static const routeName = '/RegionList';
 
-  var selectedRegion;
+  final selectedRegion;
 
-  RegionList({required String this.selectedRegion});
+  RegionListRouteBuilder({required String this.selectedRegion});
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider<RegionDataBloc>(
@@ -390,10 +443,10 @@ class RegionList extends StatelessWidget {
   }
 }
 
-class Geos extends StatelessWidget {
+class GeosRouteBuilder extends StatelessWidget {
   static const routeName = '/geos';
 
-  Geos();
+  GeosRouteBuilder();
 
   @override
   Widget build(BuildContext context) {
@@ -401,10 +454,10 @@ class Geos extends StatelessWidget {
   }
 }
 
-class AboutInfo extends StatelessWidget {
+class AboutInfoRouteBuilder extends StatelessWidget {
   static const routeName = '/aboutScreen';
 
-  AboutInfo();
+  AboutInfoRouteBuilder();
 
   @override
   Widget build(BuildContext context) {
@@ -412,7 +465,7 @@ class AboutInfo extends StatelessWidget {
   }
 }
 
-class WindyScreen extends StatelessWidget {
+class WindyRouteBuilder extends StatelessWidget {
   static const routeName = '/Windy';
 
   Widget build(BuildContext context) {
@@ -420,6 +473,43 @@ class WindyScreen extends StatelessWidget {
       create: (BuildContext context) =>
           WindyBloc(repository: RepositoryProvider.of<Repository>(context)),
       child: WindyForecast(),
+    );
+  }
+}
+
+class AirportMetarTafRouteBuilder extends StatelessWidget {
+  static const routeName = '/AirportMetarTaf';
+
+  Widget build(BuildContext context) {
+    return BlocProvider<AirportBloc>(
+      create: (BuildContext context) =>
+          AirportBloc(repository: RepositoryProvider.of<Repository>(context)),
+      child: AirportMetarTaf(
+          repository: RepositoryProvider.of<Repository>(context)),
+    );
+  }
+}
+
+class SelectedAirportsRouteBuilder extends StatelessWidget {
+  static const routeName = '/SelectedAirports';
+
+  Widget build(BuildContext context) {
+    return BlocProvider<AirportBloc>(
+      create: (BuildContext context) =>
+          AirportBloc(repository: RepositoryProvider.of<Repository>(context)),
+      child: SelectedAirportsList(),
+    );
+  }
+}
+
+class AirportsSearchRouteBuilder extends StatelessWidget {
+  static const routeName = '/AirportsSearch';
+
+  Widget build(BuildContext context) {
+    return BlocProvider<AirportBloc>(
+      create: (BuildContext context) =>
+          AirportBloc(repository: RepositoryProvider.of<Repository>(context)),
+      child: AirportsSearch(),
     );
   }
 }

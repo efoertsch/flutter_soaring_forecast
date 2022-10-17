@@ -237,7 +237,7 @@ class TaskListScreen extends StatelessWidget {
   void _goToTaskDetail(BuildContext context, int taskId) async {
     await Navigator.pushNamed(
       context,
-      TaskDetail.routeName,
+      TaskDetailRouteBuilder.routeName,
       arguments: taskId,
     );
     BlocProvider.of<TaskBloc>(context).add(TaskListEvent());

@@ -69,8 +69,11 @@ class _$AppDatabase extends AppDatabase {
 
   TurnpointDao? _turnpointDaoInstance;
 
-  Future<sqflite.Database> open(String path, List<Migration> migrations,
-      [Callback? callback]) async {
+  Future<sqflite.Database> open(
+    String path,
+    List<Migration> migrations, [
+    Callback? callback,
+  ]) async {
     final databaseOptions = sqflite.OpenDatabaseOptions(
       version: 2,
       onConfigure: (database) async {
@@ -135,8 +138,10 @@ class _$AppDatabase extends AppDatabase {
 }
 
 class _$AirportDao extends AirportDao {
-  _$AirportDao(this.database, this.changeListener)
-      : _queryAdapter = QueryAdapter(database),
+  _$AirportDao(
+    this.database,
+    this.changeListener,
+  )   : _queryAdapter = QueryAdapter(database),
         _airportInsertionAdapter = InsertionAdapter(
             database,
             'airport',
@@ -236,11 +241,6 @@ class _$AirportDao extends AirportDao {
   }
 
   @override
-  Future<int?> getCountOfAirports() async {
-    await _queryAdapter.queryNoReturn('SELECT count(*) FROM airport');
-  }
-
-  @override
   Future<int?> deleteAll() async {
     await _queryAdapter.queryNoReturn('Delete from airport');
   }
@@ -265,8 +265,10 @@ class _$AirportDao extends AirportDao {
 }
 
 class _$TaskDao extends TaskDao {
-  _$TaskDao(this.database, this.changeListener)
-      : _queryAdapter = QueryAdapter(database),
+  _$TaskDao(
+    this.database,
+    this.changeListener,
+  )   : _queryAdapter = QueryAdapter(database),
         _taskInsertionAdapter = InsertionAdapter(
             database,
             'task',
@@ -344,8 +346,10 @@ class _$TaskDao extends TaskDao {
 }
 
 class _$TaskTurnpointDao extends TaskTurnpointDao {
-  _$TaskTurnpointDao(this.database, this.changeListener)
-      : _queryAdapter = QueryAdapter(database),
+  _$TaskTurnpointDao(
+    this.database,
+    this.changeListener,
+  )   : _queryAdapter = QueryAdapter(database),
         _taskTurnpointInsertionAdapter = InsertionAdapter(
             database,
             'taskturnpoint',
@@ -448,8 +452,10 @@ class _$TaskTurnpointDao extends TaskTurnpointDao {
 }
 
 class _$TurnpointDao extends TurnpointDao {
-  _$TurnpointDao(this.database, this.changeListener)
-      : _queryAdapter = QueryAdapter(database),
+  _$TurnpointDao(
+    this.database,
+    this.changeListener,
+  )   : _queryAdapter = QueryAdapter(database),
         _turnpointInsertionAdapter = InsertionAdapter(
             database,
             'turnpoint',
@@ -577,7 +583,10 @@ class _$TurnpointDao extends TurnpointDao {
   }
 
   @override
-  Future<Turnpoint?> getTurnpoint(String title, String code) async {
+  Future<Turnpoint?> getTurnpoint(
+    String title,
+    String code,
+  ) async {
     return _queryAdapter.query(
         'Select * from turnpoint where title = ?1 and code = ?2 collate nocase',
         mapper: (Map<String, Object?> row) => Turnpoint(
@@ -639,10 +648,11 @@ class _$TurnpointDao extends TurnpointDao {
 
   @override
   Future<List<Turnpoint>> getTurnpointsWithinBounds(
-      double swLatitudeDeg,
-      double swLongitudeDeg,
-      double neLatitudeDeg,
-      double neLongitudeDeg) async {
+    double swLatitudeDeg,
+    double swLongitudeDeg,
+    double neLatitudeDeg,
+    double neLongitudeDeg,
+  ) async {
     return _queryAdapter.queryList(
         'Select * from turnpoint where latitudeDeg between ?1 and ?3  and longitudeDeg between ?2 and ?4',
         mapper: (Map<String, Object?> row) => Turnpoint(id: row['id'] as int?, title: row['title'] as String, code: row['code'] as String, country: row['country'] as String, latitudeDeg: row['latitudeDeg'] as double, longitudeDeg: row['longitudeDeg'] as double, elevation: row['elevation'] as String, style: row['style'] as String, direction: row['direction'] as String, length: row['length'] as String, frequency: row['frequency'] as String, description: row['description'] as String, runwayWidth: row['runwayWidth'] as String),

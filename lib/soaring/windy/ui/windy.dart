@@ -390,7 +390,8 @@ class WindyForecastState extends State<WindyForecast>
   }
 
   void _selectTask() async {
-    final result = await Navigator.pushNamed(context, TaskList.routeName,
+    final result = await Navigator.pushNamed(
+        context, TaskListRouteBuilder.routeName,
         arguments: TaskListScreen.SELECT_TASK_OPTION);
     if (result != null && result is int && result > -1) {
       //debugPrint('Draw task for ' + result.toString());

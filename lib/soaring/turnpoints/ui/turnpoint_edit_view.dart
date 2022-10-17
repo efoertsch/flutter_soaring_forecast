@@ -371,7 +371,7 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
   Future<void> _gotoOverheadView() async {
     var updatedTurnpoint = await Navigator.pushNamed(
       context,
-      TurnpointView.routeName,
+      TurnpointViewRouteBuilder.routeName,
       arguments: TurnpointOverHeadArgs(
           isReadOnly: _isReadOnly,
           isDecimalDegreesFormat: _isDecimalDegreesFormat,

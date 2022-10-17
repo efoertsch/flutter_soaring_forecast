@@ -6,10 +6,13 @@ part of 'rasp_api.dart';
 // RetrofitGenerator
 // **************************************************************************
 
-// ignore_for_file: unnecessary_brace_in_string_interps
+// ignore_for_file: unnecessary_brace_in_string_interps,no_leading_underscores_for_local_identifiers
 
 class _RaspClient implements RaspClient {
-  _RaspClient(this._dio, {this.baseUrl}) {
+  _RaspClient(
+    this._dio, {
+    this.baseUrl,
+  }) {
     baseUrl ??= 'https://www.soargbsc.net/rasp/';
   }
 
@@ -23,35 +26,60 @@ class _RaspClient implements RaspClient {
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     final _data = <String, dynamic>{};
-    final _result = await _dio.fetch<Map<String, dynamic>>(
-        _setStreamType<Regions>(
-            Options(method: 'GET', headers: _headers, extra: _extra)
-                .compose(_dio.options, '/current.json',
-                    queryParameters: queryParameters, data: _data)
-                .copyWith(baseUrl: baseUrl ?? _dio.options.baseUrl)));
+    final _result =
+        await _dio.fetch<Map<String, dynamic>>(_setStreamType<Regions>(Options(
+      method: 'GET',
+      headers: _headers,
+      extra: _extra,
+    )
+            .compose(
+              _dio.options,
+              '/current.json',
+              queryParameters: queryParameters,
+              data: _data,
+            )
+            .copyWith(baseUrl: baseUrl ?? _dio.options.baseUrl)));
     final value = Regions.fromJson(_result.data!);
     return value;
   }
 
   @override
-  Future<ForecastModels> getForecastModels(region, date) async {
+  Future<ForecastModels> getForecastModels(
+    region,
+    date,
+  ) async {
     const _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     final _data = <String, dynamic>{};
-    final _result = await _dio.fetch<Map<String, dynamic>>(
-        _setStreamType<ForecastModels>(
-            Options(method: 'GET', headers: _headers, extra: _extra)
-                .compose(_dio.options, '/${region}/${date}/status.json',
-                    queryParameters: queryParameters, data: _data)
-                .copyWith(baseUrl: baseUrl ?? _dio.options.baseUrl)));
+    final _result = await _dio
+        .fetch<Map<String, dynamic>>(_setStreamType<ForecastModels>(Options(
+      method: 'GET',
+      headers: _headers,
+      extra: _extra,
+    )
+            .compose(
+              _dio.options,
+              '/${region}/${date}/status.json',
+              queryParameters: queryParameters,
+              data: _data,
+            )
+            .copyWith(baseUrl: baseUrl ?? _dio.options.baseUrl)));
     final value = ForecastModels.fromJson(_result.data!);
     return value;
   }
 
   @override
   Future<HttpResponse<dynamic>> getLatLongPointForecast(
-      contentType, region, date, model, time, lat, lon, forecastType) async {
+    contentType,
+    region,
+    date,
+    model,
+    time,
+    lat,
+    lon,
+    forecastType,
+  ) async {
     const _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{r'Content-Type': contentType};
@@ -63,16 +91,21 @@ class _RaspClient implements RaspClient {
       'time': time,
       'lat': lat,
       'lon': lon,
-      'param': forecastType
+      'param': forecastType,
     };
-    final _result = await _dio.fetch(_setStreamType<HttpResponse<dynamic>>(
-        Options(
-                method: 'POST',
-                headers: _headers,
-                extra: _extra,
-                contentType: contentType)
-            .compose(_dio.options, '/cgi/get_rasp_blipspot.cgi',
-                queryParameters: queryParameters, data: _data)
+    final _result =
+        await _dio.fetch(_setStreamType<HttpResponse<dynamic>>(Options(
+      method: 'POST',
+      headers: _headers,
+      extra: _extra,
+      contentType: contentType,
+    )
+            .compose(
+              _dio.options,
+              '/cgi/get_rasp_blipspot.cgi',
+              queryParameters: queryParameters,
+              data: _data,
+            )
             .copyWith(baseUrl: baseUrl ?? _dio.options.baseUrl)));
     final value = _result.data;
     final httpResponse = HttpResponse(value, _result);

@@ -607,7 +607,7 @@ class ForecastMapState extends State<ForecastMap>
   }
 
   void _displayTurnpointOverheadView(Turnpoint turnpoint) async {
-    await Navigator.pushNamed(context, TurnpointView.routeName,
+    await Navigator.pushNamed(context, TurnpointViewRouteBuilder.routeName,
         arguments: TurnpointOverHeadArgs(turnpoint: turnpoint));
   }
 

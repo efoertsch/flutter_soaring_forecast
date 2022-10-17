@@ -19,6 +19,8 @@ import 'package:flutter_soaring_forecast/soaring/floor/taskturnpoint/task_turnpo
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/ImageCacheManager.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/one800wxbrief/metar_taf_response.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/one800wxbrief/one800wxbrief_api.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/rasp_options_api.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/special_use_airspace.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/sua_region_files.dart';
@@ -30,7 +32,7 @@ import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoints_importer.
 import 'package:flutter_soaring_forecast/soaring/windy/data/windy_altitude.dart';
 import 'package:flutter_soaring_forecast/soaring/windy/data/windy_layer.dart';
 import 'package:flutter_soaring_forecast/soaring/windy/data/windy_model.dart';
-import 'package:logger/logger.dart';
+import 'package:logger/logger.dart' as DLogger; // Level conflict with Dio
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:retrofit/dio.dart';
@@ -50,8 +52,9 @@ class Repository {
   static late RaspClient _raspClient;
   static late RaspOptionsClient _raspOptionsClient;
   static UsgsClient? _usgsClient;
+  static One800WxBriefClient? _one800WxBriefClient;
   static AppDatabase? _appDatabase;
-  static var logger = Logger();
+  static var logger = DLogger.Logger();
 
   static const String SELECTED_REGION = "SELECTED_REGION";
   static const String DEFAULT_SELECTED_REGION = "NewEngland";
@@ -60,6 +63,8 @@ class Repository {
   static const String CURRENT_TASK_ID = "CURRENT_TASK_ID";
   static const String SATELLITE_TYPE = "SATELLITE_TYPE";
   static const String SATELLITE_REGION = "SATELLITE_REGION";
+  static const String AIRPORT_CODES_FOR_METAR = "AIRPORT_CODES_FOR_METAR_TAF";
+  static const String ICAO_CODE_DELIMITER = " ";
 
   late final String satelliteRegionUS;
   late final String satelliteTypeVis;
@@ -253,7 +258,9 @@ class Repository {
 
   Future<int> getCountOfAirports() async {
     await makeDatabaseAvailable();
-    return await _appDatabase!.airportDao.getCountOfAirports() ?? 0;
+    int? count = await Sqflite.firstIntValue(
+        await _appDatabase!.database.rawQuery('SELECT count(*) FROM airport'));
+    return count ?? 0;
   }
 
   @transaction
@@ -265,7 +272,53 @@ class Repository {
   @transaction
   Future<List<int?>> insertAllAirports(List<Airport> airports) async {
     await makeDatabaseAvailable();
-    return _appDatabase!.airportDao.insertAll(airports);
+    return await _appDatabase!.airportDao.insertAll(airports);
+  }
+
+  Future<List<Airport>?> findAirports(String searchTerm) async {
+    await makeDatabaseAvailable();
+    return await _appDatabase!.airportDao.findAirports('%' + searchTerm + '%');
+  }
+
+  Future<String> getSelectedAirportCodesAsString() async {
+    return await getGenericString(
+        key: AIRPORT_CODES_FOR_METAR, defaultValue: "");
+  }
+
+  void saveSelectedAirportCodes(String icaoCodes) async {
+    await saveGenericString(key: AIRPORT_CODES_FOR_METAR, value: icaoCodes);
+  }
+
+  Future<List<Airport>?> getSelectedAirports(List<String> icaoCodes) async {
+    await makeDatabaseAvailable();
+    return await _appDatabase!.airportDao.selectIcaoIdAirports(icaoCodes);
+  }
+
+  /**
+   * @return List of icao airport codes eg KORH, KBOS, ...
+   */
+  Future<List<String>> getSelectedAirportCodesList() async {
+    String airportCodes = await getSelectedAirportCodesAsString();
+    return airportCodes.trim().split(" ");
+  }
+
+  void addAirportCodeToSelectedIcaoCodes(String icaoCode) async {
+    String oldIcaoCodes = await getSelectedAirportCodesAsString();
+    if (!oldIcaoCodes.contains(icaoCode)) {
+      final newSelectedIcaoCodes =
+          oldIcaoCodes + ICAO_CODE_DELIMITER + icaoCode;
+      saveSelectedAirportCodes(newSelectedIcaoCodes);
+    }
+  }
+
+  void storeNewAirportOrder(List<Airport> airports) async {
+    final sb = new StringBuffer();
+    airports.forEach((airport) {
+      sb.write(airport.ident);
+      sb.write(ICAO_CODE_DELIMITER);
+    });
+
+    saveSelectedAirportCodes(sb.toString());
   }
 
   // ----- Turnpoints ----------------------------------
@@ -582,7 +635,7 @@ class Repository {
           // and if OK save them to file
           if (suaString != null) {
             sua = SUA.fromJson(json.decode(suaString));
-            File file = await _writeStringToAppDocsFile(
+            await _writeStringToAppDocsFile(
                 region + '_' + suaFileName, suaString);
             // and delete the old file
             if (oldSuaFilename != null) {
@@ -696,6 +749,28 @@ class Repository {
     return await rootBundle.loadString('assets/html/windy.html');
   }
 
+  //------ 1800wxbrief ---------------------------------
+
+  Future<MetarTafResponse> getMetar({required String location}) async {
+    if (_one800WxBriefClient == null) {
+      _one800WxBriefClient = One800WxBriefClient(_dio);
+    }
+    final authorization = _getWxBriefAuthorization();
+    return await _one800WxBriefClient!.getMETAR(authorization, location);
+  }
+
+  Future<MetarTafResponse> getTaf({required String location}) async {
+    if (_one800WxBriefClient == null) {
+      _one800WxBriefClient = One800WxBriefClient(_dio);
+    }
+    final authorization = _getWxBriefAuthorization();
+    return await _one800WxBriefClient!.getTAF(authorization, location);
+  }
+
+  String _getWxBriefAuthorization() {
+    var bytes = utf8.encode(One800WXBriefID + ":" + One800WXBriefPassword);
+    return "Basic " + base64.encode(bytes);
+  }
   // ----- Shared preferences --------------------------
   // Make sure keys are unique among calling routines!
 
