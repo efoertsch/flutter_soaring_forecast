@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:after_layout/after_layout.dart';
 import 'package:cupertino_will_pop_scope/cupertino_will_pop_scope.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -8,6 +9,7 @@ import 'package:flutter_soaring_forecast/soaring/airport/bloc/airport_event.dart
 import 'package:flutter_soaring_forecast/soaring/airport/bloc/airport_state.dart';
 import 'package:flutter_soaring_forecast/soaring/airport/ui/common_airport_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
+import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/airport/airport.dart';
 
 class AirportsSearch extends StatefulWidget {
@@ -19,12 +21,20 @@ class AirportsSearch extends StatefulWidget {
   State<AirportsSearch> createState() => _AirportsSearchState();
 }
 
-class _AirportsSearchState extends State<AirportsSearch> {
+class _AirportsSearchState extends State<AirportsSearch>
+    with AfterLayoutMixin<AirportsSearch> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   bool typing = false;
   String _searchString = "";
   bool _hasChanges = false;
   final airportsFromSearch = <Airport>[];
+
+  // Make sure first layout occurs
+  @override
+  void afterFirstLayout(BuildContext context) {
+    BlocProvider.of<AirportBloc>(context)
+        .add(SeeIfAirportDownloadNeededEvent());
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -65,6 +75,7 @@ class _AirportsSearchState extends State<AirportsSearch> {
           ),
         );
       }
+
       if (state is AirportsLoadedState) {
         airportsFromSearch.clear();
         airportsFromSearch.addAll(state.airports);
@@ -72,11 +83,19 @@ class _AirportsSearchState extends State<AirportsSearch> {
     }, buildWhen: (previous, current) {
       return current is AirportsInitialState ||
           current is AirportsLoadedState ||
-          current is AirportsErrorState;
+          current is AirportsErrorState ||
+          current is AirportsBeingDownloadedState ||
+          current is AirportsDownloadedOKState ||
+          current is AirportsDownloadErrorState;
     }, builder: (context, state) {
       if (state is AirportsInitialState) {
         return Center(
           child: Container(),
+        );
+      }
+      if (state is AirportsBeingDownloadedState) {
+        return Center(
+          child: CircularProgressIndicator(),
         );
       }
       if (state is AirportsLoadedState) {
@@ -95,18 +114,87 @@ class _AirportsSearchState extends State<AirportsSearch> {
             CommonWidgets.showErrorDialog(
                 context, 'Airports Error', state.errorMsg));
       }
+      if (state is SeeIfOkToDownloadAirportsState) {
+        WidgetsBinding.instance.addPostFrameCallback((_) =>
+            CommonWidgets.showInfoDialog(
+                context: context,
+                title: "Download Airports?",
+                msg:
+                    "No airports found. Ok to download now (it might take 30 secs or so)?",
+                button1Text: "No",
+                button1Function: _cancel,
+                button2Text: "Yes",
+                button2Function: _downloadAirportsNow));
+      }
+
+      if (state is AirportsDownloadedOKState) {
+        WidgetsBinding.instance.addPostFrameCallback((_) =>
+            CommonWidgets.showInfoDialog(
+                context: context,
+                title: "Hurrah!",
+                msg:
+                    "Airports downloaded successfully. You can now search on airports.",
+                button1Text: "OK",
+                button1Function: _cancel));
+      }
+
+      if (state is AirportsDownloadErrorState) {
+        WidgetsBinding.instance.addPostFrameCallback((_) =>
+            CommonWidgets.showInfoDialog(
+                context: context,
+                title: "Oh-Oh!",
+                msg:
+                    "Hmmm. Airport download unsuccessful. Please try again later.",
+                button1Text: "OK",
+                button1Function: _cancel));
+      }
       return Container();
     });
   }
 
   AppBar _getAppBar() {
     return AppBar(
-      title:
-          _getSearchTextBox(), // typing ? _getSearchTextBox() : Text("Airports"),
-      leading: BackButton(
-        onPressed: _onWillPop,
+        title:
+            _getSearchTextBox(), // typing ? _getSearchTextBox() : Text("Airports"),
+        leading: BackButton(
+          onPressed: _onWillPop,
+        ),
+        actions: getSearchMenu());
+  }
+
+  List<Widget> getSearchMenu() {
+    return <Widget>[
+      PopupMenuButton<String>(
+        icon: Icon(Icons.more_vert),
+        onSelected: handleClick,
+        itemBuilder: (BuildContext context) {
+          return {
+            AirportMenu.refresh,
+          }.map((String choice) {
+            return PopupMenuItem<String>(
+              value: choice,
+              child: Text(choice),
+            );
+          }).toList();
+        },
       ),
-    );
+    ];
+  }
+
+  void handleClick(String value) {
+    switch (value) {
+      case AirportMenu.refresh:
+        CommonWidgets.showInfoDialog(
+            context: context,
+            title: "Refresh Airports?",
+            msg: "Are you sure you want to delete/reload the Airport database?",
+            button1Text: "No",
+            button1Function: _cancel,
+            button2Text: "Yes",
+            button2Function: _downloadAirportsNow);
+
+        break;
+    }
   }
 
   Widget _getSearchTextBox() {
@@ -155,7 +243,7 @@ class _AirportsSearchState extends State<AirportsSearch> {
     return InkWell(
       child: getAirportWidget(airports[index]),
       onTap: (() {
-        _sendEvent(AddAirportToSelectList(airports[index]));
+        _sendEvent(AddAirportToSelectListEvent(airports[index]));
         ScaffoldMessenger.of(context).removeCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(
             CommonWidgets.getSnackBarForMessage(
@@ -171,5 +259,14 @@ class _AirportsSearchState extends State<AirportsSearch> {
 
   _sendEvent(AirportEvent event) {
     BlocProvider.of<AirportBloc>(context).add(event);
+  }
+
+  _cancel() {
+    Navigator.of(context).pop();
+  }
+
+  _downloadAirportsNow() {
+    Navigator.of(context).pop();
+    _sendEvent(DownloadAirportsNowEvent());
   }
 }

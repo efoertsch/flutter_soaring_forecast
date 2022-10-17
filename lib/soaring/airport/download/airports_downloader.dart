@@ -18,34 +18,35 @@ class AirportsDownloader {
   AirportsDownloader({required this.repository});
 
   Future<bool> downloadAirportsIfNeeded() async {
-    var totalInserted = 0;
-    var totalUSAirportsDownloaded = 0;
-
-    var numberAirports = await repository.getCountOfAirports();
+    final numberAirports = await repository.getCountOfAirports();
     if (numberAirports < 2000) {
       debugPrint('Too few airports in database so trying again');
-      var listOfAirports = await getDownloadedListOfAirports();
-      totalUSAirportsDownloaded = listOfAirports.length;
-      debugPrint(
-          'Total number of US airports downloaded: $totalUSAirportsDownloaded');
-      if (listOfAirports.length > 0) {
-        repository.deleteAllAirports();
-        debugPrint("Deleted all airports from database");
-      }
-      var insertedResponse = await repository.insertAllAirports(listOfAirports);
-      var totalInserted = insertedResponse.fold<int>(0, (previous, current) {
-        //debugPrint('airport insert result: $current');
-        return previous + (current != null ? 1 : 0);
-      });
-
-      debugPrint('Number airports inserted : $totalInserted');
-      return (totalUSAirportsDownloaded == totalInserted && totalInserted > 0);
+      return await downloadAirports();
     } else {
       // Assume prior download worked successfully
       debugPrint('Number of airports in database: $numberAirports. '
           'Assuming prior download worked ok');
       return true;
     }
+  }
+
+  Future<bool> downloadAirports() async {
+    var listOfAirports = await getDownloadedListOfAirports();
+    int totalUSAirportsDownloaded = listOfAirports.length;
+    debugPrint(
+        'Total number of US airports downloaded: $totalUSAirportsDownloaded');
+    if (listOfAirports.length > 0) {
+      repository.deleteAllAirports();
+      debugPrint("Deleted all airports from database");
+    }
+    var insertedResponse = await repository.insertAllAirports(listOfAirports);
+    var totalInserted = insertedResponse.fold<int>(0, (previous, current) {
+      //debugPrint('airport insert result: $current');
+      return previous + (current != null ? 1 : 0);
+    });
+
+    debugPrint('Number airports inserted : $totalInserted');
+    return (totalUSAirportsDownloaded == totalInserted && totalInserted > 0);
   }
 
   Future<List<Airport>> getDownloadedListOfAirports() async {

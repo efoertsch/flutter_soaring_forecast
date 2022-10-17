@@ -208,6 +208,10 @@ class MetarTafMenu {
   static const String add = "Add";
 }
 
+class AirportMenu {
+  static const String refresh = "Refresh";
+}
+
 class MetarOrTAF {
   static const String METAR = "METAR";
   static const String TAF = "TAF";

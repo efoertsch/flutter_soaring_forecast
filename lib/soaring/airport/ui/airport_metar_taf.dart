@@ -11,7 +11,6 @@ import 'package:flutter_soaring_forecast/soaring/airport/bloc/airport_state.dart
 import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/airport/airport.dart';
-import 'package:flutter_soaring_forecast/soaring/repository/one800wxbrief/metar_taf_response.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 
 class AirportMetarTaf extends StatefulWidget {
@@ -30,7 +29,7 @@ class _AirportMetarTafState extends State<AirportMetarTaf>
   // Make sure first layout occurs
   @override
   void afterFirstLayout(BuildContext context) {
-    BlocProvider.of<AirportBloc>(context).add(GetAirportMetarAndTafs());
+    BlocProvider.of<AirportBloc>(context).add(GetAirportMetarAndTafsEvent());
   }
 
   @override
@@ -179,13 +178,13 @@ class _AirportMetarTafState extends State<AirportMetarTaf>
   Future<void> _addNewAirport() async {
     await Navigator.pushNamed(context, AirportsSearchRouteBuilder.routeName,
         arguments: null);
-    _sendEvent(GetSelectedAirportsList());
+    _sendEvent(GetAirportMetarAndTafsEvent());
   }
 
   Future<void> _showSelectedAirports() async {
     await Navigator.pushNamed(context, SelectedAirportsRouteBuilder.routeName,
         arguments: null);
-    _sendEvent(GetSelectedAirportsList());
+    _sendEvent(GetAirportMetarAndTafsEvent());
   }
 
   Widget _getAirportMetarAndTafWidget(Airport airport) {
@@ -193,54 +192,57 @@ class _AirportMetarTafState extends State<AirportMetarTaf>
       padding: const EdgeInsets.only(bottom: 16),
       child: Column(
         children: [
-          Row(
-            children: [
-              Expanded(
-                  flex: 4,
-                  child: Text(
-                    airport.name,
-                    overflow: TextOverflow.ellipsis,
-                    style: textStyleBlackFontSize20,
-                  )),
-              Expanded(
-                  flex: 2,
-                  child: Padding(
-                    child: Text(
-                      airport.ident,
-                      style: textStyleBlackFontSize18,
-                    ),
-                    padding: const EdgeInsets.only(left: 4.0),
-                  )),
-              Expanded(
-                  flex: 4,
-                  child: Padding(
-                    padding: const EdgeInsets.only(left: 4.0),
-                    child: Text(
-                      "Elev:  ${airport.elevationFt} ft",
-                      style: textStyleBlackFontSize18,
-                    ),
-                  ))
-            ],
-          ),
           Container(
               width: MediaQuery.of(context).size.width,
               decoration:
                   BoxDecoration(border: Border.all(color: Colors.blueAccent)),
               child: Column(
                 children: [
+                  _getAirportHeader(airport),
                   _getMetarOrTAFWidget(
                       ident: airport.ident, type: MetarOrTAF.METAR),
                   _getMetarOrTAFWidget(
                       ident: airport.ident, type: MetarOrTAF.TAF),
                 ],
               )),
-          Padding(
-            padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
-            child: Divider(
-              height: 4,
-              thickness: 2,
-            ),
-          )
+        ],
+      ),
+    );
+  }
+
+  Widget _getAirportHeader(Airport airport) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Row(
+        children: [
+          Expanded(
+              flex: 4,
+              child: Padding(
+                padding: const EdgeInsets.only(left: 4.0),
+                child: Text(
+                  airport.name,
+                  overflow: TextOverflow.ellipsis,
+                  style: textStyleBlackFontSize20,
+                ),
+              )),
+          Expanded(
+              flex: 2,
+              child: Padding(
+                child: Text(
+                  airport.ident,
+                  style: textStyleBlackFontSize18,
+                ),
+                padding: const EdgeInsets.only(left: 4.0),
+              )),
+          Expanded(
+              flex: 4,
+              child: Padding(
+                padding: const EdgeInsets.only(left: 4.0),
+                child: Text(
+                  "Elev:  ${airport.elevationFt} ft",
+                  style: textStyleBlackFontSize18,
+                ),
+              ))
         ],
       ),
     );
@@ -253,7 +255,7 @@ class _AirportMetarTafState extends State<AirportMetarTaf>
     return BlocConsumer<AirportBloc, AirportState>(listener: (context, state) {
       if (state is AirportMetarTafState) {
         if (state.location == ident && state.type == type) {
-          _response = _getMetartOrTafResponse(state.metarTafResponse);
+          _response = _getMetarOrTafResponse(state);
         }
       }
     }, buildWhen: (previous, current) {
@@ -270,7 +272,7 @@ class _AirportMetarTafState extends State<AirportMetarTaf>
             child: Padding(
               padding: const EdgeInsets.only(left: 4.0),
               child: Text(
-                style: textStyleBlackFontSize18,
+                style: textStyleBoldBlackFontSize18,
                 type,
               ),
             ),
@@ -290,8 +292,14 @@ class _AirportMetarTafState extends State<AirportMetarTaf>
     });
   }
 
-  String _getMetartOrTafResponse(MetarTafResponse metarTafResponse) {
+  String _getMetarOrTafResponse(AirportMetarTafState airportMetarTafState) {
+    final metarTafResponse = airportMetarTafState.metarTafResponse;
     if (metarTafResponse.returnStatus ?? false) {
+      if (airportMetarTafState.type == MetarOrTAF.METAR) {
+        return _formatMetarResponse(metarTafResponse.plainText);
+      } else if (airportMetarTafState.type == MetarOrTAF.TAF) {
+        return _formatTafResponse(metarTafResponse.plainText);
+      }
       return metarTafResponse.plainText ?? MetarOrTAF.UNDEFINED_ERROR;
     } else if (metarTafResponse.returnCodedMessage != null) {
       final sb = StringBuffer();
@@ -301,5 +309,25 @@ class _AirportMetarTafState extends State<AirportMetarTaf>
       return sb.toString();
     }
     return MetarOrTAF.UNDEFINED_ERROR;
+  }
+
+  String _formatMetarResponse(String? plainText) {
+    if (plainText != null) {
+      return plainText
+          .replaceFirst(". ", ".\n\n")
+          .replaceFirst(" Remarks", "\n\nRemarks");
+    } else {
+      return MetarOrTAF.UNDEFINED_ERROR;
+    }
+  }
+
+  String _formatTafResponse(String? plainText) {
+    if (plainText != null) {
+      return plainText
+          .replaceFirst("Wind", "\n\nWind")
+          .replaceAll(" From", '\n\nFrom');
+    } else {
+      return MetarOrTAF.UNDEFINED_ERROR;
+    }
   }
 }

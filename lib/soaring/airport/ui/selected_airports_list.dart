@@ -26,7 +26,7 @@ class _SelectedAirportsListState extends State<SelectedAirportsList>
   // Make sure first layout occurs
   @override
   void afterFirstLayout(BuildContext context) {
-    BlocProvider.of<AirportBloc>(context).add(GetSelectedAirportsList());
+    BlocProvider.of<AirportBloc>(context).add(GetSelectedAirportsListEvent());
   }
 
   @override
@@ -196,7 +196,7 @@ class _SelectedAirportsListState extends State<SelectedAirportsList>
     var object = await Navigator.pushNamed(
         context, AirportsSearchRouteBuilder.routeName,
         arguments: null);
-    _sendEvent(GetSelectedAirportsList());
+    _sendEvent(GetSelectedAirportsListEvent());
   }
 
   Future<bool> _onWillPop() async {

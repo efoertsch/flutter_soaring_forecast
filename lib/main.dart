@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -30,13 +32,24 @@ import 'package:flutter_soaring_forecast/soaring/windy/bloc/windy_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/windy/ui/windy.dart';
 import 'package:workmanager/workmanager.dart';
 
+// https://github.com/fluttercommunity/flutter_workmanager#customisation-android-only
+@pragma(
+    'vm:entry-point') // Mandatory if the App is obfuscated or using Flutter 3.1+
 void callbackDispatcher() {
-  Workmanager().executeTask((task, inputData) {
-    print('Checking to download airports');
-    var ok = AirportsDownloader(repository: Repository(null))
-        .downloadAirportsIfNeeded();
-    print('AirportsDownloader response : $ok');
-    return Future.value(ok);
+  Workmanager().executeTask((task, inputData) async {
+    if (task == Workmanager.iOSBackgroundTask) {
+      debugPrint("The iOS background fetch was triggered");
+    }
+    try {
+      debugPrint('Checking to download airports');
+      var ok = AirportsDownloader(repository: Repository(null))
+          .downloadAirportsIfNeeded();
+      debugPrint('AirportsDownloader response : $ok');
+      return Future.value(ok);
+    } catch (err) {
+      debugPrint(err.toString());
+      throw Exception(err);
+    }
   });
 }
 
@@ -47,12 +60,15 @@ void main() async {
     debugPrint = (String? message, {int? wrapWidth}) {};
   }
 
-  Workmanager().initialize(
-      callbackDispatcher, // The top level function, aka callbackDispatcher
-      isInDebugMode:
-          true // If enabled it will post a notification whenever the task is running. Handy for debugging tasks
-      );
-  Workmanager().registerOneOffTask("1", "airportsDownload");
+  if (Platform.isAndroid) {
+    Workmanager().initialize(
+        callbackDispatcher, // The top level function, aka callbackDispatcher
+        isInDebugMode:
+            !kReleaseMode // If enabled it will post a notification whenever the task is running. Handy for debugging tasks
+        );
+    Workmanager()
+        .registerOneOffTask("oneTimeDownload", "workmanager.background.task");
+  }
 
   runApp(RepositorySetup());
 }
@@ -416,6 +432,7 @@ class RegionListRouteBuilder extends StatelessWidget {
   final selectedRegion;
 
   RegionListRouteBuilder({required String this.selectedRegion});
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider<RegionDataBloc>(

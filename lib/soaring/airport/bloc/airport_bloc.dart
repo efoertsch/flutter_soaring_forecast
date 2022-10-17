@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/airport/bloc/airport_event.dart';
 import 'package:flutter_soaring_forecast/soaring/airport/bloc/airport_state.dart';
+import 'package:flutter_soaring_forecast/soaring/airport/download/airports_downloader.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/airport/airport.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
@@ -14,13 +15,15 @@ class AirportBloc extends Bloc<AirportEvent, AirportState> {
 //TaskState get initialState => TasksLoadingState();
 
   AirportBloc({required this.repository}) : super(AirportsInitialState()) {
-    on<GetAirportMetarAndTafs>(_getAirportMetarAndTafs);
+    on<GetAirportMetarAndTafsEvent>(_getAirportMetarAndTafs);
     on<SearchAirportsEvent>(_searchForAirports);
-    on<GetSelectedAirportsList>(_getSelectedAirports);
-    on<AddAirportToSelectList>(_addAirportToSelectList);
+    on<GetSelectedAirportsListEvent>(_getSelectedAirports);
+    on<AddAirportToSelectListEvent>(_addAirportToSelectList);
     on<SwitchOrderOfSelectedAirportsEvent>(_switchOrderOfSelectedAirports);
     on<SwipeDeletedAirportEvent>(_deleteAirport);
     on<AddBackAirportEvent>(_addBackAirportToList);
+    on<SeeIfAirportDownloadNeededEvent>(_seeIfAirportDownloadNeeded);
+    on<DownloadAirportsNowEvent>(_downloadAirportsNow);
   }
 
   FutureOr<void> _searchForAirports(
@@ -32,7 +35,7 @@ class AirportBloc extends Bloc<AirportEvent, AirportState> {
   }
 
   void _getSelectedAirports(
-      GetSelectedAirportsList event, Emitter<AirportState> emit) async {
+      GetSelectedAirportsListEvent event, Emitter<AirportState> emit) async {
     final airportIdents = await repository.getSelectedAirportCodesList();
     await _emitSelectedAirports(airportIdents, emit);
   }
@@ -57,7 +60,7 @@ class AirportBloc extends Bloc<AirportEvent, AirportState> {
   }
 
   FutureOr<void> _addAirportToSelectList(
-      AddAirportToSelectList event, Emitter<AirportState> emit) {
+      AddAirportToSelectListEvent event, Emitter<AirportState> emit) {
     repository.addAirportCodeToSelectedIcaoCodes(event.airport.ident);
   }
 
@@ -90,7 +93,7 @@ class AirportBloc extends Bloc<AirportEvent, AirportState> {
   }
 
   FutureOr<void> _getAirportMetarAndTafs(
-      GetAirportMetarAndTafs event, Emitter<AirportState> emit) async {
+      GetAirportMetarAndTafsEvent event, Emitter<AirportState> emit) async {
     final airportIdents = await repository.getSelectedAirportCodesList();
     _emitSelectedAirports(airportIdents, emit);
     final List<Future> futureFunctions = [];
@@ -122,6 +125,26 @@ class AirportBloc extends Bloc<AirportEvent, AirportState> {
       // (type == MetarOrTAF.TAF)
       final taf = await repository.getTaf(location: location);
       return (AirportMetarTafState(location, type, taf));
+    }
+  }
+
+  FutureOr<void> _seeIfAirportDownloadNeeded(
+      SeeIfAirportDownloadNeededEvent event, Emitter<AirportState> emit) async {
+    final numberAirports = await repository.getCountOfAirports();
+    if (numberAirports < 2000) {
+      emit(SeeIfOkToDownloadAirportsState());
+    }
+  }
+
+  FutureOr<void> _downloadAirportsNow(
+      DownloadAirportsNowEvent event, Emitter<AirportState> emit) async {
+    emit(AirportsBeingDownloadedState());
+    var ok = await AirportsDownloader(repository: Repository(null))
+        .downloadAirports();
+    if (ok) {
+      emit(AirportsDownloadedOKState());
+    } else {
+      emit(AirportsDownloadErrorState());
     }
   }
 }

@@ -14,20 +14,25 @@ class SearchAirportsEvent extends AirportEvent {
   List<Object?> get props => [searchString];
 }
 
-class GetSelectedAirportsList extends AirportEvent {
+class SeeIfAirportDownloadNeededEvent extends AirportEvent {
   @override
   List<Object?> get props => [];
 }
 
-class GetAirportMetarAndTafs extends AirportEvent {
+class GetSelectedAirportsListEvent extends AirportEvent {
   @override
   List<Object?> get props => [];
 }
 
-class AddAirportToSelectList extends AirportEvent {
+class GetAirportMetarAndTafsEvent extends AirportEvent {
+  @override
+  List<Object?> get props => [];
+}
+
+class AddAirportToSelectListEvent extends AirportEvent {
   final Airport airport;
 
-  AddAirportToSelectList(this.airport);
+  AddAirportToSelectListEvent(this.airport);
 
   @override
   List<Object?> get props => [airport];
@@ -46,7 +51,6 @@ class SwipeDeletedAirportEvent extends AirportEvent {
 
   SwipeDeletedAirportEvent(this.airport);
   @override
-  // TODO: implement props
   List<Object?> get props => [airport];
 }
 
@@ -55,6 +59,10 @@ class AddBackAirportEvent extends AirportEvent {
   final int index;
   AddBackAirportEvent(this.airport, this.index);
   @override
-  // TODO: implement props
   List<Object?> get props => [airport];
+}
+
+class DownloadAirportsNowEvent extends AirportEvent {
+  @override
+  List<Object?> get props => [];
 }

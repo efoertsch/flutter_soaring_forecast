@@ -42,7 +42,29 @@ class AirportMetarTafState extends AirportState {
   final String location;
   final String type; // Metar or Taf
   final MetarTafResponse metarTafResponse;
+
   AirportMetarTafState(this.location, this.type, this.metarTafResponse);
+
   @override
   List<Object?> get props => [location, type, metarTafResponse.toString()];
+}
+
+class SeeIfOkToDownloadAirportsState extends AirportState {
+  @override
+  List<Object?> get props => [];
+}
+
+class AirportsBeingDownloadedState extends AirportState {
+  @override
+  List<Object?> get props => [];
+}
+
+class AirportsDownloadedOKState extends AirportState {
+  @override
+  List<Object?> get props => [];
+}
+
+class AirportsDownloadErrorState extends AirportState {
+  @override
+  List<Object?> get props => [];
 }

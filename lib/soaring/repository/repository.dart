@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
-import 'package:dio_logging_interceptor/dio_logging_interceptor.dart';
 import 'package:floor/floor.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -80,12 +79,12 @@ class Repository {
       // _dio.interceptors.add(LogInterceptor(responseBody: true));
       _dio.options.receiveTimeout = 300000;
       _dio.options.followRedirects = true;
-      _dio.interceptors.add(
-        DioLoggingInterceptor(
-          level: Level.body,
-          compact: false,
-        ),
-      );
+      // _dio.interceptors.add(
+      //   DioLoggingInterceptor(
+      //     level: Level.body,
+      //     compact: false,
+      //   ),
+      // );
       _raspClient = RaspClient(_dio);
       _raspOptionsClient = RaspOptionsClient(_dio);
     }
