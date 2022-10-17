@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
+import 'package:async/async.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/airport/bloc/airport_event.dart';
 import 'package:flutter_soaring_forecast/soaring/airport/bloc/airport_state.dart';
@@ -96,35 +96,28 @@ class AirportBloc extends Bloc<AirportEvent, AirportState> {
       GetAirportMetarAndTafsEvent event, Emitter<AirportState> emit) async {
     final airportIdents = await repository.getSelectedAirportCodesList();
     _emitSelectedAirports(airportIdents, emit);
-    final List<Future> futureFunctions = [];
+    final FutureGroup futureGroup = FutureGroup();
+    //final List<Future> futureFunctions = [];
     airportIdents.forEach((airport) {
-      futureFunctions.add(
-          _getAirportMetarOrTaf(location: airport, type: MetarOrTAF.METAR));
-      futureFunctions
-          .add(_getAirportMetarOrTaf(location: airport, type: MetarOrTAF.TAF));
+      futureGroup.add(_getAirportMetarOrTaf(
+          location: airport, type: MetarOrTAF.METAR, emit: emit));
+      futureGroup.add(_getAirportMetarOrTaf(
+          location: airport, type: MetarOrTAF.TAF, emit: emit));
     });
-    await Future.wait(futureFunctions).then((airportMetarTafStateList) {
-      for (final item in airportMetarTafStateList) {
-        if (item is AirportMetarTafState) {
-          emit(item);
-        } else {
-          debugPrint(item.toString());
-        }
-      }
-    }, onError: (err) {
-      debugPrint(err.toString());
-    });
+    await futureGroup.future;
   }
 
-  Future<AirportMetarTafState> _getAirportMetarOrTaf(
-      {required final String location, required final String type}) async {
+  Future _getAirportMetarOrTaf(
+      {required final String location,
+      required final String type,
+      required final Emitter<AirportState> emit}) async {
     if (type == MetarOrTAF.METAR) {
       final metar = await repository.getMetar(location: location);
-      return AirportMetarTafState(location, type, metar);
+      emit(AirportMetarTafState(location, type, metar));
     } else {
       // (type == MetarOrTAF.TAF)
       final taf = await repository.getTaf(location: location);
-      return (AirportMetarTafState(location, type, taf));
+      emit(AirportMetarTafState(location, type, taf));
     }
   }
 
