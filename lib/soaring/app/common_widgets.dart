@@ -95,50 +95,6 @@ class CommonWidgets {
     );
   }
 
-  // static showTwoButtonAlertDialog(
-  //     {required final BuildContext context,
-  //     required final String title,
-  //     required final String msg,
-  //     required final String button1Text,
-  //     required final Function button1Function,
-  //     final String? button2Text,
-  //     final Function? button2Function}) {
-  //   // set up the buttons
-  //   Widget cancelButton = TextButton(
-  //       child: Text(button1Text),
-  //       onPressed: () {
-  //         if (button1Function != null) {
-  //           button1Function();
-  //         }
-  //       });
-  //   Widget continueButton = TextButton(
-  //       child: Text(button2Text),
-  //       onPressed: () {
-  //         if (button2Function != null) {
-  //           button2Function();
-  //         }
-  //       });
-  //
-  //   // set up the AlertDialog
-  //   AlertDialog alert = AlertDialog(
-  //     title: Text(title),
-  //     content: Text(msg),
-  //     actions: [
-  //       cancelButton,
-  //       continueButton,
-  //     ],
-  //   );
-  //
-  //   // show the dialog
-  //   showDialog(
-  //     context: context,
-  //     barrierDismissible: false,
-  //     builder: (BuildContext context) {
-  //       return WillPopScope(onWillPop: () async => false, child: alert);
-  //     },
-  //   );
-  // }
-
   static List<Widget> composeDialogButtons(
       {required final String button1Text,
       required final Function button1Function,
@@ -225,8 +181,8 @@ class CommonWidgets {
     required TextEditingController textEditingController,
     required String button1Text,
     required Function button1Function,
-    required String button2Text,
-    required Function button2Function,
+    String? button2Text,
+    Function? button2Function,
     bool barrierDismissible = false,
     int minLines = 2,
     int maxLines = 10,
@@ -249,16 +205,11 @@ class CommonWidgets {
                 maxLines: maxLines,
               ),
             ),
-            actions: <Widget>[
-              TextButton(
-                child: Text(button1Text),
-                onPressed: () => button1Function(),
-              ),
-              TextButton(
-                child: Text(button2Text),
-                onPressed: () => button2Function(),
-              ),
-            ],
+            actions: composeDialogButtons(
+                button1Text: button1Text,
+                button1Function: button1Function,
+                button2Text: button2Text,
+                button2Function: button2Function),
           );
         });
   }

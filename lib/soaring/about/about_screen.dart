@@ -1,11 +1,10 @@
 import 'dart:io';
 
 import 'package:cupertino_will_pop_scope/cupertino_will_pop_scope.dart';
-import 'package:email_launcher/email_launcher.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_html/flutter_html.dart';
-import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
+import 'package:flutter_soaring_forecast/soaring/mixin/app_feedback.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 class AboutScreen extends StatefulWidget {
@@ -15,7 +14,7 @@ class AboutScreen extends StatefulWidget {
   _AboutScreenState createState() => _AboutScreenState();
 }
 
-class _AboutScreenState extends State<AboutScreen> {
+class _AboutScreenState extends State<AboutScreen> with AppFeedback {
   TextEditingController textEditingController = TextEditingController();
 
   @override
@@ -116,7 +115,7 @@ class _AboutScreenState extends State<AboutScreen> {
               child: Html(
                 data: snapshot.data,
                 onLinkTap: (reference, _, __, ___) {
-                  _sendFeedback();
+                  sendFeedback(context: context);
                 },
               ),
             ); // snapshot.data  :- get your object which is pass from your downloadData() function
@@ -141,30 +140,30 @@ class _AboutScreenState extends State<AboutScreen> {
     return rootBundle.loadString('assets/html/about.html');
   }
 
-  void _sendFeedback() {
-    CommonWidgets.displayTextInputDialog(
-        context: context,
-        title: "SoaringForecast Feedback",
-        inputHintText: "Please enter your feedback",
-        textEditingController: textEditingController,
-        button1Text: "Cancel",
-        button1Function: () {
-          Navigator.pop(context);
-        },
-        button2Text: "Submit",
-        button2Function: () => _sendEmail());
-  }
-
-  Future<void> _sendEmail() async {
-    final feedback = textEditingController.text;
-    if (feedback.isNotEmpty) {
-      print("Send email");
-      Email email = Email(
-          //to: ['flightservice@soaringforecast.org'],
-          to: ['ericfoertsch@gmail.com'],
-          subject: 'SoaringForecast iOS version feedback',
-          body: feedback);
-      await EmailLauncher.launch(email);
-    }
-  }
+  // void _sendFeedback() {
+  //   CommonWidgets.displayTextInputDialog(
+  //       context: context,
+  //       title: "SoaringForecast Feedback",
+  //       inputHintText: "Please enter your feedback",
+  //       textEditingController: textEditingController,
+  //       button1Text: "Cancel",
+  //       button1Function: () {
+  //         Navigator.pop(context);
+  //       },
+  //       button2Text: "Submit",
+  //       button2Function: () => _sendEmail());
+  // }
+  //
+  // Future<void> _sendEmail() async {
+  //   final feedback = textEditingController.text;
+  //   if (feedback.isNotEmpty) {
+  //     print("Send email");
+  //     Email email = Email(
+  //         //to: ['flightservice@soaringforecast.org'],
+  //         to: ['ericfoertsch@gmail.com'],
+  //         subject: 'SoaringForecast iOS version feedback',
+  //         body: feedback);
+  //     await EmailLauncher.launch(email);
+  //   }
+  // }
 }

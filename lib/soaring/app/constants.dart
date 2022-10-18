@@ -19,6 +19,7 @@ const String GEOS_CURRENT =
     "https://cdn.star.nesdis.noaa.gov/GOES16/ABI/SECTOR/ne/GEOCOLOR/2400x2400.jpg";
 
 const String WXBRIEF_URL = "https://lmfsweb.afss.com/Website/rest/";
+const String FEEDBACK_EMAIL_ADDRESS = 'ericfoertsch@gmail.com';
 
 const double metersToFeet = 3.28084;
 const String ft = "ft";
@@ -218,6 +219,13 @@ class MetarOrTAF {
   static const String TAF = "TAF";
   static const String FETCHING_INFORMATION = "Fetching information";
   static const String UNDEFINED_ERROR = "Undefined error";
+}
+
+class Feedback {
+  static const String FEEDBACK_TITLE = "SoaringForecast Feedback";
+  static const String FEEDBACK_HINT = "Please enter your feedback";
+  static const String FEEDBACK_CANCEL = "Cancel";
+  static const String FEEDBACK_SUBMIT = "Submit";
 }
 
 // Turnpoint icon colors for type of runway
