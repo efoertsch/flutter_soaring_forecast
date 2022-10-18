@@ -1297,7 +1297,7 @@ packages:
       name: workmanager
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.5.0-dev.8"
+    version: "0.5.0"
   xdg_directories:
     dependency: transitive
     description:

@@ -206,6 +206,7 @@ class GeosMenu {
 class MetarTafMenu {
   static const String list = "List";
   static const String add = "Add";
+  static const String refresh = "Refresh";
 }
 
 class AirportMenu {
