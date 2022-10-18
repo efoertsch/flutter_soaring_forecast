@@ -29,7 +29,7 @@ class _AirportMetarTafState extends State<AirportMetarTaf>
   // Make sure first layout occurs
   @override
   void afterFirstLayout(BuildContext context) {
-    BlocProvider.of<AirportBloc>(context).add(GetAirportMetarAndTafsEvent());
+    _sendEvent(GetAirportMetarAndTafsEvent());
   }
 
   @override
@@ -78,6 +78,7 @@ class _AirportMetarTafState extends State<AirportMetarTaf>
           return {
             MetarTafMenu.add,
             MetarTafMenu.list,
+            MetarTafMenu.refresh,
           }.map((String choice) {
             return PopupMenuItem<String>(
               value: choice,
@@ -97,6 +98,8 @@ class _AirportMetarTafState extends State<AirportMetarTaf>
       case MetarTafMenu.add:
         _addNewAirport();
         break;
+      case MetarTafMenu.refresh:
+        _refreshTafAndMetars();
     }
   }
 
@@ -199,8 +202,10 @@ class _AirportMetarTafState extends State<AirportMetarTaf>
               child: Column(
                 children: [
                   _getAirportHeader(airport),
+                  _getDivider(),
                   _getMetarOrTAFWidget(
                       ident: airport.ident, type: MetarOrTAF.METAR),
+                  _getDivider(),
                   _getMetarOrTAFWidget(
                       ident: airport.ident, type: MetarOrTAF.TAF),
                 ],
@@ -212,7 +217,7 @@ class _AirportMetarTafState extends State<AirportMetarTaf>
 
   Widget _getAirportHeader(Airport airport) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
+      padding: const EdgeInsets.only(bottom: 8.0, top: 8.0),
       child: Row(
         children: [
           Expanded(
@@ -270,7 +275,7 @@ class _AirportMetarTafState extends State<AirportMetarTaf>
           Align(
             alignment: Alignment.centerLeft,
             child: Padding(
-              padding: const EdgeInsets.only(left: 4.0),
+              padding: const EdgeInsets.only(left: 8.0, top: 4.0),
               child: Text(
                 style: textStyleBoldBlackFontSize18,
                 type,
@@ -329,5 +334,19 @@ class _AirportMetarTafState extends State<AirportMetarTaf>
     } else {
       return MetarOrTAF.UNDEFINED_ERROR;
     }
+  }
+
+  void _refreshTafAndMetars() {
+    _sendEvent(GetAirportMetarAndTafsEvent());
+  }
+
+  Widget _getDivider() {
+    return Padding(
+      padding: EdgeInsets.only(left: 8.0, right: 8.0),
+      child: Divider(
+        height: 4,
+        thickness: 2,
+      ),
+    );
   }
 }
