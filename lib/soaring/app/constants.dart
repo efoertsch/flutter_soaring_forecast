@@ -222,6 +222,7 @@ class MetarOrTAF {
 }
 
 class Feedback {
+  static const String SOARING_FORECAST = "SoaringForecast";
   static const String FEEDBACK_TITLE = "SoaringForecast Feedback";
   static const String FEEDBACK_HINT = "Please enter your feedback";
   static const String FEEDBACK_CANCEL = "Cancel";

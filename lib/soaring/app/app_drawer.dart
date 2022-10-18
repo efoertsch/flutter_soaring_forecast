@@ -1,11 +1,15 @@
-import 'package:flutter/material.dart';
+import 'dart:io';
+
+import 'package:email_launcher/email_launcher.dart';
+import 'package:flutter/material.dart' hide Feedback;
 import 'package:flutter_soaring_forecast/main.dart';
-import 'package:flutter_soaring_forecast/soaring/mixin/app_feedback.dart';
+import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
+    show FEEDBACK_EMAIL_ADDRESS, Feedback;
 import 'package:url_launcher/url_launcher.dart';
 
 import 'web_launcher.dart';
 
-class AppDrawer with AppFeedback {
+class AppDrawer {
   Widget getDrawer(BuildContext context,
       {Function? refreshTaskDisplayFunction}) {
     return Drawer(
@@ -115,8 +119,14 @@ class AppDrawer with AppFeedback {
           _getDivider(),
           ListTile(
             title: Text('Feedback'),
-            onTap: () {
-              sendFeedback(context: context);
+            onTap: () async {
+              Email email = Email(
+                //to: ['flightservice@soaringforecast.org'],
+                to: [FEEDBACK_EMAIL_ADDRESS],
+                subject:
+                    Feedback.FEEDBACK_TITLE + " - " + Platform.operatingSystem,
+              );
+              await EmailLauncher.launch(email);
             },
           ),
           ListTile(
