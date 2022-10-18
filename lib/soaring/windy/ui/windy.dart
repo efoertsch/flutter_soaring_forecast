@@ -158,7 +158,7 @@ class WindyForecastState extends State<WindyForecast>
       if (state is WindyModelListState) {
         final List<WindyModel> models = state.models;
         return Expanded(
-          flex: 2,
+          flex: 1,
           child: DropdownButton<WindyModel>(
             style: CustomStyle.bold18(context),
             value: (models[_modelIndex]),
