@@ -43,7 +43,6 @@ class _RegionListScreenState extends State<RegionListScreen> {
     }
   }
 
-  @override
   Widget _buildSafeArea(BuildContext context) {
     BlocProvider.of<RegionDataBloc>(context).add(ListRegionsEvent());
     return SafeArea(

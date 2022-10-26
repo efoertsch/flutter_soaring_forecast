@@ -626,8 +626,7 @@ class Repository {
             )
             .suaFileName;
         if (oldSuaFilename == null ||
-            (oldSuaFilename != null &&
-                !(oldSuaFilename).endsWith(region + '_' + suaFileName))) {
+            (!(oldSuaFilename).endsWith(region + '_' + suaFileName))) {
           logger.d(
               "Need to get SUA file from server (no sua on device or new file available");
           // so get details from server

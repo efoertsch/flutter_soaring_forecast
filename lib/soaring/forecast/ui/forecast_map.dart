@@ -628,7 +628,6 @@ class ForecastMapState extends State<ForecastMap>
     suaDetails.features?.forEach((airspace) {
       Color? polygonColor = null;
       String? label = null;
-      String? type = null;
       if (airspace.properties != null && airspace.properties!.type != null) {
         label = airspace.properties!.type!;
         for (var suaType in Constants.SUAColor.values) {

@@ -9,7 +9,6 @@ import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 class RegionDataBloc extends Bloc<RegionDataEvent, RegionDataState> {
   final Repository repository;
   Regions? _regions;
-  Region? _region;
 
   RegionDataBloc({required this.repository}) : super(RegionInitialState()) {
     on<ListRegionsEvent>(_getRegionList);

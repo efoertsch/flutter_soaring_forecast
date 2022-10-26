@@ -3,7 +3,6 @@ import 'dart:async';
 class DisplayTimer {
   late Duration duration;
   int _limit = 0;
-  int _start = 0;
   var _count = 1;
   Timer? _timer;
   late StreamController<int> _controller;

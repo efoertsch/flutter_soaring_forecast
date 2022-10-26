@@ -19,31 +19,37 @@ class InitialRaspRegionEvent extends RaspDataEvent {
 
 class SelectedRaspModelEvent extends RaspDataEvent {
   final String modelName;
+
   SelectedRaspModelEvent(this.modelName);
 }
 
 class SelectedRaspRegion extends RaspDataEvent {
   final Region region;
+
   SelectedRaspRegion(this.region);
 }
 
 class SelectRaspForecastDateEvent extends RaspDataEvent {
   final String forecastDate;
+
   SelectRaspForecastDateEvent(this.forecastDate);
 }
 
 class SetRaspForecastTimeEvent extends RaspDataEvent {
   final String forecastTime;
+
   SetRaspForecastTimeEvent(this.forecastTime);
 }
 
 class SelectedRaspForecastEvent extends RaspDataEvent {
   final Forecast forecast;
+
   SelectedRaspForecastEvent(this.forecast);
 }
 
 class SetRaspForecastType extends RaspDataEvent {
   final ForecastType forecastType;
+
   SetRaspForecastType(this.forecastType);
 }
 
@@ -64,12 +70,14 @@ class LoadForecastTypesEvents extends RaspDataEvent {
 
 class RunAnimationEvent extends RaspDataEvent {
   final bool runAnimation;
+
   RunAnimationEvent(this.runAnimation);
 }
 
 // Ask bloc to get the task turnpoints for plotting on map
 class GetTaskTurnpointsEvent extends RaspDataEvent {
   final int taskId;
+
   GetTaskTurnpointsEvent(this.taskId);
 }
 
@@ -84,76 +92,57 @@ class MapReadyEvent extends RaspDataEvent {
 
 class DisplayTaskTurnpointEvent extends RaspDataEvent {
   final TaskTurnpoint taskTurnpoint;
+
   DisplayTaskTurnpointEvent(this.taskTurnpoint);
-  @override
-  List<Object?> get props => [taskTurnpoint];
 }
 
 class DisplayLocalForecastEvent extends RaspDataEvent {
   final LatLng latLng;
+
   DisplayLocalForecastEvent(this.latLng);
-  @override
-  List<Object?> get props => [latLng];
 }
 
 class RedisplayMarkersEvent extends RaspDataEvent {
   RedisplayMarkersEvent();
-  @override
-  List<Object?> get props => [];
 }
 
 class SaveRaspDisplayOptionsEvent extends RaspDataEvent {
   final PreferenceOption displayOption;
+
   SaveRaspDisplayOptionsEvent(this.displayOption);
-  @override
-  List<Object?> get props => [displayOption];
 }
 
 class NewLatLngBoundsEvent extends RaspDataEvent {
   final LatLngBounds latLngBounds;
+
   NewLatLngBoundsEvent(LatLngBounds this.latLngBounds);
-  @override
-  List<Object?> get props => [latLngBounds];
 }
 
 class DisplayTurnointsEvent extends RaspDataEvent {
   final LatLngBounds latLngBounds;
 
   DisplayTurnointsEvent(this.latLngBounds);
-
-  @override
-  List<Object?> get props => [latLngBounds];
 }
 
 class DisplaySoundingsEvent extends RaspDataEvent {
   final Soundings sounding;
 
   DisplaySoundingsEvent(this.sounding);
-  @override
-  List<Object?> get props => [sounding];
 }
 
 // Used when closing soundings display and go back to displaying forecast images
 class DisplayCurrentForecastEvent extends RaspDataEvent {
   DisplayCurrentForecastEvent();
-  @override
-  List<Object?> get props => [];
 }
 
 class GetForecastOverlayOpacityEvent extends RaspDataEvent {
   GetForecastOverlayOpacityEvent();
-  @override
-  List<Object?> get props => [];
 }
 
 class SetForecastOverlayOpacityEvent extends RaspDataEvent {
   final double forecastOverlayOpacity;
+
   SetForecastOverlayOpacityEvent(this.forecastOverlayOpacity);
-  @override
-  List<Object?> get props => [forecastOverlayOpacity];
 }
 
-class RefreshTaskEvent extends RaspDataEvent {
-  @override
-  List<Object?> get props => [];
-}
+class RefreshTaskEvent extends RaspDataEvent {}

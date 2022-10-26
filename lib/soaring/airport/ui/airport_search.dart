@@ -25,8 +25,6 @@ class _AirportsSearchState extends State<AirportsSearch>
     with AfterLayoutMixin<AirportsSearch> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   bool typing = false;
-  String _searchString = "";
-  bool _hasChanges = false;
   final airportsFromSearch = <Airport>[];
 
   // Make sure first layout occurs
@@ -204,7 +202,6 @@ class _AirportsSearchState extends State<AirportsSearch>
       child: TextField(
         onChanged: (searchString) {
           if (searchString.length >= 2) {
-            _searchString = searchString;
             BlocProvider.of<AirportBloc>(context)
                 .add(SearchAirportsEvent(searchString));
           }

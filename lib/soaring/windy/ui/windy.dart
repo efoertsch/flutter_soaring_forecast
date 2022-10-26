@@ -27,8 +27,6 @@ class WindyForecast extends StatefulWidget {
 
 class WindyForecastState extends State<WindyForecast>
     with AfterLayoutMixin<WindyForecast> {
-  final Completer<WebViewController> _controller =
-      Completer<WebViewController>();
   WebViewController? _webViewController;
 
   int _modelIndex = 0;
@@ -339,13 +337,12 @@ class WindyForecastState extends State<WindyForecast>
                     //   _sendEvent(AssignWindyStartupParms());
                     // },
                     onWebViewCreated: (WebViewController webViewController) {
-                      //_controller.complete(webViewController);
                       _webViewController = webViewController;
                       _sendWindyWidgetHeight(
                           webViewController, _windyWidgetHeight);
                     },
                     navigationDelegate: (NavigationRequest request) {
-                      var url = request.url!.toString();
+                      var url = request.url.toString();
                       if (url.startsWith("https://www.windy.com")) {
                         launchWebBrowser("www.windy.com", "");
                         return NavigationDecision.prevent;
