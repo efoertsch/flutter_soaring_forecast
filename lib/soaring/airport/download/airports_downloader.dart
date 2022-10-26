@@ -61,6 +61,7 @@ class AirportsDownloader {
           goodHeaderRow = checklabels(row);
         }
         if (count > 0 &&
+            goodHeaderRow &&
             row.length > 10 &&
             row[2] != 'closed' &&
             row[8].toString().trim() == 'US') {

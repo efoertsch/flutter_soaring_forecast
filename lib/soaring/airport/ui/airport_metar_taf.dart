@@ -223,7 +223,7 @@ class _AirportMetarTafState extends State<AirportMetarTaf>
           Expanded(
               flex: 4,
               child: Padding(
-                padding: const EdgeInsets.only(left: 4.0),
+                padding: const EdgeInsets.only(left: 8.0),
                 child: Text(
                   airport.name,
                   overflow: TextOverflow.ellipsis,

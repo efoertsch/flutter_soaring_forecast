@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart' hide BuildContext;
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_soaring_forecast/main.dart';
 import 'package:flutter_soaring_forecast/soaring/app/app_drawer.dart';
@@ -57,8 +57,6 @@ class _RaspScreenState extends State<RaspScreen>
   Stream<int>? _overlayPositionCounter;
   StreamSubscription<int>? _tickerSubscription;
 
-  AppLifecycleState? _appLifecycleState;
-
   // Executed only when class created
   @override
   void initState() {
@@ -92,15 +90,6 @@ class _RaspScreenState extends State<RaspScreen>
         debugPrint("app in detached");
         break;
     }
-  }
-
-  // Make sure first layout occurs prior to map ready otherwise crash occurs
-  @override
-  void afterFirstLayout(BuildContext context) {
-    // debugPrint("First layout complete.");
-    // debugPrint('Calling series of APIs');
-    _sendEvent(InitialRaspRegionEvent());
-    _mapController.onReady.then((value) => _sendEvent(MapReadyEvent()));
   }
 
   @override
@@ -527,7 +516,7 @@ class _RaspScreenState extends State<RaspScreen>
 
   void displayTurnpointView(
       BuildContext context, TurnpointFoundState state) async {
-    final result = await Navigator.pushNamed(
+    await Navigator.pushNamed(
       context,
       TurnpointViewRouteBuilder.routeName,
       arguments: TurnpointOverHeadArgs(turnpoint: state.turnpoint),

@@ -70,7 +70,7 @@ class TurnpointFileLoadingState extends TurnpointState {
 }
 
 class TurnpointCupStyles extends TurnpointState {
-  List<CupStyle> cupStyles;
+  final List<CupStyle> cupStyles;
   TurnpointCupStyles(this.cupStyles);
   @override
   List<Object?> get props => [cupStyles];

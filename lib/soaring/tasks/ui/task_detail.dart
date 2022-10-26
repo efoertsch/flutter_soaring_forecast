@@ -326,10 +326,6 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
     );
   }
 
-  Widget _spacerBetweenListAndTurnpointsButton() {
-    return Spacer(flex: 1);
-  }
-
   void _displayTaskTurnpoint(
       BuildContext context, TaskTurnpoint taskTurnpoint) {
     BlocProvider.of<TaskBloc>(context)
@@ -392,7 +388,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
 
   void displayTurnpointView(
       BuildContext context, TurnpointFoundState state) async {
-    final result = await Navigator.pushNamed(
+    await Navigator.pushNamed(
       context,
       TurnpointViewRouteBuilder.routeName,
       arguments: TurnpointOverHeadArgs(turnpoint: state.turnpoint),

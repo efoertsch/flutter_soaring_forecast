@@ -167,7 +167,7 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
     emit(EditTurnpoint(turnpoint));
   }
 
-  FutureOr<int?> _saveTurnpoint(
+  FutureOr<void> _saveTurnpoint(
       SaveTurnpointEvent event, Emitter<TurnpointState> emit) async {
     final turnpoint = event.turnpoint;
     int? id = turnpoint.id;
@@ -204,21 +204,22 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
       GetCurrentLocation event, Emitter<TurnpointState> emit) async {
     Location location = Location();
     try {
+      double? elevation = 0;
       final currentLocation = await location.getLocation();
       if (currentLocation.altitude != null && currentLocation.altitude == 0) {
-        double? elevation = await getUSGSElevationAtLocation(
+        elevation = await getUSGSElevationAtLocation(
             currentLocation.latitude ?? 0, currentLocation.longitude ?? 0);
       }
       print(
           "location: ${currentLocation.latitude} ${currentLocation.longitude}, elevation(m): ${currentLocation.altitude} ");
       emit(CurrentLocationState(currentLocation.latitude ?? 0,
-          currentLocation.longitude ?? 0, currentLocation.altitude ?? 0));
+          currentLocation.longitude ?? 0, elevation ?? 0));
     } catch (e) {
       emit(TurnpointErrorState("Oops. Can't find your location!"));
     }
   }
 
-  FutureOr<double?> _getElevationAtLatLong(
+  FutureOr<void> _getElevationAtLatLong(
       GetElevationAtLatLong event, Emitter<TurnpointState> emit) async {
     double elevation;
     try {
@@ -227,7 +228,6 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
       emit(LatLongElevationState(event.latitude, event.longitude, elevation));
     } catch (e) {
       emit(TurnpointErrorState("Ooops. Could not get elevation at that point"));
-      return 0;
     }
   }
 

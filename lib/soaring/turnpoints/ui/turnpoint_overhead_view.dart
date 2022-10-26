@@ -41,7 +41,6 @@ class TurnpointOverheadView extends StatefulWidget {
 class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
     with AfterLayoutMixin<TurnpointOverheadView> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
-  bool _firstLayoutComplete = false;
   GoogleMapController? _mapController;
   bool _isDecimalDegreesFormat = true;
   bool _isReadOnly = false;
@@ -81,9 +80,7 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
       WidgetsBinding.instance.addPostFrameCallback((_) {
         checkForLocationPermission();
       });
-      setState(() {
-        _firstLayoutComplete = true;
-      });
+      setState(() {});
     }
   }
 
@@ -96,7 +93,6 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
     return _buildSafeArea(context);
   }
 
-  @override
   Widget _buildSafeArea(BuildContext context) {
     return SafeArea(
       child: Scaffold(

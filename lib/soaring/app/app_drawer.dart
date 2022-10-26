@@ -5,7 +5,6 @@ import 'package:flutter/material.dart' hide Feedback;
 import 'package:flutter_soaring_forecast/main.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     show FEEDBACK_EMAIL_ADDRESS, Feedback;
-import 'package:url_launcher/url_launcher.dart';
 
 import 'web_launcher.dart';
 
@@ -146,13 +145,5 @@ class AppDrawer {
       height: 4,
       thickness: 2,
     );
-  }
-
-  static void _launchWebBrowser(String url) async {
-    if (await canLaunch(url)) {
-      await launch(url);
-    } else {
-      throw 'Could not launch $url';
-    }
   }
 }

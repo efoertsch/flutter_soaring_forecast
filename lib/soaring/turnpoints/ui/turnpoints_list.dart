@@ -34,7 +34,6 @@ class _TurnpointsListState extends State<TurnpointsList>
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   bool typing = false;
   String _searchString = "";
-  bool _hasChanges = false;
 
   // Make sure first layout occurs
   @override
@@ -197,7 +196,6 @@ class _TurnpointsListState extends State<TurnpointsList>
             onPressed: () {
               if (widget.viewOption == TurnpointsList.TASK_TURNPOINT_OPTION) {
                 _searchString = "";
-                _hasChanges = true;
                 widget.turnpointsForTask.add(turnpoints[index]);
                 ScaffoldMessenger.of(context).removeCurrentSnackBar();
                 ScaffoldMessenger.of(context).showSnackBar(
