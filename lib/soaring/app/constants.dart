@@ -101,6 +101,24 @@ enum SUAColor {
   final Color airspaceColor;
 }
 
+enum WxBriefOption {
+  TASK_NOTAMS(option: "Task NOTAMS"),
+  ROUTE_BREIFING(option: "Route Briefing");
+
+  const WxBriefOption({required this.option});
+
+  final String option;
+}
+
+enum WxBriefFormat {
+  PDF(option: "PDF"),
+  EMAIL(option: "Email");
+
+  const WxBriefFormat({required this.option});
+
+  final String option;
+}
+
 //------------- Translatable values --------------------------------------------
 class RaspMenu {
   static const String selectTask = 'SELECT TASK';
@@ -110,6 +128,9 @@ class RaspMenu {
   static const String reorderForecasts = 'Reorder Forecasts';
   static const String opacity = 'Opacity';
   static const String selectRegion = 'Select Region';
+  static const String taskBrief = 'Task Brief';
+  static const String notamsBrief = "NOTAMS";
+  static const String routeBrief = "Route Brief";
 }
 
 class RaspDisplayOptionsMenu {
@@ -229,11 +250,20 @@ class Feedback {
   static const String FEEDBACK_SUBMIT = "Submit";
 }
 
+class WxBriefLiterals {
+  static const String CANCEL = "Cancel";
+  static const String SUBMIT = "Submit";
+}
+
 // Turnpoint icon colors for type of runway
 const Color grassRunway = Color(0xFF3CB043);
 const Color asphaltRunway = Colors.black;
 const Color noRunway = Color(0xFFEE4926);
 //---------------------------------------------------------------------------
+
+const textStyleBoldBlackFontSize24 =
+    TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 24);
+
 const textStyleBoldBlackFontSize20 =
     TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 20);
 

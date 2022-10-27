@@ -69,6 +69,12 @@ class Repository {
   late final String satelliteRegionUS;
   late final String satelliteTypeVis;
 
+  static const String WXBRIEF_AIRCRAFT_REGISTRATION =
+      "WXBRIEF_AIRCRAFT_REGISTRATION";
+  static const String WXBRIEF_ACCOUNT_NAME = "WXBRIEF_ACCOUNT_NAME";
+  static const String WXBRIEF_CORRIDOR_WIDTH = "WXBRIEF_CORRIDOR_WIDTH";
+  static const String WXBRIEF_WINDS_ALOFT_WIDTH = "WXBRIEF_WINDS_ALOFT_WIDTH";
+
   Repository._();
 
   // BuildContext should only be null if repository created in WorkManager task!!!
@@ -412,9 +418,7 @@ class Repository {
     var stringJson = await _raspOptionsClient.getTurnpointRegions();
     TurnpointRegions turnpointRegions =
         TurnpointRegions.fromJson(jsonDecode(stringJson));
-    if (turnpointRegions != null) {
-      turnpointRegionList.addAll(turnpointRegions.turnpointRegions!);
-    }
+    turnpointRegionList.addAll(turnpointRegions.turnpointRegions!);
     String selectedRegion = await getGenericString(
         key: SELECTED_REGION, defaultValue: DEFAULT_SELECTED_REGION);
     return turnpointRegionList
@@ -770,6 +774,44 @@ class Repository {
     var bytes = utf8.encode(One800WXBriefID + ":" + One800WXBriefPassword);
     return "Basic " + base64.encode(bytes);
   }
+
+  Future<String> getAircraftRegistration() async {
+    return getGenericString(
+        key: WXBRIEF_AIRCRAFT_REGISTRATION, defaultValue: "");
+  }
+
+  Future<bool> setAircraftRegistration(String aircraftRegistration) async {
+    return saveGenericString(
+        key: WXBRIEF_AIRCRAFT_REGISTRATION, value: aircraftRegistration);
+  }
+
+  Future<String> getWxBriefAccountName() {
+    return getGenericString(key: WXBRIEF_ACCOUNT_NAME, defaultValue: "");
+  }
+
+  Future<bool> setWxBriefAccountName(String wxbriefAccountName) {
+    return saveGenericString(
+        key: WXBRIEF_ACCOUNT_NAME, value: wxbriefAccountName);
+  }
+
+  Future<String> getWxBriefCorridorWidth() async {
+    return getGenericString(key: WXBRIEF_CORRIDOR_WIDTH, defaultValue: "25");
+  }
+
+  Future<bool> setWxBriefCorridorWidth(String corridorWidth) async {
+    return saveGenericString(key: WXBRIEF_CORRIDOR_WIDTH, value: corridorWidth);
+  }
+
+  Future<String> getWxBriefWindsAloftWidth() async {
+    return getGenericString(
+        key: WXBRIEF_WINDS_ALOFT_WIDTH, defaultValue: "200");
+  }
+
+  Future<bool> setWxBriefWindsAloftWidth(String windsAloftWidth) async {
+    return saveGenericString(
+        key: WXBRIEF_WINDS_ALOFT_WIDTH, value: windsAloftWidth);
+  }
+
   // ----- Shared preferences --------------------------
   // Make sure keys are unique among calling routines!
 

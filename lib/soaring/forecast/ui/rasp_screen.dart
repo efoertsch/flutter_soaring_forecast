@@ -57,6 +57,8 @@ class _RaspScreenState extends State<RaspScreen>
   Stream<int>? _overlayPositionCounter;
   StreamSubscription<int>? _tickerSubscription;
 
+  bool taskSelected = false;
+
   // Executed only when class created
   @override
   void initState() {
@@ -394,12 +396,18 @@ class _RaspScreenState extends State<RaspScreen>
   Widget _miscStatesHandlerWidget() {
     return BlocConsumer<RaspDataBloc, RaspDataState>(
         listener: (context, state) {
+      if (state is RaspTaskTurnpoints) {
+        taskSelected = state.taskTurnpoints.isNotEmpty;
+        return;
+      }
       if (state is RaspDisplayOptionsState) {
         // debugPrint("Received RaspDisplayOptionsState");
         _raspDisplayOptions = state.displayOptions;
+        return;
       }
       if (state is SelectedRegionNameState) {
         _selectedRegionName = state.selectedRegionName;
+        return;
       }
     }, builder: (context, state) {
       return SizedBox.shrink();
@@ -450,20 +458,62 @@ class _RaspScreenState extends State<RaspScreen>
         itemBuilder: (BuildContext context) {
           return {
             RaspMenu.clearTask,
+            RaspMenu.taskBrief,
             RaspMenu.displayOptions,
             // RaspMenu.mapBackground,
             RaspMenu.reorderForecasts,
             RaspMenu.opacity,
             RaspMenu.selectRegion
           }.map((String choice) {
+            if (choice == RaspMenu.clearTask) {
+              return PopupMenuItem<String>(
+                value: choice,
+                enabled: taskSelected,
+                child: Text(choice),
+              );
+            }
+            if (choice == RaspMenu.taskBrief) {
+              return PopupMenuItem<String>(
+                value: choice,
+                enabled: taskSelected,
+                child: _getBriefSubMenu(),
+              );
+            }
+            ;
             return PopupMenuItem<String>(
               value: choice,
               child: Text(choice),
             );
           }).toList();
         },
-      ),
+      )
     ];
+  }
+
+  Widget _getBriefSubMenu() {
+    return PopupMenuButton<String>(
+      offset: Offset(-30, 25),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Text(RaspMenu.taskBrief),
+          Spacer(),
+          Icon(Icons.arrow_right, size: 20.0, color: Colors.black),
+        ],
+      ),
+      onSelected: handleClick,
+      itemBuilder: (BuildContext context) {
+        return {
+          RaspMenu.notamsBrief,
+          RaspMenu.routeBrief,
+        }.map((String choice) {
+          return PopupMenuItem<String>(
+            value: choice,
+            child: Text(choice),
+          );
+        }).toList();
+      },
+    );
   }
 
   _selectTask() async {
@@ -480,6 +530,12 @@ class _RaspScreenState extends State<RaspScreen>
     switch (value) {
       case RaspMenu.clearTask:
         _sendEvent(ClearTaskEvent());
+        break;
+      case RaspMenu.notamsBrief:
+        _displayWxBriefNotams();
+        break;
+      case RaspMenu.routeBrief:
+        _displayWxBriefRouteBriefing();
         break;
       case RaspMenu.displayOptions:
         _showMapDisplayOptionsDialog();
@@ -603,4 +659,12 @@ class _RaspScreenState extends State<RaspScreen>
       _sendEvent(MapReadyEvent());
     }
   }
+
+  void _displayWxBriefNotams() async {
+    final result = await Navigator.pushNamed(
+        context, WxBriefNotamsBuilder.routeName,
+        arguments: TaskListScreen.SELECT_TASK_OPTION);
+  }
+
+  void _displayWxBriefRouteBriefing() async {}
 }
