@@ -3,10 +3,13 @@ import 'dart:io';
 
 import 'package:after_layout/after_layout.dart';
 import 'package:cupertino_will_pop_scope/cupertino_will_pop_scope.dart';
+import 'package:email_validator/email_validator.dart';
 import 'package:flutter/material.dart' hide Feedback;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
-import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
+import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
+    show WxBriefLiterals, WxBriefFormat;
+import 'package:flutter_soaring_forecast/soaring/app/custom_styles.dart';
 import 'package:flutter_soaring_forecast/soaring/wxbrief/bloc/wxbrief_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/wxbrief/bloc/wxbrief_event.dart';
 import 'package:flutter_soaring_forecast/soaring/wxbrief/bloc/wxbrief_state.dart';
@@ -21,8 +24,10 @@ class WxBriefNotams extends StatefulWidget {
 class _WxBriefNotamsState extends State<WxBriefNotams>
     with AfterLayoutMixin<WxBriefNotams> {
   var _formKey = GlobalKey<FormState>();
-  WxBriefFormat _dropDownWxBriefFormat = WxBriefFormat.PDF;
+  WxBriefFormat _selectedWxBriefFormat = WxBriefFormat.PDF;
   List<WxBriefFormat> _dropDownWxBriefFormatList = WxBriefFormat.values;
+  String _accountName = "";
+  String _aircraftRegistration = "";
 
   @override
   FutureOr<void> afterFirstLayout(BuildContext context) {
@@ -155,9 +160,17 @@ class _WxBriefNotamsState extends State<WxBriefNotams>
           ),
           Padding(
             padding: const EdgeInsets.only(left: 16.0),
-            child: Icon(
-              Icons.info,
+            child: IconButton(
+              icon: Icon(Icons.info),
               color: Colors.blue,
+              onPressed: () {
+                CommonWidgets.showInfoDialog(
+                    context: context,
+                    title: WxBriefLiterals.NOTAMS_BRIEFING,
+                    msg: WxBriefLiterals.WXBRIEF_NOTAMS_ABBREV_BRIEF_INFO,
+                    button1Text: WxBriefLiterals.CLOSE,
+                    button1Function: _cancel);
+              },
             ),
           )
         ],
@@ -165,9 +178,16 @@ class _WxBriefNotamsState extends State<WxBriefNotams>
     );
   }
 
+  void _cancel() {
+    Navigator.of(context).pop();
+  }
+
   Widget _getAircraftRegistrion() {
-    return BlocBuilder<WxBriefBloc, WxBriefState>(
-        buildWhen: (previous, current) {
+    return BlocConsumer<WxBriefBloc, WxBriefState>(listener: (context, state) {
+      if (state is WxBriefDefaultsState) {
+        _accountName = state.wxBriefDefaults.wxBriefAccountName;
+      }
+    }, buildWhen: (previous, current) {
       return current is WxBriefInitialState || current is WxBriefDefaultsState;
     }, builder: (context, state) {
       if (state is WxBriefInitialState) {
@@ -177,14 +197,15 @@ class _WxBriefNotamsState extends State<WxBriefNotams>
         return Padding(
           padding: const EdgeInsets.only(top: 8.0),
           child: TextFormField(
-              initialValue: state.wxBriefDefaults.aircraftRegistration,
+              initialValue: _accountName,
               decoration: InputDecoration(
                 border: OutlineInputBorder(),
                 labelText: 'Aircraft Registration',
               ),
               autovalidateMode: AutovalidateMode.onUserInteraction,
               validator: (value) {
-                if ((value ?? "").length > 3) {
+                if (value != null && value.length > 3) {
+                  _aircraftRegistration = value;
                   return null;
                 } else {
                   return "Invalid aircraft registration";
@@ -198,8 +219,11 @@ class _WxBriefNotamsState extends State<WxBriefNotams>
   }
 
   Widget _getWxBriefAccountName() {
-    return BlocBuilder<WxBriefBloc, WxBriefState>(
-        buildWhen: (previous, current) {
+    return BlocConsumer<WxBriefBloc, WxBriefState>(listener: (context, state) {
+      if (state is WxBriefDefaultsState) {
+        _aircraftRegistration = state.wxBriefDefaults.aircraftRegistration;
+      }
+    }, buildWhen: (previous, current) {
       return current is WxBriefInitialState || current is WxBriefDefaultsState;
     }, builder: (context, state) {
       if (state is WxBriefInitialState) {
@@ -209,14 +233,17 @@ class _WxBriefNotamsState extends State<WxBriefNotams>
         return Padding(
           padding: const EdgeInsets.only(top: 16.0),
           child: TextFormField(
-              initialValue: state.wxBriefDefaults.wxBriefAccountName,
+              initialValue: _aircraftRegistration,
               decoration: InputDecoration(
                 border: OutlineInputBorder(),
                 labelText: '1800WxBrief Account Name',
               ),
               autovalidateMode: AutovalidateMode.onUserInteraction,
               validator: (value) {
-                if ((value ?? "").length > 3) {
+                if (value != null &&
+                    value.length > 3 &&
+                    EmailValidator.validate(value)) {
+                  _accountName = value;
                   return null;
                 } else {
                   return "Invalid aircraft registration";
@@ -246,7 +273,7 @@ class _WxBriefNotamsState extends State<WxBriefNotams>
 
   Widget _getBriefingFormatDropDown() {
     return DropdownButton<WxBriefFormat>(
-      value: _dropDownWxBriefFormat,
+      value: _selectedWxBriefFormat,
       icon: const Icon(Icons.arrow_downward),
       elevation: 16,
       style: const TextStyle(color: Colors.deepPurple),
@@ -257,7 +284,7 @@ class _WxBriefNotamsState extends State<WxBriefNotams>
       onChanged: (WxBriefFormat? value) {
         // This is called when the user selects an item.
         setState(() {
-          _dropDownWxBriefFormat = value!;
+          _selectedWxBriefFormat = value!;
         });
       },
       items: _dropDownWxBriefFormatList
@@ -285,7 +312,9 @@ class _WxBriefNotamsState extends State<WxBriefNotams>
                 onPrimary: Colors.white,
                 primary: Theme.of(context).colorScheme.primary,
               ),
-              onPressed: () {},
+              onPressed: () {
+                _cancel();
+              },
               child: const Text(WxBriefLiterals.CANCEL),
             ),
           ),
@@ -300,7 +329,9 @@ class _WxBriefNotamsState extends State<WxBriefNotams>
                   onPrimary: Colors.white,
                   primary: Theme.of(context).colorScheme.primary,
                 ),
-                onPressed: () {},
+                onPressed: () {
+                  _submit();
+                },
                 child: const Text(WxBriefLiterals.SUBMIT),
               ),
             ),
@@ -312,5 +343,12 @@ class _WxBriefNotamsState extends State<WxBriefNotams>
 
   void _sendEvent(WxBriefEvent event) {
     BlocProvider.of<WxBriefBloc>(context).add(event);
+  }
+
+  void _submit() {
+    _sendEvent(WxBriefGetNotamsEvent(
+        aircraftRegistration: _aircraftRegistration,
+        accountName: _accountName,
+        wxBriefFormat: _selectedWxBriefFormat));
   }
 }

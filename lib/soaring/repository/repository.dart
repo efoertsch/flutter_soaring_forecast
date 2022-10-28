@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:csv/csv.dart';
 import 'package:dio/dio.dart';
 import 'package:floor/floor.dart';
 import 'package:flutter/foundation.dart';
@@ -32,6 +33,7 @@ import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoints_importer.
 import 'package:flutter_soaring_forecast/soaring/windy/data/windy_altitude.dart';
 import 'package:flutter_soaring_forecast/soaring/windy/data/windy_layer.dart';
 import 'package:flutter_soaring_forecast/soaring/windy/data/windy_model.dart';
+import 'package:flutter_soaring_forecast/soaring/wxbrief/data/briefingOption.dart';
 import 'package:logger/logger.dart' as DLogger; // Level conflict with Dio
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
@@ -865,5 +867,47 @@ class Repository {
       {required String key, required bool defaultValue}) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     return await prefs.getBool(key) ?? defaultValue;
+  }
+
+  // 1800WXBrief --------------------------------------------------------------
+
+  Future<List<BriefingOption>> getWxBriefProductCodes(
+      Constants.WxBriefTypeOfBriefing selectedTypeOfBrief) async {
+    return getWxBriefingOptions(
+        "wxbrief_product_codes.csv", selectedTypeOfBrief);
+  }
+
+  Future<List<BriefingOption>> getWxBriefNGBV2TailoringOptions(
+      Constants.WxBriefTypeOfBriefing selectedTypeOfBrief) async {
+    return getWxBriefingOptions(
+        "wxbrief_ngbv2_options.csv", selectedTypeOfBrief);
+  }
+
+  Future<List<BriefingOption>> getWxBriefNonNGBV2TailoringOptions(
+      Constants.WxBriefTypeOfBriefing selectedTypeOfBrief) async {
+    return getWxBriefingOptions(
+        "wxbrief_non_ngbv2_options.csv", selectedTypeOfBrief);
+  }
+
+  Future<List<BriefingOption>> getWxBriefingOptions(String optionsFileName,
+      Constants.WxBriefTypeOfBriefing selectedTypeOfBrief) async {
+    final briefingOptions = <BriefingOption>[];
+    String optionsString =
+        await rootBundle.loadString('assets/csv/' + optionsFileName);
+    final rowsAsListOfValues = const CsvToListConverter(
+      eol: '\n',
+    ).convert(optionsString);
+    for (int i = 0; i < rowsAsListOfValues.length; ++i) {
+      if (i > 0) {
+        final briefingOption =
+            await BriefingOption.createBriefingOptionFromCSVDetail(
+                rowsAsListOfValues[i], selectedTypeOfBrief);
+        if (briefingOption != null) {
+          briefingOptions.add(briefingOption);
+        }
+      }
+    }
+    debugPrint(" Number of product/options codes  ${briefingOptions.length}");
+    return briefingOptions;
   }
 }

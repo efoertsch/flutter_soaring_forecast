@@ -15,6 +15,7 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
 
   WxBriefBloc({required this.repository}) : super(WxBriefInitialState()) {
     on<WxBriefGetTaskDetailsEvent>(_getWxBriefTaskDetails);
+    on<WxBriefGetNotamsEvent>(_submitNotamsBriefRequest);
   }
 
   FutureOr<void> _getWxBriefTaskDetails(
@@ -41,4 +42,7 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
             aircraftRegistration: aircraftRegistration,
             wxBriefAccountName: wxbriefAccountName)));
   }
+
+  FutureOr<void> _submitNotamsBriefRequest(
+      WxBriefGetNotamsEvent event, Emitter<WxBriefState> emit) async {}
 }

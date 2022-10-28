@@ -1,0 +1,21 @@
+1800WxBrief Parameter name,1800WxBrief parm description,Display Description,Display for OutlookBrief,Default Value OutLook Brief ,Display for StandardBrief,Default value for Standard Brief,Display For Abbreviated Brief,Default vale for Abbreviated Brief,Display For NOTAMS Brief only,Default vale for NOTAMS Brief
+EXCLUDE_GRAPHICS,Exclude graphics,Include graphics,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE
+EXCLUDE_NEXTGEN,Exclude Nextgen content,Include NextGen content,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE
+EXCLUDE_PLAINTEXT,Exclude plaintext,Plain Text Translations,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE
+EXCLUDE_HISTORICAL_METARS,Exclude historical METARs,Include most recent METARS,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,FALSE
+EXCLUDE_FAR_WINDS_ALOFT,Exclude Winds Aloft data not within 4000ft of the filed altitude,Include winds aloft,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,FALSE,FALSE
+EXCLUDE_LOW_ENROUTE_OBSTRUCTIONS,Exclude en route obstructions more than 1000ft below the filed altitude,Include enroute obstructions ,FALSE,FALSE,TRUE,FALSE,TRUE,FALSE,FALSE,TRUE
+EXCLUDE_GFA_BEYOND_DEP_TIME,Exclude Graphical Forecast beyond the departure time,Include graphical forecast beyond departure time,TRUE,TRUE,TRUE,FALSE,TRUE,FALSE,FALSE,FALSE
+EXCLUDE_ENROUTE_NAV_DME,Exclude en route navigational DME NOTAMs,Include en route navigational DME NOTAMs,FALSE,FALSE,TRUE,FALSE,TRUE,FALSE,FALSE,FALSE
+EXCLUDE_ENROUTE_NAV_ILS,Exclude en route navigational ILS NOTAMs,Include en route navigational ILS NOTAMs,FALSE,FALSE,TRUE,FALSE,TRUE,FALSE,FALSE,FALSE
+EXCLUDE_ENROUTE_NAV_NDB,Exclude en route navigational NDB NOTAMs,Include en route navigational NDB NOTAMs,FALSE,FALSE,TRUE,FALSE,TRUE,FALSE,FALSE,FALSE
+EXCLUDE_ENROUTE_NAV_TACAN,Exclude en route navigational TACAN NOTAMs,Include en route navigational TACAN NOTAMs,FALSE,FALSE,TRUE,FALSE,TRUE,FALSE,FALSE,FALSE
+EXCLUDE_ENROUTE_NAV_VOR,Exclude en route navigational VOR NOTAMs,Include en route navigational VOR NOTAMs,FALSE,FALSE,TRUE,FALSE,TRUE,FALSE,FALSE,FALSE
+EXCLUDE_ENROUTE_NAV_VORTAC,Exclude en route navigational VORTAC NOTAMs,Include en route navigational VORTAC NOTAMs,FALSE,FALSE,TRUE,FALSE,TRUE,FALSE,FALSE,FALSE
+EXCLUDE_ENROUTE_NAV_VOR-DME,Exclude en route navigational VOR-DME NOTAMs,Include en route navigational VOR-DME NOTAMs,FALSE,FALSE,TRUE,FALSE,TRUE,FALSE,FALSE,FALSE
+EXCLUDE_ENROUTE_NAV_OTHER,Exclude other en route navigational NOTAMs,Include other en route navigational NOTAMs,FALSE,FALSE,TRUE,FALSE,TRUE,FALSE,FALSE,FALSE
+EXCLUDE_FLOW_CONTROL,Exclude Flow Control Messages,Include flow control messages,FALSE,FALSE,TRUE,FALSE,TRUE,FALSE,FALSE,FALSE
+EXCLUDE_MILITARY_NOTAM,Exclude Military NOTAMs,Include Military NOTAMs,FALSE,FALSE,TRUE,FALSE,TRUE,FALSE,TRUE,FALSE
+EXCLUDE_NHC_BULLETIN,Exclude NHC Bulletin,Include HNHC bulletin,FALSE,FALSE,TRUE,FALSE,TRUE,FALSE,FALSE,FALSE
+EXCLUDE_NON_LOCATION_FDC_NOTAM,Exclude non-location FDC NOTAMs,Include non-location FDC NOTAMs,FALSE,FALSE,TRUE,FALSE,TRUE,FALSE,FALSE,FALSE
+EXCLUDE_STATE_DEPARTMENT_NOTAM,Exclude State Department NOTAMs,Include State Department NOTAMs,FALSE,FALSE,TRUE,FALSE,TRUE,FALSE,FALSE,FALSE

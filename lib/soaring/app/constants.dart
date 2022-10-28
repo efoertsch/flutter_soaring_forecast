@@ -119,6 +119,29 @@ enum WxBriefFormat {
   final String option;
 }
 
+enum WxBriefTypeOfBriefing {
+  OUTLOOK(option: "Outlook"),
+  STANDARD(option: "Standard"),
+  ABBREVIATED(option: "Abbreviated"),
+  NOTAMS(option: "NOTAMS"); // for NOTAMS of interest to glider pilots
+
+  const WxBriefTypeOfBriefing({required this.option});
+
+  final String option;
+}
+
+enum BriefingFormat {
+  NGBV2(option: "Online(PDF)"),
+  EMAIL(option: "EMail");
+
+  const BriefingFormat({required this.option});
+  final String option;
+
+  String getOption() {
+    return option;
+  }
+}
+
 //------------- Translatable values --------------------------------------------
 class RaspMenu {
   static const String selectTask = 'SELECT TASK';
@@ -251,8 +274,21 @@ class Feedback {
 }
 
 class WxBriefLiterals {
+  static const String NOTAMS_BRIEFING = "NOTAMS Briefing";
   static const String CANCEL = "Cancel";
+  static const String CLOSE = "Close";
   static const String SUBMIT = "Submit";
+  static const String WXBRIEF_NOTAMS_ABBREV_BRIEF_INFO =
+      '''This option retrieves aeronautical and meteorological data from 1800wxbrief.com, and provides NOTAMs and TFRs as of the time the request is made.
+  \n\nOnly the following are requested for this briefing:
+  \n\u2022 Temporary Flight Restrictions
+  \n\u2022 Closed/Unsafe NOTAMS
+  \n\u2022 Departure and Destination NOTAMS
+  \n\u2022 UAS Operating Area
+  \n\u2022 Communication NOTAM
+  \n\u2022 Special Use Airspace NOTAM
+  \n\u2022 Runway/Taxiway/Apron/Aerodome/FDC NOTAM
+  \n\nThe route corridor is set to 50nm width, the minimum allowed by 1800WXBrief.''';
 }
 
 // Turnpoint icon colors for type of runway
@@ -260,41 +296,3 @@ const Color grassRunway = Color(0xFF3CB043);
 const Color asphaltRunway = Colors.black;
 const Color noRunway = Color(0xFFEE4926);
 //---------------------------------------------------------------------------
-
-const textStyleBoldBlackFontSize24 =
-    TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 24);
-
-const textStyleBoldBlackFontSize20 =
-    TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 20);
-
-const textStyleBlackFontSize20 = TextStyle(color: Colors.black, fontSize: 20);
-
-const textStyleBlackFontSize18 = TextStyle(color: Colors.black, fontSize: 18);
-
-const textStyleBoldBlackFontSize18 =
-    TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 18);
-
-const textStyleBoldBlackFontSize16 =
-    TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 16);
-
-const textStyleBlackFontSize16 = TextStyle(color: Colors.black, fontSize: 16);
-
-const textStyleBoldBlackFontSize14 =
-    TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 14);
-
-const textStyleBlackFontSize14 = TextStyle(color: Colors.black, fontSize: 14);
-
-const textStyleBoldBlack87FontSize15 =
-    TextStyle(fontWeight: FontWeight.bold, color: Colors.black87, fontSize: 15);
-
-const textStyleBlack87FontSize15 =
-    TextStyle(color: Colors.black87, fontSize: 15);
-
-const textStyleBoldBlack87FontSize14 =
-    TextStyle(fontWeight: FontWeight.bold, color: Colors.black87, fontSize: 14);
-
-const textStyleBlack87FontSize14 =
-    TextStyle(color: Colors.black87, fontSize: 14);
-
-const textStyleWhiteFontSize12 = TextStyle(color: Colors.white, fontSize: 12);
-const textStyleBlackFontSize12 = TextStyle(color: Colors.black, fontSize: 12);

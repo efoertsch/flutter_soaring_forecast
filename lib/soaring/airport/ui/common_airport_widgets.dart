@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
+import 'package:flutter_soaring_forecast/soaring/app/custom_styles.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/airport/airport.dart';
 
 Widget getAirportWidget(Airport airport) {
