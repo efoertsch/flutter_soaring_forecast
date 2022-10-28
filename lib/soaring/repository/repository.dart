@@ -33,7 +33,7 @@ import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoints_importer.
 import 'package:flutter_soaring_forecast/soaring/windy/data/windy_altitude.dart';
 import 'package:flutter_soaring_forecast/soaring/windy/data/windy_layer.dart';
 import 'package:flutter_soaring_forecast/soaring/windy/data/windy_model.dart';
-import 'package:flutter_soaring_forecast/soaring/wxbrief/data/briefingOption.dart';
+import 'package:flutter_soaring_forecast/soaring/wxbrief/data/briefing_option.dart';
 import 'package:logger/logger.dart' as DLogger; // Level conflict with Dio
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';

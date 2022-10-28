@@ -28,6 +28,8 @@ class _WxBriefNotamsState extends State<WxBriefNotams>
   List<WxBriefFormat> _dropDownWxBriefFormatList = WxBriefFormat.values;
   String _accountName = "";
   String _aircraftRegistration = "";
+  RegExp aircraftIdRegex =
+      RegExp('^([A-Z]-[A-Z]{4}|[A-Z]{2}[A-Z]{3}|N[0-9]{1,5}[A-Z]{0,2})\$');
 
   @override
   FutureOr<void> afterFirstLayout(BuildContext context) {
@@ -185,7 +187,7 @@ class _WxBriefNotamsState extends State<WxBriefNotams>
   Widget _getAircraftRegistrion() {
     return BlocConsumer<WxBriefBloc, WxBriefState>(listener: (context, state) {
       if (state is WxBriefDefaultsState) {
-        _accountName = state.wxBriefDefaults.wxBriefAccountName;
+        _aircraftRegistration = state.wxBriefDefaults.aircraftRegistration;
       }
     }, buildWhen: (previous, current) {
       return current is WxBriefInitialState || current is WxBriefDefaultsState;
@@ -197,18 +199,20 @@ class _WxBriefNotamsState extends State<WxBriefNotams>
         return Padding(
           padding: const EdgeInsets.only(top: 8.0),
           child: TextFormField(
-              initialValue: _accountName,
+              initialValue: _aircraftRegistration,
               decoration: InputDecoration(
                 border: OutlineInputBorder(),
-                labelText: 'Aircraft Registration',
+                labelText: WxBriefLiterals.AIRCRAFT_REGISTRATION_LABEL,
               ),
               autovalidateMode: AutovalidateMode.onUserInteraction,
               validator: (value) {
-                if (value != null && value.length > 3) {
+                if (value != null &&
+                    value.length > 3 &&
+                    aircraftIdRegex.hasMatch(value)) {
                   _aircraftRegistration = value;
                   return null;
                 } else {
-                  return "Invalid aircraft registration";
+                  return WxBriefLiterals.INVALID_AIRCRAFT_REGISTRATION_ID;
                 }
               }),
         );
@@ -221,7 +225,7 @@ class _WxBriefNotamsState extends State<WxBriefNotams>
   Widget _getWxBriefAccountName() {
     return BlocConsumer<WxBriefBloc, WxBriefState>(listener: (context, state) {
       if (state is WxBriefDefaultsState) {
-        _aircraftRegistration = state.wxBriefDefaults.aircraftRegistration;
+        _accountName = state.wxBriefDefaults.wxBriefAccountName;
       }
     }, buildWhen: (previous, current) {
       return current is WxBriefInitialState || current is WxBriefDefaultsState;
@@ -233,10 +237,10 @@ class _WxBriefNotamsState extends State<WxBriefNotams>
         return Padding(
           padding: const EdgeInsets.only(top: 16.0),
           child: TextFormField(
-              initialValue: _aircraftRegistration,
+              initialValue: _accountName,
               decoration: InputDecoration(
                 border: OutlineInputBorder(),
-                labelText: '1800WxBrief Account Name',
+                labelText: WxBriefLiterals.WXBRIEF_ACCOUNT_NAME,
               ),
               autovalidateMode: AutovalidateMode.onUserInteraction,
               validator: (value) {
@@ -246,7 +250,7 @@ class _WxBriefNotamsState extends State<WxBriefNotams>
                   _accountName = value;
                   return null;
                 } else {
-                  return "Invalid aircraft registration";
+                  return WxBriefLiterals.INVALID_WXBRIEF_USER_NAME;
                 }
               }),
         );
@@ -263,7 +267,7 @@ class _WxBriefNotamsState extends State<WxBriefNotams>
         alignment: Alignment.centerLeft,
         child: Column(
           children: [
-            Text('BriefingFormat'),
+            Text(WxBriefLiterals.BRIEFING_FORMAT),
             _getBriefingFormatDropDown(),
           ],
         ),

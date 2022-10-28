@@ -278,6 +278,14 @@ class WxBriefLiterals {
   static const String CANCEL = "Cancel";
   static const String CLOSE = "Close";
   static const String SUBMIT = "Submit";
+  static const String AIRCRAFT_REGISTRATION_LABEL = 'Aircraft Registration';
+  static const String INVALID_AIRCRAFT_REGISTRATION_ID =
+      "Invalid aircraft registration id";
+  static const String WXBRIEF_ACCOUNT_NAME =
+      '1800WxBrief Account Name(Email address)';
+  static const String INVALID_WXBRIEF_USER_NAME =
+      "Invalid 1800WXBrief user name. Must be email address.";
+  static const String BRIEFING_FORMAT = "Briefing Format";
   static const String WXBRIEF_NOTAMS_ABBREV_BRIEF_INFO =
       '''This option retrieves aeronautical and meteorological data from 1800wxbrief.com, and provides NOTAMs and TFRs as of the time the request is made.
   \n\nOnly the following are requested for this briefing:
