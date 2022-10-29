@@ -76,6 +76,7 @@ class Repository {
   static const String WXBRIEF_ACCOUNT_NAME = "WXBRIEF_ACCOUNT_NAME";
   static const String WXBRIEF_CORRIDOR_WIDTH = "WXBRIEF_CORRIDOR_WIDTH";
   static const String WXBRIEF_WINDS_ALOFT_WIDTH = "WXBRIEF_WINDS_ALOFT_WIDTH";
+  static const String WX_BRIEF_SHOW_DISLAIMER = "WX_BRIEF_SHOW_DISCLAIMER";
 
   Repository._();
 
@@ -871,26 +872,36 @@ class Repository {
 
   // 1800WXBrief --------------------------------------------------------------
 
+  // return true if user no longer wants to see disclaimer
+  Future<bool> getWxBriefShowDisclaimer() {
+    return getGenericBool(key: WX_BRIEF_SHOW_DISLAIMER, defaultValue: true);
+  }
+
+  // return true to show disclaimer - false if not
+  void setWxBriefShowDisclaimer(bool displayDisclaimer) {
+    saveGenericBool(key: WX_BRIEF_SHOW_DISLAIMER, value: displayDisclaimer);
+  }
+
   Future<List<BriefingOption>> getWxBriefProductCodes(
-      Constants.WxBriefTypeOfBriefing selectedTypeOfBrief) async {
+      Constants.WxBriefTypeOfBrief selectedTypeOfBrief) async {
     return getWxBriefingOptions(
         "wxbrief_product_codes.csv", selectedTypeOfBrief);
   }
 
   Future<List<BriefingOption>> getWxBriefNGBV2TailoringOptions(
-      Constants.WxBriefTypeOfBriefing selectedTypeOfBrief) async {
+      Constants.WxBriefTypeOfBrief selectedTypeOfBrief) async {
     return getWxBriefingOptions(
         "wxbrief_ngbv2_options.csv", selectedTypeOfBrief);
   }
 
   Future<List<BriefingOption>> getWxBriefNonNGBV2TailoringOptions(
-      Constants.WxBriefTypeOfBriefing selectedTypeOfBrief) async {
+      Constants.WxBriefTypeOfBrief selectedTypeOfBrief) async {
     return getWxBriefingOptions(
         "wxbrief_non_ngbv2_options.csv", selectedTypeOfBrief);
   }
 
   Future<List<BriefingOption>> getWxBriefingOptions(String optionsFileName,
-      Constants.WxBriefTypeOfBriefing selectedTypeOfBrief) async {
+      Constants.WxBriefTypeOfBrief selectedTypeOfBrief) async {
     final briefingOptions = <BriefingOption>[];
     String optionsString =
         await rootBundle.loadString('assets/csv/' + optionsFileName);

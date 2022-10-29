@@ -1,15 +1,15 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
-    show WxBriefFormat, WxBriefTypeOfBriefing;
+    show WxBriefFormat, WxBriefTypeOfBrief;
 
 @immutable
 abstract class WxBriefEvent extends Equatable {}
 
 // All the events related to WxBriefs
 
-class WxBriefGetTaskDetailsEvent extends WxBriefEvent {
-  WxBriefGetTaskDetailsEvent();
+class WxBriefInitNotamsEvent extends WxBriefEvent {
+  WxBriefInitNotamsEvent();
 
   @override
   List<Object?> get props => [];
@@ -39,7 +39,7 @@ class WxBriefSetBriefFormatEvent extends WxBriefEvent {
 }
 
 class WxBriefSetTypeOfBriefEvent extends WxBriefEvent {
-  final WxBriefTypeOfBriefing wxBriefTypeOfBriefing;
+  final WxBriefTypeOfBrief wxBriefTypeOfBriefing;
   WxBriefSetTypeOfBriefEvent({required this.wxBriefTypeOfBriefing});
   @override
   List<Object?> get props => [wxBriefTypeOfBriefing];

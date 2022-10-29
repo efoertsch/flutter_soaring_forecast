@@ -2,7 +2,7 @@ import 'dart:core';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
-    show WxBriefTypeOfBriefing;
+    show WxBriefTypeOfBrief;
 import 'package:flutter_soaring_forecast/soaring/app/extensions/string_apis.dart';
 
 /**
@@ -43,7 +43,7 @@ class RouteBriefingRequest {
    */
   List<String> _tailoringOptions = <String>[];
   String? _selectedBriefingType = "";
-  WxBriefTypeOfBriefing? _typeOfBrief = null;
+  WxBriefTypeOfBrief? _typeOfBrief = null;
 
   /**
    * REST calls require type - DOMESTIC (being deprecated) or ICAO -
@@ -223,13 +223,6 @@ class RouteBriefingRequest {
    */
   String? _plainTextTimeZone;
 
-  RouteBriefingRequest._() {}
-
-  static RouteBriefingRequest newInstance() {
-    final routeBriefingRequest = RouteBriefingRequest._();
-    return routeBriefingRequest;
-  }
-
   void setTurnpointNames(List<String> turnpointNames) {
     turnpointNames = turnpointNames;
     if (turnpointNames.length > 0) {
@@ -321,16 +314,16 @@ class RouteBriefingRequest {
     this._routeCorridorWidth = routeCorridorWidth;
   }
 
-  void setTypeOfBrief(WxBriefTypeOfBriefing selectedTypeOfBrief) {
+  void setTypeOfBrief(WxBriefTypeOfBrief selectedTypeOfBrief) {
     this._typeOfBrief = selectedTypeOfBrief;
-    setOutlookBriefing(selectedTypeOfBrief == WxBriefTypeOfBriefing.OUTLOOK);
+    setOutlookBriefing(selectedTypeOfBrief == WxBriefTypeOfBrief.OUTLOOK);
   }
 
   void setOutlookBriefing(bool outlookBriefing) {
     this._outlookBriefing = outlookBriefing;
   }
 
-  void setSelectedBriefingType(String selectedBriefingType) {
+  void setSelectedBriefFormat(String selectedBriefingType) {
     this._selectedBriefingType = selectedBriefingType;
   }
 
@@ -468,8 +461,8 @@ class RouteBriefingRequest {
    * @return
    */
   String getProductCodesJson() {
-    if (_typeOfBrief == WxBriefTypeOfBriefing.STANDARD ||
-        _typeOfBrief == WxBriefTypeOfBriefing.OUTLOOK) {
+    if (_typeOfBrief == WxBriefTypeOfBrief.STANDARD ||
+        _typeOfBrief == WxBriefTypeOfBrief.OUTLOOK) {
       return "";
     }
     StringBuffer sb = new StringBuffer();

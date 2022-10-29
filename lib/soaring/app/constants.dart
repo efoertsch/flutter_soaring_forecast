@@ -119,13 +119,13 @@ enum WxBriefFormat {
   final String option;
 }
 
-enum WxBriefTypeOfBriefing {
+enum WxBriefTypeOfBrief {
   OUTLOOK(option: "Outlook"),
   STANDARD(option: "Standard"),
   ABBREVIATED(option: "Abbreviated"),
   NOTAMS(option: "NOTAMS"); // for NOTAMS of interest to glider pilots
 
-  const WxBriefTypeOfBriefing({required this.option});
+  const WxBriefTypeOfBrief({required this.option});
 
   final String option;
 }

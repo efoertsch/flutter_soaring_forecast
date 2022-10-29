@@ -1,5 +1,5 @@
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
-    show WxBriefTypeOfBriefing;
+    show WxBriefTypeOfBrief;
 import 'package:flutter_soaring_forecast/soaring/app/extensions/string_apis.dart';
 
 class BriefingOption {
@@ -11,13 +11,13 @@ class BriefingOption {
   late final bool briefOption;
 
   // Default value (whether displayed or not) for the selected type of briefing
-  late final bool selectForBrief;
+  late bool selectForBrief;
 
   BriefingOption._() {}
 
   static Future<BriefingOption?> createBriefingOptionFromCSVDetail(
       List<dynamic> briefingOptions,
-      WxBriefTypeOfBriefing selectedTypeOfBrief) async {
+      WxBriefTypeOfBrief selectedTypeOfBrief) async {
     List<String> briefingOptionDetails =
         briefingOptions.map((option) => option as String).toList();
     BriefingOption? briefingOption = BriefingOption._();
@@ -26,19 +26,19 @@ class BriefingOption {
       briefingOption.wxBriefParamDescription = briefingOptionDetails[1];
       briefingOption.displayDescription = briefingOptionDetails[2];
       switch (selectedTypeOfBrief) {
-        case WxBriefTypeOfBriefing.OUTLOOK:
+        case WxBriefTypeOfBrief.OUTLOOK:
           briefingOption.briefOption = briefingOptionDetails[3].parseBool();
           briefingOption.selectForBrief = briefingOptionDetails[4].parseBool();
           break;
-        case WxBriefTypeOfBriefing.STANDARD:
+        case WxBriefTypeOfBrief.STANDARD:
           briefingOption.briefOption = briefingOptionDetails[5].parseBool();
           briefingOption.selectForBrief = briefingOptionDetails[6].parseBool();
           break;
-        case WxBriefTypeOfBriefing.ABBREVIATED:
+        case WxBriefTypeOfBrief.ABBREVIATED:
           briefingOption.briefOption = briefingOptionDetails[7].parseBool();
           briefingOption.selectForBrief = briefingOptionDetails[8].parseBool();
           break;
-        case WxBriefTypeOfBriefing.NOTAMS:
+        case WxBriefTypeOfBrief.NOTAMS:
           briefingOption.briefOption = briefingOptionDetails[9].parseBool();
           briefingOption.selectForBrief = briefingOptionDetails[10].parseBool();
       }

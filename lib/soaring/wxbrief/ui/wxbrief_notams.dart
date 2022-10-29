@@ -33,7 +33,7 @@ class _WxBriefNotamsState extends State<WxBriefNotams>
 
   @override
   FutureOr<void> afterFirstLayout(BuildContext context) {
-    _sendEvent(WxBriefGetTaskDetailsEvent());
+    _sendEvent(WxBriefInitNotamsEvent());
   }
 
   @override
