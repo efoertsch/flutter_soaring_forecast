@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:advance_pdf_viewer/advance_pdf_viewer.dart';
 import 'package:after_layout/after_layout.dart';
 import 'package:cupertino_will_pop_scope/cupertino_will_pop_scope.dart';
 import 'package:email_validator/email_validator.dart';
 import 'package:flutter/material.dart' hide Feedback;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_soaring_forecast/main.dart';
 import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     show WxBriefLiterals, WxBriefFormat;
@@ -13,6 +15,7 @@ import 'package:flutter_soaring_forecast/soaring/app/custom_styles.dart';
 import 'package:flutter_soaring_forecast/soaring/wxbrief/bloc/wxbrief_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/wxbrief/bloc/wxbrief_event.dart';
 import 'package:flutter_soaring_forecast/soaring/wxbrief/bloc/wxbrief_state.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class WxBriefNotams extends StatefulWidget {
   WxBriefNotams({Key? key}) : super(key: key);
@@ -24,7 +27,7 @@ class WxBriefNotams extends StatefulWidget {
 class _WxBriefNotamsState extends State<WxBriefNotams>
     with AfterLayoutMixin<WxBriefNotams> {
   var _formKey = GlobalKey<FormState>();
-  WxBriefFormat _selectedWxBriefFormat = WxBriefFormat.PDF;
+  WxBriefFormat _selectedWxBriefFormat = WxBriefFormat.NGBV2;
   List<WxBriefFormat> _dropDownWxBriefFormatList = WxBriefFormat.values;
   String _accountName = "";
   String _aircraftRegistration = "";
@@ -68,7 +71,7 @@ class _WxBriefNotamsState extends State<WxBriefNotams>
 
   AppBar getAppBar(BuildContext context) {
     return AppBar(
-      title: Text("NOTAMS Briefing"),
+      title: Text(WxBriefLiterals.NOTAMS_BRIEFING),
       leading: BackButton(onPressed: () => Navigator.pop(context)),
       //  actions: _getAppBarMenu(),
     );
@@ -77,27 +80,52 @@ class _WxBriefNotamsState extends State<WxBriefNotams>
   Widget _getBody() {
     return Padding(
       padding: const EdgeInsets.only(left: 8.0, right: 8.0),
-      child: CustomScrollView(slivers: <Widget>[
-        SliverList(
-          delegate: SliverChildListDelegate([
-            _getTaskTitleWidget(),
-            _getNOTAMAbbrevBriefText(),
-            Form(
-              key: _formKey,
-              child: Column(
-                children: [
-                  _getAircraftRegistrion(),
-                  _getWxBriefAccountName(),
-                ],
+      child: Stack(children: [
+        CustomScrollView(slivers: <Widget>[
+          SliverList(
+            delegate: SliverChildListDelegate([
+              _getTaskTitleWidget(),
+              _getNOTAMAbbrevBriefText(),
+              Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    _getAircraftRegistrion(),
+                    _getWxBriefAccountName(),
+                  ],
+                ),
               ),
-            ),
-            _getBriefingFormat()
-          ]),
-        ),
-        SliverFillRemaining(
-            hasScrollBody: false, child: _getCancelContinueWidgets()),
+              _getBriefingFormat(),
+            ]),
+          ),
+          SliverFillRemaining(
+              hasScrollBody: false, child: _getCancelContinueWidgets()),
+        ]),
+        _getProgressIndicator(),
+        _widgetForMessages(),
       ]),
     );
+  }
+
+  Widget _getProgressIndicator() {
+    return BlocConsumer<WxBriefBloc, WxBriefState>(
+        listener: (context, state) {},
+        buildWhen: (previous, current) {
+          return current is WxBriefWorkingState;
+        },
+        builder: (context, state) {
+          if (state is WxBriefWorkingState) {
+            if (state.working) {
+              return Container(
+                child: AbsorbPointer(
+                    absorbing: true, child: CircularProgressIndicator()),
+                alignment: Alignment.center,
+                color: Colors.transparent,
+              );
+            }
+          }
+          return SizedBox.shrink();
+        });
   }
 
   Future<bool> _onWillPop() async {
@@ -334,7 +362,8 @@ class _WxBriefNotamsState extends State<WxBriefNotams>
                   primary: Theme.of(context).colorScheme.primary,
                 ),
                 onPressed: () {
-                  _submit();
+                  _checkStoragePermission();
+                  ;
                 },
                 child: const Text(WxBriefLiterals.SUBMIT),
               ),
@@ -345,11 +374,65 @@ class _WxBriefNotamsState extends State<WxBriefNotams>
     );
   }
 
+  Widget _getPDFViewer() {
+    return BlocBuilder<WxBriefBloc, WxBriefState>(
+        buildWhen: (previous, current) {
+      return current is WxBriefPdfDocState;
+    }, builder: (context, state) {
+      if (state is WxBriefPdfDocState) {
+        return Container(
+          child: PDFViewer(document: state.pdfDoc),
+          height: double.maxFinite,
+          width: double.maxFinite,
+        );
+      }
+      return SizedBox.shrink();
+    });
+  }
+
+  Widget _widgetForMessages() {
+    return BlocListener<WxBriefBloc, WxBriefState>(
+      listener: (context, state) async {
+        if (state is WxBriefMessageState) {
+          CommonWidgets.showInfoDialog(
+              context: context,
+              title: WxBriefLiterals.ONE800WXBRIEF,
+              msg: state.msg,
+              button1Text: WxBriefLiterals.CLOSE,
+              button1Function: _cancel);
+        }
+        if (state is WxBriefPdfDocState) {
+          await Navigator.pushNamed(context, PdfViewRouteBuilder.routeName,
+              arguments: state.pdfDoc);
+        }
+      },
+      child: SizedBox.shrink(),
+    );
+  }
+
   void _sendEvent(WxBriefEvent event) {
     BlocProvider.of<WxBriefBloc>(context).add(event);
   }
 
-  void _submit() {
+  void _checkStoragePermission() async {
+    var status = await Permission.storage.status;
+    if (status.isDenied) {
+      // We didn't ask for permission yet or the permission has been denied before but not permanently.
+      if (await Permission.storage.request().isGranted) {
+        // Fire event to export turnpoints
+        _submit();
+      }
+    }
+    if (status.isPermanentlyDenied) {
+      // display msg to user they need to go to settings to re-enable
+      openAppSettings();
+    }
+    if (status.isGranted) {
+      _submit();
+    }
+  }
+
+  void _submit() async {
     _sendEvent(WxBriefGetNotamsEvent(
         aircraftRegistration: _aircraftRegistration,
         accountName: _accountName,

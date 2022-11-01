@@ -22,6 +22,7 @@ import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_
 import 'package:flutter_soaring_forecast/soaring/repository/ImageCacheManager.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/one800wxbrief/metar_taf_response.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/one800wxbrief/one800wxbrief_api.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/one800wxbrief/route_briefing.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/rasp_options_api.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/special_use_airspace.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/sua_region_files.dart';
@@ -815,6 +816,76 @@ class Repository {
         key: WXBRIEF_WINDS_ALOFT_WIDTH, value: windsAloftWidth);
   }
 
+  // return true if user no longer wants to see disclaimer
+  Future<bool> getWxBriefShowDisclaimer() {
+    return getGenericBool(key: WX_BRIEF_SHOW_DISLAIMER, defaultValue: true);
+  }
+
+  // return true to show disclaimer - false if not
+  void setWxBriefShowDisclaimer(bool displayDisclaimer) {
+    saveGenericBool(key: WX_BRIEF_SHOW_DISLAIMER, value: displayDisclaimer);
+  }
+
+  Future<List<BriefingOption>> getWxBriefProductCodes(
+      Constants.WxBriefTypeOfBrief selectedTypeOfBrief) async {
+    return getWxBriefingOptions(
+        "wxbrief_product_codes.csv", selectedTypeOfBrief);
+  }
+
+  Future<List<BriefingOption>> getWxBriefNGBV2TailoringOptions(
+      Constants.WxBriefTypeOfBrief selectedTypeOfBrief) async {
+    return getWxBriefingOptions(
+        "wxbrief_ngbv2_options.csv", selectedTypeOfBrief);
+  }
+
+  Future<List<BriefingOption>> getWxBriefNonNGBV2TailoringOptions(
+      Constants.WxBriefTypeOfBrief selectedTypeOfBrief) async {
+    return getWxBriefingOptions(
+        "wxbrief_non_ngbv2_options.csv", selectedTypeOfBrief);
+  }
+
+  Future<List<BriefingOption>> getWxBriefingOptions(String optionsFileName,
+      Constants.WxBriefTypeOfBrief selectedTypeOfBrief) async {
+    final briefingOptions = <BriefingOption>[];
+    String optionsString =
+        await rootBundle.loadString('assets/csv/' + optionsFileName);
+    final rowsAsListOfValues = const CsvToListConverter(
+      eol: '\n',
+    ).convert(optionsString);
+    for (int i = 0; i < rowsAsListOfValues.length; ++i) {
+      if (i > 0) {
+        final briefingOption =
+            await BriefingOption.createBriefingOptionFromCSVDetail(
+                rowsAsListOfValues[i], selectedTypeOfBrief);
+        if (briefingOption != null) {
+          briefingOptions.add(briefingOption);
+        }
+      }
+    }
+    debugPrint(" Number of product/options codes  ${briefingOptions.length}");
+    return briefingOptions;
+  }
+
+  Future<RouteBriefing> submitWxBriefBriefingRequest(String parms) async {
+    if (_one800WxBriefClient == null) {
+      _one800WxBriefClient = One800WxBriefClient(_dio);
+    }
+    final authorization = _getWxBriefAuthorization();
+    return await _one800WxBriefClient!.getRouteBriefing(authorization, parms);
+  }
+
+  Future<File?> writeBytesToDirectory(String fileName, Uint8List bytes) async {
+    File? file = await createFile(fileName);
+    if (file == null) {
+      return null;
+    }
+    if (await file.exists()) {
+      await file.delete();
+    }
+    await file.writeAsBytes(bytes, flush: true);
+    return file;
+  }
+
   // ----- Shared preferences --------------------------
   // Make sure keys are unique among calling routines!
 
@@ -870,55 +941,35 @@ class Repository {
     return await prefs.getBool(key) ?? defaultValue;
   }
 
-  // 1800WXBrief --------------------------------------------------------------
+  // ----- File access -----------------------------------------------
 
-  // return true if user no longer wants to see disclaimer
-  Future<bool> getWxBriefShowDisclaimer() {
-    return getGenericBool(key: WX_BRIEF_SHOW_DISLAIMER, defaultValue: true);
+  Future<File?> createFile(String filename) async {
+    File? file = null;
+    try {
+      Directory? directory = await getDownloadDirectory();
+      if (directory != null) {
+        file = File(directory.absolute.path + '/' + filename);
+      }
+    } catch (e) {
+      print("Exception creating download file: " + e.toString());
+    }
+    return file;
   }
 
-  // return true to show disclaimer - false if not
-  void setWxBriefShowDisclaimer(bool displayDisclaimer) {
-    saveGenericBool(key: WX_BRIEF_SHOW_DISLAIMER, value: displayDisclaimer);
-  }
-
-  Future<List<BriefingOption>> getWxBriefProductCodes(
-      Constants.WxBriefTypeOfBrief selectedTypeOfBrief) async {
-    return getWxBriefingOptions(
-        "wxbrief_product_codes.csv", selectedTypeOfBrief);
-  }
-
-  Future<List<BriefingOption>> getWxBriefNGBV2TailoringOptions(
-      Constants.WxBriefTypeOfBrief selectedTypeOfBrief) async {
-    return getWxBriefingOptions(
-        "wxbrief_ngbv2_options.csv", selectedTypeOfBrief);
-  }
-
-  Future<List<BriefingOption>> getWxBriefNonNGBV2TailoringOptions(
-      Constants.WxBriefTypeOfBrief selectedTypeOfBrief) async {
-    return getWxBriefingOptions(
-        "wxbrief_non_ngbv2_options.csv", selectedTypeOfBrief);
-  }
-
-  Future<List<BriefingOption>> getWxBriefingOptions(String optionsFileName,
-      Constants.WxBriefTypeOfBrief selectedTypeOfBrief) async {
-    final briefingOptions = <BriefingOption>[];
-    String optionsString =
-        await rootBundle.loadString('assets/csv/' + optionsFileName);
-    final rowsAsListOfValues = const CsvToListConverter(
-      eol: '\n',
-    ).convert(optionsString);
-    for (int i = 0; i < rowsAsListOfValues.length; ++i) {
-      if (i > 0) {
-        final briefingOption =
-            await BriefingOption.createBriefingOptionFromCSVDetail(
-                rowsAsListOfValues[i], selectedTypeOfBrief);
-        if (briefingOption != null) {
-          briefingOptions.add(briefingOption);
-        }
+  Future<Directory?> getDownloadDirectory() async {
+    Directory? directory = null;
+    if (Platform.isAndroid) {
+      directory = Directory('/storage/emulated/0/Download');
+      if (!await directory.exists()) {
+        directory = await getExternalStorageDirectory();
+      }
+    } else {
+      //iOS
+      directory = await getApplicationDocumentsDirectory();
+      if (!directory.existsSync()) {
+        directory.createSync(recursive: true);
       }
     }
-    debugPrint(" Number of product/options codes  ${briefingOptions.length}");
-    return briefingOptions;
+    return directory;
   }
 }

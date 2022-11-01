@@ -1,3 +1,4 @@
+import 'package:advance_pdf_viewer/advance_pdf_viewer.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
@@ -13,12 +14,27 @@ class WxBriefInitialState extends WxBriefState {
   List<Object?> get props => [];
 }
 
+class WxBriefMessageState extends WxBriefState {
+  final String msg;
+  WxBriefMessageState(this.msg);
+
+  @override
+  List<Object?> get props => [msg];
+}
+
+class WxBriefPdfDocState extends WxBriefState {
+  final PDFDocument pdfDoc;
+  WxBriefPdfDocState(this.pdfDoc);
+  @override
+  List<Object?> get props => [pdfDoc];
+}
+
 class WxBriefBriefFormatsState extends WxBriefState {
   final List<WxBriefFormat> wxBriefFormats;
 
   WxBriefBriefFormatsState(this.wxBriefFormats);
   @override
-  List<Object?> get props => [];
+  List<Object?> get props => [wxBriefFormats.toString()];
 }
 
 class WxBriefDepartureDatesState extends WxBriefState {
@@ -72,4 +88,12 @@ class WxBriefDefaultsState extends WxBriefState {
 
   @override
   List<Object?> get props => [wxBriefDefaults];
+}
+
+class WxBriefWorkingState extends WxBriefState {
+  final bool working;
+  WxBriefWorkingState({required this.working});
+
+  @override
+  List<Object?> get props => [working];
 }

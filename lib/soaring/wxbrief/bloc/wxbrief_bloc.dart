@@ -1,5 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
 
+import 'package:advance_pdf_viewer/advance_pdf_viewer.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
@@ -31,7 +34,7 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
   final _briefingDates = <String>[];
   int _selectedBriefingDateIndex = 0;
 
-  WxBriefFormat _selectedBriefFormat = WxBriefFormat.PDF;
+  WxBriefFormat _selectedBriefFormat = WxBriefFormat.NGBV2; //i.e. PDF
   final List<WxBriefTypeOfBrief> _briefingTypes = <WxBriefTypeOfBrief>[];
   WxBriefTypeOfBrief _selectedTypeOfBrief = WxBriefTypeOfBrief.NOTAMS;
 
@@ -104,6 +107,7 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
 
   FutureOr<void> _submitNotamsBriefRequest(
       WxBriefGetNotamsEvent event, Emitter<WxBriefState> emit) async {
+    emit(WxBriefWorkingState(working: true));
     _saveAccountNameAndAircraftId(
         aircraftRegistration: event.aircraftRegistration,
         accountName: event.accountName);
@@ -114,7 +118,10 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
     _routeBriefingRequest.setSelectedBriefFormat(_selectedBriefFormat.name);
     _setDepartureRouteAndDestination();
     _formatDepartureInstant();
-    _submitBriefingRequest();
+    _addProductCodesToRouteBriefingRequest();
+    _addTailoringOptions();
+    await _submitBriefingRequest(emit);
+    emit(WxBriefWorkingState(working: false));
   }
 
   void _setDepartureRouteAndDestination() {
@@ -144,17 +151,13 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
     String departureTimeZulu = "";
     // if today assume flight 1 hr in future
     if (_selectedBriefingDateIndex == 0) {
-      departureTimeZulu = DateFormat(ZULU_DATE_FORMAT).format(
-          DateTime.fromMillisecondsSinceEpoch(
-              DateTime.now().toUtc().millisecond + ONE_HOUR_IN_MILLISECS));
+      departureTimeZulu = DateFormat(ZULU_DATE_FORMAT)
+          .format(DateTime.now().toUtc().add(const Duration(hours: 1)));
     } else {
       // assume 9AM local time departure
-
-      departureTimeZulu = DateFormat(ZULU_DATE_FORMAT).format(
-          DateTime.fromMillisecondsSinceEpoch(DateTime.parse(
-                  _briefingDates[_selectedBriefingDateIndex] + " 09:00:00.000")
-              .toUtc()
-              .millisecond));
+      departureTimeZulu = DateFormat(ZULU_DATE_FORMAT).format(DateTime.parse(
+              _briefingDates[_selectedBriefingDateIndex] + " 09:00:00.000")
+          .toUtc());
     }
     _routeBriefingRequest.setDepartureInstant(departureTimeZulu);
   }
@@ -180,22 +183,88 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
         DateTime.fromMillisecondsSinceEpoch(tomorrow + ONE_DAY_IN_MILLISEC)));
   }
 
-  void _submitBriefingRequest() {
+  FutureOr<void> _submitBriefingRequest(Emitter<WxBriefState> emit) async {
     final restParmString = _routeBriefingRequest.getRestParmString();
     debugPrint(restParmString);
+    await repository
+        .submitWxBriefBriefingRequest(restParmString)
+        .then((routeBriefing) async {
+      if ((routeBriefing.returnStatus ?? false) &&
+          routeBriefing.returnCodedMessage!.length == 0) {
+        if (_selectedBriefFormat == WxBriefFormat.EMAIL) {
+          emit(WxBriefMessageState(WxBriefLiterals.WXBRIEF_SENT_TO_MAILBOX));
+        } else if (_selectedBriefFormat == WxBriefFormat.NGBV2) {
+          // need to get NGBV2 briefing from
+          await _createRouteBriefingPDF(routeBriefing.ngbv2PdfBriefing!, emit);
+        }
+      }
+    }).catchError((Object obj) {
+      // non-200 error goes here.
+      switch (obj.runtimeType) {
+        case DioError:
+          // Here's the sample to get the failed response error code and message
+          final res = (obj as DioError).response;
+          print(
+              "Got error on 1800WxBriefCall : ${res?.statusCode} -> ${res?.statusMessage}");
+          break;
+        default:
+          break;
+      }
+    });
   }
 
+  // Load product codes and tailoring options from CSV
   void _getProductCodesAndTailoringOptions() async {
     _fullProductCodeList.clear();
     _fullProductCodeList
         .addAll(await repository.getWxBriefProductCodes(_selectedTypeOfBrief));
     _fullTailoringOptionList.clear();
-    if (_selectedTypeOfBrief == BriefingFormat.EMAIL) {
+    if (_selectedBriefFormat == WxBriefFormat.EMAIL) {
+      // Non NGBV2
       _fullTailoringOptionList.addAll(await repository
           .getWxBriefNonNGBV2TailoringOptions(_selectedTypeOfBrief));
     } else {
+      // NGBV2
       _fullTailoringOptionList.addAll(await repository
           .getWxBriefNGBV2TailoringOptions(_selectedTypeOfBrief));
+    }
+  }
+
+  void _addProductCodesToRouteBriefingRequest() {
+    final productCodes = <String>[];
+    _fullProductCodeList.forEach((productCode) {
+      if (productCode.selectForBrief) {
+        productCodes.add(productCode.wxBriefParameterName);
+      }
+    });
+    _routeBriefingRequest.setProductCodes(productCodes);
+  }
+
+  void _addTailoringOptions() {
+    final tailoringOptions = <String>[];
+    _fullTailoringOptionList.forEach((tailoringOption) {
+      // Option was checked
+      // Note that NGBV2 are 'EXCLUDE...' but non NGBV2 are INCLUDE so need to handle differently
+      if ((_selectedBriefFormat == WxBriefFormat.NGBV2 &&
+              !tailoringOption.selectForBrief) ||
+          _selectedBriefFormat != WxBriefFormat.NGBV2 &&
+              tailoringOption.selectForBrief) {
+        tailoringOptions.add(tailoringOption.wxBriefParameterName);
+      }
+    });
+    _routeBriefingRequest.setTailoringOptions(tailoringOptions);
+  }
+
+  FutureOr<void> _createRouteBriefingPDF(
+      String ngbv2pdfBriefing, Emitter<WxBriefState> emit) async {
+    Uint8List bytes = base64Decode(ngbv2pdfBriefing);
+    final file = await repository.writeBytesToDirectory("WxBrief.pdf", bytes);
+    if (file == null) {
+      // send error
+    } else {
+      //display PDF
+      PDFDocument document = await PDFDocument.fromFile(file);
+      emit(WxBriefPdfDocState(document));
     }
   }
 }

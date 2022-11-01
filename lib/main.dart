@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:advance_pdf_viewer/advance_pdf_viewer.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -14,6 +15,7 @@ import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_data_bloc.da
 import 'package:flutter_soaring_forecast/soaring/forecast/ui/rasp_screen.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast_types/bloc/forecast_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast_types/ui/forecast_list.dart';
+import 'package:flutter_soaring_forecast/soaring/pdfviewer/pdf_view_screen.dart';
 import 'package:flutter_soaring_forecast/soaring/region/bloc/region_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/region/ui/region_list_screen.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
@@ -289,6 +291,18 @@ class SoaringForecastApp extends StatelessWidget {
             return CustomMaterialPageRoute(
               builder: (context) {
                 return WxBriefRouteBriefingBuilder();
+              },
+              settings: settings,
+            );
+          }
+
+          if (settings.name == PdfViewRouteBuilder.routeName) {
+            final document = settings.arguments as PDFDocument;
+            return CustomMaterialPageRoute(
+              builder: (context) {
+                return PdfViewRouteBuilder(
+                  document: document,
+                );
               },
               settings: settings,
             );
@@ -586,5 +600,16 @@ class WxBriefRouteBriefingBuilder extends StatelessWidget {
           WxBriefBloc(repository: RepositoryProvider.of<Repository>(context)),
       child: WxBriefRouteBriefing(),
     );
+  }
+}
+
+class PdfViewRouteBuilder extends StatelessWidget {
+  static const routeName = '/PDFViewer';
+  final PDFDocument document;
+
+  PdfViewRouteBuilder({required this.document});
+
+  Widget build(BuildContext context) {
+    return PdfViewScreen(document: document);
   }
 }

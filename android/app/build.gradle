@@ -39,7 +39,7 @@ android {
     defaultConfig {
         // TODO: Switch to existing Android SoaringForecast application Id once flutter version reaches parity with Android version
         applicationId "soaringforecast.org.flutter_soaring_forecast"
-        minSdkVersion 20
+        minSdkVersion 21
         targetSdkVersion 33
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName

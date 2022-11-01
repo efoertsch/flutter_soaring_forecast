@@ -18,7 +18,8 @@ const String GEOS_GIF =
 const String GEOS_CURRENT =
     "https://cdn.star.nesdis.noaa.gov/GOES16/ABI/SECTOR/ne/GEOCOLOR/2400x2400.jpg";
 
-const String WXBRIEF_URL = "https://lmfsweb.afss.com/Website/rest/";
+const String WXBRIEF_URL = "https://ffspelabs.leidos.com/Website2/rest/";
+//const String WXBRIEF_URL = "https://lmfsweb.afss.com/Website/rest/";
 const String FEEDBACK_EMAIL_ADDRESS = 'ericfoertsch@gmail.com';
 
 const double metersToFeet = 3.28084;
@@ -110,15 +111,6 @@ enum WxBriefOption {
   final String option;
 }
 
-enum WxBriefFormat {
-  PDF(option: "PDF"),
-  EMAIL(option: "Email");
-
-  const WxBriefFormat({required this.option});
-
-  final String option;
-}
-
 enum WxBriefTypeOfBrief {
   OUTLOOK(option: "Outlook"),
   STANDARD(option: "Standard"),
@@ -130,11 +122,11 @@ enum WxBriefTypeOfBrief {
   final String option;
 }
 
-enum BriefingFormat {
+enum WxBriefFormat {
   NGBV2(option: "Online(PDF)"),
   EMAIL(option: "EMail");
 
-  const BriefingFormat({required this.option});
+  const WxBriefFormat({required this.option});
   final String option;
 
   String getOption() {
@@ -274,6 +266,7 @@ class Feedback {
 }
 
 class WxBriefLiterals {
+  static const String ONE800WXBRIEF = "1800WxBrief";
   static const String NOTAMS_BRIEFING = "NOTAMS Briefing";
   static const String CANCEL = "Cancel";
   static const String CLOSE = "Close";
@@ -297,6 +290,8 @@ class WxBriefLiterals {
   \n\u2022 Special Use Airspace NOTAM
   \n\u2022 Runway/Taxiway/Apron/Aerodome/FDC NOTAM
   \n\nThe route corridor is set to 50nm width, the minimum allowed by 1800WXBrief.''';
+  static const String WXBRIEF_SENT_TO_MAILBOX =
+      "Your briefing should arrive in our mailbox shortly";
 }
 
 // Turnpoint icon colors for type of runway
