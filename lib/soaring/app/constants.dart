@@ -112,10 +112,10 @@ enum WxBriefOption {
 }
 
 enum WxBriefTypeOfBrief {
-  OUTLOOK(option: "Outlook"),
   STANDARD(option: "Standard"),
   ABBREVIATED(option: "Abbreviated"),
-  NOTAMS(option: "NOTAMS"); // for NOTAMS of interest to glider pilots
+  NOTAMS(option: "NOTAMS"), // for NOTAMS of interest to glider pilots
+  OUTLOOK(option: "Outlook");
 
   const WxBriefTypeOfBrief({required this.option});
 
@@ -267,7 +267,10 @@ class Feedback {
 
 class WxBriefLiterals {
   static const String ONE800WXBRIEF = "1800WxBrief";
-  static const String NOTAMS_BRIEFING = "NOTAMS Briefing";
+  static const String NOTAMS_BRIEFING = "1800WxBrief NOTAMS";
+  static const String NOTAMS_ABBREV_BRIEF = "NOTAMS Abbreviated Brief";
+  static const String REPORT_OPTIONS = "Report Options";
+  static const String PRODUCT_OPTIONS = "Product Options";
   static const String CANCEL = "Cancel";
   static const String CLOSE = "Close";
   static const String SUBMIT = "Submit";
@@ -279,6 +282,14 @@ class WxBriefLiterals {
   static const String INVALID_WXBRIEF_USER_NAME =
       "Invalid 1800WXBrief user name. Must be email address.";
   static const String BRIEFING_FORMAT = "Briefing Format";
+  static const String DEPARTURE_DATE = "Departure Date";
+  static const String TYPE_OF_BRIEF = "Type of Brief";
+  static const String SELECT = "Select";
+  static const String WXBRIEF_ACCOUNT_NAME_INFO =
+      "Your email address associated with your 1800WXBrief account.";
+  static const String DEPARTURE_DATE_INFO =
+      "For current date the brief assumes 1hr in the future. For future days, a 9AM departure is assumed.";
+
   static const String WXBRIEF_NOTAMS_ABBREV_BRIEF_INFO =
       '''This option retrieves aeronautical and meteorological data from 1800wxbrief.com, and provides NOTAMs and TFRs as of the time the request is made.
   \n\nOnly the following are requested for this briefing:

@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:advance_pdf_viewer/advance_pdf_viewer.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -13,6 +12,7 @@ import 'package:flutter_soaring_forecast/soaring/wxbrief/bloc/wxbrief_state.dart
 import 'package:flutter_soaring_forecast/soaring/wxbrief/data/briefing_option.dart';
 import 'package:flutter_soaring_forecast/soaring/wxbrief/data/route_briefing_request.dart';
 import 'package:flutter_soaring_forecast/soaring/wxbrief/data/wxbrief_defaults.dart';
+import 'package:flutter_soaring_forecast/soaring/wxbrief/ui/wxbrief_request.dart';
 import 'package:intl/intl.dart';
 
 class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
@@ -23,6 +23,9 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
 
   final Repository repository;
 
+  String _wxbriefAccountName = "";
+  String _aircraftRegistration = "";
+
   //-------- Arrays to hold WxBrief
   // All product codes
   List<BriefingOption> _fullProductCodeList = <BriefingOption>[];
@@ -32,7 +35,7 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
 
   // List of briefing dates
   final _briefingDates = <String>[];
-  int _selectedBriefingDateIndex = 0;
+  String _selectedDepartureDate = "";
 
   WxBriefFormat _selectedBriefFormat = WxBriefFormat.NGBV2; //i.e. PDF
   final List<WxBriefTypeOfBrief> _briefingTypes = <WxBriefTypeOfBrief>[];
@@ -45,28 +48,41 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
   //WxBriefState get initialState => WxBriefsLoadingState();
 
   WxBriefBloc({required this.repository}) : super(WxBriefInitialState()) {
-    on<WxBriefInitNotamsEvent>(_getWxBriefNotamsDetails);
+    on<WxBriefInitEvent>(_getWxBriefRequestData);
     on<WxBriefSetBriefFormatEvent>(_setBriefFormat);
     on<WxBriefSetTypeOfBriefEvent>(_setTypeOfBrief);
-    on<WxBriefGetNotamsEvent>(_submitNotamsBriefRequest);
+    on<WxBriefUpdateDepartureDateEvent>(_setDepartureDate);
+    on<WxBriefSubmitEvent>(_submitWxBriefRequest);
+    on<WxBriefUpdateAircraftRegistrationEvent>(_updateAircraftRegistration);
+    on<WxBriefUpdateAccountNameEvent>(_updateAccountName);
+    on<WxBriefUpdateReportingOptionsEvent>(_updateReportingOptions);
+    on<WxBriefUpdateProductOptionsEvent>(_updateProductOptions);
   }
 
-  FutureOr<void> _getWxBriefNotamsDetails(
-      WxBriefInitNotamsEvent event, Emitter<WxBriefState> emit) async {
+  FutureOr<void> _getWxBriefRequestData(
+      WxBriefInitEvent event, Emitter<WxBriefState> emit) async {
     await _emitTaskDetails(emit);
     await _emitAircraftIdAndAccountEvent(emit);
     await _emitBriefingFormats(emit);
-    _getProductCodesAndTailoringOptions();
+    await _getProductCodesAndTailoringOptions();
+    await _createBriefingDates();
+    if (event.request == WxBriefRequest.ROUTE_REQUEST) {
+      await _emitBriefingDepartureDatesState(emit);
+      await _emitBriefingTypesState(emit);
+      await _emitReportingOptions(emit);
+      await _emitProductOptions(emit);
+    }
+    ;
   }
 
   Future<void> _emitAircraftIdAndAccountEvent(
       Emitter<WxBriefState> emit) async {
-    String aircraftRegistration = await repository.getAircraftRegistration();
-    String wxbriefAccountName = await repository.getWxBriefAccountName();
+    _aircraftRegistration = await repository.getAircraftRegistration();
+    _wxbriefAccountName = await repository.getWxBriefAccountName();
     emit(WxBriefDefaultsState(
         wxBriefDefaults: WxBriefDefaults(
-            aircraftRegistration: aircraftRegistration,
-            wxBriefAccountName: wxbriefAccountName)));
+            aircraftRegistration: _aircraftRegistration,
+            wxBriefAccountName: _wxbriefAccountName)));
   }
 
   Future<void> _emitTaskDetails(Emitter<WxBriefState> emit) async {
@@ -92,9 +108,6 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
 
   FutureOr<void> _emitBriefingDepartureDatesState(
       Emitter<WxBriefState> emit) async {
-    if (_briefingDates.isEmpty) {
-      _createBriefingDates();
-    }
     emit(WxBriefDepartureDatesState(_briefingDates));
   }
 
@@ -105,15 +118,20 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
     emit(WxBriefBriefingTypesState(_briefingTypes));
   }
 
-  FutureOr<void> _submitNotamsBriefRequest(
-      WxBriefGetNotamsEvent event, Emitter<WxBriefState> emit) async {
+  FutureOr<void> _emitReportingOptions(Emitter<WxBriefState> emit) {
+    emit(WxBriefReportingOptionsState(_fullTailoringOptionList));
+  }
+
+  FutureOr<void> _emitProductOptions(Emitter<WxBriefState> emit) {
+    emit(WxBriefProductOptionsState(_fullProductCodeList));
+  }
+
+  FutureOr<void> _submitWxBriefRequest(
+      WxBriefSubmitEvent event, Emitter<WxBriefState> emit) async {
     emit(WxBriefWorkingState(working: true));
-    _saveAccountNameAndAircraftId(
-        aircraftRegistration: event.aircraftRegistration,
-        accountName: event.accountName);
-    _routeBriefingRequest.setAircraftIdentifier(event.aircraftRegistration);
-    _routeBriefingRequest.setEmailAddress(event.accountName);
-    _routeBriefingRequest.setWebUserName(event.accountName);
+    _routeBriefingRequest.setAircraftIdentifier(_aircraftRegistration);
+    _routeBriefingRequest.setEmailAddress(_wxbriefAccountName);
+    _routeBriefingRequest.setWebUserName(_wxbriefAccountName);
     _routeBriefingRequest.setNotABriefing(true);
     _routeBriefingRequest.setSelectedBriefFormat(_selectedBriefFormat.name);
     _setDepartureRouteAndDestination();
@@ -137,12 +155,6 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
     _routeBriefingRequest.setRoute(_taskTurnpointIds.join(" "));
   }
 
-  void _saveAccountNameAndAircraftId(
-      {required String aircraftRegistration, required String accountName}) {
-    repository.setAircraftRegistration(aircraftRegistration);
-    repository.setWxBriefAccountName(accountName);
-  }
-
   /**
    * Convert selected local/date and  time to Zulu
    * Time must be in format of yyyy-MM-ddTHH:mm:ss.S
@@ -150,14 +162,13 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
   void _formatDepartureInstant() {
     String departureTimeZulu = "";
     // if today assume flight 1 hr in future
-    if (_selectedBriefingDateIndex == 0) {
+    if (_selectedDepartureDate == _briefingDates[0]) {
       departureTimeZulu = DateFormat(ZULU_DATE_FORMAT)
           .format(DateTime.now().toUtc().add(const Duration(hours: 1)));
     } else {
       // assume 9AM local time departure
-      departureTimeZulu = DateFormat(ZULU_DATE_FORMAT).format(DateTime.parse(
-              _briefingDates[_selectedBriefingDateIndex] + " 09:00:00.000")
-          .toUtc());
+      departureTimeZulu = DateFormat(ZULU_DATE_FORMAT).format(
+          DateTime.parse(_selectedDepartureDate + " 09:00:00.000").toUtc());
     }
     _routeBriefingRequest.setDepartureInstant(departureTimeZulu);
   }
@@ -172,15 +183,15 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
     _selectedTypeOfBrief = event.wxBriefTypeOfBriefing;
   }
 
-  void _createBriefingDates() {
+  FutureOr<void> _createBriefingDates() async {
     _briefingDates.clear();
     // Date.now() gives local time
     _briefingDates.add(DateFormat(DATE_FORMAT).format(DateTime.now()));
-    final tomorrow = DateTime.now().millisecond + ONE_DAY_IN_MILLISEC;
-    _briefingDates.add(DateFormat(DATE_FORMAT)
-        .format(DateTime.fromMillisecondsSinceEpoch(tomorrow)));
-    _briefingDates.add(DateFormat(DATE_FORMAT).format(
-        DateTime.fromMillisecondsSinceEpoch(tomorrow + ONE_DAY_IN_MILLISEC)));
+    _briefingDates.add(
+        DateFormat(DATE_FORMAT).format(DateTime.now().add(Duration(days: 1))));
+    _briefingDates.add(
+        DateFormat(DATE_FORMAT).format(DateTime.now().add(Duration(days: 2))));
+    _selectedDepartureDate = _briefingDates[0];
   }
 
   FutureOr<void> _submitBriefingRequest(Emitter<WxBriefState> emit) async {
@@ -204,6 +215,8 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
         case DioError:
           // Here's the sample to get the failed response error code and message
           final res = (obj as DioError).response;
+          emit(WxBriefErrorState(
+              "Got error on 1800WxBriefCall : ${res?.statusCode} -> ${res?.statusMessage}"));
           print(
               "Got error on 1800WxBriefCall : ${res?.statusCode} -> ${res?.statusMessage}");
           break;
@@ -214,7 +227,7 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
   }
 
   // Load product codes and tailoring options from CSV
-  void _getProductCodesAndTailoringOptions() async {
+  FutureOr<void> _getProductCodesAndTailoringOptions() async {
     _fullProductCodeList.clear();
     _fullProductCodeList
         .addAll(await repository.getWxBriefProductCodes(_selectedTypeOfBrief));
@@ -262,9 +275,33 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
     if (file == null) {
       // send error
     } else {
-      //display PDF
-      PDFDocument document = await PDFDocument.fromFile(file);
-      emit(WxBriefPdfDocState(document));
+      emit(WxBriefPdfDocState(file.path));
     }
+  }
+
+  FutureOr<void> _updateAircraftRegistration(
+      WxBriefUpdateAircraftRegistrationEvent event,
+      Emitter<WxBriefState> emit) async {
+    await repository.setAircraftRegistration(event.registration);
+  }
+
+  FutureOr<void> _updateAccountName(
+      WxBriefUpdateAccountNameEvent event, Emitter<WxBriefState> emit) async {
+    repository.setWxBriefAccountName(event.accountName);
+  }
+
+  FutureOr<void> _updateReportingOptions(
+      WxBriefUpdateReportingOptionsEvent event, Emitter<WxBriefState> emit) {
+    _fullTailoringOptionList = event.briefingOptions;
+  }
+
+  FutureOr<void> _updateProductOptions(
+      WxBriefUpdateProductOptionsEvent event, Emitter<WxBriefState> emit) {
+    _fullProductCodeList = event.briefingOptions;
+  }
+
+  FutureOr<void> _setDepartureDate(
+      WxBriefUpdateDepartureDateEvent event, Emitter<WxBriefState> emit) {
+    _selectedDepartureDate = event.departureDate;
   }
 }

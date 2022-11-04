@@ -19,6 +19,7 @@ import 'package:flutter_soaring_forecast/soaring/forecast_types/ui/forecast_list
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
 import 'package:flutter_soaring_forecast/soaring/tasks/ui/task_list.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_overhead_view.dart';
+import 'package:flutter_soaring_forecast/soaring/wxbrief/ui/wxbrief_request.dart';
 import 'package:intl/intl.dart';
 
 import '../bloc/rasp_data_bloc.dart';
@@ -532,10 +533,10 @@ class _RaspScreenState extends State<RaspScreen>
         _sendEvent(ClearTaskEvent());
         break;
       case RaspMenu.notamsBrief:
-        _displayWxBriefNotams();
+        _displayWxBriefRequest(WxBriefRequest.NOTAMS_REQUEST);
         break;
       case RaspMenu.routeBrief:
-        _displayWxBriefRouteBriefing();
+        _displayWxBriefRequest(WxBriefRequest.ROUTE_REQUEST);
         break;
       case RaspMenu.displayOptions:
         _showMapDisplayOptionsDialog();
@@ -660,11 +661,9 @@ class _RaspScreenState extends State<RaspScreen>
     }
   }
 
-  void _displayWxBriefNotams() async {
+  void _displayWxBriefRequest(String request) async {
     final result = await Navigator.pushNamed(
-        context, WxBriefNotamsBuilder.routeName,
-        arguments: TaskListScreen.SELECT_TASK_OPTION);
+        context, WxBriefRequestBuilder.routeName,
+        arguments: request);
   }
-
-  void _displayWxBriefRouteBriefing() async {}
 }

@@ -1,4 +1,3 @@
-import 'package:advance_pdf_viewer/advance_pdf_viewer.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
@@ -23,10 +22,19 @@ class WxBriefMessageState extends WxBriefState {
 }
 
 class WxBriefPdfDocState extends WxBriefState {
-  final PDFDocument pdfDoc;
-  WxBriefPdfDocState(this.pdfDoc);
+  final String fileName;
+  WxBriefPdfDocState(this.fileName);
   @override
-  List<Object?> get props => [pdfDoc];
+  List<Object?> get props => [fileName];
+}
+
+class WxBriefErrorState extends WxBriefState {
+  final String error;
+
+  WxBriefErrorState(this.error);
+
+  @override
+  List<Object?> get props => [error];
 }
 
 class WxBriefBriefFormatsState extends WxBriefState {

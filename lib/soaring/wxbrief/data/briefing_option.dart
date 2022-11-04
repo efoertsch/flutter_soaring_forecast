@@ -3,14 +3,19 @@ import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
 import 'package:flutter_soaring_forecast/soaring/app/extensions/string_apis.dart';
 
 class BriefingOption {
+  ///Name using in request to 1800WxBrief
   late final String wxBriefParameterName;
+
+  /// Description (info only)
   late final String wxBriefParamDescription;
+
+  /// Short description  used for display
   late final String displayDescription;
 
-  // if true it means this option should be displayed
-  late final bool briefOption;
+  /// if true it means this option should be displayed
+  late final bool displayThisOption;
 
-  // Default value (whether displayed or not) for the selected type of briefing
+  /// Default value (whether displayed or not) for the selected type of briefing
   late bool selectForBrief;
 
   BriefingOption._() {}
@@ -27,19 +32,23 @@ class BriefingOption {
       briefingOption.displayDescription = briefingOptionDetails[2];
       switch (selectedTypeOfBrief) {
         case WxBriefTypeOfBrief.OUTLOOK:
-          briefingOption.briefOption = briefingOptionDetails[3].parseBool();
+          briefingOption.displayThisOption =
+              briefingOptionDetails[3].parseBool();
           briefingOption.selectForBrief = briefingOptionDetails[4].parseBool();
           break;
         case WxBriefTypeOfBrief.STANDARD:
-          briefingOption.briefOption = briefingOptionDetails[5].parseBool();
+          briefingOption.displayThisOption =
+              briefingOptionDetails[5].parseBool();
           briefingOption.selectForBrief = briefingOptionDetails[6].parseBool();
           break;
         case WxBriefTypeOfBrief.ABBREVIATED:
-          briefingOption.briefOption = briefingOptionDetails[7].parseBool();
+          briefingOption.displayThisOption =
+              briefingOptionDetails[7].parseBool();
           briefingOption.selectForBrief = briefingOptionDetails[8].parseBool();
           break;
         case WxBriefTypeOfBrief.NOTAMS:
-          briefingOption.briefOption = briefingOptionDetails[9].parseBool();
+          briefingOption.displayThisOption =
+              briefingOptionDetails[9].parseBool();
           briefingOption.selectForBrief = briefingOptionDetails[10].parseBool();
       }
     } catch (exception) {

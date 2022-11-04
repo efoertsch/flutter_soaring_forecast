@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:advance_pdf_viewer/advance_pdf_viewer.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -34,8 +33,7 @@ import 'package:flutter_soaring_forecast/soaring/windy/bloc/windy_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/windy/ui/windy.dart';
 import 'package:flutter_soaring_forecast/soaring/wxbrief/bloc/wxbrief_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/wxbrief/ui/wxbrief_auth.dart';
-import 'package:flutter_soaring_forecast/soaring/wxbrief/ui/wxbrief_notams.dart';
-import 'package:flutter_soaring_forecast/soaring/wxbrief/ui/wxbrief_route_briefing.dart';
+import 'package:flutter_soaring_forecast/soaring/wxbrief/ui/wxbrief_request.dart';
 import 'package:workmanager/workmanager.dart';
 
 // https://github.com/fluttercommunity/flutter_workmanager#customisation-android-only
@@ -278,30 +276,22 @@ class SoaringForecastApp extends StatelessWidget {
             );
           }
 
-          if (settings.name == WxBriefNotamsBuilder.routeName) {
+          if (settings.name == WxBriefRequestBuilder.routeName) {
+            final request = settings.arguments as String;
             return CustomMaterialPageRoute(
               builder: (context) {
-                return WxBriefNotamsBuilder();
-              },
-              settings: settings,
-            );
-          }
-
-          if (settings.name == WxBriefRouteBriefingBuilder.routeName) {
-            return CustomMaterialPageRoute(
-              builder: (context) {
-                return WxBriefRouteBriefingBuilder();
+                return WxBriefRequestBuilder(request: request);
               },
               settings: settings,
             );
           }
 
           if (settings.name == PdfViewRouteBuilder.routeName) {
-            final document = settings.arguments as PDFDocument;
+            final fileName = settings.arguments as String;
             return CustomMaterialPageRoute(
               builder: (context) {
                 return PdfViewRouteBuilder(
-                  document: document,
+                  fileName: fileName,
                 );
               },
               settings: settings,
@@ -573,43 +563,28 @@ class WxBriefAuthBuilder extends StatelessWidget {
   }
 }
 
-class WxBriefNotamsBuilder extends StatelessWidget {
-  static const routeName = '/WxBriefNotams';
-
-  WxBriefNotamsBuilder();
-
-  @override
-  Widget build(BuildContext context) {
-    return BlocProvider<WxBriefBloc>(
-      create: (BuildContext context) =>
-          WxBriefBloc(repository: RepositoryProvider.of<Repository>(context)),
-      child: WxBriefNotams(),
-    );
-  }
-}
-
-class WxBriefRouteBriefingBuilder extends StatelessWidget {
-  static const routeName = '/WxBriefRouteBriefing';
-
-  WxBriefRouteBriefingBuilder();
+class WxBriefRequestBuilder extends StatelessWidget {
+  static const routeName = '/WxBriefRequest';
+  final String request;
+  WxBriefRequestBuilder({required this.request});
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider<WxBriefBloc>(
       create: (BuildContext context) =>
           WxBriefBloc(repository: RepositoryProvider.of<Repository>(context)),
-      child: WxBriefRouteBriefing(),
+      child: WxBriefRequest(request: request),
     );
   }
 }
 
 class PdfViewRouteBuilder extends StatelessWidget {
   static const routeName = '/PDFViewer';
-  final PDFDocument document;
+  final String fileName;
 
-  PdfViewRouteBuilder({required this.document});
+  PdfViewRouteBuilder({required this.fileName});
 
   Widget build(BuildContext context) {
-    return PdfViewScreen(document: document);
+    return PdfViewScreen(fileName: fileName);
   }
 }
