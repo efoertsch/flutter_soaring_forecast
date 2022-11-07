@@ -128,8 +128,8 @@ class _WxBriefRequestState extends State<WxBriefRequest>
             alignment: Alignment.centerLeft, child: _getBriefingFormatWidget()),
       ));
     } else {
-      widgetList.add(_getDepartureDatesWidget());
       widgetList.add(_getBriefTypeAndFormat());
+      widgetList.add(_getDepartureDatesWidget());
       widgetList.add(_getReportAndProductOptions());
     }
     return widgetList;
@@ -398,79 +398,81 @@ class _WxBriefRequestState extends State<WxBriefRequest>
   }
 
   Widget _getDepartureDatesWidget() {
-    return BlocConsumer<WxBriefBloc, WxBriefState>(
-        listener: (context, state) {},
-        buildWhen: (previous, current) {
-          return current is WxBriefDepartureDatesState;
-        },
-        builder: (context, state) {
-          if (state is WxBriefDepartureDatesState) {
-            _departureDates = state.departureDates;
-            if (_selectedDepartureDate.isEmpty) {
-              _selectedDepartureDate = state.departureDates[0];
-            }
-
-            return _getDepartureDates(state.departureDates);
-          }
-          return SizedBox.shrink();
-        });
+    return BlocConsumer<WxBriefBloc, WxBriefState>(listener: (context, state) {
+      if (state is WxBriefDepartureDatesState) {
+        _departureDates = state.departureDates;
+        if (_selectedDepartureDate.isEmpty) {
+          _selectedDepartureDate = state.departureDates[0];
+        }
+      }
+    }, buildWhen: (previous, current) {
+      return current is WxBriefDepartureDatesState;
+    }, builder: (context, state) {
+      return _getDepartureDates(_departureDates);
+    });
   }
 
   Widget _getDepartureDates(List<String> departureDates) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 8.0),
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: Column(
-          children: [
-            Text(WxBriefLiterals.DEPARTURE_DATE),
-            DropdownButton<String>(
-              value: _selectedDepartureDate,
-              icon: const Icon(Icons.arrow_downward),
-              elevation: 16,
-              style: const TextStyle(color: Colors.deepPurple),
-              underline: Container(
-                height: 2,
-                color: Colors.deepPurpleAccent,
-              ),
-              onChanged: (String? value) {
-                // This is called when the user selects an item.
-                setState(() {
-                  _selectedDepartureDate = value!;
-                  _sendEvent(
-                      WxBriefUpdateDepartureDateEvent(_selectedDepartureDate));
-                });
-              },
-              items:
-                  departureDates.map<DropdownMenuItem<String>>((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
-            )
-          ],
+    return Visibility(
+      visible: (_selectedBriefType == WxBriefTypeOfBrief.NOTAMS ||
+          _selectedBriefType == WxBriefTypeOfBrief.OUTLOOK),
+      child: Padding(
+        padding: const EdgeInsets.only(top: 8.0),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: Column(
+            children: [
+              Text(WxBriefLiterals.DEPARTURE_DATE),
+              DropdownButton<String>(
+                value: _selectedDepartureDate,
+                icon: const Icon(Icons.arrow_downward),
+                elevation: 16,
+                style: const TextStyle(color: Colors.deepPurple),
+                underline: Container(
+                  height: 2,
+                  color: Colors.deepPurpleAccent,
+                ),
+                onChanged: (String? value) {
+                  // This is called when the user selects an item.
+                  setState(() {
+                    _selectedDepartureDate = value!;
+                    _sendEvent(WxBriefUpdateDepartureDateEvent(
+                        _selectedDepartureDate));
+                  });
+                },
+                items: departureDates
+                    .map<DropdownMenuItem<String>>((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
+              )
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _getTypeOfBriefWidget() {
-    return BlocConsumer<WxBriefBloc, WxBriefState>(
-        listener: (context, state) {},
-        buildWhen: (previous, current) {
-          return current is WxBriefBriefingTypesState;
-        },
-        builder: (context, state) {
-          if (state is WxBriefBriefingTypesState) {
-            return _getTypesOfBriefs(state.briefingTypes);
-          }
-          return SizedBox.shrink();
-        });
+    return BlocConsumer<WxBriefBloc, WxBriefState>(listener: (context, state) {
+      if (state is WxBriefBriefingTypesState) {
+        if (_selectedBriefType == null) {
+          _selectedBriefType = state.briefingTypes[0];
+        }
+      }
+    }, buildWhen: (previous, current) {
+      return current is WxBriefBriefingTypesState;
+    }, builder: (context, state) {
+      if (state is WxBriefBriefingTypesState) {
+        return _getTypesOfBriefs(state.briefingTypes);
+      }
+      return SizedBox.shrink();
+    });
   }
 
   Widget _getTypesOfBriefs(List<WxBriefTypeOfBrief> briefingTypes) {
-    _selectedBriefType = briefingTypes[0];
     return Column(
       children: [
         Align(
@@ -493,7 +495,11 @@ class _WxBriefRequestState extends State<WxBriefRequest>
                 _selectedBriefType = value!;
                 if (_selectedBriefType == WxBriefTypeOfBrief.OUTLOOK) {
                   (_selectedDepartureDate = _departureDates[1]);
+                  _sendEvent(
+                      WxBriefUpdateDepartureDateEvent(_selectedDepartureDate));
                 }
+                _sendEvent(WxBriefSetTypeOfBriefEvent(
+                    wxBriefTypeOfBriefing: _selectedBriefType!));
               });
             },
             items: briefingTypes.map<DropdownMenuItem<WxBriefTypeOfBrief>>(

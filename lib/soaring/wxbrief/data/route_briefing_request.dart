@@ -223,17 +223,6 @@ class RouteBriefingRequest {
    */
   String? _plainTextTimeZone;
 
-  void setTurnpointNames(List<String> turnpointNames) {
-    turnpointNames = turnpointNames;
-    if (turnpointNames.length > 0) {
-      _departure = turnpointNames[0];
-    }
-    if (turnpointNames.length > 1) {
-      _destination = turnpointNames[turnpointNames.length - 1];
-    }
-    setRoute(turnpointNames.join(" "));
-  }
-
   void setNotABriefing(bool notABriefing) {
     this._notABriefing = notABriefing;
   }

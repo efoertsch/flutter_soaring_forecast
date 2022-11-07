@@ -38,7 +38,7 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
   String _selectedDepartureDate = "";
 
   WxBriefFormat _selectedBriefFormat = WxBriefFormat.NGBV2; //i.e. PDF
-  final List<WxBriefTypeOfBrief> _briefingTypes = <WxBriefTypeOfBrief>[];
+  final List<WxBriefTypeOfBrief> _briefingTypes = WxBriefTypeOfBrief.values;
   WxBriefTypeOfBrief _selectedTypeOfBrief = WxBriefTypeOfBrief.NOTAMS;
 
   final _routeBriefingRequest = RouteBriefingRequest();
@@ -61,6 +61,9 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
 
   FutureOr<void> _getWxBriefRequestData(
       WxBriefInitEvent event, Emitter<WxBriefState> emit) async {
+    if (event.request == WxBriefRequest.ROUTE_REQUEST) {
+      _selectedTypeOfBrief = _briefingTypes[0];
+    }
     await _emitTaskDetails(emit);
     await _emitAircraftIdAndAccountEvent(emit);
     await _emitBriefingFormats(emit);
@@ -72,7 +75,6 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
       await _emitReportingOptions(emit);
       await _emitProductOptions(emit);
     }
-    ;
   }
 
   Future<void> _emitAircraftIdAndAccountEvent(
@@ -112,9 +114,6 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
   }
 
   FutureOr<void> _emitBriefingTypesState(Emitter<WxBriefState> emit) async {
-    if (_briefingTypes.isEmpty) {
-      _briefingTypes.addAll(WxBriefTypeOfBrief.values);
-    }
     emit(WxBriefBriefingTypesState(_briefingTypes));
   }
 
@@ -134,6 +133,7 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
     _routeBriefingRequest.setWebUserName(_wxbriefAccountName);
     _routeBriefingRequest.setNotABriefing(true);
     _routeBriefingRequest.setSelectedBriefFormat(_selectedBriefFormat.name);
+    _routeBriefingRequest.setTypeOfBrief(_selectedTypeOfBrief);
     _setDepartureRouteAndDestination();
     _formatDepartureInstant();
     _addProductCodesToRouteBriefingRequest();
@@ -152,7 +152,13 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
         _taskTurnpointIds.add(_taskTurnpoints[i].code);
       }
     }
-    _routeBriefingRequest.setRoute(_taskTurnpointIds.join(" "));
+    final routeTurnpoints = <String>[];
+    if (_taskTurnpoints.length > 2) {
+      for (int i = 1; i < _taskTurnpoints.length - 1; ++i) {
+        routeTurnpoints.add(_taskTurnpoints[i].code);
+      }
+    }
+    _routeBriefingRequest.setRoute(routeTurnpoints.join(","));
   }
 
   /**
@@ -181,6 +187,9 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
   FutureOr<void> _setTypeOfBrief(
       WxBriefSetTypeOfBriefEvent event, Emitter<WxBriefState> emit) async {
     _selectedTypeOfBrief = event.wxBriefTypeOfBriefing;
+    await _getProductCodesAndTailoringOptions();
+    await _emitReportingOptions(emit);
+    await _emitProductOptions(emit);
   }
 
   FutureOr<void> _createBriefingDates() async {
@@ -195,6 +204,7 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
   }
 
   FutureOr<void> _submitBriefingRequest(Emitter<WxBriefState> emit) async {
+    debugPrint("type of brief: ${_selectedTypeOfBrief.name}");
     final restParmString = _routeBriefingRequest.getRestParmString();
     debugPrint(restParmString);
     await repository

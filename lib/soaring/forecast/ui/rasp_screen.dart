@@ -533,9 +533,11 @@ class _RaspScreenState extends State<RaspScreen>
         _sendEvent(ClearTaskEvent());
         break;
       case RaspMenu.notamsBrief:
+        Navigator.pop(context);
         _displayWxBriefRequest(WxBriefRequest.NOTAMS_REQUEST);
         break;
       case RaspMenu.routeBrief:
+        Navigator.pop(context);
         _displayWxBriefRequest(WxBriefRequest.ROUTE_REQUEST);
         break;
       case RaspMenu.displayOptions:
