@@ -72,16 +72,19 @@ class AppDrawer {
           ),
           _getDivider(),
           ListTile(
+              title: Text(
+            '1800WxBrief',
+            style: TextStyle(
+              color: Colors.black54,
+            ),
+          )),
+          ListTile(
               title: Text('Area Brief'),
               onTap: () {
                 Navigator.popAndPushNamed(
                     context, WxBriefRequestBuilder.routeName,
                     arguments: WxBriefBriefingRequest.AREA_REQUEST);
               }),
-          Divider(
-            height: 4,
-            thickness: 2,
-          ),
           ListTile(
               title: Text('Airport METAR/TAF'),
               onTap: () {

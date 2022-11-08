@@ -141,7 +141,7 @@ class RaspMenu {
   static const String reorderForecasts = 'Reorder Forecasts';
   static const String opacity = 'Opacity';
   static const String selectRegion = 'Select Region';
-  static const String taskBrief = 'Task Brief';
+  static const String one800WxBrief = '1800WxBrief';
   static const String notamsBrief = "NOTAMS";
   static const String routeBrief = "Route Brief";
 }

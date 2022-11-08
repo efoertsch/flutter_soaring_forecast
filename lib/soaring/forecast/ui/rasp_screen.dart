@@ -458,7 +458,7 @@ class _RaspScreenState extends State<RaspScreen>
         itemBuilder: (BuildContext context) {
           return {
             RaspMenu.clearTask,
-            RaspMenu.taskBrief,
+            RaspMenu.one800WxBrief,
             RaspMenu.displayOptions,
             // RaspMenu.mapBackground,
             RaspMenu.reorderForecasts,
@@ -472,7 +472,7 @@ class _RaspScreenState extends State<RaspScreen>
                 child: Text(choice),
               );
             }
-            if (choice == RaspMenu.taskBrief) {
+            if (choice == RaspMenu.one800WxBrief) {
               return PopupMenuItem<String>(
                 value: choice,
                 enabled: taskSelected,
@@ -496,7 +496,7 @@ class _RaspScreenState extends State<RaspScreen>
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          Text(RaspMenu.taskBrief),
+          Text(RaspMenu.one800WxBrief),
           Spacer(),
           Icon(Icons.arrow_right, size: 20.0, color: Colors.black),
         ],
