@@ -39,4 +39,13 @@ abstract class One800WxBriefClient {
   Future<RouteBriefing> getRouteBriefing(
       @Header("Authorization") String basicBase64,
       @Body() String completeQueryString);
+
+  @POST("FP/areaBriefing")
+  @Headers(<String, dynamic>{
+    "Content-Type": "application/x-www-form-urlencoded",
+    "User-Agent": "Soaring Forecast FFSP Interface"
+  })
+  Future<RouteBriefing> getAreaBriefing(
+      @Header("Authorization") String basicBase64,
+      @Body() String completeQueryString);
 }

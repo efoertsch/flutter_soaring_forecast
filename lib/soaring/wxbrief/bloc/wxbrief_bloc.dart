@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
+import 'package:flutter_soaring_forecast/soaring/floor/airport/airport.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/taskturnpoint/task_turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 import 'package:flutter_soaring_forecast/soaring/wxbrief/bloc/wxbrief_event.dart';
@@ -12,7 +13,6 @@ import 'package:flutter_soaring_forecast/soaring/wxbrief/bloc/wxbrief_state.dart
 import 'package:flutter_soaring_forecast/soaring/wxbrief/data/briefing_option.dart';
 import 'package:flutter_soaring_forecast/soaring/wxbrief/data/route_briefing_request.dart';
 import 'package:flutter_soaring_forecast/soaring/wxbrief/data/wxbrief_defaults.dart';
-import 'package:flutter_soaring_forecast/soaring/wxbrief/ui/wxbrief_request.dart';
 import 'package:intl/intl.dart';
 
 class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
@@ -40,6 +40,8 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
   WxBriefFormat _selectedBriefFormat = WxBriefFormat.NGBV2; //i.e. PDF
   final List<WxBriefTypeOfBrief> _briefingTypes = WxBriefTypeOfBrief.values;
   WxBriefTypeOfBrief _selectedTypeOfBrief = WxBriefTypeOfBrief.NOTAMS;
+  WxBriefBriefingRequest _selectedBriefingRequest =
+      WxBriefBriefingRequest.NOTAMS_REQUEST;
 
   final _routeBriefingRequest = RouteBriefingRequest();
   final _taskTurnpoints = <TaskTurnpoint>[];
@@ -57,19 +59,26 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
     on<WxBriefUpdateAccountNameEvent>(_updateAccountName);
     on<WxBriefUpdateReportingOptionsEvent>(_updateReportingOptions);
     on<WxBriefUpdateProductOptionsEvent>(_updateProductOptions);
+    on<WxAirportIdEvent>(_getAirport);
   }
 
   FutureOr<void> _getWxBriefRequestData(
       WxBriefInitEvent event, Emitter<WxBriefState> emit) async {
-    if (event.request == WxBriefRequest.ROUTE_REQUEST) {
+    _selectedBriefingRequest = event.request;
+    if (_selectedBriefingRequest == WxBriefBriefingRequest.ROUTE_REQUEST ||
+        _selectedBriefingRequest == WxBriefBriefingRequest.AREA_REQUEST) {
       _selectedTypeOfBrief = _briefingTypes[0];
+    }
+    if (_selectedBriefingRequest == WxBriefBriefingRequest.AREA_REQUEST) {
+      await _checkForSavedAirport(emit);
     }
     await _emitTaskDetails(emit);
     await _emitAircraftIdAndAccountEvent(emit);
     await _emitBriefingFormats(emit);
     await _getProductCodesAndTailoringOptions();
     await _createBriefingDates();
-    if (event.request == WxBriefRequest.ROUTE_REQUEST) {
+    if (_selectedBriefingRequest == WxBriefBriefingRequest.ROUTE_REQUEST ||
+        _selectedBriefingRequest == WxBriefBriefingRequest.AREA_REQUEST) {
       await _emitBriefingDepartureDatesState(emit);
       await _emitBriefingTypesState(emit);
       await _emitReportingOptions(emit);
@@ -239,17 +248,19 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
   // Load product codes and tailoring options from CSV
   FutureOr<void> _getProductCodesAndTailoringOptions() async {
     _fullProductCodeList.clear();
-    _fullProductCodeList
-        .addAll(await repository.getWxBriefProductCodes(_selectedTypeOfBrief));
+    _fullProductCodeList.addAll(await repository.getWxBriefProductCodes(
+        _selectedBriefingRequest, _selectedTypeOfBrief));
     _fullTailoringOptionList.clear();
     if (_selectedBriefFormat == WxBriefFormat.EMAIL) {
       // Non NGBV2
-      _fullTailoringOptionList.addAll(await repository
-          .getWxBriefNonNGBV2TailoringOptions(_selectedTypeOfBrief));
+      _fullTailoringOptionList.addAll(
+          await repository.getWxBriefNonNGBV2TailoringOptions(
+              _selectedBriefingRequest, _selectedTypeOfBrief));
     } else {
       // NGBV2
-      _fullTailoringOptionList.addAll(await repository
-          .getWxBriefNGBV2TailoringOptions(_selectedTypeOfBrief));
+      _fullTailoringOptionList.addAll(
+          await repository.getWxBriefNGBV2TailoringOptions(
+              _selectedBriefingRequest, _selectedTypeOfBrief));
     }
   }
 
@@ -313,5 +324,24 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
   FutureOr<void> _setDepartureDate(
       WxBriefUpdateDepartureDateEvent event, Emitter<WxBriefState> emit) {
     _selectedDepartureDate = event.departureDate;
+  }
+
+  FutureOr<void> _getAirport(
+      WxAirportIdEvent event, Emitter<WxBriefState> emit) async {
+    await repository.saveAirportId(event.airportId);
+    await _emitAirport(emit, event.airportId);
+  }
+
+  FutureOr<void> _checkForSavedAirport(Emitter<WxBriefState> emit) async {
+    String airportId = await repository.getSavedAirportId();
+    _emitAirport(emit, airportId);
+  }
+
+  _emitAirport(Emitter<WxBriefState> emit, String airportId) async {
+    Airport? airport = await repository.getAirportById(airportId);
+    if (airport == null) {
+      airport = Airport(ident: airportId);
+    }
+    emit(WxBriefAirportState(airport: airport));
   }
 }

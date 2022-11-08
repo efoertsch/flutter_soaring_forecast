@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     show WxBriefFormat, WxBriefTypeOfBrief;
+import 'package:flutter_soaring_forecast/soaring/floor/airport/airport.dart';
 import 'package:flutter_soaring_forecast/soaring/wxbrief/data/briefing_option.dart';
 import 'package:flutter_soaring_forecast/soaring/wxbrief/data/wxbrief_defaults.dart';
 
@@ -96,6 +97,14 @@ class WxBriefDefaultsState extends WxBriefState {
 
   @override
   List<Object?> get props => [wxBriefDefaults];
+}
+
+class WxBriefAirportState extends WxBriefState {
+  final Airport? airport;
+  WxBriefAirportState({required this.airport});
+
+  @override
+  List<Object?> get props => [airport.toString()];
 }
 
 class WxBriefWorkingState extends WxBriefState {

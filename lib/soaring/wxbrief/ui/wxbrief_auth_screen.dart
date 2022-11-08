@@ -6,16 +6,16 @@ import 'package:flutter/material.dart' hide Feedback;
 import 'package:flutter/services.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
-    show FEEDBACK_EMAIL_ADDRESS, Feedback, WxBriefOption;
+    show FEEDBACK_EMAIL_ADDRESS, Feedback;
 
-class WxBriefAuth extends StatefulWidget {
-  WxBriefAuth({Key? key}) : super(key: key);
+class WxBriefAuthScreen extends StatefulWidget {
+  WxBriefAuthScreen({Key? key}) : super(key: key);
 
   @override
-  _WxBriefAuthState createState() => _WxBriefAuthState();
+  _WxBriefAuthScreenState createState() => _WxBriefAuthScreenState();
 }
 
-class _WxBriefAuthState extends State<WxBriefAuth> {
+class _WxBriefAuthScreenState extends State<WxBriefAuthScreen> {
   @override
   Widget build(BuildContext context) {
     if (Platform.isAndroid) {

@@ -74,7 +74,7 @@ const String suaDisplayOption = "SuaDisplayOption";
 const String turnpointsDisplayOption = "TurnpointsDisplayOption";
 
 // Consider this a const List, but only selected value should be changeable during program execution
-final List<PreferenceOption> raspDisplayOptions = [
+final List<PreferenceOption> RaspDisplayOptions = [
   PreferenceOption(
       key: soundingsDisplayOption,
       displayText: RaspDisplayOptionsMenu.soundings),
@@ -102,13 +102,10 @@ enum SUAColor {
   final Color airspaceColor;
 }
 
-enum WxBriefOption {
-  TASK_NOTAMS(option: "Task NOTAMS"),
-  ROUTE_BREIFING(option: "Route Briefing");
-
-  const WxBriefOption({required this.option});
-
-  final String option;
+enum WxBriefBriefingRequest {
+  AREA_REQUEST,
+  NOTAMS_REQUEST, //Basically route request but focus on NOTAMS
+  ROUTE_REQUEST;
 }
 
 enum WxBriefTypeOfBrief {
@@ -127,6 +124,7 @@ enum WxBriefFormat {
   EMAIL(option: "EMail");
 
   const WxBriefFormat({required this.option});
+
   final String option;
 
   String getOption() {
@@ -267,6 +265,7 @@ class Feedback {
 
 class WxBriefLiterals {
   static const String ONE800WXBRIEF = "1800WxBrief";
+  static const String ONE800WX_AREA_BRIEF = "1800WxBrief Area";
   static const String NOTAMS_BRIEFING = "1800WxBrief NOTAMS";
   static const String NOTAMS_ABBREV_BRIEF = "NOTAMS Abbreviated Brief";
   static const String REPORT_OPTIONS = "Report Options";
@@ -274,6 +273,8 @@ class WxBriefLiterals {
   static const String CANCEL = "Cancel";
   static const String CLOSE = "Close";
   static const String SUBMIT = "Submit";
+  static const String AIRPORT_ID = "Airport Id";
+  static const String INVALID_AIRPORT_ID = "Invalid Airport Id";
   static const String AIRCRAFT_REGISTRATION_LABEL = 'Aircraft Registration';
   static const String INVALID_AIRCRAFT_REGISTRATION_ID =
       "Invalid aircraft registration id";

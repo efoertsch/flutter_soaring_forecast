@@ -11,8 +11,12 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_map/src/geo/latlng_bounds.dart';
 import 'package:flutter_soaring_forecast/auth/secrets.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
-    as Constants;
-import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
+    show
+        RASP_BASE_URL,
+        PreferenceOption,
+        WxBriefBriefingRequest,
+        WxBriefTypeOfBrief,
+        RaspDisplayOptions;
 import 'package:flutter_soaring_forecast/soaring/floor/airport/airport.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/app_database.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/task/task.dart';
@@ -68,6 +72,7 @@ class Repository {
   static const String SATELLITE_REGION = "SATELLITE_REGION";
   static const String AIRPORT_CODES_FOR_METAR = "AIRPORT_CODES_FOR_METAR_TAF";
   static const String ICAO_CODE_DELIMITER = " ";
+  static const String WXBRIEF_AIRPORT_ID = "";
 
   late final String satelliteRegionUS;
   late final String satelliteTypeVis;
@@ -230,7 +235,7 @@ class Repository {
   // ----------- Get RASP forecast images -----------------------
   Future<SoaringForecastImage> getRaspForecastImageByUrl(
       SoaringForecastImage soaringForecastImage) async {
-    String fullUrl = Constants.RASP_BASE_URL + soaringForecastImage.imageUrl;
+    String fullUrl = RASP_BASE_URL + soaringForecastImage.imageUrl;
     File file = await ImageCacheManager().getSingleFile(fullUrl);
     //logger.d("Downloading forecast image: $fullUrl");
     Image image = Image.file(file);
@@ -245,7 +250,7 @@ class Repository {
       String forecastType,
       String forecastTime,
       String imageType) async {
-    return getRaspForecastImage(Constants.RASP_BASE_URL +
+    return getRaspForecastImage(RASP_BASE_URL +
         "/$regionName/$forecastDate/$model/$forecastType.$forecastTime}local.d2.$imageType.png");
   }
 
@@ -302,6 +307,11 @@ class Repository {
   Future<List<Airport>?> getSelectedAirports(List<String> icaoCodes) async {
     await makeDatabaseAvailable();
     return await _appDatabase!.airportDao.selectIcaoIdAirports(icaoCodes);
+  }
+
+  Future<Airport?> getAirportById(String ident) async {
+    await makeDatabaseAvailable();
+    return await _appDatabase!.airportDao.getAirportByIdent(ident);
   }
 
   /**
@@ -560,7 +570,7 @@ class Repository {
   //-------- Map Display Options ----------------------------------------
   Future<List<PreferenceOption>> getRaspDisplayOptions() async {
     List<PreferenceOption> displayOptions = [];
-    for (var option in raspDisplayOptions) {
+    for (var option in RaspDisplayOptions) {
       final isSelected =
           await getGenericBool(key: option.key, defaultValue: false);
       displayOptions.add(PreferenceOption(
@@ -574,7 +584,7 @@ class Repository {
 
   FutureOr<void> saveRaspDisplayOptions(
       List<PreferenceOption> displayOptions) async {
-    raspDisplayOptions.forEach((option) async {
+    RaspDisplayOptions.forEach((option) async {
       saveRaspDisplayOption(option);
     });
   }
@@ -757,6 +767,13 @@ class Repository {
   }
 
   //------ 1800wxbrief ---------------------------------
+  Future<String> getSavedAirportId() async {
+    return await getGenericString(key: WXBRIEF_AIRPORT_ID, defaultValue: "3B3");
+  }
+
+  Future<bool> saveAirportId(String airportId) async {
+    return await saveGenericString(key: WXBRIEF_AIRPORT_ID, value: airportId);
+  }
 
   Future<MetarTafResponse> getMetar({required String location}) async {
     if (_one800WxBriefClient == null) {
@@ -827,25 +844,42 @@ class Repository {
   }
 
   Future<List<BriefingOption>> getWxBriefProductCodes(
-      Constants.WxBriefTypeOfBrief selectedTypeOfBrief) async {
-    return getWxBriefingOptions(
-        "wxbrief_product_codes.csv", selectedTypeOfBrief);
+      selectedBriefingRequest, WxBriefTypeOfBrief selectedTypeOfBrief) async {
+    String filename = "";
+    if (selectedBriefingRequest == WxBriefBriefingRequest.AREA_REQUEST) {
+      filename = "wxbrief_ab_product_codes.csv";
+    } else {
+      filename = "wxbrief_product_codes.csv";
+    }
+    return await getWxBriefingOptions(filename, selectedTypeOfBrief);
   }
 
   Future<List<BriefingOption>> getWxBriefNGBV2TailoringOptions(
-      Constants.WxBriefTypeOfBrief selectedTypeOfBrief) async {
-    return getWxBriefingOptions(
-        "wxbrief_ngbv2_options.csv", selectedTypeOfBrief);
+      WxBriefBriefingRequest selectedBriefingRequest,
+      WxBriefTypeOfBrief selectedTypeOfBrief) async {
+    String filename = "";
+    if (selectedBriefingRequest == WxBriefBriefingRequest.AREA_REQUEST) {
+      filename = "wxbrief_ab_ngbv2_options.csv";
+    } else {
+      filename = "wxbrief_ngbv2_options.csv";
+    }
+    return await getWxBriefingOptions(filename, selectedTypeOfBrief);
   }
 
   Future<List<BriefingOption>> getWxBriefNonNGBV2TailoringOptions(
-      Constants.WxBriefTypeOfBrief selectedTypeOfBrief) async {
-    return getWxBriefingOptions(
-        "wxbrief_non_ngbv2_options.csv", selectedTypeOfBrief);
+      WxBriefBriefingRequest selectedBriefingRequest,
+      WxBriefTypeOfBrief selectedTypeOfBrief) async {
+    String filename = "";
+    if (selectedBriefingRequest == WxBriefBriefingRequest.AREA_REQUEST) {
+      filename = "wxbrief_ab_non_ngbv2_options.csv";
+    } else {
+      filename = "wxbrief_non_ngbv2_options.csv";
+    }
+    return await getWxBriefingOptions(filename, selectedTypeOfBrief);
   }
 
-  Future<List<BriefingOption>> getWxBriefingOptions(String optionsFileName,
-      Constants.WxBriefTypeOfBrief selectedTypeOfBrief) async {
+  Future<List<BriefingOption>> getWxBriefingOptions(
+      String optionsFileName, WxBriefTypeOfBrief selectedTypeOfBrief) async {
     final briefingOptions = <BriefingOption>[];
     String optionsString =
         await rootBundle.loadString('assets/csv/' + optionsFileName);

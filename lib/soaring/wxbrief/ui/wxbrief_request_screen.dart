@@ -9,27 +9,30 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/main.dart';
 import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
-    show WxBriefFormat, WxBriefLiterals, WxBriefTypeOfBrief;
+    show
+        WxBriefFormat,
+        WxBriefLiterals,
+        WxBriefBriefingRequest,
+        WxBriefTypeOfBrief;
 import 'package:flutter_soaring_forecast/soaring/app/custom_styles.dart';
+import 'package:flutter_soaring_forecast/soaring/floor/airport/airport.dart';
 import 'package:flutter_soaring_forecast/soaring/wxbrief/bloc/wxbrief_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/wxbrief/bloc/wxbrief_event.dart';
 import 'package:flutter_soaring_forecast/soaring/wxbrief/bloc/wxbrief_state.dart';
 import 'package:flutter_soaring_forecast/soaring/wxbrief/data/briefing_option.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-class WxBriefRequest extends StatefulWidget {
-  static const String NOTAMS_REQUEST = "NOTAMS";
-  static const String ROUTE_REQUEST = "ROUTE";
-  late final String request;
+class WxBriefRequestScreen extends StatefulWidget {
+  late final WxBriefBriefingRequest request;
 
-  WxBriefRequest({Key? key, required String this.request}) : super(key: key);
+  WxBriefRequestScreen({Key? key, required this.request}) : super(key: key);
 
   @override
-  _WxBriefRequestState createState() => _WxBriefRequestState();
+  _WxBriefRequestScreenState createState() => _WxBriefRequestScreenState();
 }
 
-class _WxBriefRequestState extends State<WxBriefRequest>
-    with AfterLayoutMixin<WxBriefRequest> {
+class _WxBriefRequestScreenState extends State<WxBriefRequestScreen>
+    with AfterLayoutMixin<WxBriefRequestScreen> {
   var _formKey = GlobalKey<FormState>();
 
   String _accountName = "";
@@ -47,6 +50,9 @@ class _WxBriefRequestState extends State<WxBriefRequest>
   List<BriefingOption> _fullProductOptionList = <BriefingOption>[];
 
   List<String> _departureDates = <String>[];
+
+  String _airportId = "";
+  Airport? _airport = null;
 
   @override
   FutureOr<void> afterFirstLayout(BuildContext context) {
@@ -85,9 +91,11 @@ class _WxBriefRequestState extends State<WxBriefRequest>
 
   AppBar getAppBar(BuildContext context) {
     return AppBar(
-      title: Text(widget.request == WxBriefTypeOfBrief.NOTAMS.name
+      title: Text(widget.request == WxBriefBriefingRequest.NOTAMS_REQUEST
           ? WxBriefLiterals.NOTAMS_BRIEFING
-          : WxBriefLiterals.ONE800WXBRIEF),
+          : (widget.request == WxBriefBriefingRequest.AREA_REQUEST)
+              ? WxBriefLiterals.ONE800WX_AREA_BRIEF
+              : WxBriefLiterals.ONE800WXBRIEF),
       leading: BackButton(onPressed: () => Navigator.pop(context)),
       //  actions: _getAppBarMenu(),
     );
@@ -112,16 +120,24 @@ class _WxBriefRequestState extends State<WxBriefRequest>
     );
   }
 
+  // There are 3 different screen formats displayed depending on the request
+  // 1. NOTAMS_REQUEST - uses RouteBrief but only asks for NOTAMS
+  // 2. ROUTE_REQUEST - displays widgets so use can select Standard, Abbreviated, Outlook or NOTAMS briefing
+  // 3. AREA_REQUEST - Requests Area Briefing and user can also select Standard, Abbreviated, Outlook or NOTAMS briefing
   List<Widget> _getRequestWidgets() {
     final widgetList = <Widget>[];
-    widgetList.add(_getTaskTitleWidget());
-    if (widget.request == WxBriefTypeOfBrief.NOTAMS.name) {
+    if (widget.request == WxBriefBriefingRequest.NOTAMS_REQUEST ||
+        widget.request == WxBriefBriefingRequest.ROUTE_REQUEST) {
+      widgetList.add(_getTaskTitleWidget());
+    }
+    if (widget.request == WxBriefBriefingRequest.NOTAMS_REQUEST) {
       widgetList.add(_getNOTAMAbbrevBriefText());
-    } else {
-      widgetList.add(SizedBox.shrink());
+    }
+    if (widget.request == WxBriefBriefingRequest.AREA_REQUEST) {
+      widgetList.add(_getAreaBriefWidget());
     }
     widgetList.add(_getRegistrationAndAccountNameForm());
-    if (widget.request == WxBriefTypeOfBrief.NOTAMS.name) {
+    if (widget.request == WxBriefBriefingRequest.NOTAMS_REQUEST) {
       widgetList.add(Padding(
         padding: const EdgeInsets.only(top: 16.0),
         child: Align(
@@ -216,6 +232,69 @@ class _WxBriefRequestState extends State<WxBriefRequest>
           ),
         )
       ],
+    );
+  }
+
+  Widget _getAreaBriefWidget() {
+    return BlocConsumer<WxBriefBloc, WxBriefState>(
+      listener: (context, state) {
+        if (state is WxBriefAirportState) {
+          _airport = state.airport;
+        }
+      },
+      buildWhen: (previous, current) {
+        return current is WxBriefInitialState || current is WxBriefAirportState;
+      },
+      builder: (context, state) {
+        if (state is WxBriefAirportState) {
+          return Padding(
+            padding: const EdgeInsets.only(top: 12.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: TextFormField(
+                      initialValue: _airport!.ident,
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(),
+                        labelText: WxBriefLiterals.AIRPORT_ID,
+                      ),
+                      autovalidateMode: AutovalidateMode.onUserInteraction,
+                      validator: (value) {
+                        if (value != null && value.length >= 3) {
+                          _sendEvent(WxAirportIdEvent(value));
+                          return null;
+                        } else {
+                          return WxBriefLiterals.INVALID_AIRPORT_ID;
+                        }
+                      }),
+                ),
+                Expanded(
+                  flex: 1,
+                  child: Padding(
+                      padding: const EdgeInsets.only(left: 16.0),
+                      child: IconButton(
+                          icon: Icon(Icons.search),
+                          color: Colors.blue,
+                          onPressed: () {})),
+                ),
+                Expanded(
+                  flex: 4,
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 8.0),
+                    child: Text(
+                      _airport!.name,
+                      style: textStyleBlackFontSize16,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+        return SizedBox.shrink();
+      },
     );
   }
 

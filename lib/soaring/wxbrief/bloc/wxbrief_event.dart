@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
-    show WxBriefFormat, WxBriefTypeOfBrief;
+    show WxBriefFormat, WxBriefBriefingRequest, WxBriefTypeOfBrief;
 import 'package:flutter_soaring_forecast/soaring/wxbrief/data/briefing_option.dart';
 
 @immutable
@@ -10,15 +10,26 @@ abstract class WxBriefEvent extends Equatable {}
 // All the events related to WxBriefs
 
 class WxBriefInitEvent extends WxBriefEvent {
-  final String request;
-  WxBriefInitEvent(String this.request);
+  final WxBriefBriefingRequest request;
+
+  WxBriefInitEvent(WxBriefBriefingRequest this.request);
 
   @override
-  List<Object?> get props => [request];
+  List<Object?> get props => [request.toString()];
+}
+
+class WxAirportIdEvent extends WxBriefEvent {
+  final String airportId;
+
+  WxAirportIdEvent(this.airportId);
+
+  @override
+  List<Object?> get props => [airportId];
 }
 
 class WxBriefUpdateDepartureDateEvent extends WxBriefEvent {
   final String departureDate;
+
   WxBriefUpdateDepartureDateEvent(String this.departureDate);
 
   @override
@@ -27,6 +38,7 @@ class WxBriefUpdateDepartureDateEvent extends WxBriefEvent {
 
 class WxBriefUpdateAircraftRegistrationEvent extends WxBriefEvent {
   final String registration;
+
   WxBriefUpdateAircraftRegistrationEvent(String this.registration);
 
   @override
@@ -35,6 +47,7 @@ class WxBriefUpdateAircraftRegistrationEvent extends WxBriefEvent {
 
 class WxBriefUpdateAccountNameEvent extends WxBriefEvent {
   final String accountName;
+
   WxBriefUpdateAccountNameEvent(String this.accountName);
 
   @override
@@ -59,21 +72,27 @@ class WxBriefSetBriefFormatEvent extends WxBriefEvent {
 
 class WxBriefSetTypeOfBriefEvent extends WxBriefEvent {
   final WxBriefTypeOfBrief wxBriefTypeOfBriefing;
+
   WxBriefSetTypeOfBriefEvent({required this.wxBriefTypeOfBriefing});
+
   @override
   List<Object?> get props => [wxBriefTypeOfBriefing];
 }
 
 class WxBriefUpdateReportingOptionsEvent extends WxBriefEvent {
   final List<BriefingOption> briefingOptions;
+
   WxBriefUpdateReportingOptionsEvent({required this.briefingOptions});
+
   @override
   List<Object?> get props => [briefingOptions.toString()];
 }
 
 class WxBriefUpdateProductOptionsEvent extends WxBriefEvent {
   final List<BriefingOption> briefingOptions;
+
   WxBriefUpdateProductOptionsEvent({required this.briefingOptions});
+
   @override
   List<Object?> get props => [briefingOptions.toString()];
 }

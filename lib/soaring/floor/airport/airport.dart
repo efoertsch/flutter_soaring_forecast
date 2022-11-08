@@ -20,13 +20,13 @@ class Airport {
 
   Airport({
     required this.ident,
-    required this.type,
-    required this.name,
-    required this.latitudeDeg,
-    required this.longitudeDeg,
-    required this.elevationFt,
-    required this.state,
-    required this.municipality,
+    this.type = "",
+    this.name = "Unknown",
+    this.latitudeDeg = 0,
+    this.longitudeDeg = 0,
+    this.elevationFt = 0,
+    this.state = "",
+    this.municipality = "",
   });
 
   factory Airport.fromList(List<dynamic> list) => Airport(
@@ -62,4 +62,23 @@ class Airport {
         state: map[9],
         municipality: map[10],
       );
+
+  @override
+  String toString() {
+    return (ident +
+        " " +
+        type +
+        " " +
+        name +
+        " " +
+        latitudeDeg.toString() +
+        " " +
+        longitudeDeg.toString() +
+        " " +
+        elevationFt.toString() +
+        " " +
+        state +
+        " " +
+        municipality);
+  }
 }

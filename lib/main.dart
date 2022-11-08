@@ -9,6 +9,8 @@ import 'package:flutter_soaring_forecast/soaring/airport/download/airports_downl
 import 'package:flutter_soaring_forecast/soaring/airport/ui/airport_metar_taf.dart';
 import 'package:flutter_soaring_forecast/soaring/airport/ui/airport_search.dart';
 import 'package:flutter_soaring_forecast/soaring/airport/ui/selected_airports_list.dart';
+import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
+    show WxBriefBriefingRequest;
 import 'package:flutter_soaring_forecast/soaring/app/custom_material_page_route.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_data_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/ui/rasp_screen.dart';
@@ -32,8 +34,8 @@ import 'package:flutter_soaring_forecast/soaring/values/strings.dart';
 import 'package:flutter_soaring_forecast/soaring/windy/bloc/windy_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/windy/ui/windy.dart';
 import 'package:flutter_soaring_forecast/soaring/wxbrief/bloc/wxbrief_bloc.dart';
-import 'package:flutter_soaring_forecast/soaring/wxbrief/ui/wxbrief_auth.dart';
-import 'package:flutter_soaring_forecast/soaring/wxbrief/ui/wxbrief_request.dart';
+import 'package:flutter_soaring_forecast/soaring/wxbrief/ui/wxbrief_auth_screen.dart';
+import 'package:flutter_soaring_forecast/soaring/wxbrief/ui/wxbrief_request_screen.dart';
 import 'package:workmanager/workmanager.dart';
 
 // https://github.com/fluttercommunity/flutter_workmanager#customisation-android-only
@@ -277,7 +279,7 @@ class SoaringForecastApp extends StatelessWidget {
           }
 
           if (settings.name == WxBriefRequestBuilder.routeName) {
-            final request = settings.arguments as String;
+            final request = settings.arguments as WxBriefBriefingRequest;
             return CustomMaterialPageRoute(
               builder: (context) {
                 return WxBriefRequestBuilder(request: request);
@@ -558,14 +560,14 @@ class WxBriefAuthBuilder extends StatelessWidget {
     return BlocProvider<WxBriefBloc>(
       create: (BuildContext context) =>
           WxBriefBloc(repository: RepositoryProvider.of<Repository>(context)),
-      child: WxBriefAuth(),
+      child: WxBriefAuthScreen(),
     );
   }
 }
 
 class WxBriefRequestBuilder extends StatelessWidget {
   static const routeName = '/WxBriefRequest';
-  final String request;
+  final WxBriefBriefingRequest request;
   WxBriefRequestBuilder({required this.request});
 
   @override
@@ -573,7 +575,7 @@ class WxBriefRequestBuilder extends StatelessWidget {
     return BlocProvider<WxBriefBloc>(
       create: (BuildContext context) =>
           WxBriefBloc(repository: RepositoryProvider.of<Repository>(context)),
-      child: WxBriefRequest(request: request),
+      child: WxBriefRequestScreen(request: request),
     );
   }
 }
