@@ -13,9 +13,11 @@ import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/airport/airport.dart';
 
 class AirportsSearch extends StatefulWidget {
+  static const String PICK_ONE = "PICK_ONE";
   final List<Airport> airports = [];
+  final String? option;
 
-  AirportsSearch({Key? key}) : super(key: key);
+  AirportsSearch({Key? key, this.option = null}) : super(key: key);
 
   @override
   State<AirportsSearch> createState() => _AirportsSearchState();
@@ -240,6 +242,10 @@ class _AirportsSearchState extends State<AirportsSearch>
     return InkWell(
       child: getAirportWidget(airports[index]),
       onTap: (() {
+        if (widget.option == AirportsSearch.PICK_ONE) {
+          Navigator.pop(context, airports[index].ident);
+          return;
+        }
         _sendEvent(AddAirportToSelectListEvent(airports[index]));
         ScaffoldMessenger.of(context).removeCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(

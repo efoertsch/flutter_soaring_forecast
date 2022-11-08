@@ -265,8 +265,9 @@ class Feedback {
 
 class WxBriefLiterals {
   static const String ONE800WXBRIEF = "1800WxBrief";
-  static const String ONE800WX_AREA_BRIEF = "1800WxBrief Area";
-  static const String NOTAMS_BRIEFING = "1800WxBrief NOTAMS";
+  static const String ONE800WX_AREA_BRIEF = "Area Brief";
+  static const String ONE800WX_ROUTE_BRIEF = "Route Brief";
+  static const String NOTAMS_BRIEFING = "NOTAMS Only";
   static const String NOTAMS_ABBREV_BRIEF = "NOTAMS Abbreviated Brief";
   static const String REPORT_OPTIONS = "Report Options";
   static const String PRODUCT_OPTIONS = "Product Options";

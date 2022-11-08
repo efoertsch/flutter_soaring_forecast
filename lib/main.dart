@@ -253,9 +253,10 @@ class SoaringForecastApp extends StatelessWidget {
           }
 
           if (settings.name == AirportsSearchRouteBuilder.routeName) {
+            final String? option = settings.arguments as String;
             return CustomMaterialPageRoute(
               builder: (context) {
-                return AirportsSearchRouteBuilder();
+                return AirportsSearchRouteBuilder(option: option);
               },
               settings: settings,
             );
@@ -540,12 +541,15 @@ class SelectedAirportsRouteBuilder extends StatelessWidget {
 
 class AirportsSearchRouteBuilder extends StatelessWidget {
   static const routeName = '/AirportsSearch';
+  final String? option;
+
+  AirportsSearchRouteBuilder({this.option = null});
 
   Widget build(BuildContext context) {
     return BlocProvider<AirportBloc>(
       create: (BuildContext context) =>
           AirportBloc(repository: RepositoryProvider.of<Repository>(context)),
-      child: AirportsSearch(),
+      child: AirportsSearch(option: option),
     );
   }
 }

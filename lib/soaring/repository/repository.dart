@@ -25,8 +25,8 @@ import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart'
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/ImageCacheManager.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/one800wxbrief/metar_taf_response.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/one800wxbrief/one800wxbrief.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/one800wxbrief/one800wxbrief_api.dart';
-import 'package:flutter_soaring_forecast/soaring/repository/one800wxbrief/route_briefing.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/rasp_options_api.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/special_use_airspace.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/sua_region_files.dart';
@@ -900,12 +900,17 @@ class Repository {
     return briefingOptions;
   }
 
-  Future<RouteBriefing> submitWxBriefBriefingRequest(String parms) async {
+  Future<One800WxBrief> submitWxBriefBriefingRequest(
+      String parms, WxBriefBriefingRequest selectedBriefingRequest) async {
     if (_one800WxBriefClient == null) {
       _one800WxBriefClient = One800WxBriefClient(_dio);
     }
     final authorization = _getWxBriefAuthorization();
-    return await _one800WxBriefClient!.getRouteBriefing(authorization, parms);
+    if (selectedBriefingRequest == WxBriefBriefingRequest.AREA_REQUEST) {
+      return await _one800WxBriefClient!.getAreaBriefing(authorization, parms);
+    } else {
+      return await _one800WxBriefClient!.getRouteBriefing(authorization, parms);
+    }
   }
 
   Future<File?> writeBytesToDirectory(String fileName, Uint8List bytes) async {

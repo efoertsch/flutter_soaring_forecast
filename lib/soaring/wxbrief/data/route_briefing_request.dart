@@ -2,7 +2,7 @@ import 'dart:core';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
-    show WxBriefTypeOfBrief;
+    show WxBriefBriefingRequest, WxBriefTypeOfBrief;
 import 'package:flutter_soaring_forecast/soaring/app/extensions/string_apis.dart';
 
 /**
@@ -44,6 +44,8 @@ class RouteBriefingRequest {
   List<String> _tailoringOptions = <String>[];
   String? _selectedBriefingType = "";
   WxBriefTypeOfBrief? _typeOfBrief = null;
+  WxBriefBriefingRequest _wxBriefBriefingRequest =
+      WxBriefBriefingRequest.NOTAMS_REQUEST;
 
   /**
    * REST calls require type - DOMESTIC (being deprecated) or ICAO -
@@ -223,6 +225,16 @@ class RouteBriefingRequest {
    */
   String? _plainTextTimeZone;
 
+  // For area briefing
+  int _briefingRadius = 25;
+  int _windsAloftRadius = 100;
+  String _fixName = "";
+
+  void setWxBriefBriefingRequest(
+      WxBriefBriefingRequest wxBriefBriefingRequest) {
+    this._wxBriefBriefingRequest = wxBriefBriefingRequest;
+  }
+
   void setNotABriefing(bool notABriefing) {
     this._notABriefing = notABriefing;
   }
@@ -336,6 +348,20 @@ class RouteBriefingRequest {
     this._plainTextTimeZone = plainTextTimeZone;
   }
 
+  // Area briefing specific
+
+  void setFixName(String fixName) {
+    this._fixName = fixName;
+  }
+
+  void setBriefingRadius(int briefingRadius) {
+    this._briefingRadius = briefingRadius;
+  }
+
+  void setWindsAloftRadius(int windsAloftRadius) {
+    this._windsAloftRadius = windsAloftRadius;
+  }
+
   /**
    * Create the parm string for a REST routeBriefing API call. Create string like
    * includeCodedMessages=true&routeCorridorWidth=25&briefingPreferences={"tailoring":["ENCODED_ONLY"]}
@@ -350,25 +376,27 @@ class RouteBriefingRequest {
     // sb.append("notABriefing=",notABriefing);
     sb.writeAll([_AMPERSAND, "includeCodedMessages=", _includeCodedMessages]);
     sb.writeAll([_AMPERSAND, "type=", _type]); //ICAO
-
     sb.writeAll([_AMPERSAND, "aircraftIdentifier=", _aircraftIdentifier]);
-    sb.writeAll([_AMPERSAND, "routeCorridorWidth=", _routeCorridorWidth]);
+    if (_wxBriefBriefingRequest == WxBriefBriefingRequest.AREA_REQUEST) {
+      sb.writeAll([_AMPERSAND, "fixName=", _fixName]);
+      sb.writeAll([_AMPERSAND, "briefingRadius=", _briefingRadius]);
+      sb.writeAll([_AMPERSAND, "windsAloftRadius=", _windsAloftRadius]);
+    } else {
+      sb.writeAll([_AMPERSAND, "routeCorridorWidth=", _routeCorridorWidth]);
+      sb.writeAll([_AMPERSAND, "flightRules=", _flightRules]);
+      sb.writeAll([_AMPERSAND, "departure=", _departure]);
+      sb.writeAll([_AMPERSAND, "destination=", _destination]);
+      sb.writeAll([_AMPERSAND, "route=", _route]);
+      sb.writeAll([_AMPERSAND, "flightDuration=", _flightDuration]);
+      sb.writeAll([_AMPERSAND, "speedKnots=", _speedKnots]);
+    }
     sb.writeAll([
       _AMPERSAND,
       "outlookBriefing=",
       ((_outlookBriefing != null) ? _outlookBriefing : false)
     ]);
-    sb.writeAll([_AMPERSAND, "flightRules=", _flightRules]);
-    sb.writeAll([_AMPERSAND, "departure=", _departure]);
     sb.writeAll([_AMPERSAND, "departureInstant=", _departureInstant]);
-    sb.writeAll([_AMPERSAND, "destination=", _destination]);
-    sb.writeAll([_AMPERSAND, "route=", _route]);
-    sb.writeAll([_AMPERSAND, "flightDuration=", _flightDuration]);
-//        if (!notABriefing) {
-//            sb.writeAll([AMPERSAND,"webUserName=",webUserName);
-//        }
     sb.writeAll([_AMPERSAND, "webUserName=", _webUserName]);
-    sb.writeAll([_AMPERSAND, "speedKnots=", _speedKnots]);
     sb.writeAll([_AMPERSAND, "versionRequested=", "99999999"]);
     sb.writeAll([_AMPERSAND, "briefingType=", _selectedBriefingType]);
     if (_selectedBriefingType != null) {
@@ -376,15 +404,21 @@ class RouteBriefingRequest {
         case "NGBV2":
           sb.writeAll(
               [_AMPERSAND, "briefingResultFormat=", _briefingResultFormat]);
-          // LEIDOS wants altitudeVFRFL when requesting PDF
-          sb.writeAll([_AMPERSAND, "altitudeVFRFL=", _flightLevel]);
+          if (_wxBriefBriefingRequest != WxBriefBriefingRequest.AREA_REQUEST) {
+            // LEIDOS wants altitudeVFRFL when requesting PDF
+            sb.writeAll([_AMPERSAND, "altitudeVFRFL=", _flightLevel]);
+          }
           break;
         case "EMAIL":
           sb.writeAll([_AMPERSAND, "emailAddress=", _emailAddress]);
-          sb.writeAll([_AMPERSAND, "altitudeVFR"]);
+          if (_wxBriefBriefingRequest != WxBriefBriefingRequest.AREA_REQUEST) {
+            sb.writeAll([_AMPERSAND, "altitudeVFR"]);
+          }
           break;
         default:
-          sb.writeAll([_AMPERSAND, "altitudeVFR"]);
+          if (_wxBriefBriefingRequest != WxBriefBriefingRequest.AREA_REQUEST) {
+            sb.writeAll([_AMPERSAND, "altitudeVFR"]);
+          }
       }
     }
     if (_selectedBriefingType != null &&

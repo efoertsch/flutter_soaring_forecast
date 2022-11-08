@@ -7,6 +7,7 @@ import 'package:email_validator/email_validator.dart';
 import 'package:flutter/material.dart' hide Feedback;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/main.dart';
+import 'package:flutter_soaring_forecast/soaring/airport/ui/airport_search.dart';
 import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     show
@@ -91,11 +92,7 @@ class _WxBriefRequestScreenState extends State<WxBriefRequestScreen>
 
   AppBar getAppBar(BuildContext context) {
     return AppBar(
-      title: Text(widget.request == WxBriefBriefingRequest.NOTAMS_REQUEST
-          ? WxBriefLiterals.NOTAMS_BRIEFING
-          : (widget.request == WxBriefBriefingRequest.AREA_REQUEST)
-              ? WxBriefLiterals.ONE800WX_AREA_BRIEF
-              : WxBriefLiterals.ONE800WXBRIEF),
+      title: Text(WxBriefLiterals.ONE800WXBRIEF),
       leading: BackButton(onPressed: () => Navigator.pop(context)),
       //  actions: _getAppBarMenu(),
     );
@@ -126,6 +123,7 @@ class _WxBriefRequestScreenState extends State<WxBriefRequestScreen>
   // 3. AREA_REQUEST - Requests Area Briefing and user can also select Standard, Abbreviated, Outlook or NOTAMS briefing
   List<Widget> _getRequestWidgets() {
     final widgetList = <Widget>[];
+    widgetList.add(_getBriefingHeader());
     if (widget.request == WxBriefBriefingRequest.NOTAMS_REQUEST ||
         widget.request == WxBriefBriefingRequest.ROUTE_REQUEST) {
       widgetList.add(_getTaskTitleWidget());
@@ -149,6 +147,22 @@ class _WxBriefRequestScreenState extends State<WxBriefRequestScreen>
       widgetList.add(_getReportAndProductOptions());
     }
     return widgetList;
+  }
+
+  Widget _getBriefingHeader() {
+    return Padding(
+      padding: const EdgeInsets.only(top: 8.0),
+      child: Center(
+        child: Text(
+          widget.request == WxBriefBriefingRequest.NOTAMS_REQUEST
+              ? WxBriefLiterals.NOTAMS_BRIEFING
+              : (widget.request == WxBriefBriefingRequest.AREA_REQUEST)
+                  ? WxBriefLiterals.ONE800WX_AREA_BRIEF
+                  : WxBriefLiterals.ONE800WX_ROUTE_BRIEF,
+          style: textStyleBoldBlackFontSize24,
+        ),
+      ),
+    );
   }
 
   Form _getRegistrationAndAccountNameForm() {
@@ -255,6 +269,7 @@ class _WxBriefRequestScreenState extends State<WxBriefRequestScreen>
                 Expanded(
                   flex: 3,
                   child: TextFormField(
+                      key: Key(_airport!.ident),
                       initialValue: _airport!.ident,
                       decoration: InputDecoration(
                         border: OutlineInputBorder(),
@@ -277,7 +292,9 @@ class _WxBriefRequestScreenState extends State<WxBriefRequestScreen>
                       child: IconButton(
                           icon: Icon(Icons.search),
                           color: Colors.blue,
-                          onPressed: () {})),
+                          onPressed: () {
+                            _searchForAirport();
+                          })),
                 ),
                 Expanded(
                   flex: 4,
@@ -777,6 +794,7 @@ class _WxBriefRequestScreenState extends State<WxBriefRequestScreen>
                   backgroundColor: Theme.of(context).colorScheme.primary,
                 ),
                 onPressed: () {
+                  FocusManager.instance.primaryFocus?.unfocus();
                   _checkStoragePermission();
                   ;
                 },
@@ -810,6 +828,20 @@ class _WxBriefRequestScreenState extends State<WxBriefRequestScreen>
       },
       child: SizedBox.shrink(),
     );
+  }
+
+  void _searchForAirport() async {
+    final result = await Navigator.pushNamed(
+      context,
+      AirportsSearchRouteBuilder.routeName,
+      arguments: AirportsSearch.PICK_ONE,
+    );
+    if (result != null && result is String) {
+      BlocProvider.of<WxBriefBloc>(context).add(WxAirportIdEvent(result));
+    } else {
+      _airportId = "";
+    }
+    setState(() {});
   }
 
   void _sendEvent(WxBriefEvent event) {

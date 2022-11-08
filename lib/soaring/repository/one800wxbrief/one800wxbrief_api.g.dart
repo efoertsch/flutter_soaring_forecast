@@ -85,7 +85,7 @@ class _One800WxBriefClient implements One800WxBriefClient {
   }
 
   @override
-  Future<RouteBriefing> getRouteBriefing(
+  Future<One800WxBrief> getRouteBriefing(
     basicBase64,
     completeQueryString,
   ) async {
@@ -99,7 +99,7 @@ class _One800WxBriefClient implements One800WxBriefClient {
     _headers.removeWhere((k, v) => v == null);
     final _data = completeQueryString;
     final _result = await _dio
-        .fetch<Map<String, dynamic>>(_setStreamType<RouteBriefing>(Options(
+        .fetch<Map<String, dynamic>>(_setStreamType<One800WxBrief>(Options(
       method: 'POST',
       headers: _headers,
       extra: _extra,
@@ -112,12 +112,12 @@ class _One800WxBriefClient implements One800WxBriefClient {
               data: _data,
             )
             .copyWith(baseUrl: baseUrl ?? _dio.options.baseUrl)));
-    final value = RouteBriefing.fromJson(_result.data!);
+    final value = One800WxBrief.fromJson(_result.data!);
     return value;
   }
 
   @override
-  Future<RouteBriefing> getAreaBriefing(
+  Future<One800WxBrief> getAreaBriefing(
     basicBase64,
     completeQueryString,
   ) async {
@@ -131,7 +131,7 @@ class _One800WxBriefClient implements One800WxBriefClient {
     _headers.removeWhere((k, v) => v == null);
     final _data = completeQueryString;
     final _result = await _dio
-        .fetch<Map<String, dynamic>>(_setStreamType<RouteBriefing>(Options(
+        .fetch<Map<String, dynamic>>(_setStreamType<One800WxBrief>(Options(
       method: 'POST',
       headers: _headers,
       extra: _extra,
@@ -144,7 +144,7 @@ class _One800WxBriefClient implements One800WxBriefClient {
               data: _data,
             )
             .copyWith(baseUrl: baseUrl ?? _dio.options.baseUrl)));
-    final value = RouteBriefing.fromJson(_result.data!);
+    final value = One800WxBrief.fromJson(_result.data!);
     return value;
   }
 

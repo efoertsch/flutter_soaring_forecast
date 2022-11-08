@@ -46,6 +46,7 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
   final _routeBriefingRequest = RouteBriefingRequest();
   final _taskTurnpoints = <TaskTurnpoint>[];
   final _taskTurnpointIds = <String>[];
+  String _selectedAirportId = "3B3";
 
   //WxBriefState get initialState => WxBriefsLoadingState();
 
@@ -137,13 +138,18 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
   FutureOr<void> _submitWxBriefRequest(
       WxBriefSubmitEvent event, Emitter<WxBriefState> emit) async {
     emit(WxBriefWorkingState(working: true));
+    _routeBriefingRequest.setWxBriefBriefingRequest(_selectedBriefingRequest);
     _routeBriefingRequest.setAircraftIdentifier(_aircraftRegistration);
     _routeBriefingRequest.setEmailAddress(_wxbriefAccountName);
     _routeBriefingRequest.setWebUserName(_wxbriefAccountName);
     _routeBriefingRequest.setNotABriefing(true);
     _routeBriefingRequest.setSelectedBriefFormat(_selectedBriefFormat.name);
     _routeBriefingRequest.setTypeOfBrief(_selectedTypeOfBrief);
-    _setDepartureRouteAndDestination();
+    if (_selectedBriefingRequest == WxBriefBriefingRequest.AREA_REQUEST) {
+      _routeBriefingRequest.setFixName(_selectedAirportId);
+    } else {
+      _setDepartureRouteAndDestination();
+    }
     _formatDepartureInstant();
     _addProductCodesToRouteBriefingRequest();
     _addTailoringOptions();
@@ -161,13 +167,10 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
         _taskTurnpointIds.add(_taskTurnpoints[i].code);
       }
     }
-    final routeTurnpoints = <String>[];
-    if (_taskTurnpoints.length > 2) {
-      for (int i = 1; i < _taskTurnpoints.length - 1; ++i) {
-        routeTurnpoints.add(_taskTurnpoints[i].code);
-      }
-    }
-    _routeBriefingRequest.setRoute(routeTurnpoints.join(","));
+    final sb = StringBuffer();
+    _taskTurnpoints.fold(
+        sb, (previous, current) => sb.writeAll([current.code, ","]));
+    _routeBriefingRequest.setRoute(sb.toString());
   }
 
   /**
@@ -217,7 +220,7 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
     final restParmString = _routeBriefingRequest.getRestParmString();
     debugPrint(restParmString);
     await repository
-        .submitWxBriefBriefingRequest(restParmString)
+        .submitWxBriefBriefingRequest(restParmString, _selectedBriefingRequest)
         .then((routeBriefing) async {
       if ((routeBriefing.returnStatus ?? false) &&
           routeBriefing.returnCodedMessage!.length == 0) {
@@ -227,6 +230,11 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
           // need to get NGBV2 briefing from
           await _createRouteBriefingPDF(routeBriefing.ngbv2PdfBriefing!, emit);
         }
+      } else if (routeBriefing.returnCodedMessage!.length > 0) {
+        final sb = StringBuffer();
+        routeBriefing.returnCodedMessage!.fold(sb,
+            (previousValue, element) => sb.writeAll([element.message, "\n"]));
+        emit(WxBriefErrorState(sb.toString()));
       }
     }).catchError((Object obj) {
       // non-200 error goes here.
@@ -343,5 +351,6 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
       airport = Airport(ident: airportId);
     }
     emit(WxBriefAirportState(airport: airport));
+    _selectedAirportId = airportId;
   }
 }
