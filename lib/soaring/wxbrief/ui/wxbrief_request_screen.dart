@@ -11,11 +11,14 @@ import 'package:flutter_soaring_forecast/soaring/airport/ui/airport_search.dart'
 import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     show
+        StandardLiterals,
+        WxBriefBriefingRequest,
         WxBriefFormat,
         WxBriefLiterals,
-        WxBriefBriefingRequest,
+        WxBriefMenu,
         WxBriefTypeOfBrief;
 import 'package:flutter_soaring_forecast/soaring/app/custom_styles.dart';
+import 'package:flutter_soaring_forecast/soaring/app/upper_case_text_formatter.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/airport/airport.dart';
 import 'package:flutter_soaring_forecast/soaring/wxbrief/bloc/wxbrief_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/wxbrief/bloc/wxbrief_event.dart';
@@ -52,8 +55,7 @@ class _WxBriefRequestScreenState extends State<WxBriefRequestScreen>
 
   List<String> _departureDates = <String>[];
 
-  String _airportId = "";
-  Airport? _airport = null;
+  Airport? _airport = Airport(ident: "");
 
   @override
   FutureOr<void> afterFirstLayout(BuildContext context) {
@@ -92,10 +94,11 @@ class _WxBriefRequestScreenState extends State<WxBriefRequestScreen>
 
   AppBar getAppBar(BuildContext context) {
     return AppBar(
-      title: Text(WxBriefLiterals.ONE800WXBRIEF),
-      leading: BackButton(onPressed: () => Navigator.pop(context)),
-      //  actions: _getAppBarMenu(),
-    );
+        title: Text(WxBriefLiterals.ONE800WXBRIEF),
+        leading: BackButton(onPressed: () => Navigator.pop(context)),
+        actions: _getWxBriefMenu()
+        //  actions: _getAppBarMenu(),
+        );
   }
 
   Widget _getBody() {
@@ -260,57 +263,55 @@ class _WxBriefRequestScreenState extends State<WxBriefRequestScreen>
         return current is WxBriefInitialState || current is WxBriefAirportState;
       },
       builder: (context, state) {
-        if (state is WxBriefAirportState) {
-          return Padding(
-            padding: const EdgeInsets.only(top: 12.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                Expanded(
-                  flex: 3,
-                  child: TextFormField(
-                      key: Key(_airport!.ident),
-                      initialValue: _airport!.ident,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(),
-                        labelText: WxBriefLiterals.AIRPORT_ID,
-                      ),
-                      autovalidateMode: AutovalidateMode.onUserInteraction,
-                      validator: (value) {
-                        if (value != null && value.length >= 3) {
-                          _sendEvent(WxAirportIdEvent(value));
-                          return null;
-                        } else {
-                          return WxBriefLiterals.INVALID_AIRPORT_ID;
-                        }
-                      }),
-                ),
-                Expanded(
-                  flex: 1,
-                  child: Padding(
-                      padding: const EdgeInsets.only(left: 16.0),
-                      child: IconButton(
-                          icon: Icon(Icons.search),
-                          color: Colors.blue,
-                          onPressed: () {
-                            _searchForAirport();
-                          })),
-                ),
-                Expanded(
-                  flex: 4,
-                  child: Padding(
-                    padding: const EdgeInsets.only(left: 8.0),
-                    child: Text(
-                      _airport!.name,
-                      style: textStyleBlackFontSize16,
+        return Padding(
+          padding: const EdgeInsets.only(top: 12.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              Expanded(
+                flex: 3,
+                child: TextFormField(
+                    key: Key(_airport!.ident),
+                    initialValue: _airport!.ident,
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(),
+                      labelText: WxBriefLiterals.AIRPORT_ID,
                     ),
+                    inputFormatters: [UpperCaseTextFormatter()],
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
+                    validator: (value) {
+                      if (value != null && value.length >= 3) {
+                        _sendEvent(WxAirportIdEvent(value));
+                        return null;
+                      } else {
+                        return WxBriefLiterals.INVALID_AIRPORT_ID;
+                      }
+                    }),
+              ),
+              Expanded(
+                flex: 1,
+                child: Padding(
+                    padding: const EdgeInsets.only(left: 16.0),
+                    child: IconButton(
+                        icon: Icon(Icons.search),
+                        color: Colors.blue,
+                        onPressed: () {
+                          _searchForAirport();
+                        })),
+              ),
+              Expanded(
+                flex: 4,
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 8.0),
+                  child: Text(
+                    _airport!.name,
+                    style: textStyleBlackFontSize16,
                   ),
                 ),
-              ],
-            ),
-          );
-        }
-        return SizedBox.shrink();
+              ),
+            ],
+          ),
+        );
       },
     );
   }
@@ -369,6 +370,7 @@ class _WxBriefRequestScreenState extends State<WxBriefRequestScreen>
                 labelText: WxBriefLiterals.AIRCRAFT_REGISTRATION_LABEL,
               ),
               autovalidateMode: AutovalidateMode.onUserInteraction,
+              inputFormatters: [UpperCaseTextFormatter()],
               validator: (value) {
                 if (value != null &&
                     value.length > 3 &&
@@ -825,6 +827,15 @@ class _WxBriefRequestScreenState extends State<WxBriefRequestScreen>
         if (state is WxBriefErrorState) {
           CommonWidgets.showErrorDialog(context, "Error", state.error);
         }
+        if (state is WxBriefShowAuthScreenState) {
+          if (state.showAuthScreen) {
+            var result = await Navigator.pushNamed(
+                context, WxBriefAuthBuilder.routeName);
+            if (result == StandardLiterals.CANCEL) {
+              Navigator.pop(context);
+            }
+          }
+        }
       },
       child: SizedBox.shrink(),
     );
@@ -839,7 +850,7 @@ class _WxBriefRequestScreenState extends State<WxBriefRequestScreen>
     if (result != null && result is String) {
       BlocProvider.of<WxBriefBloc>(context).add(WxAirportIdEvent(result));
     } else {
-      _airportId = "";
+      _airport = null;
     }
     setState(() {});
   }
@@ -868,5 +879,36 @@ class _WxBriefRequestScreenState extends State<WxBriefRequestScreen>
 
   void _submit() async {
     _sendEvent(WxBriefSubmitEvent());
+  }
+
+  List<Widget> _getWxBriefMenu() {
+    return <Widget>[
+      PopupMenuButton<String>(
+        onSelected: handleClick,
+        icon: Icon(Icons.more_vert),
+        itemBuilder: (BuildContext context) {
+          return {
+            WxBriefMenu.HELP,
+          }.map((String choice) {
+            return PopupMenuItem<String>(
+              value: choice,
+              child: Text(choice),
+            );
+          }).toList();
+        },
+      ),
+    ];
+  }
+
+  void handleClick(String value) async {
+    switch (value) {
+      case WxBriefMenu.HELP:
+        _displayWxBriefAuthorizationHelp();
+        break;
+    }
+  }
+
+  void _displayWxBriefAuthorizationHelp() {
+    _sendEvent(WxBriefDisplayAuthScreenEvent());
   }
 }

@@ -82,7 +82,7 @@ class Repository {
   static const String WXBRIEF_ACCOUNT_NAME = "WXBRIEF_ACCOUNT_NAME";
   static const String WXBRIEF_CORRIDOR_WIDTH = "WXBRIEF_CORRIDOR_WIDTH";
   static const String WXBRIEF_WINDS_ALOFT_WIDTH = "WXBRIEF_WINDS_ALOFT_WIDTH";
-  static const String WX_BRIEF_SHOW_DISLAIMER = "WX_BRIEF_SHOW_DISCLAIMER";
+  static const String WX_BRIEF_SHOW_AUTH_SCREEN = "WX_BRIEF_SHOW_DISCLAIMER";
 
   Repository._();
 
@@ -311,7 +311,8 @@ class Repository {
 
   Future<Airport?> getAirportById(String ident) async {
     await makeDatabaseAvailable();
-    return await _appDatabase!.airportDao.getAirportByIdent(ident);
+    Airport? airport = await _appDatabase!.airportDao.getAirportByIdent(ident);
+    return airport;
   }
 
   /**
@@ -834,13 +835,13 @@ class Repository {
   }
 
   // return true if user no longer wants to see disclaimer
-  Future<bool> getWxBriefShowDisclaimer() {
-    return getGenericBool(key: WX_BRIEF_SHOW_DISLAIMER, defaultValue: true);
+  Future<bool> getWxBriefShowAuthScreen() async {
+    return getGenericBool(key: WX_BRIEF_SHOW_AUTH_SCREEN, defaultValue: true);
   }
 
   // return true to show disclaimer - false if not
-  void setWxBriefShowDisclaimer(bool displayDisclaimer) {
-    saveGenericBool(key: WX_BRIEF_SHOW_DISLAIMER, value: displayDisclaimer);
+  FutureOr<void> setWxBriefShowAuthScreen(bool displayDisclaimer) {
+    saveGenericBool(key: WX_BRIEF_SHOW_AUTH_SCREEN, value: displayDisclaimer);
   }
 
   Future<List<BriefingOption>> getWxBriefProductCodes(

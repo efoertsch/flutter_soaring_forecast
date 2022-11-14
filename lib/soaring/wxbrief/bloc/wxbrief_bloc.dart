@@ -61,6 +61,8 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
     on<WxBriefUpdateReportingOptionsEvent>(_updateReportingOptions);
     on<WxBriefUpdateProductOptionsEvent>(_updateProductOptions);
     on<WxAirportIdEvent>(_getAirport);
+    on<WxBriefDisplayAuthScreenEvent>(_displayAuthScreen);
+    on<SetWxBriefDisplayAuthScreenEvent>(_setDisplayAuthScreen);
   }
 
   FutureOr<void> _getWxBriefRequestData(
@@ -85,6 +87,7 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
       await _emitReportingOptions(emit);
       await _emitProductOptions(emit);
     }
+    await _checkForAuthScreen(emit);
   }
 
   Future<void> _emitAircraftIdAndAccountEvent(
@@ -127,11 +130,11 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
     emit(WxBriefBriefingTypesState(_briefingTypes));
   }
 
-  FutureOr<void> _emitReportingOptions(Emitter<WxBriefState> emit) {
+  FutureOr<void> _emitReportingOptions(Emitter<WxBriefState> emit) async {
     emit(WxBriefReportingOptionsState(_fullTailoringOptionList));
   }
 
-  FutureOr<void> _emitProductOptions(Emitter<WxBriefState> emit) {
+  FutureOr<void> _emitProductOptions(Emitter<WxBriefState> emit) async {
     emit(WxBriefProductOptionsState(_fullProductCodeList));
   }
 
@@ -342,15 +345,32 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
 
   FutureOr<void> _checkForSavedAirport(Emitter<WxBriefState> emit) async {
     String airportId = await repository.getSavedAirportId();
-    _emitAirport(emit, airportId);
+    await _emitAirport(emit, airportId);
   }
 
-  _emitAirport(Emitter<WxBriefState> emit, String airportId) async {
+  FutureOr<void> _emitAirport(
+      Emitter<WxBriefState> emit, String airportId) async {
     Airport? airport = await repository.getAirportById(airportId);
     if (airport == null) {
       airport = Airport(ident: airportId);
     }
     emit(WxBriefAirportState(airport: airport));
     _selectedAirportId = airportId;
+  }
+
+  _checkForAuthScreen(Emitter<WxBriefState> emit) async {
+    emit(WxBriefShowAuthScreenState(
+        await repository.getWxBriefShowAuthScreen()));
+  }
+
+  FutureOr<void> _displayAuthScreen(
+      WxBriefDisplayAuthScreenEvent event, Emitter<WxBriefState> emit) async {
+    await repository.setWxBriefShowAuthScreen(true);
+    emit(WxBriefShowAuthScreenState(true));
+  }
+
+  FutureOr<void> _setDisplayAuthScreen(SetWxBriefDisplayAuthScreenEvent event,
+      Emitter<WxBriefState> emit) async {
+    await repository.setWxBriefShowAuthScreen(event.showAuthScreen);
   }
 }

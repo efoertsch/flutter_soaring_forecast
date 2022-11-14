@@ -63,7 +63,7 @@ class _AirportMetarTafState extends State<AirportMetarTaf>
 
   AppBar _getAppBar() {
     return AppBar(
-        title: Text("METAR/TAF"),
+        title: Text(MetarOrTAF.METAR_TAF),
         leading: BackButton(
           onPressed: _onWillPop,
         ),
@@ -126,7 +126,7 @@ class _AirportMetarTafState extends State<AirportMetarTaf>
       if (state is AirportsLoadedState) {
         if (state.airports.isEmpty) {
           return Center(
-            child: Text('No airports selected yet.'),
+            child: Text(MetarOrTAF.NO_AIRPORTS_SELECTED_YET),
           );
         }
         return _getAirportsListView(context: context, airports: state.airports);
@@ -135,10 +135,10 @@ class _AirportMetarTafState extends State<AirportMetarTaf>
       if (state is AirportsErrorState) {
         WidgetsBinding.instance.addPostFrameCallback((_) =>
             CommonWidgets.showErrorDialog(
-                context, 'Airports Error', state.errorMsg));
+                context, MetarOrTAF.AIRPORTS_ERROR, state.errorMsg));
       }
       return Center(
-        child: Text('Hmmm. Undefined state.'),
+        child: Text(StandardLiterals.UNDEFINED_STATE),
       );
     });
   }
@@ -245,7 +245,7 @@ class _AirportMetarTafState extends State<AirportMetarTaf>
               child: Padding(
                 padding: const EdgeInsets.only(left: 4.0),
                 child: Text(
-                  "Elev:  ${airport.elevationFt} ft",
+                  "${MetarOrTAF.ELEV}:  ${airport.elevationFt} ${MetarOrTAF.FT}",
                   style: textStyleBlackFontSize18,
                 ),
               ))

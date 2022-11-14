@@ -114,3 +114,11 @@ class WxBriefWorkingState extends WxBriefState {
   @override
   List<Object?> get props => [working];
 }
+
+class WxBriefShowAuthScreenState extends WxBriefState {
+  final bool showAuthScreen;
+  WxBriefShowAuthScreenState(this.showAuthScreen);
+
+  @override
+  List<Object?> get props => [showAuthScreen];
+}

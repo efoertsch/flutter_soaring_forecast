@@ -133,6 +133,18 @@ enum WxBriefFormat {
 }
 
 //------------- Translatable values --------------------------------------------
+class StandardLiterals {
+  static const YES = "Yes";
+  static const NO = "No";
+  static const CANCEL = "Cancel";
+  static const SUBMIT = "Submit";
+  static const OK = "OK";
+  static const HURRAH = "Hurrah!";
+  static const OH_OH = "Oh-Oh!";
+  static const UNDEFINED_STATE = 'Hmmm. Undefined state.';
+  static const CONTINUE = "Continue";
+}
+
 class RaspMenu {
   static const String selectTask = 'SELECT TASK';
   static const String clearTask = 'Clear Task';
@@ -248,11 +260,29 @@ class AirportMenu {
   static const String refresh = "Refresh";
 }
 
+class AirportLiterals {
+  static const String DOWNLOAD_AIRPORTS = "Download Airports?";
+  static const String NO_AIRPORTS_FOUND_MSG =
+      "Hmmm. Looks like we need to download the airport database. Is it Ok to download now? It might take 30 secs or so.";
+  static const String DOWNLOAD_SUCCESSFUL =
+      "Airports downloaded successfully. You can now search on airports.";
+  static const String DOWNLOAD_UNSUCCESSFUL =
+      "Hmmm. Airport download unsuccessful. Please try again later.";
+  static const String REFRESH_AIRPORTS = "Refresh Airports?";
+  static const String CONFIRM_DELETE_RELOAD =
+      "Are you sure you want to delete/reload the Airport database?";
+}
+
 class MetarOrTAF {
+  static const String METAR_TAF = "METAR/TAF";
   static const String METAR = "METAR";
   static const String TAF = "TAF";
   static const String FETCHING_INFORMATION = "Fetching information";
   static const String UNDEFINED_ERROR = "Undefined error";
+  static const String NO_AIRPORTS_SELECTED_YET = 'No airports selected yet.';
+  static const String AIRPORTS_ERROR = 'Airports Error';
+  static const String ELEV = "Elev";
+  static const String FT = "ft";
 }
 
 class Feedback {
@@ -263,7 +293,13 @@ class Feedback {
   static const String FEEDBACK_SUBMIT = "Submit";
 }
 
+class WxBriefMenu {
+  static const String HELP = "Help";
+}
+
 class WxBriefLiterals {
+  static const String DO_NOT_SHOW_THIS_AGAIN = "Do not show this again";
+  static const String WXBRIEF_AUTHORIZATION = "1800Brief Authorization";
   static const String ONE800WXBRIEF = "1800WxBrief";
   static const String ONE800WX_AREA_BRIEF = "Area Brief";
   static const String ONE800WX_ROUTE_BRIEF = "Route Brief";

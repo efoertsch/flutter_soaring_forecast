@@ -1,12 +1,16 @@
 import 'dart:io';
 
 import 'package:cupertino_will_pop_scope/cupertino_will_pop_scope.dart';
-import 'package:email_launcher/email_launcher.dart';
 import 'package:flutter/material.dart' hide Feedback;
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
-    show FEEDBACK_EMAIL_ADDRESS, Feedback;
+    show StandardLiterals, WxBriefLiterals;
+import 'package:flutter_soaring_forecast/soaring/app/web_launcher.dart';
+import 'package:flutter_soaring_forecast/soaring/wxbrief/bloc/wxbrief_bloc.dart';
+import 'package:flutter_soaring_forecast/soaring/wxbrief/bloc/wxbrief_event.dart';
+import 'package:flutter_soaring_forecast/soaring/wxbrief/bloc/wxbrief_state.dart';
 
 class WxBriefAuthScreen extends StatefulWidget {
   WxBriefAuthScreen({Key? key}) : super(key: key);
@@ -16,6 +20,8 @@ class WxBriefAuthScreen extends StatefulWidget {
 }
 
 class _WxBriefAuthScreenState extends State<WxBriefAuthScreen> {
+  bool _doNotShowAgain = false;
+
   @override
   Widget build(BuildContext context) {
     if (Platform.isAndroid) {
@@ -48,29 +54,32 @@ class _WxBriefAuthScreenState extends State<WxBriefAuthScreen> {
 
   AppBar getAppBar(BuildContext context) {
     return AppBar(
-      title: Text("Briefing Authorization"),
+      title: Text(WxBriefLiterals.WXBRIEF_AUTHORIZATION),
       leading: BackButton(onPressed: () => Navigator.pop(context)),
       //  actions: _getAppBarMenu(),
     );
   }
 
   Widget _getBody() {
-    return Stack(children: [
-      _getWxBriefAuth(),
-      Positioned(
-        bottom: 0,
-        left: 8,
-        right: 8,
-        child: Row(
-          children: [_getCancelButton(), _getContinueButton()],
-        ),
-      ),
-    ]);
+    return Padding(
+      padding: const EdgeInsets.only(left: 8.0, right: 8.0),
+      child: Stack(children: [
+        CustomScrollView(slivers: <Widget>[
+          SliverList(
+            delegate: SliverChildListDelegate(
+              [_getWxBriefAuth(), _getDoNotShowAgainCheckbox()],
+            ),
+          ),
+          SliverFillRemaining(
+              hasScrollBody: false, child: _getContinueButton()),
+        ])
+      ]),
+    );
   }
 
   FutureBuilder<String> _getWxBriefAuth() {
     return FutureBuilder<String>(
-      future: _loadAboutHtml(),
+      future: _loadWxBriefAuthHtml(),
       builder: (BuildContext context, AsyncSnapshot<String> snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Center(child: Text('Please wait, its loading...'));
@@ -82,17 +91,10 @@ class _WxBriefAuthScreenState extends State<WxBriefAuthScreen> {
               child: Html(
                 data: snapshot.data,
                 onLinkTap: (reference, _, __, ___) async {
-                  Email email = Email(
-                    //to: ['flightservice@soaringforecast.org'],
-                    to: [FEEDBACK_EMAIL_ADDRESS],
-                    subject: Feedback.FEEDBACK_TITLE +
-                        " - " +
-                        Platform.operatingSystem,
-                  );
-                  await EmailLauncher.launch(email);
+                  launchWebBrowser(reference!, "", launchAsExternal: true);
                 },
               ),
-            ); // snapshot.data  :- get your object which is pass from your downloadData() function
+            );
         }
       },
     );
@@ -103,8 +105,9 @@ class _WxBriefAuthScreenState extends State<WxBriefAuthScreen> {
     return true;
   }
 
-  Future<String> _loadAboutHtml() async {
-    return rootBundle.loadString('assets/html/wx_brief_disclaimer.html');
+  Future<String> _loadWxBriefAuthHtml() async {
+    return rootBundle
+        .loadString('assets/html/wx_brief_authorization_help.html');
   }
 
   Widget _getCancelButton() {
@@ -115,11 +118,52 @@ class _WxBriefAuthScreenState extends State<WxBriefAuthScreen> {
         });
   }
 
+  _getCancelContinue(String result) {
+    Navigator.pop(context, result);
+  }
+
   Widget _getContinueButton() {
-    return TextButton(
-        child: Text("Continue"),
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: TextButton(
+        style: ElevatedButton.styleFrom(
+          minimumSize: Size(double.infinity,
+              40), // double.infinity is the width and 30 is the height
+          foregroundColor: Colors.white,
+          backgroundColor: Theme.of(context).colorScheme.primary,
+        ),
         onPressed: () {
-          Navigator.pop(context, "Continue");
-        });
+          Navigator.pop(context, StandardLiterals.CONTINUE);
+        },
+        child: Text(StandardLiterals.CONTINUE),
+      ),
+    );
+  }
+
+  Widget _getDoNotShowAgainCheckbox() {
+    return BlocConsumer<WxBriefBloc, WxBriefState>(listener: (context, state) {
+      if (state is WxBriefShowAuthScreenState) {
+        _doNotShowAgain = !state.showAuthScreen;
+      }
+    }, builder: (context, state) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 16.0),
+        child: CheckboxListTile(
+          controlAffinity: ListTileControlAffinity.leading,
+          title: Text(WxBriefLiterals.DO_NOT_SHOW_THIS_AGAIN),
+          value: _doNotShowAgain,
+          onChanged: (newValue) {
+            setState(() {
+              _doNotShowAgain = newValue!;
+              _sendEvent(SetWxBriefDisplayAuthScreenEvent(!newValue!));
+            });
+          },
+        ),
+      );
+    });
+  }
+
+  void _sendEvent(WxBriefEvent event) {
+    BlocProvider.of<WxBriefBloc>(context).add(event);
   }
 }

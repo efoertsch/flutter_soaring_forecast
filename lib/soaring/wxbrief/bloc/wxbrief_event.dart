@@ -96,3 +96,16 @@ class WxBriefUpdateProductOptionsEvent extends WxBriefEvent {
   @override
   List<Object?> get props => [briefingOptions.toString()];
 }
+
+class WxBriefDisplayAuthScreenEvent extends WxBriefEvent {
+  @override
+  List<Object?> get props => [];
+}
+
+class SetWxBriefDisplayAuthScreenEvent extends WxBriefEvent {
+  final bool showAuthScreen;
+  SetWxBriefDisplayAuthScreenEvent(this.showAuthScreen);
+
+  @override
+  List<Object?> get props => [showAuthScreen];
+}

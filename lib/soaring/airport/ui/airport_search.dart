@@ -9,7 +9,9 @@ import 'package:flutter_soaring_forecast/soaring/airport/bloc/airport_event.dart
 import 'package:flutter_soaring_forecast/soaring/airport/bloc/airport_state.dart';
 import 'package:flutter_soaring_forecast/soaring/airport/ui/common_airport_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
-import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
+import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
+    show AirportLiterals, AirportMenu, StandardLiterals;
+import 'package:flutter_soaring_forecast/soaring/app/upper_case_text_formatter.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/airport/airport.dart';
 
 class AirportsSearch extends StatefulWidget {
@@ -86,7 +88,8 @@ class _AirportsSearchState extends State<AirportsSearch>
           current is AirportsErrorState ||
           current is AirportsBeingDownloadedState ||
           current is AirportsDownloadedOKState ||
-          current is AirportsDownloadErrorState;
+          current is AirportsDownloadErrorState ||
+          current is SeeIfOkToDownloadAirportsState;
     }, builder: (context, state) {
       if (state is AirportsInitialState) {
         return Center(
@@ -118,12 +121,11 @@ class _AirportsSearchState extends State<AirportsSearch>
         WidgetsBinding.instance.addPostFrameCallback((_) =>
             CommonWidgets.showInfoDialog(
                 context: context,
-                title: "Download Airports?",
-                msg:
-                    "No airports found. Ok to download now (it might take 30 secs or so)?",
-                button1Text: "No",
+                title: AirportLiterals.DOWNLOAD_AIRPORTS,
+                msg: AirportLiterals.NO_AIRPORTS_FOUND_MSG,
+                button1Text: StandardLiterals.NO,
                 button1Function: _cancel,
-                button2Text: "Yes",
+                button2Text: StandardLiterals.YES,
                 button2Function: _downloadAirportsNow));
       }
 
@@ -131,10 +133,9 @@ class _AirportsSearchState extends State<AirportsSearch>
         WidgetsBinding.instance.addPostFrameCallback((_) =>
             CommonWidgets.showInfoDialog(
                 context: context,
-                title: "Hurrah!",
-                msg:
-                    "Airports downloaded successfully. You can now search on airports.",
-                button1Text: "OK",
+                title: StandardLiterals.HURRAH,
+                msg: AirportLiterals.DOWNLOAD_SUCCESSFUL,
+                button1Text: StandardLiterals.OK,
                 button1Function: _cancel));
       }
 
@@ -142,10 +143,9 @@ class _AirportsSearchState extends State<AirportsSearch>
         WidgetsBinding.instance.addPostFrameCallback((_) =>
             CommonWidgets.showInfoDialog(
                 context: context,
-                title: "Oh-Oh!",
-                msg:
-                    "Hmmm. Airport download unsuccessful. Please try again later.",
-                button1Text: "OK",
+                title: StandardLiterals.OH_OH,
+                msg: AirportLiterals.DOWNLOAD_UNSUCCESSFUL,
+                button1Text: StandardLiterals.OK,
                 button1Function: _cancel));
       }
       return Container();
@@ -186,11 +186,11 @@ class _AirportsSearchState extends State<AirportsSearch>
       case AirportMenu.refresh:
         CommonWidgets.showInfoDialog(
             context: context,
-            title: "Refresh Airports?",
-            msg: "Are you sure you want to delete/reload the Airport database?",
-            button1Text: "No",
+            title: AirportLiterals.REFRESH_AIRPORTS,
+            msg: AirportLiterals.CONFIRM_DELETE_RELOAD,
+            button1Text: StandardLiterals.NO,
             button1Function: _cancel,
-            button2Text: "Yes",
+            button2Text: StandardLiterals.YES,
             button2Function: _downloadAirportsNow);
 
         break;
@@ -208,6 +208,9 @@ class _AirportsSearchState extends State<AirportsSearch>
                 .add(SearchAirportsEvent(searchString));
           }
         },
+        inputFormatters: [UpperCaseTextFormatter()],
+        textCapitalization: TextCapitalization.characters,
+        enableSuggestions: false,
         decoration: InputDecoration(
           border: OutlineInputBorder(),
           hintText: 'ICAO code, name, city, state',

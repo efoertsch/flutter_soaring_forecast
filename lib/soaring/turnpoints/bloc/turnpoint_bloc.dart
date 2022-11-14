@@ -213,7 +213,7 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
       print(
           "location: ${currentLocation.latitude} ${currentLocation.longitude}, elevation(m): ${currentLocation.altitude} ");
       emit(CurrentLocationState(currentLocation.latitude ?? 0,
-          currentLocation.longitude ?? 0, elevation ?? 0));
+          currentLocation.longitude ?? 0, elevation));
     } catch (e) {
       emit(TurnpointErrorState("Oops. Can't find your location!"));
     }

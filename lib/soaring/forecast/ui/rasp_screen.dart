@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_soaring_forecast/main.dart';
 import 'package:flutter_soaring_forecast/soaring/app/app_drawer.dart';
 import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
@@ -37,7 +36,6 @@ class RaspScreen extends StatefulWidget {
 class _RaspScreenState extends State<RaspScreen>
     with TickerProviderStateMixin, WidgetsBindingObserver {
   final abbrevDateformatter = DateFormat('E, MMM dd');
-  late final MapController _mapController;
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _forecastMapStateKey = GlobalKey<ForecastMapState>();
   late List<PreferenceOption> _raspDisplayOptions;
@@ -64,7 +62,6 @@ class _RaspScreenState extends State<RaspScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _mapController = MapController();
   }
 
   @override
@@ -663,8 +660,7 @@ class _RaspScreenState extends State<RaspScreen>
   }
 
   void _displayWxBriefRequest(WxBriefBriefingRequest request) async {
-    final result = await Navigator.pushNamed(
-        context, WxBriefRequestBuilder.routeName,
+    await Navigator.pushNamed(context, WxBriefRequestBuilder.routeName,
         arguments: request);
   }
 }
