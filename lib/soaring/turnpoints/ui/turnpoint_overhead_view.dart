@@ -211,8 +211,8 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
         style: ElevatedButton.styleFrom(
           minimumSize: Size(double.infinity,
               40), // double.infinity is the width and 30 is the height
-          onPrimary: Colors.white,
-          primary: Theme.of(context).colorScheme.primary,
+          foregroundColor: Colors.white,
+          backgroundColor: Theme.of(context).colorScheme.primary,
         ),
         onPressed: () {
           Navigator.pop(context);
@@ -231,8 +231,8 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
         style: ElevatedButton.styleFrom(
           minimumSize: Size(double.infinity,
               40), // double.infinity is the width and 30 is the height
-          onPrimary: Colors.white,
-          primary: Theme.of(context).colorScheme.primary,
+          foregroundColor: Colors.white,
+          backgroundColor: Theme.of(context).colorScheme.primary,
         ),
         onPressed: () {
           if (_isReadOnly) {
@@ -274,8 +274,8 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
       style: ElevatedButton.styleFrom(
         minimumSize: Size(double.infinity,
             40), // double.infinity is the width and 30 is the height
-        onPrimary: Colors.white,
-        primary: Theme.of(context).colorScheme.primary,
+        foregroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.primary,
       ),
       onPressed: () {
         Navigator.pop(context, turnpoint);
@@ -291,8 +291,8 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
       style: ElevatedButton.styleFrom(
         minimumSize: Size(double.infinity,
             40), // double.infinity is the width and 30 is the height
-        onPrimary: Colors.white,
-        primary: Theme.of(context).colorScheme.primary,
+        foregroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.primary,
       ),
       onPressed: () {
         setState(() {

@@ -4,7 +4,7 @@ import 'package:email_launcher/email_launcher.dart';
 import 'package:flutter/material.dart' hide Feedback;
 import 'package:flutter_soaring_forecast/main.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
-    show FEEDBACK_EMAIL_ADDRESS, Feedback;
+    show FEEDBACK_EMAIL_ADDRESS, Feedback, WxBriefBriefingRequest;
 
 import 'web_launcher.dart';
 
@@ -71,6 +71,20 @@ class AppDrawer {
             },
           ),
           _getDivider(),
+          ListTile(
+              title: Text(
+            '1800WxBrief',
+            style: TextStyle(
+              color: Colors.black54,
+            ),
+          )),
+          ListTile(
+              title: Text('Area Brief'),
+              onTap: () {
+                Navigator.popAndPushNamed(
+                    context, WxBriefRequestBuilder.routeName,
+                    arguments: WxBriefBriefingRequest.AREA_REQUEST);
+              }),
           ListTile(
               title: Text('Airport METAR/TAF'),
               onTap: () {

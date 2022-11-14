@@ -9,11 +9,14 @@ import 'package:flutter_soaring_forecast/soaring/airport/download/airports_downl
 import 'package:flutter_soaring_forecast/soaring/airport/ui/airport_metar_taf.dart';
 import 'package:flutter_soaring_forecast/soaring/airport/ui/airport_search.dart';
 import 'package:flutter_soaring_forecast/soaring/airport/ui/selected_airports_list.dart';
+import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
+    show WxBriefBriefingRequest;
 import 'package:flutter_soaring_forecast/soaring/app/custom_material_page_route.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_data_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/ui/rasp_screen.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast_types/bloc/forecast_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast_types/ui/forecast_list.dart';
+import 'package:flutter_soaring_forecast/soaring/pdfviewer/pdf_view_screen.dart';
 import 'package:flutter_soaring_forecast/soaring/region/bloc/region_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/region/ui/region_list_screen.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
@@ -30,6 +33,9 @@ import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoints_list.d
 import 'package:flutter_soaring_forecast/soaring/values/strings.dart';
 import 'package:flutter_soaring_forecast/soaring/windy/bloc/windy_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/windy/ui/windy.dart';
+import 'package:flutter_soaring_forecast/soaring/wxbrief/bloc/wxbrief_bloc.dart';
+import 'package:flutter_soaring_forecast/soaring/wxbrief/ui/wxbrief_auth_screen.dart';
+import 'package:flutter_soaring_forecast/soaring/wxbrief/ui/wxbrief_request_screen.dart';
 import 'package:workmanager/workmanager.dart';
 
 // https://github.com/fluttercommunity/flutter_workmanager#customisation-android-only
@@ -247,9 +253,10 @@ class SoaringForecastApp extends StatelessWidget {
           }
 
           if (settings.name == AirportsSearchRouteBuilder.routeName) {
+            final String? option = settings.arguments as String;
             return CustomMaterialPageRoute(
               builder: (context) {
-                return AirportsSearchRouteBuilder();
+                return AirportsSearchRouteBuilder(option: option);
               },
               settings: settings,
             );
@@ -259,6 +266,36 @@ class SoaringForecastApp extends StatelessWidget {
             return CustomMaterialPageRoute(
               builder: (context) {
                 return SelectedAirportsRouteBuilder();
+              },
+              settings: settings,
+            );
+          }
+          if (settings.name == WxBriefAuthBuilder.routeName) {
+            return CustomMaterialPageRoute(
+              builder: (context) {
+                return WxBriefAuthBuilder();
+              },
+              settings: settings,
+            );
+          }
+
+          if (settings.name == WxBriefRequestBuilder.routeName) {
+            final request = settings.arguments as WxBriefBriefingRequest;
+            return CustomMaterialPageRoute(
+              builder: (context) {
+                return WxBriefRequestBuilder(request: request);
+              },
+              settings: settings,
+            );
+          }
+
+          if (settings.name == PdfViewRouteBuilder.routeName) {
+            final fileName = settings.arguments as String;
+            return CustomMaterialPageRoute(
+              builder: (context) {
+                return PdfViewRouteBuilder(
+                  fileName: fileName,
+                );
               },
               settings: settings,
             );
@@ -504,12 +541,56 @@ class SelectedAirportsRouteBuilder extends StatelessWidget {
 
 class AirportsSearchRouteBuilder extends StatelessWidget {
   static const routeName = '/AirportsSearch';
+  final String? option;
+
+  AirportsSearchRouteBuilder({this.option = null});
 
   Widget build(BuildContext context) {
     return BlocProvider<AirportBloc>(
       create: (BuildContext context) =>
           AirportBloc(repository: RepositoryProvider.of<Repository>(context)),
-      child: AirportsSearch(),
+      child: AirportsSearch(option: option),
     );
+  }
+}
+
+class WxBriefAuthBuilder extends StatelessWidget {
+  static const routeName = '/WxBriefAuth';
+
+  WxBriefAuthBuilder();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider<WxBriefBloc>(
+      create: (BuildContext context) =>
+          WxBriefBloc(repository: RepositoryProvider.of<Repository>(context)),
+      child: WxBriefAuthScreen(),
+    );
+  }
+}
+
+class WxBriefRequestBuilder extends StatelessWidget {
+  static const routeName = '/WxBriefRequest';
+  final WxBriefBriefingRequest request;
+  WxBriefRequestBuilder({required this.request});
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider<WxBriefBloc>(
+      create: (BuildContext context) =>
+          WxBriefBloc(repository: RepositoryProvider.of<Repository>(context)),
+      child: WxBriefRequestScreen(request: request),
+    );
+  }
+}
+
+class PdfViewRouteBuilder extends StatelessWidget {
+  static const routeName = '/PDFViewer';
+  final String fileName;
+
+  PdfViewRouteBuilder({required this.fileName});
+
+  Widget build(BuildContext context) {
+    return PdfViewScreen(fileName: fileName);
   }
 }

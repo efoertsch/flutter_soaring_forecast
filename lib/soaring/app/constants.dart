@@ -18,6 +18,7 @@ const String GEOS_GIF =
 const String GEOS_CURRENT =
     "https://cdn.star.nesdis.noaa.gov/GOES16/ABI/SECTOR/ne/GEOCOLOR/2400x2400.jpg";
 
+//const String WXBRIEF_URL = "https://ffspelabs.leidos.com/Website2/rest/";
 const String WXBRIEF_URL = "https://lmfsweb.afss.com/Website/rest/";
 const String FEEDBACK_EMAIL_ADDRESS = 'ericfoertsch@gmail.com';
 
@@ -73,7 +74,7 @@ const String suaDisplayOption = "SuaDisplayOption";
 const String turnpointsDisplayOption = "TurnpointsDisplayOption";
 
 // Consider this a const List, but only selected value should be changeable during program execution
-final List<PreferenceOption> raspDisplayOptions = [
+final List<PreferenceOption> RaspDisplayOptions = [
   PreferenceOption(
       key: soundingsDisplayOption,
       displayText: RaspDisplayOptionsMenu.soundings),
@@ -101,7 +102,49 @@ enum SUAColor {
   final Color airspaceColor;
 }
 
+enum WxBriefBriefingRequest {
+  AREA_REQUEST,
+  NOTAMS_REQUEST, //Basically route request but focus on NOTAMS
+  ROUTE_REQUEST;
+}
+
+enum WxBriefTypeOfBrief {
+  STANDARD(option: "Standard"),
+  ABBREVIATED(option: "Abbreviated"),
+  NOTAMS(option: "NOTAMS"), // for NOTAMS of interest to glider pilots
+  OUTLOOK(option: "Outlook");
+
+  const WxBriefTypeOfBrief({required this.option});
+
+  final String option;
+}
+
+enum WxBriefFormat {
+  NGBV2(option: "Online(PDF)"),
+  EMAIL(option: "EMail");
+
+  const WxBriefFormat({required this.option});
+
+  final String option;
+
+  String getOption() {
+    return option;
+  }
+}
+
 //------------- Translatable values --------------------------------------------
+class StandardLiterals {
+  static const YES = "Yes";
+  static const NO = "No";
+  static const CANCEL = "Cancel";
+  static const SUBMIT = "Submit";
+  static const OK = "OK";
+  static const HURRAH = "Hurrah!";
+  static const OH_OH = "Oh-Oh!";
+  static const UNDEFINED_STATE = 'Hmmm. Undefined state.';
+  static const CONTINUE = "Continue";
+}
+
 class RaspMenu {
   static const String selectTask = 'SELECT TASK';
   static const String clearTask = 'Clear Task';
@@ -110,6 +153,9 @@ class RaspMenu {
   static const String reorderForecasts = 'Reorder Forecasts';
   static const String opacity = 'Opacity';
   static const String selectRegion = 'Select Region';
+  static const String one800WxBrief = '1800WxBrief';
+  static const String notamsBrief = "NOTAMS";
+  static const String routeBrief = "Route Brief";
 }
 
 class RaspDisplayOptionsMenu {
@@ -214,11 +260,29 @@ class AirportMenu {
   static const String refresh = "Refresh";
 }
 
+class AirportLiterals {
+  static const String DOWNLOAD_AIRPORTS = "Download Airports?";
+  static const String NO_AIRPORTS_FOUND_MSG =
+      "Hmmm. Looks like we need to download the airport database. Is it Ok to download now? It might take 30 secs or so.";
+  static const String DOWNLOAD_SUCCESSFUL =
+      "Airports downloaded successfully. You can now search on airports.";
+  static const String DOWNLOAD_UNSUCCESSFUL =
+      "Hmmm. Airport download unsuccessful. Please try again later.";
+  static const String REFRESH_AIRPORTS = "Refresh Airports?";
+  static const String CONFIRM_DELETE_RELOAD =
+      "Are you sure you want to delete/reload the Airport database?";
+}
+
 class MetarOrTAF {
+  static const String METAR_TAF = "METAR/TAF";
   static const String METAR = "METAR";
   static const String TAF = "TAF";
   static const String FETCHING_INFORMATION = "Fetching information";
   static const String UNDEFINED_ERROR = "Undefined error";
+  static const String NO_AIRPORTS_SELECTED_YET = 'No airports selected yet.';
+  static const String AIRPORTS_ERROR = 'Airports Error';
+  static const String ELEV = "Elev";
+  static const String FT = "ft";
 }
 
 class Feedback {
@@ -229,42 +293,58 @@ class Feedback {
   static const String FEEDBACK_SUBMIT = "Submit";
 }
 
+class WxBriefMenu {
+  static const String HELP = "Help";
+}
+
+class WxBriefLiterals {
+  static const String DO_NOT_SHOW_THIS_AGAIN = "Do not show this again";
+  static const String WXBRIEF_AUTHORIZATION = "1800Brief Authorization";
+  static const String ONE800WXBRIEF = "1800WxBrief";
+  static const String ONE800WX_AREA_BRIEF = "Area Brief";
+  static const String ONE800WX_ROUTE_BRIEF = "Route Brief";
+  static const String NOTAMS_BRIEFING = "NOTAMS Only";
+  static const String NOTAMS_ABBREV_BRIEF = "NOTAMS Abbreviated Brief";
+  static const String REPORT_OPTIONS = "Report Options";
+  static const String PRODUCT_OPTIONS = "Product Options";
+  static const String CANCEL = "Cancel";
+  static const String CLOSE = "Close";
+  static const String SUBMIT = "Submit";
+  static const String AIRPORT_ID = "Airport Id";
+  static const String INVALID_AIRPORT_ID = "Invalid Airport Id";
+  static const String AIRCRAFT_REGISTRATION_LABEL = 'Aircraft Registration';
+  static const String INVALID_AIRCRAFT_REGISTRATION_ID =
+      "Invalid aircraft registration id";
+  static const String WXBRIEF_ACCOUNT_NAME =
+      '1800WxBrief Account Name(Email address)';
+  static const String INVALID_WXBRIEF_USER_NAME =
+      "Invalid 1800WXBrief user name. Must be email address.";
+  static const String BRIEFING_FORMAT = "Briefing Format";
+  static const String DEPARTURE_DATE = "Departure Date";
+  static const String TYPE_OF_BRIEF = "Type of Brief";
+  static const String SELECT = "Select";
+  static const String WXBRIEF_ACCOUNT_NAME_INFO =
+      "Your email address associated with your 1800WXBrief account.";
+  static const String DEPARTURE_DATE_INFO =
+      "For current date the brief assumes 1hr in the future. For future days, a 9AM departure is assumed.";
+
+  static const String WXBRIEF_NOTAMS_ABBREV_BRIEF_INFO =
+      '''This option retrieves aeronautical and meteorological data from 1800wxbrief.com, and provides NOTAMs and TFRs as of the time the request is made.
+  \n\nOnly the following are requested for this briefing:
+  \n\u2022 Temporary Flight Restrictions
+  \n\u2022 Closed/Unsafe NOTAMS
+  \n\u2022 Departure and Destination NOTAMS
+  \n\u2022 UAS Operating Area
+  \n\u2022 Communication NOTAM
+  \n\u2022 Special Use Airspace NOTAM
+  \n\u2022 Runway/Taxiway/Apron/Aerodome/FDC NOTAM
+  \n\nThe route corridor is set to 50nm width, the minimum allowed by 1800WXBrief.''';
+  static const String WXBRIEF_SENT_TO_MAILBOX =
+      "Your briefing should arrive in our mailbox shortly";
+}
+
 // Turnpoint icon colors for type of runway
 const Color grassRunway = Color(0xFF3CB043);
 const Color asphaltRunway = Colors.black;
 const Color noRunway = Color(0xFFEE4926);
 //---------------------------------------------------------------------------
-const textStyleBoldBlackFontSize20 =
-    TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 20);
-
-const textStyleBlackFontSize20 = TextStyle(color: Colors.black, fontSize: 20);
-
-const textStyleBlackFontSize18 = TextStyle(color: Colors.black, fontSize: 18);
-
-const textStyleBoldBlackFontSize18 =
-    TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 18);
-
-const textStyleBoldBlackFontSize16 =
-    TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 16);
-
-const textStyleBlackFontSize16 = TextStyle(color: Colors.black, fontSize: 16);
-
-const textStyleBoldBlackFontSize14 =
-    TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 14);
-
-const textStyleBlackFontSize14 = TextStyle(color: Colors.black, fontSize: 14);
-
-const textStyleBoldBlack87FontSize15 =
-    TextStyle(fontWeight: FontWeight.bold, color: Colors.black87, fontSize: 15);
-
-const textStyleBlack87FontSize15 =
-    TextStyle(color: Colors.black87, fontSize: 15);
-
-const textStyleBoldBlack87FontSize14 =
-    TextStyle(fontWeight: FontWeight.bold, color: Colors.black87, fontSize: 14);
-
-const textStyleBlack87FontSize14 =
-    TextStyle(color: Colors.black87, fontSize: 14);
-
-const textStyleWhiteFontSize12 = TextStyle(color: Colors.white, fontSize: 12);
-const textStyleBlackFontSize12 = TextStyle(color: Colors.black, fontSize: 12);

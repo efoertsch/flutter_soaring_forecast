@@ -7,6 +7,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_soaring_forecast/main.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     as Constants;
+import 'package:flutter_soaring_forecast/soaring/app/custom_styles.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/taskturnpoint/task_turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_bloc.dart';
@@ -401,7 +402,7 @@ class ForecastMapState extends State<ForecastMap>
                     turnpoint.title.length > 4
                         ? turnpoint.title.substring(0, 4)
                         : turnpoint.title,
-                    style: Constants.textStyleBlackFontSize12,
+                    style: textStyleBlackFontSize12,
                     textAlign: TextAlign.center),
               ],
             )),
@@ -453,7 +454,7 @@ class ForecastMapState extends State<ForecastMap>
                           sounding.location!.length > 5
                               ? sounding.location!.substring(0, 5)
                               : sounding.location!,
-                          style: Constants.textStyleBlackFontSize12,
+                          style: textStyleBlackFontSize12,
                           textAlign: TextAlign.left,
                         ),
                       ),
@@ -642,7 +643,7 @@ class ForecastMapState extends State<ForecastMap>
           points: airspace.geometry!.coordinates,
           label: label ?? "Unknown",
           isFilled: true,
-          labelStyle: Constants.textStyleBlack87FontSize14,
+          labelStyle: textStyleBlack87FontSize14,
           color: polygonColor ?? Color(0x400000F80),
           borderColor: (polygonColor ?? Color(0xFF0000F80)).withOpacity(1)));
     });
@@ -673,7 +674,7 @@ class ForecastMapState extends State<ForecastMap>
                           padding: const EdgeInsets.only(left: 8),
                           child: Text("0",
                               textAlign: TextAlign.center,
-                              style: Constants.textStyleBoldBlack87FontSize14),
+                              style: textStyleBoldBlack87FontSize14),
                         ),
                       ),
                     ),
@@ -712,7 +713,7 @@ class ForecastMapState extends State<ForecastMap>
                           padding: const EdgeInsets.only(right: 8.0),
                           child: Text("100",
                               textAlign: TextAlign.center,
-                              style: Constants.textStyleBoldBlack87FontSize14),
+                              style: textStyleBoldBlack87FontSize14),
                         ),
                       ),
                     ),

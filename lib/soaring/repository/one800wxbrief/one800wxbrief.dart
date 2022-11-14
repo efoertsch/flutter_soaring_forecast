@@ -2,7 +2,7 @@ import 'package:flutter_soaring_forecast/soaring/repository/one800wxbrief/coded_
 import 'package:json_annotation/json_annotation.dart';
 
 @JsonSerializable()
-class RouteBriefing {
+class One800WxBrief {
   bool? returnStatus;
   List<String>? returnMessage;
   List<ReturnCodedMessage>? returnCodedMessage;
@@ -14,7 +14,7 @@ class RouteBriefing {
   String? ngbv2HtmlBriefing;
   String? ngbv2PdfBriefing;
 
-  RouteBriefing(
+  One800WxBrief(
       {this.returnStatus,
       this.returnMessage,
       this.returnCodedMessage,
@@ -26,7 +26,7 @@ class RouteBriefing {
       this.ngbv2HtmlBriefing,
       this.ngbv2PdfBriefing});
 
-  RouteBriefing.fromJson(Map<String, dynamic> json) {
+  One800WxBrief.fromJson(Map<String, dynamic> json) {
     returnStatus = json['returnStatus'];
     if (json['returnMessage'] != null) {
       returnMessage = <String>[];

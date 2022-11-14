@@ -36,6 +36,54 @@ class CommonWidgets {
     );
   }
 
+  static Widget getTwoButtonsInRowWidget(
+      {required final BuildContext context,
+      required final String button1Text,
+      required final Function button1Function,
+      required final String button2Text,
+      required final Function button2Function}) {
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: Row(
+        children: [
+          Expanded(
+            flex: 5,
+            child: TextButton(
+              style: ElevatedButton.styleFrom(
+                minimumSize: Size(double.infinity,
+                    40), // double.infinity is the width and 30 is the height
+                foregroundColor: Colors.white,
+                backgroundColor: Theme.of(context).colorScheme.primary,
+              ),
+              onPressed: () {
+                button1Function;
+              },
+              child: Text(button1Text),
+            ),
+          ),
+          Expanded(
+            flex: 5,
+            child: Padding(
+              padding: const EdgeInsets.only(left: 8.0),
+              child: TextButton(
+                style: ElevatedButton.styleFrom(
+                  minimumSize: Size(double.infinity,
+                      40), // double.infinity is the width and 30 is the height
+                  foregroundColor: Colors.white,
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                ),
+                onPressed: () {
+                  button2Function;
+                },
+                child: Text(button2Text),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   static Future<void> showErrorDialog(
       BuildContext context, String title, String errorMsg) async {
     return showDialog<void>(

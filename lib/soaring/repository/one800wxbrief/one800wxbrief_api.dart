@@ -2,7 +2,7 @@ import 'package:dio/dio.dart' hide Headers;
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     as Constants;
 import 'package:flutter_soaring_forecast/soaring/repository/one800wxbrief/metar_taf_response.dart';
-import 'package:flutter_soaring_forecast/soaring/repository/one800wxbrief/route_briefing.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/one800wxbrief/one800wxbrief.dart';
 import 'package:retrofit/retrofit.dart';
 
 part 'one800wxbrief_api.g.dart';
@@ -36,7 +36,16 @@ abstract class One800WxBriefClient {
     "Content-Type": "application/x-www-form-urlencoded",
     "User-Agent": "Soaring Forecast FFSP Interface"
   })
-  Future<RouteBriefing> getRouteBriefing(
+  Future<One800WxBrief> getRouteBriefing(
+      @Header("Authorization") String basicBase64,
+      @Body() String completeQueryString);
+
+  @POST("FP/areaBriefing")
+  @Headers(<String, dynamic>{
+    "Content-Type": "application/x-www-form-urlencoded",
+    "User-Agent": "Soaring Forecast FFSP Interface"
+  })
+  Future<One800WxBrief> getAreaBriefing(
       @Header("Authorization") String basicBase64,
       @Body() String completeQueryString);
 }

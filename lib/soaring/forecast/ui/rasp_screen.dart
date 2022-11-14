@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_soaring_forecast/main.dart';
 import 'package:flutter_soaring_forecast/soaring/app/app_drawer.dart';
 import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
@@ -37,7 +36,6 @@ class RaspScreen extends StatefulWidget {
 class _RaspScreenState extends State<RaspScreen>
     with TickerProviderStateMixin, WidgetsBindingObserver {
   final abbrevDateformatter = DateFormat('E, MMM dd');
-  late final MapController _mapController;
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _forecastMapStateKey = GlobalKey<ForecastMapState>();
   late List<PreferenceOption> _raspDisplayOptions;
@@ -57,12 +55,13 @@ class _RaspScreenState extends State<RaspScreen>
   Stream<int>? _overlayPositionCounter;
   StreamSubscription<int>? _tickerSubscription;
 
+  bool taskSelected = false;
+
   // Executed only when class created
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _mapController = MapController();
   }
 
   @override
@@ -394,12 +393,18 @@ class _RaspScreenState extends State<RaspScreen>
   Widget _miscStatesHandlerWidget() {
     return BlocConsumer<RaspDataBloc, RaspDataState>(
         listener: (context, state) {
+      if (state is RaspTaskTurnpoints) {
+        taskSelected = state.taskTurnpoints.isNotEmpty;
+        return;
+      }
       if (state is RaspDisplayOptionsState) {
         // debugPrint("Received RaspDisplayOptionsState");
         _raspDisplayOptions = state.displayOptions;
+        return;
       }
       if (state is SelectedRegionNameState) {
         _selectedRegionName = state.selectedRegionName;
+        return;
       }
     }, builder: (context, state) {
       return SizedBox.shrink();
@@ -450,20 +455,62 @@ class _RaspScreenState extends State<RaspScreen>
         itemBuilder: (BuildContext context) {
           return {
             RaspMenu.clearTask,
+            RaspMenu.one800WxBrief,
             RaspMenu.displayOptions,
             // RaspMenu.mapBackground,
             RaspMenu.reorderForecasts,
             RaspMenu.opacity,
             RaspMenu.selectRegion
           }.map((String choice) {
+            if (choice == RaspMenu.clearTask) {
+              return PopupMenuItem<String>(
+                value: choice,
+                enabled: taskSelected,
+                child: Text(choice),
+              );
+            }
+            if (choice == RaspMenu.one800WxBrief) {
+              return PopupMenuItem<String>(
+                value: choice,
+                enabled: taskSelected,
+                child: _getBriefSubMenu(),
+              );
+            }
+            ;
             return PopupMenuItem<String>(
               value: choice,
               child: Text(choice),
             );
           }).toList();
         },
-      ),
+      )
     ];
+  }
+
+  Widget _getBriefSubMenu() {
+    return PopupMenuButton<String>(
+      offset: Offset(-30, 25),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Text(RaspMenu.one800WxBrief),
+          Spacer(),
+          Icon(Icons.arrow_right, size: 20.0, color: Colors.black),
+        ],
+      ),
+      onSelected: handleClick,
+      itemBuilder: (BuildContext context) {
+        return {
+          RaspMenu.notamsBrief,
+          RaspMenu.routeBrief,
+        }.map((String choice) {
+          return PopupMenuItem<String>(
+            value: choice,
+            child: Text(choice),
+          );
+        }).toList();
+      },
+    );
   }
 
   _selectTask() async {
@@ -480,6 +527,14 @@ class _RaspScreenState extends State<RaspScreen>
     switch (value) {
       case RaspMenu.clearTask:
         _sendEvent(ClearTaskEvent());
+        break;
+      case RaspMenu.notamsBrief:
+        Navigator.pop(context);
+        _displayWxBriefRequest(WxBriefBriefingRequest.NOTAMS_REQUEST);
+        break;
+      case RaspMenu.routeBrief:
+        Navigator.pop(context);
+        _displayWxBriefRequest(WxBriefBriefingRequest.ROUTE_REQUEST);
         break;
       case RaspMenu.displayOptions:
         _showMapDisplayOptionsDialog();
@@ -602,5 +657,10 @@ class _RaspScreenState extends State<RaspScreen>
     if (possibleTaskChange) {
       _sendEvent(MapReadyEvent());
     }
+  }
+
+  void _displayWxBriefRequest(WxBriefBriefingRequest request) async {
+    await Navigator.pushNamed(context, WxBriefRequestBuilder.routeName,
+        arguments: request);
   }
 }
