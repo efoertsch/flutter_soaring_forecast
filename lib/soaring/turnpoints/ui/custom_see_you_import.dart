@@ -71,11 +71,11 @@ class _CustomSeeYouImportScreenState extends State<CustomSeeYouImportScreen>
           },
           buildWhen: (previous, current) {
             return current is TurnpointsInitialState ||
-                current is CustomTurnpointFileList ||
+                current is CustomTurnpointFileListState ||
                 current is TurnpointErrorState;
           },
           builder: (context, state) {
-            if (state is CustomTurnpointFileList) {
+            if (state is CustomTurnpointFileListState) {
               if (state.customTurnpointFiles.isEmpty) {
                 return Center(
                   child: Text('No turnpoint files found.'),

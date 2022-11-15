@@ -43,9 +43,9 @@ import 'package:workmanager/workmanager.dart';
     'vm:entry-point') // Mandatory if the App is obfuscated or using Flutter 3.1+
 void callbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
-    if (task == Workmanager.iOSBackgroundTask) {
-      debugPrint("The iOS background fetch was triggered");
-    }
+    // if (task == Workmanager.iOSBackgroundTask) {
+    //   debugPrint("The iOS background fetch was triggered");
+    // }
     try {
       debugPrint('Checking to download airports');
       var ok = AirportsDownloader(repository: Repository(null))
@@ -66,6 +66,7 @@ void main() async {
     debugPrint = (String? message, {int? wrapWidth}) {};
   }
 
+  // Since iOS less definitive on when background task will run, just have user kick it off when requested.
   if (Platform.isAndroid) {
     Workmanager().initialize(
         callbackDispatcher, // The top level function, aka callbackDispatcher

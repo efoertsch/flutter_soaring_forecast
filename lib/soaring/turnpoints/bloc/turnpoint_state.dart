@@ -55,9 +55,9 @@ class TurnpointSearchErrorState extends TurnpointState {
   List<Object?> get props => [errorMsg];
 }
 
-class TurnpointSearchMessage extends TurnpointState {
+class TurnpointSearchMessageState extends TurnpointState {
   final String msg;
-  TurnpointSearchMessage(String this.msg);
+  TurnpointSearchMessageState(String this.msg);
   @override
   List<Object?> get props => [msg];
 }
@@ -69,28 +69,28 @@ class TurnpointFileLoadingState extends TurnpointState {
   List<Object?> get props => [];
 }
 
-class TurnpointCupStyles extends TurnpointState {
+class TurnpointCupStylesState extends TurnpointState {
   final List<CupStyle> cupStyles;
-  TurnpointCupStyles(this.cupStyles);
+  TurnpointCupStylesState(this.cupStyles);
   @override
   List<Object?> get props => [cupStyles];
 }
 
-class TurnpointDuplicateCode extends TurnpointState {
+class TurnpointDuplicateCodeState extends TurnpointState {
   @override
   List<Object?> get props => [];
 }
 
-class EditTurnpoint extends TurnpointState {
+class EditTurnpointState extends TurnpointState {
   final Turnpoint turnpoint;
-  EditTurnpoint(this.turnpoint);
+  EditTurnpointState(this.turnpoint);
   @override
   List<Object?> get props => [turnpoint];
 }
 
-class UpdatedTurnpoint extends TurnpointState {
+class UpdatedTurnpointState extends TurnpointState {
   final Turnpoint turnpoint;
-  UpdatedTurnpoint(this.turnpoint);
+  UpdatedTurnpointState(this.turnpoint);
   @override
   List<Object?> get props => [turnpoint];
 }
@@ -132,9 +132,9 @@ class TurnpointFilesFoundState extends TurnpointState {
   List<Object?> get props => [turnpointFiles];
 }
 
-class CustomTurnpointFileList extends TurnpointState {
+class CustomTurnpointFileListState extends TurnpointState {
   final List<File> customTurnpointFiles;
-  CustomTurnpointFileList(List<File> this.customTurnpointFiles);
+  CustomTurnpointFileListState(List<File> this.customTurnpointFiles);
   @override
   // TODO: implement props
   List<Object?> get props => [customTurnpointFiles];

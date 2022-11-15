@@ -139,7 +139,7 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
       if (state is TurnpointsInitialState) {
         return CommonWidgets.buildLoading();
       }
-      if (state is EditTurnpoint) {
+      if (state is EditTurnpointState) {
         if (!_turnpointInitialized) {
           turnpoint = state.turnpoint;
           modifiableTurnpoint = turnpoint!.clone();
@@ -148,7 +148,7 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
           _turnpointInitialized = true;
         }
       }
-      if (state is UpdatedTurnpoint) {
+      if (state is UpdatedTurnpointState) {
         _needToSaveUpdates = false;
         turnpoint = state.turnpoint;
         modifiableTurnpoint = turnpoint!.clone();
@@ -157,7 +157,7 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
       if (state is TurnpointDeletedState) {
         _displayTurnpointDeletedDialog();
       }
-      if (state is TurnpointCupStyles) {
+      if (state is TurnpointCupStylesState) {
         print("adding cup styles");
         _cupStyles.clear();
         _cupStyles.addAll(state.cupStyles);
