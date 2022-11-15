@@ -53,8 +53,6 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
   late final Turnpoint originalTurnpoint;
   Key? _mapKey;
 
-  GoogleMap? _googleMapWidget;
-
   var _displayCloseButton = false;
 
   @override
@@ -76,6 +74,7 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
 // Make sure first layout occurs prior to map ready otherwise crash occurs
   @override
   void afterFirstLayout(BuildContext context) {
+    _sendEvent(CupStylesEvent());
     if (turnpoint.latitudeDeg == 0 || turnpoint.longitudeDeg == 0) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         checkForLocationPermission();
@@ -86,6 +85,7 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
 
   void _onMapCreated(GoogleMapController controller) {
     _mapController = controller;
+    _animateCameraToNewPosition();
   }
 
   @override
@@ -116,6 +116,52 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
   }
 
   Widget getBodyWidget() {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: <Widget>[
+          _getTurnpointInfoTextWidget(),
+          _googleMap(),
+          _getButtons(),
+        ],
+      ),
+    );
+  }
+
+  void _animateCameraToNewPosition() {
+    Future.delayed(Duration(milliseconds: 60), () {
+      var newPosition = CameraPosition(
+          target: LatLng(
+            turnpoint.latitudeDeg,
+            turnpoint.longitudeDeg,
+          ),
+          zoom: 14);
+      CameraUpdate update = CameraUpdate.newCameraPosition(newPosition);
+      _mapController!.moveCamera(update);
+    });
+  }
+
+  Widget _getTurnpointInfoTextWidget() {
+    return BlocBuilder<TurnpointBloc, TurnpointState>(
+      buildWhen: (previous, current) {
+        return current is TurnpointsInitialState ||
+            current is TurnpointCupStylesState;
+      },
+      builder: (context, state) {
+        if (state is TurnpointCupStylesState) {
+          return Text(
+              TurnpointUtils.getFormattedTurnpointDetails(
+                  turnpoint, _isDecimalDegreesFormat),
+              key: _mapKey,
+              textAlign: TextAlign.start);
+        } else
+          return SizedBox.shrink();
+      },
+    );
+  }
+
+  Widget _googleMap() {
     return BlocListener<TurnpointBloc, TurnpointState>(
       listener: (context, state) {
         if (state is TurnpointsInitialState) {}
@@ -144,56 +190,23 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
         }
         _mapKey = ObjectKey(state);
         _getTurnpointMarker();
-        _animateCameraToNewPosition();
-        delaySetState(200);
+        // _animateCameraToNewPosition();
+        // delaySetState(200);
       },
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: <Widget>[
-            _getTurnpointInfoTextWidget(),
-            _googleMap(),
-            _getButtons(),
-          ],
+      child: Flexible(
+        child: GoogleMap(
+          myLocationButtonEnabled: !_isReadOnly,
+          onMapCreated: _onMapCreated,
+          mapType: MapType.satellite,
+          initialCameraPosition: CameraPosition(
+            target: LatLng(turnpoint.latitudeDeg, turnpoint.longitudeDeg),
+            zoom: 14.0,
+          ),
+          markers: Set<Marker>.of({_getTurnpointMarker()}),
         ),
       ),
     );
-  }
-
-  void _animateCameraToNewPosition() {
-    Future.delayed(Duration(milliseconds: 60), () {
-      var newPosition = CameraPosition(
-          target: LatLng(
-            turnpoint.latitudeDeg,
-            turnpoint.longitudeDeg,
-          ),
-          zoom: 14);
-      CameraUpdate update = CameraUpdate.newCameraPosition(newPosition);
-      _mapController!.moveCamera(update);
-    });
-  }
-
-  Widget _getTurnpointInfoTextWidget() {
-    return Text(
-        TurnpointUtils.getFormattedTurnpointDetails(
-            turnpoint, _isDecimalDegreesFormat),
-        key: _mapKey,
-        textAlign: TextAlign.start);
-  }
-
-  Widget _googleMap() {
-    _googleMapWidget = GoogleMap(
-      myLocationButtonEnabled: true,
-      onMapCreated: _onMapCreated,
-      mapType: MapType.satellite,
-      initialCameraPosition: CameraPosition(
-        target: LatLng(turnpoint.latitudeDeg, turnpoint.longitudeDeg),
-        zoom: 14.0,
-      ),
-      markers: Set<Marker>.of({_getTurnpointMarker()}),
-    );
-    return Expanded(child: _googleMapWidget!);
+    ;
   }
 
   Widget _getButtons() {
@@ -459,5 +472,9 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
   void _cancelUpdateFunction() {
     Navigator.pop(context); // remove dialog
     Navigator.pop(context); // return to prior screen
+  }
+
+  void _sendEvent(TurnpointEvent event) {
+    BlocProvider.of<TurnpointBloc>(context).add(event);
   }
 }

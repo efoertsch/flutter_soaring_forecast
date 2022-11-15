@@ -18,7 +18,7 @@ import 'package:path_provider/path_provider.dart';
 class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
   final Repository repository;
   final List<TurnpointFile> turnpointFiles = [];
-  final List<CupStyle> cupStyles = [];
+  //final List<CupStyle> cupStyles = [];
 
   //TurnpointState get initialState => TurnpointsLoadingState();
 
@@ -143,14 +143,15 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
     Turnpoint? turnpoint =
         await repository.getTurnpointByCode(event.turnpointCode);
     if (turnpoint != null) {
-      emit(TurnpointDuplicateCode());
+      emit(TurnpointDuplicateCodeState());
       emit(TurnpointErrorState("Duplicate turnpoint code"));
     }
   }
 
   void _getAllCupStyles(CupStylesEvent event, Emitter<TurnpointState> emit) {
     print("Emitting CupStyles");
-    emit(TurnpointCupStyles(TurnpointUtils.getCupStyles()));
+    _getCupStylesIfNeeded();
+    emit(TurnpointCupStylesState(TurnpointUtils.getCupStyles()));
   }
 
   FutureOr<void> _getTurnpoint(
@@ -164,7 +165,7 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
         turnpoint = Turnpoint();
       }
     }
-    emit(EditTurnpoint(turnpoint));
+    emit(EditTurnpointState(turnpoint));
   }
 
   FutureOr<void> _saveTurnpoint(
@@ -184,7 +185,7 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
     }
     emit(TurnpointShortMessageState("Turnpoint updated."));
     turnpoint.id = id;
-    emit(UpdatedTurnpoint(turnpoint));
+    emit(UpdatedTurnpointState(turnpoint));
   }
 
   FutureOr<void> _deleteTurnpoint(
@@ -349,7 +350,7 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
             .forEach((file) {
           cupfiles.add(file as File);
         });
-        emit(CustomTurnpointFileList(cupfiles));
+        emit(CustomTurnpointFileListState(cupfiles));
       }
     } catch (e) {
       emit(TurnpointErrorState("Error getting list of .cup files"));

@@ -87,7 +87,7 @@ class _TurnpointsListState extends State<TurnpointsList>
           current is SearchingTurnpointsState ||
           current is TurnpointsLoadedState ||
           current is TurnpointErrorState ||
-          current is TurnpointSearchMessage ||
+          current is TurnpointSearchMessageState ||
           current is TurnpointSearchErrorState;
     }, builder: (context, state) {
       if (state is TurnpointsInitialState) {
@@ -126,7 +126,7 @@ class _TurnpointsListState extends State<TurnpointsList>
             CommonWidgets.showErrorDialog(
                 context, 'Turnpoints Error', state.errorMsg));
       }
-      if (state is TurnpointSearchMessage) {
+      if (state is TurnpointSearchMessageState) {
         return Center(
           child: Text(state.msg),
         );
