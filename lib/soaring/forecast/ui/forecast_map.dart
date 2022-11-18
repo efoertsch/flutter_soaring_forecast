@@ -14,6 +14,7 @@ import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/LatLngForecast.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image_set.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/util/animated_map_controller.dart';
+import 'package:flutter_soaring_forecast/soaring/graphics/data/local_forecast_graph_data.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/special_use_airspace.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/regions.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoint_utils.dart';
@@ -120,6 +121,7 @@ class ForecastMapState extends State<ForecastMap>
         child: _forecastLegend(),
       ),
       _getOpacitySlider(),
+      _miscStatesHandlerWidget(),
     ]);
   }
 
@@ -288,6 +290,26 @@ class ForecastMapState extends State<ForecastMap>
       ;
       return SizedBox.shrink();
     });
+  }
+
+  Widget _miscStatesHandlerWidget() {
+    return BlocListener<RaspDataBloc, RaspDataState>(
+      listener: (context, state) {
+        if (state is DisplayLocalForecastGraphState) {
+          _displayLocalForecastGraph(context, state.localForecastGraphData);
+        }
+      },
+      child: SizedBox.shrink(),
+    );
+  }
+
+  void _displayLocalForecastGraph(
+      BuildContext context, LocalForecastGraphData graphData) {
+    Navigator.pushNamed(
+      context,
+      LocalForecastGraphRouteBuilder.routeName,
+      arguments: graphData,
+    );
   }
 
   void _updateTaskTurnpoints(List<TaskTurnpoint> taskTurnpoints) {
