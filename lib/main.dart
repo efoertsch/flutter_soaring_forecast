@@ -18,7 +18,7 @@ import 'package:flutter_soaring_forecast/soaring/forecast_types/bloc/forecast_bl
 import 'package:flutter_soaring_forecast/soaring/forecast_types/ui/forecast_list.dart';
 import 'package:flutter_soaring_forecast/soaring/graphics/bloc/graphic_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/graphics/bloc/graphic_event.dart';
-import 'package:flutter_soaring_forecast/soaring/graphics/data/local_forecast_graph_data.dart';
+import 'package:flutter_soaring_forecast/soaring/graphics/data/forecast_graph_data.dart';
 import 'package:flutter_soaring_forecast/soaring/graphics/ui/local_forecast_graphic.dart';
 import 'package:flutter_soaring_forecast/soaring/pdfviewer/pdf_view_screen.dart';
 import 'package:flutter_soaring_forecast/soaring/region/bloc/region_bloc.dart';
@@ -307,7 +307,7 @@ class SoaringForecastApp extends StatelessWidget {
           }
 
           if (settings.name == LocalForecastGraphRouteBuilder.routeName) {
-            final graphData = settings.arguments as LocalForecastGraphData;
+            final graphData = settings.arguments as ForecastInputData;
             return CustomMaterialPageRoute(
               builder: (context) {
                 return LocalForecastGraphRouteBuilder(
@@ -615,7 +615,7 @@ class PdfViewRouteBuilder extends StatelessWidget {
 
 class LocalForecastGraphRouteBuilder extends StatelessWidget {
   static const routeName = '/ForecastGraph';
-  final LocalForecastGraphData graphData;
+  final ForecastInputData graphData;
 
   LocalForecastGraphRouteBuilder({required this.graphData});
 
@@ -624,7 +624,7 @@ class LocalForecastGraphRouteBuilder extends StatelessWidget {
     return BlocProvider<GraphicBloc>(
       create: (BuildContext context) =>
           GraphicBloc(repository: RepositoryProvider.of<Repository>(context))
-            ..add(LocalForecastGraphEvent(localForecastGraphData: graphData)),
+            ..add(LocalForecastDataEvent(localForecastGraphData: graphData)),
       child: LocalForecastGraphic(),
     );
   }

@@ -23,8 +23,11 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
 
   bool _isWorking = false;
 
+  double _screenWidth = 0;
+
   @override
   Widget build(BuildContext context) {
+    _screenWidth = MediaQuery.of(context).size.width;
     return SafeArea(
       child: Scaffold(
         appBar: getAppBar(context),
@@ -53,124 +56,160 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
   }
 
   Widget _getForecastCharts() {
-    return BlocBuilder<GraphicBloc, GraphState>(buildWhen: (previous, current) {
-      return current is GraphDataState;
-    }, builder: (context, state) {
-      if (state is GraphDataState) {
-        return SingleChildScrollView(
-          child: Center(
-            child: Column(
-              children: <Widget>[
-                Container(
-                  padding: const EdgeInsets.fromLTRB(20, 40, 20, 5),
-                  child: const Text(
-                    'Cu Cloudbase (Sfc.LCL) MSL',
-                    style: TextStyle(fontSize: 20),
-                  ),
+    return BlocConsumer<GraphicBloc, GraphState>(
+        listener: (context, state) {},
+        buildWhen: (previous, current) {
+          return current is GraphDataState;
+        },
+        builder: (context, state) {
+          if (state is GraphDataState) {
+            return Padding(
+              padding: const EdgeInsets.only(left: 8.0, right: 8),
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    _getLocationName(state.forecastData.turnpointTitle),
+                    _getChartHeader('Cu Cloudbase (Sfc.LCL) MSL'),
+                    _getCloudbase(state.forecastData.altitudeData!),
+                    _getThermalUpdraft(state.forecastData.thermalData!),
+                  ],
                 ),
-                Container(
-                  margin: const EdgeInsets.only(top: 10),
-                  width: 350,
-                  height: 300,
-                  child: Chart(
-                    data: state.forecastData,
-                    rebuild: false,
-                    padding: (_) => const EdgeInsets.fromLTRB(10, 0, 10, 8),
-                    variables: {
-                      'Time': Variable(
-                        accessor: (Map map) => map['Time'] as String,
-                      ),
-                      'Cu Cloudbase (Sfc.LCL) MSL': Variable(
-                        accessor: (Map map) =>
-                            map['Cu Cloudbase (Sfc.LCL) MSL'] as num,
-                      ),
-                    },
-                    elements: [
-                      LineElement(
-                        shape: ShapeAttr(value: BasicLineShape(smooth: true)),
-                        size: SizeAttr(value: 4.0),
-                      ),
-                    ],
-                    coord: RectCoord(color: const Color(0xffdddddd)),
-                    axes: [
-                      Defaults.horizontalAxis
-                        ..label = (LabelStyle(
-                            style: TextStyle(
-                                color: Colors.black,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold))),
-                      Defaults.verticalAxis
-                        ..label = (LabelStyle(
-                            style: TextStyle(
-                                color: Colors.black,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold))),
-                    ],
-                    selections: {'tap': PointSelection(dim: Dim.x)},
-                    tooltip: TooltipGuide(),
-                    crosshair: CrosshairGuide(),
-                    gestureChannel: forecastChannel,
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.fromLTRB(20, 40, 20, 5),
-                  child: const Text(
-                    'Thermal Updraft Velocity (ft/min)',
-                    style: TextStyle(fontSize: 20),
-                  ),
-                ),
-                Container(
-                  margin: const EdgeInsets.only(top: 0),
-                  width: 350,
-                  height: 80,
-                  child: Chart(
-                    padding: (_) => const EdgeInsets.fromLTRB(10, 20, 10, 8),
-                    rebuild: false,
-                    data: state.forecastData,
-                    variables: {
-                      'Time': Variable(
-                        accessor: (Map map) => map['Time'] as String,
-                      ),
-                      'Thermal Updraft Velocity (W*)': Variable(
-                        accessor: (Map map) =>
-                            map['Thermal Updraft Velocity (W*)'] as num,
-                      ),
-                    },
-                    coord: RectCoord(color: const Color(0xffdddddd)),
-                    elements: [
-                      LineElement(
-                        shape: ShapeAttr(value: BasicLineShape(smooth: true)),
-                        size: SizeAttr(value: 4.0),
-                      ),
-                    ],
-                    axes: [
-                      Defaults.horizontalAxis
-                        ..label = (LabelStyle(
-                            style: TextStyle(
-                                color: Colors.black,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold))),
-                      Defaults.verticalAxis
-                        ..label = (LabelStyle(
-                            style: TextStyle(
-                                color: Colors.black,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold))),
-                    ],
-                    selections: {'tap': PointSelection(dim: Dim.x)},
-                    tooltip: TooltipGuide(),
-                    crosshair: CrosshairGuide(),
-                    gestureChannel: forecastChannel,
-                  ),
-                ),
-              ],
+              ),
+            );
+          }
+          return SizedBox.shrink();
+        });
+  }
+
+  Widget _getLocationName(String? turnpointTitle) {
+    if (turnpointTitle != null) {
+      return Container(
+        child: Center(
+          child: Text(
+            turnpointTitle,
+            style: TextStyle(fontSize: 20),
+          ),
+        ),
+      );
+    } else {
+      return SizedBox.shrink();
+    }
+  }
+
+  Container _getChartHeader(String title) {
+    return Container(
+      child: Center(
+        child: Text(
+          title,
+          style: TextStyle(fontSize: 20),
+        ),
+      ),
+    );
+  }
+
+  Container _getCloudbase(List<Map<String, Object>> forecastData) {
+    return Container(
+      margin: const EdgeInsets.only(top: 10),
+      width: _screenWidth - 75,
+      height: 400,
+      child: Chart(
+        data: forecastData,
+        rebuild: false,
+        padding: (_) => const EdgeInsets.fromLTRB(10, 0, 10, 4),
+        variables: {
+          'Time': Variable(
+            accessor: (Map map) => map['Time'] as String,
+          ),
+          'value': Variable(
+            accessor: (Map map) => map['value'] as num,
+          ),
+          'code': Variable(
+            accessor: (Map map) => map['code'] as String,
+          ),
+        },
+        coord: RectCoord(horizontalRange: [0.01, 0.99]),
+        elements: [
+          LineElement(
+            position: Varset('Time') * Varset('value') / Varset('code'),
+            shape: ShapeAttr(value: BasicLineShape(smooth: true)),
+            size: SizeAttr(value: 4.0),
+            color: ColorAttr(
+              variable: 'code',
+              values: Defaults.colors10,
+              updaters: {
+                'groupMouse': {false: (color) => color.withAlpha(100)},
+                'groupTouch': {false: (color) => color.withAlpha(100)},
+              },
             ),
           ),
-        );
-      } else {
-        return SizedBox.shrink();
-      }
-    });
+          PointElement(
+            size: SizeAttr(value: 4.0),
+            color: ColorAttr(
+              variable: 'code',
+              values: Defaults.colors10,
+              updaters: {
+                'groupMouse': {false: (color) => color.withAlpha(100)},
+                'groupTouch': {false: (color) => color.withAlpha(100)},
+              },
+            ),
+          ),
+        ],
+        axes: [
+          Defaults.horizontalAxis,
+          Defaults.verticalAxis,
+        ],
+        selections: {'tap': PointSelection(dim: Dim.x)},
+        tooltip: TooltipGuide(),
+        crosshair: CrosshairGuide(),
+        gestureChannel: forecastChannel,
+      ),
+    );
+  }
+
+  Container _getThermalUpdraft(List<Map<String, Object>> forecastData) {
+    return Container(
+      margin: const EdgeInsets.only(top: 0),
+      width: _screenWidth - 75,
+      height: 80,
+      child: Chart(
+        padding: (_) => const EdgeInsets.fromLTRB(10, 0, 10, 8),
+        rebuild: false,
+        data: forecastData,
+        variables: {
+          'Time': Variable(
+            accessor: (Map map) => map['Time'] as String,
+          ),
+          'value': Variable(
+            accessor: (Map map) => map['value'] as num,
+          ),
+        },
+        coord: RectCoord(color: const Color(0xffdddddd)),
+        elements: [
+          LineElement(
+            shape: ShapeAttr(value: BasicLineShape(smooth: true)),
+            size: SizeAttr(value: 4.0),
+          ),
+        ],
+        axes: [
+          Defaults.horizontalAxis
+            ..label = (LabelStyle(
+                style: TextStyle(
+                    color: Colors.black,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold))),
+          Defaults.verticalAxis
+            ..label = (LabelStyle(
+                style: TextStyle(
+                    color: Colors.black,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold))),
+        ],
+        selections: {'tap': PointSelection(dim: Dim.x)},
+        tooltip: TooltipGuide(),
+        crosshair: CrosshairGuide(),
+        gestureChannel: forecastChannel,
+      ),
+    );
   }
 
   _sendEvent(GraphicEvent event) {

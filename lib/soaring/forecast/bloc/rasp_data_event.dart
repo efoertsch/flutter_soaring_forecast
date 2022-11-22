@@ -98,8 +98,9 @@ class DisplayTaskTurnpointEvent extends RaspDataEvent {
 
 class DisplayLocalForecastEvent extends RaspDataEvent {
   final LatLng latLng;
+  final String? turnpointName;
 
-  DisplayLocalForecastEvent(this.latLng);
+  DisplayLocalForecastEvent(this.latLng, this.turnpointName);
 }
 
 class RedisplayMarkersEvent extends RaspDataEvent {

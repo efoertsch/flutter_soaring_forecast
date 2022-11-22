@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_soaring_forecast/soaring/graphics/data/forecast_graph_data.dart';
 
 @immutable
 abstract class GraphState extends Equatable {}
@@ -10,7 +11,7 @@ class GraphicInitialState extends GraphState {
 }
 
 class GraphDataState extends GraphState {
-  final List<Map<String, Object>> forecastData;
+  final ForecastGraphData forecastData;
 
   GraphDataState({required this.forecastData});
 

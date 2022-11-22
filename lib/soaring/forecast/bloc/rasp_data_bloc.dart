@@ -8,7 +8,7 @@ import 'package:flutter_soaring_forecast/soaring/floor/taskturnpoint/task_turnpo
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image_set.dart';
-import 'package:flutter_soaring_forecast/soaring/graphics/data/local_forecast_graph_data.dart';
+import 'package:flutter_soaring_forecast/soaring/graphics/data/forecast_graph_data.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/special_use_airspace.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/regions.dart';
@@ -427,13 +427,14 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
 
   void _displayLocalForecast(
       DisplayLocalForecastEvent event, Emitter<RaspDataState> emit) async {
-    final localForecastGraphData = LocalForecastGraphData(
+    final localForecastGraphData = ForecastInputData(
         region: _region!.name!,
         date: _selectedForecastDate!,
         model: _selectedModelname!,
         times: _forecastTimes!,
         lat: event.latLng.latitude,
-        lng: event.latLng.longitude);
+        lng: event.latLng.longitude,
+        turnpointName: event.turnpointName);
     emit(DisplayLocalForecastGraphState(localForecastGraphData));
   }
 
@@ -487,7 +488,11 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
 
 // check new bounds and if needed send turnpoints and soundings within those bounds
   FutureOr<void> _processNewLatLongBounds(
-      NewLatLngBoundsEvent event, Emitter<RaspDataState> emit) {}
+      NewLatLngBoundsEvent event, Emitter<RaspDataState> emit) async {
+    _latLngBounds = event.latLngBounds;
+    await _emitDisplayOptions(emit);
+    emit(RedisplayMarkersState());
+  }
 
 // initial check for display options (soundings, turnpoints, sua) and send them if needed
   FutureOr<void> _emitDisplayOptions(Emitter<RaspDataState> emit) async {

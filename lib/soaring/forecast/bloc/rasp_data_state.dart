@@ -6,7 +6,7 @@ import 'package:flutter_soaring_forecast/soaring/floor/taskturnpoint/task_turnpo
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/LatLngForecast.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image_set.dart';
-import 'package:flutter_soaring_forecast/soaring/graphics/data/local_forecast_graph_data.dart';
+import 'package:flutter_soaring_forecast/soaring/graphics/data/forecast_graph_data.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/special_use_airspace.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/regions.dart';
@@ -233,7 +233,7 @@ class RegionsLoadedState extends RaspDataState {
 }
 
 class DisplayLocalForecastGraphState extends RaspDataState {
-  final LocalForecastGraphData localForecastGraphData;
+  final ForecastInputData localForecastGraphData;
   DisplayLocalForecastGraphState(this.localForecastGraphData);
   @override
   List<Object?> get props => [localForecastGraphData];

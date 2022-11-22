@@ -11,7 +11,7 @@ Future<void> main() async {
 }
 
 class ForecastsForDay {
-  static const forecastParmList = ["wstar", "dwcrit", "bsratio", "zsfclcl"];
+  static const forecastParmList = ["hwcrit", "zsfclclmask", "zblclmask"];
   final file = new File('./test/test_resources/forecast_options.json');
 
 //final json = jsonDecode(await file.readAsString());
@@ -31,24 +31,21 @@ class ForecastsForDay {
     "1700",
   };
 
-  var date = "2022-11-16";
+  var date = "2022-11-19";
   var region = "NewEngland";
   var model = "gfs";
   var lat = 43.1394043.toString();
   var long = (-72.0759888).toString();
   String forecastParmString = forecastParmList.join(" ");
-  final List<Map<String, Object?>> forecastData = [];
 
   FutureOr<void> getAllForecastsForDay() async {
     if (options.isEmpty) {
       forecastTypes = forecastTypesFromJson(await file.readAsString());
       options.addAll(forecastTypes!.forecasts);
     }
-
+    var dailyForecastListMap = <Map<String, Object>>[];
     await Future.forEach(times, (time) async {
-      var forecastMap = Map<String, Object>();
-      forecastMap.addAll({"Time": time.toString()});
-      await getForecastInfo(
+      var hourlyListMap = await getForecastInfo(
           region: region,
           date: date,
           model: model,
@@ -57,24 +54,24 @@ class ForecastsForDay {
           long: long,
           forecastParmString: forecastParmString,
           forecastParmList: forecastParmList,
-          options: options,
-          forecastMap: forecastMap);
-      forecastData.add(forecastMap);
+          options: options);
+      dailyForecastListMap.addAll(hourlyListMap);
     });
-    print(forecastData.toString());
+    print(dailyForecastListMap.toString());
   }
 
-  FutureOr<void> getForecastInfo(
-      {required String region,
-      required String date,
-      required String model,
-      required String time,
-      required String lat,
-      required String long,
-      required String forecastParmString,
-      required List<String> forecastParmList,
-      required List<Forecast> options,
-      required Map<String, Object> forecastMap}) async {
+  FutureOr<List<Map<String, Object>>> getForecastInfo({
+    required String region,
+    required String date,
+    required String model,
+    required String time,
+    required String lat,
+    required String long,
+    required String forecastParmString,
+    required List<String> forecastParmList,
+    required List<Forecast> options,
+  }) async {
+    final forecastListMap = <Map<String, Object>>[];
     await repository
         .getLatLngForecast(
             region, date, model, time, lat, long, forecastParmString)
@@ -85,6 +82,7 @@ class ForecastsForDay {
         var response = httpResponse.response.data.toString().split('\n');
         // for each forecast in list e.g. "wstar", "dwcrit"
         forecastParmList.forEach((element) {
+          final forecastMap = Map<String, Object>();
           // find the forecast details (parm nanme, display name etc);
           final forecast = options
               .singleWhere((forecast) => forecast.forecastName == element);
@@ -92,15 +90,21 @@ class ForecastsForDay {
           final forecastString = response.firstWhere(
               (line) => line.contains(forecast.forecastNameDisplay));
           print(forecastString);
-          var forecastValue = double.parse(forecastString
+          final forecastValue = forecastString
               .trim()
               .substring(forecast.forecastNameDisplay.length)
-              .trim());
+              .trim();
+          var value =
+              (forecastValue == "-") ? double.nan : double.parse(forecastValue);
           // and then add the display name and forecasted value to the map
-          forecastMap.addAll({forecast.forecastNameDisplay: forecastValue});
+          //forecastMap.addAll({forecast.forecastNameDisplay: forecastValue});
+          forecastMap
+              .addAll({"Time": time, "code": element, "altitude": value});
+          forecastListMap.add(forecastMap);
         });
-        print(forecastMap);
+        print(forecastListMap);
       }
     });
+    return forecastListMap;
   }
 }
