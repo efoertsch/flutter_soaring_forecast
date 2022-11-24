@@ -19,8 +19,14 @@ class ForecastInputData {
 
 class ForecastGraphData {
   final String? turnpointTitle;
+  final double? lat;
+  final double? lng;
   final List<Map<String, Object>>? altitudeData;
   final List<Map<String, Object>>? thermalData;
   ForecastGraphData(
-      {this.turnpointTitle = null, this.altitudeData, this.thermalData});
+      {this.turnpointTitle = null,
+      this.altitudeData,
+      this.thermalData,
+      this.lat,
+      this.lng});
 }

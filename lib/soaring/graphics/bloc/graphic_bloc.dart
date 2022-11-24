@@ -67,6 +67,8 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
     emit(GraphDataState(
         forecastData: ForecastGraphData(
             turnpointTitle: event.localForecastGraphData.turnpointName,
+            lat: inputData.lat,
+            lng: inputData.lng,
             altitudeData: altitudeForecastData,
             thermalData: thermalForecastData)));
   }
@@ -96,7 +98,7 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
       required String time,
       required String lat,
       required String lng}) async {
-    var forecastGraphData = ForecastGraphData();
+    var forecastGraphData;
     // call the api and process the response
     await _getLatLongForecast(region, date, model, time, lat, lng)
         .then((responseList) {
@@ -106,7 +108,10 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
       // collect all the thermal values for the specified time in one list
       var thermalGraphValues = _getThermalForecast(time, responseList);
       forecastGraphData = ForecastGraphData(
-          altitudeData: altitudeGraphValues, thermalData: thermalGraphValues);
+          altitudeData: altitudeGraphValues,
+          thermalData: thermalGraphValues,
+          lat: double.parse(lat),
+          lng: double.parse(lng));
     });
     return forecastGraphData;
   }
@@ -119,7 +124,7 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
         .then((httpResponse) {
       if (httpResponse.response.statusCode! >= 200 &&
           httpResponse.response.statusCode! < 300) {
-        print('LatLngForecast text ${httpResponse.response.data.toString()}');
+        //print('LatLngForecast text ${httpResponse.response.data.toString()}');
         forecastList.addAll(httpResponse.response.data.toString().split('\n'));
       } else {
         throw Exception(
@@ -143,7 +148,7 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
           .trim()
           .substring(forecast.forecastNameDisplay.length)
           .trim();
-      var value = (forecastValue == "-") ? 0 : double.parse(forecastValue);
+      var value = (forecastValue == "-") ? 0.0 : double.parse(forecastValue);
       // and then add the display name and forecasted value to the map
       // forecastMap.addAll({forecast.forecastNameDisplay: value});
       forecastMap.addAll({
@@ -190,11 +195,15 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
           .trim()
           .substring(forecast.forecastNameDisplay.length)
           .trim();
-      var value = (forecastValue == "-") ? 0 : double.parse(forecastValue);
+      var value = (forecastValue == "-") ? 0.0 : double.parse(forecastValue);
       // and then add the display name and forecasted value to the map
       // forecastMap.addAll({forecast.forecastNameDisplay: value});
-      forecastMap.addAll(
-          {"Time": time, "code": forecast.forecastName, "value": value});
+      forecastMap.addAll({
+        "Time": time,
+        "code": forecast.forecastName,
+        "value": value,
+        "name": forecast.forecastNameDisplay
+      });
       listMap.addAll({forecastMap});
     });
     return listMap;

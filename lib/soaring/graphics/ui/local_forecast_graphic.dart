@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     show GraphLiterals, StandardLiterals;
+import 'package:flutter_soaring_forecast/soaring/app/custom_styles.dart';
 import 'package:flutter_soaring_forecast/soaring/graphics/bloc/graphic_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/graphics/bloc/graphic_event.dart';
 import 'package:flutter_soaring_forecast/soaring/graphics/bloc/graphic_state.dart';
@@ -48,9 +49,9 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
   Widget _getBody() {
     return Stack(
       children: [
+        _widgetForMessages(),
         _getForecastCharts(),
         _getProgressIndicator(),
-        _widgetForMessages(),
       ],
     );
   }
@@ -68,10 +69,11 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
               child: SingleChildScrollView(
                 child: Column(
                   children: [
-                    _getLocationName(state.forecastData.turnpointTitle),
-                    _getChartHeader('Cu Cloudbase (Sfc.LCL) MSL'),
-                    _getCloudbase(state.forecastData.altitudeData!),
-                    _getThermalUpdraft(state.forecastData.thermalData!),
+                    _getLocationTitleWidget(state.forecastData.turnpointTitle,
+                        state.forecastData.lat, state.forecastData.lng),
+                    //_getChartHeaderWidget('Cu Cloudbase (Sfc.LCL) MSL'),
+                    _getCloudbaseWidget(state.forecastData.altitudeData!),
+                    _getThermalUpdraftWidget(state.forecastData.thermalData!),
                   ],
                 ),
               ),
@@ -81,13 +83,23 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
         });
   }
 
-  Widget _getLocationName(String? turnpointTitle) {
+  Widget _getLocationTitleWidget(
+      String? turnpointTitle, double? lat, double? lng) {
+    var text;
     if (turnpointTitle != null) {
+      text = turnpointTitle;
+    } else if (lat != null && lng != null) {
+      text = lat.toStringAsFixed(5) + "/" + lng.toStringAsFixed(5);
+    }
+    if (text != null) {
       return Container(
-        child: Center(
-          child: Text(
-            turnpointTitle,
-            style: TextStyle(fontSize: 20),
+        child: Padding(
+          padding: const EdgeInsets.only(top: 8.0),
+          child: Center(
+            child: Text(
+              text,
+              style: TextStyle(fontSize: 20),
+            ),
           ),
         ),
       );
@@ -96,7 +108,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
     }
   }
 
-  Container _getChartHeader(String title) {
+  Container _getChartHeaderWidget(String title) {
     return Container(
       child: Center(
         child: Text(
@@ -107,11 +119,11 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
     );
   }
 
-  Container _getCloudbase(List<Map<String, Object>> forecastData) {
+  Container _getCloudbaseWidget(List<Map<String, Object>> forecastData) {
     return Container(
       margin: const EdgeInsets.only(top: 10),
       width: _screenWidth - 75,
-      height: 400,
+      height: 300,
       child: Chart(
         data: forecastData,
         rebuild: false,
@@ -122,19 +134,24 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
           ),
           'value': Variable(
             accessor: (Map map) => map['value'] as num,
+            scale:
+                LinearScale(formatter: (value) => '${value.toInt()}', min: 0),
           ),
-          'code': Variable(
-            accessor: (Map map) => map['code'] as String,
+          'name': Variable(
+            accessor: (Map map) => map['name'] as String,
           ),
         },
-        coord: RectCoord(horizontalRange: [0.01, 0.99]),
+
+        coord: RectCoord(
+            horizontalRange: [0.01, 0.99], color: const Color(0xffdddddd)),
+        //coord: RectCoord(color: const Color(0xffdddddd)),
         elements: [
           LineElement(
-            position: Varset('Time') * Varset('value') / Varset('code'),
+            position: Varset('Time') * Varset('value') / Varset('name'),
             shape: ShapeAttr(value: BasicLineShape(smooth: true)),
             size: SizeAttr(value: 4.0),
             color: ColorAttr(
-              variable: 'code',
+              variable: 'name',
               values: Defaults.colors10,
               updaters: {
                 'groupMouse': {false: (color) => color.withAlpha(100)},
@@ -145,7 +162,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
           PointElement(
             size: SizeAttr(value: 4.0),
             color: ColorAttr(
-              variable: 'code',
+              variable: 'name',
               values: Defaults.colors10,
               updaters: {
                 'groupMouse': {false: (color) => color.withAlpha(100)},
@@ -155,48 +172,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
           ),
         ],
         axes: [
-          Defaults.horizontalAxis,
-          Defaults.verticalAxis,
-        ],
-        selections: {'tap': PointSelection(dim: Dim.x)},
-        tooltip: TooltipGuide(),
-        crosshair: CrosshairGuide(),
-        gestureChannel: forecastChannel,
-      ),
-    );
-  }
-
-  Container _getThermalUpdraft(List<Map<String, Object>> forecastData) {
-    return Container(
-      margin: const EdgeInsets.only(top: 0),
-      width: _screenWidth - 75,
-      height: 80,
-      child: Chart(
-        padding: (_) => const EdgeInsets.fromLTRB(10, 0, 10, 8),
-        rebuild: false,
-        data: forecastData,
-        variables: {
-          'Time': Variable(
-            accessor: (Map map) => map['Time'] as String,
-          ),
-          'value': Variable(
-            accessor: (Map map) => map['value'] as num,
-          ),
-        },
-        coord: RectCoord(color: const Color(0xffdddddd)),
-        elements: [
-          LineElement(
-            shape: ShapeAttr(value: BasicLineShape(smooth: true)),
-            size: SizeAttr(value: 4.0),
-          ),
-        ],
-        axes: [
-          Defaults.horizontalAxis
-            ..label = (LabelStyle(
-                style: TextStyle(
-                    color: Colors.black,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold))),
+          Defaults.horizontalAxis..label = null,
           Defaults.verticalAxis
             ..label = (LabelStyle(
                 style: TextStyle(
@@ -205,10 +181,144 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
                     fontWeight: FontWeight.bold))),
         ],
         selections: {'tap': PointSelection(dim: Dim.x)},
-        tooltip: TooltipGuide(),
+        //tooltip: TooltipGuide(),
         crosshair: CrosshairGuide(),
         gestureChannel: forecastChannel,
+        annotations: [
+          _getMarkAnnotation(
+              colorIndex: 0,
+              xPosIndex: 0,
+              yOffset: 290,
+              yPosIndex: -1,
+              color: Defaults.colors10[0]),
+          _getTagAnnotation(
+              label: "Altitude Thermal Strength >= 225fpm (MSL/Dry)",
+              xPosIndex: 0,
+              yOffset: 290,
+              yPosIndex: -1),
+          _getMarkAnnotation(
+              colorIndex: 1,
+              xPosIndex: 0,
+              yOffset: 290,
+              yPosIndex: 0,
+              color: Defaults.colors10[1]),
+          _getTagAnnotation(
+              label: "Cu Cloudbase(MSL)",
+              xPosIndex: 0,
+              yOffset: 290,
+              yPosIndex: 0),
+          _getMarkAnnotation(
+              colorIndex: 2,
+              xPosIndex: 1,
+              yOffset: 290,
+              yPosIndex: 0,
+              color: Defaults.colors10[2]),
+          _getTagAnnotation(
+              label: "OD Cloudbase(MSL)",
+              xPosIndex: 1,
+              yOffset: 290,
+              yPosIndex: 0),
+        ],
       ),
+    );
+  }
+
+  Container _getThermalUpdraftWidget(List<Map<String, Object>> forecastData) {
+    return Container(
+      margin: const EdgeInsets.only(top: 0),
+      width: _screenWidth - 75,
+      height: 140,
+      child: Padding(
+        padding: const EdgeInsets.only(top: 20.0),
+        child: Chart(
+          padding: (_) => const EdgeInsets.fromLTRB(10, 0, 10, 8),
+          rebuild: false,
+          data: forecastData,
+          variables: {
+            'Time': Variable(
+              accessor: (Map map) => map['Time'] as String,
+            ),
+            'value': Variable(
+              accessor: (Map map) => map['value'] as num,
+              scale:
+                  LinearScale(formatter: (value) => '${value.toInt()}', min: 0),
+            ),
+          },
+          coord: RectCoord(color: const Color(0xffdddddd)),
+          elements: [
+            LineElement(
+              color: ColorAttr(
+                  variable: 'value', values: [Colors.red, Colors.red]),
+              shape: ShapeAttr(value: BasicLineShape(smooth: true)),
+              size: SizeAttr(value: 4.0),
+            ),
+          ],
+          axes: [
+            Defaults.horizontalAxis
+              ..label = (LabelStyle(
+                  style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold))),
+            Defaults.verticalAxis
+              ..label = (LabelStyle(
+                  style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold))),
+          ],
+          selections: {'tap': PointSelection(dim: Dim.x)},
+          //tooltip: TooltipGuide(),
+          crosshair: CrosshairGuide(),
+          gestureChannel: forecastChannel,
+          annotations: [
+            _getMarkAnnotation(
+                colorIndex: 3,
+                xPosIndex: 0,
+                yOffset: 145,
+                yPosIndex: 0,
+                color: Colors.red),
+            _getTagAnnotation(
+                label: "Thermal Updraft ft/min",
+                xPosIndex: 0,
+                yOffset: 145,
+                yPosIndex: 0)
+          ],
+        ),
+      ),
+    );
+  }
+
+  MarkAnnotation _getMarkAnnotation(
+      {required int colorIndex,
+      required int xPosIndex,
+      required double yOffset,
+      required double yPosIndex,
+      required color}) {
+    return MarkAnnotation(
+      relativePath: Path()
+        ..addRect(Rect.fromCircle(center: const Offset(0, 0), radius: 5)),
+      style: Paint()..color = color,
+      anchor: (size) => Offset(
+          25 + (xPosIndex == 0 ? 0 : (size.width / 2) * xPosIndex),
+          yOffset + 12 * yPosIndex),
+    );
+  }
+
+  TagAnnotation _getTagAnnotation(
+      {required String label,
+      required int xPosIndex,
+      required double yOffset,
+      required double yPosIndex}) {
+    return TagAnnotation(
+      label: Label(
+        label,
+        LabelStyle(
+            style: textStyleBlackFontSize13, align: Alignment.centerRight),
+      ),
+      anchor: (size) => Offset(
+          34 + (xPosIndex == 0 ? 0 : (size.width / 2) * xPosIndex),
+          yOffset + 12 * yPosIndex),
     );
   }
 
@@ -217,14 +327,15 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
   }
 
   Widget _getProgressIndicator() {
-    return BlocListener<GraphicBloc, GraphState>(
-      listener: (context, state) {
-        if (state is GraphWorkingState) {
-          _isWorking = state.working;
-        }
+    return BlocConsumer<GraphicBloc, GraphState>(
+      listener: (context, state) {},
+      buildWhen: (previous, current) {
+        return current is GraphWorkingState;
       },
-      child: _isWorking
-          ? Container(
+      builder: (context, state) {
+        if (state is GraphWorkingState) {
+          if (state.working) {
+            return Container(
               child: AbsorbPointer(
                   absorbing: true,
                   child: CircularProgressIndicator(
@@ -232,8 +343,11 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
                   )),
               alignment: Alignment.center,
               color: Colors.transparent,
-            )
-          : SizedBox.shrink(),
+            );
+          }
+        }
+        return SizedBox.shrink();
+      },
     );
   }
 

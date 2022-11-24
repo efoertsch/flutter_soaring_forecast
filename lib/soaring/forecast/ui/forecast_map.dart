@@ -361,6 +361,12 @@ class ForecastMapState extends State<ForecastMap>
       onTap: () {
         _sendEvent(DisplayTaskTurnpointEvent(taskTurnpoint));
       },
+      onLongPress: () {
+        _getLocalForecast(
+            latLng:
+                LatLng(taskTurnpoint.latitudeDeg, taskTurnpoint.longitudeDeg),
+            turnpointName: ("${taskTurnpoint.title} (${taskTurnpoint.code})"));
+      },
       child: Container(
           color: Colors.white,
           child: Column(
@@ -397,8 +403,8 @@ class ForecastMapState extends State<ForecastMap>
           LatLng(turnpoint.latitudeDeg, turnpoint.longitudeDeg);
 
       _turnpointMarkers.add(Marker(
-          width: _mapZoom < 8 ? 24 : 48,
-          height: _mapZoom < 8 ? 24 : 48,
+          width: _mapZoom < 9 ? 24 : 48,
+          height: _mapZoom < 9 ? 24 : 48,
           point: turnpointLatLng,
           builder: (context) => _getTurnpointMarker(turnpoint),
           anchorPos: AnchorPos.align(AnchorAlign.top)));
@@ -418,23 +424,24 @@ class ForecastMapState extends State<ForecastMap>
       },
       child: ClipOval(
         child: Container(
-            width: _mapZoom < 8 ? 24 : 48,
-            height: _mapZoom < 8 ? 24 : 48,
             color: Colors.transparent,
             child: Stack(
               alignment: AlignmentDirectional.center,
               children: [
-                SvgPicture.asset(
-                  'assets/svg/ic_turnpoint_white_48dp.svg',
-                  fit: BoxFit.scaleDown,
-                  color:
-                      TurnpointUtils.getColorForTurnpointIcon(turnpoint.style),
+                SizedBox.expand(
+                  child: SvgPicture.asset(
+                    'assets/svg/ic_turnpoint_white_48dp.svg',
+                    color: TurnpointUtils.getColorForTurnpointIcon(
+                        turnpoint.style),
+                  ),
                 ),
                 Text(
                     turnpoint.title.length > 4
                         ? turnpoint.title.substring(0, 4)
                         : turnpoint.title,
-                    style: textStyleBlackFontSize12,
+                    style: _mapZoom < 9
+                        ? textStyleBlackFontSize12
+                        : textStyleBlackFontSize18,
                     textAlign: TextAlign.center),
               ],
             )),
