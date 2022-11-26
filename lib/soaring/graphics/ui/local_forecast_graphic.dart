@@ -9,6 +9,8 @@ import 'package:flutter_soaring_forecast/soaring/app/custom_styles.dart';
 import 'package:flutter_soaring_forecast/soaring/graphics/bloc/graphic_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/graphics/bloc/graphic_event.dart';
 import 'package:flutter_soaring_forecast/soaring/graphics/bloc/graphic_state.dart';
+import 'package:flutter_soaring_forecast/soaring/graphics/data/forecast_graph_data.dart';
+import 'package:flutter_soaring_forecast/soaring/graphics/ui/grid_widgets.dart';
 import 'package:graphic/graphic.dart';
 
 class LocalForecastGraphic extends StatefulWidget {
@@ -41,9 +43,21 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
     return AppBar(
       title: Text(GraphLiterals.LOCAL_FORECAST),
       leading: BackButton(onPressed: () => Navigator.pop(context)),
-
+      actions: _getGraphMenu(),
       //  actions: _getAppBarMenu(),
     );
+  }
+
+  List<Widget> _getGraphMenu() {
+    return <Widget>[
+      TextButton(
+        child: const Text(StandardLiterals.REFRESH,
+            style: TextStyle(color: Colors.white)),
+        onPressed: () {
+          setState(() {});
+        },
+      ),
+    ];
   }
 
   Widget _getBody() {
@@ -74,6 +88,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
                     //_getChartHeaderWidget('Cu Cloudbase (Sfc.LCL) MSL'),
                     _getCloudbaseWidget(state.forecastData.altitudeData!),
                     _getThermalUpdraftWidget(state.forecastData.thermalData!),
+                    _getGridDataWidget(state.forecastData)
                   ],
                 ),
               ),
@@ -129,8 +144,8 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
         rebuild: false,
         padding: (_) => const EdgeInsets.fromLTRB(10, 0, 10, 4),
         variables: {
-          'Time': Variable(
-            accessor: (Map map) => map['Time'] as String,
+          'time': Variable(
+            accessor: (Map map) => map['time'] as String,
           ),
           'value': Variable(
             accessor: (Map map) => map['value'] as num,
@@ -147,7 +162,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
         //coord: RectCoord(color: const Color(0xffdddddd)),
         elements: [
           LineElement(
-            position: Varset('Time') * Varset('value') / Varset('name'),
+            position: Varset('time') * Varset('value') / Varset('name'),
             shape: ShapeAttr(value: BasicLineShape(smooth: true)),
             size: SizeAttr(value: 4.0),
             color: ColorAttr(
@@ -235,8 +250,8 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
           rebuild: false,
           data: forecastData,
           variables: {
-            'Time': Variable(
-              accessor: (Map map) => map['Time'] as String,
+            'time': Variable(
+              accessor: (Map map) => map['time'] as String,
             ),
             'value': Variable(
               accessor: (Map map) => map['value'] as num,
@@ -360,5 +375,20 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
       },
       child: SizedBox.shrink(),
     );
+  }
+
+  Widget _getGridDataWidget(ForecastGraphData forecastGraphData) {
+    // get list of hours for which forecasts have been made
+    final hours = forecastGraphData.hours;
+    final descriptions = forecastGraphData.descriptions;
+    return ScrollableTable(
+        columnHeadings: hours,
+        headingColumnWidth: 30,
+        headingBackgroundColor: Colors.yellow.withOpacity(0.3),
+        descriptionColumnWidth: 50,
+        descriptionBackgroundColor: Colors.yellow.withOpacity(0.3),
+        dataRowsBackgroundColors: [Colors.white, Colors.green.shade50],
+        gridData: forecastGraphData.gridData,
+        descriptions: descriptions);
   }
 }

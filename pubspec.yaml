@@ -40,6 +40,7 @@ dependencies:
   permission_handler: ^10.0.0  # for permissions to downloads directory, location
   location: ^4.4.0 # Get location via GPS - also provides permission so overlap with above
   flutter_svg: ^1.1.3   #Used to draw turnpoint icons
+  linked_scroll_controller: 0.2.0   # Used for grid view with fixed header and column
 
   flutter_cache_manager: ^3.3.0
   intl: ^0.17.0   # used for date/time formatting

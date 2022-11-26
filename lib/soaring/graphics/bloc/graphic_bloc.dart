@@ -31,6 +31,7 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
   var _altitudeForecastList = <Forecast>[];
   var _thermalForecastList = <Forecast>[];
   static final _options = <Forecast>[];
+  ForecastGraphData? _forecastGraphData;
 
   GraphicBloc({required this.repository}) : super(GraphicInitialState()) {
     on<LocalForecastDataEvent>(_getLocalForecastData);
@@ -42,6 +43,7 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
     final inputData = event.localForecastGraphData;
     final List<Map<String, Object>> altitudeForecastData = [];
     final List<Map<String, Object>> thermalForecastData = [];
+    final List<Map<String, Object>> allData = [];
     await _getForecastList();
     _requestParams =
         _altitudeParmList.join(" ") + " " + _thermalParmList.join(" ");
@@ -59,19 +61,68 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
             .addAll(forecastGraphData.altitudeData ?? <Map<String, Object>>[]);
         thermalForecastData
             .addAll(forecastGraphData.thermalData ?? <Map<String, Object>>[]);
+        allData.addAll(forecastGraphData.allData ?? <Map<String, Object>>[]);
       }).onError((error, stackTrace) {
         emit(GraphErrorMsgState(error.toString()));
       });
     });
     emit(GraphWorkingState(working: false));
-    emit(GraphDataState(
-        forecastData: ForecastGraphData(
-            turnpointTitle: event.localForecastGraphData.turnpointName,
-            lat: inputData.lat,
-            lng: inputData.lng,
-            altitudeData: altitudeForecastData,
-            thermalData: thermalForecastData)));
+    _sortAltitudeDataByCodeAndTime(altitudeForecastData);
+    // create grid data
+    var hours = inputData.times;
+    var descriptions = _getForecastDescriptions(allData);
+    var gridData = _createGridData(allData, hours, descriptions);
+    _forecastGraphData = ForecastGraphData(
+        turnpointTitle: event.localForecastGraphData.turnpointName,
+        lat: inputData.lat,
+        lng: inputData.lng,
+        altitudeData: altitudeForecastData,
+        thermalData: thermalForecastData,
+        hours: hours,
+        descriptions: descriptions,
+        gridData: gridData);
+    emit(GraphDataState(forecastData: _forecastGraphData!));
   }
+
+  void _sortAltitudeDataByCodeAndTime(
+      List<Map<String, Object>> altitudeForecastData) {
+    altitudeForecastData.sort((m1, m2) {
+      var r = ((m1['code'] as String)).compareTo((m2['code'] as String));
+      if (r != 0) return r;
+      return (m1["time"] as String).compareTo(m2["time"] as String);
+    });
+  }
+
+  List<String> _getForecastDescriptions(List<Map<String, Object>> gridData) {
+    // get list of unique forecast descriptions
+    final descriptions = <String>[];
+    gridData.forEach((element) {
+      if (!descriptions.contains(element["name"] as String)) {
+        descriptions.add(element["name"] as String);
+      }
+      ;
+    });
+    return descriptions;
+  }
+
+  List<List<String>> _createGridData(List<Map<String, Object>> gridData,
+      List<String> hours, List<String> descriptions) {
+    var dataGrid = _createGridMatrix(descriptions.length, hours.length);
+    gridData.forEach((element) {
+      var col = hours.indexOf(element["time"] as String);
+      var row = descriptions.indexOf((element["name"] as String));
+      var value = element["value"];
+      dataGrid[col - 1][row - 1] = value as String;
+    });
+    return dataGrid;
+  }
+
+  List<List<String>> _createGridMatrix(int rows, int cols) {
+    return Iterable<List<String>>.generate(
+        rows, (i) => new List<String>.filled(cols, " ")).toList();
+  }
+
+  //
 
   FutureOr<void> _getForecastList() async {
     if (_options.isEmpty) {
@@ -91,29 +142,34 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
   }
 
   ///For each forecast time, call the local forecast api
-  Future<ForecastGraphData> _getForecastInfo(
+  Future<ForecastData> _getForecastInfo(
       {required String region,
       required String date,
       required String model,
       required String time,
       required String lat,
       required String lng}) async {
-    var forecastGraphData;
+    var forecastData;
     // call the api and process the response
     await _getLatLongForecast(region, date, model, time, lat, lng)
         .then((responseList) {
       // collect all the altitude values for the specified time in one list
-      // (note the list format is different than the thermal graph values.
       var altitudeGraphValues = _getAltitudeForecast(time, responseList);
+      // prune out altitude values if needed
+      var prunedAltitudeGraphValues = _pruneAltitudeMap(altitudeGraphValues);
       // collect all the thermal values for the specified time in one list
       var thermalGraphValues = _getThermalForecast(time, responseList);
-      forecastGraphData = ForecastGraphData(
-          altitudeData: altitudeGraphValues,
-          thermalData: thermalGraphValues,
-          lat: double.parse(lat),
-          lng: double.parse(lng));
+      // construct complete list  for grid
+      var allData = <Map<String, Object>>[];
+      allData.addAll(altitudeGraphValues);
+      allData.addAll(thermalGraphValues);
+      forecastData = ForecastData(
+        altitudeData: prunedAltitudeGraphValues,
+        thermalData: thermalGraphValues,
+        allData: allData,
+      );
     });
-    return forecastGraphData;
+    return forecastData;
   }
 
   Future<List<String>> _getLatLongForecast(String region, String date,
@@ -152,17 +208,23 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
       // and then add the display name and forecasted value to the map
       // forecastMap.addAll({forecast.forecastNameDisplay: value});
       forecastMap.addAll({
-        "Time": time,
+        "time": time,
         "code": forecast.forecastName,
         "value": value,
         "name": forecast.forecastNameDisplay
       });
       listMap.addAll({forecastMap});
     });
-    // Prune map
-    // Always add MSL Ht of Critical Updraft Strength (225fpm) (hcrit)
-    // If Cu Potential (zsfclcldif) >0 , add  Cu Cloudbase (Sfc.LCL) MSL (zsfclcl) to the prunedMap
-    // If OD Potential (zblcldif) > 0, add  OD Cloudbase (BL CL) MSL (zblcl) to the prunedMap
+    return listMap;
+  }
+
+  /// Prune map
+  /// Always add MSL Ht of Critical Updraft Strength (225fpm) (hcrit)
+  /// If Cu Potential (zsfclcldif) >0 , add  Cu Cloudbase (Sfc.LCL) MSL (zsfclcl) to the prunedMap
+  /// If OD Potential (zblcldif) > 0, add  OD Cloudbase (BL CL) MSL (zblcl) to the prunedMap
+
+  List<Map<String, Object>> _pruneAltitudeMap(
+      List<Map<String, Object>> listMap) {
     final prunedMap = <Map<String, Object>>[];
     var thermalMap =
         listMap.firstWhere((element) => element["code"] == "hwcrit");
@@ -199,7 +261,7 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
       // and then add the display name and forecasted value to the map
       // forecastMap.addAll({forecast.forecastNameDisplay: value});
       forecastMap.addAll({
-        "Time": time,
+        "time": time,
         "code": forecast.forecastName,
         "value": value,
         "name": forecast.forecastNameDisplay

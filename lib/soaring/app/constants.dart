@@ -144,6 +144,7 @@ class StandardLiterals {
   static const UNDEFINED_STATE = 'Hmmm. Undefined state.';
   static const CONTINUE = "Continue";
   static const CLOSE = "Close";
+  static const REFRESH = "Refresh";
 }
 
 class RaspMenu {
