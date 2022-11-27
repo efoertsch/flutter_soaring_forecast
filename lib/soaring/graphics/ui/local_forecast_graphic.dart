@@ -80,17 +80,30 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
           if (state is GraphDataState) {
             return Padding(
               padding: const EdgeInsets.only(left: 8.0, right: 8),
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    _getLocationTitleWidget(state.forecastData.turnpointTitle,
-                        state.forecastData.lat, state.forecastData.lng),
-                    //_getChartHeaderWidget('Cu Cloudbase (Sfc.LCL) MSL'),
-                    _getCloudbaseWidget(state.forecastData.altitudeData!),
-                    _getThermalUpdraftWidget(state.forecastData.thermalData!),
-                    _getGridDataWidget(state.forecastData)
-                  ],
-                ),
+              child: Column(
+                children: [
+                  Expanded(
+                    flex: 5,
+                    child: Column(
+                      children: [
+                        _getLocationTitleWidget(
+                            state.forecastData.turnpointTitle,
+                            state.forecastData.lat,
+                            state.forecastData.lng),
+                        //_getChartHeaderWidget('Cu Cloudbase (Sfc.LCL) MSL'),
+                        _getCloudbaseWidget(state.forecastData.altitudeData!),
+                        _getThermalUpdraftWidget(
+                            state.forecastData.thermalData!),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    flex: 2,
+                    child: _getGridDataWidget(
+                      state.forecastData,
+                    ),
+                  ),
+                ],
               ),
             );
           }
@@ -290,13 +303,13 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
             _getMarkAnnotation(
                 colorIndex: 3,
                 xPosIndex: 0,
-                yOffset: 145,
+                yOffset: 100,
                 yPosIndex: 0,
                 color: Colors.red),
             _getTagAnnotation(
                 label: "Thermal Updraft ft/min",
                 xPosIndex: 0,
-                yOffset: 145,
+                yOffset: 100,
                 yPosIndex: 0)
           ],
         ),
@@ -383,9 +396,10 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
     final descriptions = forecastGraphData.descriptions;
     return ScrollableTable(
         columnHeadings: hours,
-        headingColumnWidth: 30,
+        dataCellWidth: 60,
+        dataCellHeight: 40,
         headingBackgroundColor: Colors.yellow.withOpacity(0.3),
-        descriptionColumnWidth: 50,
+        descriptionColumnWidth: 125,
         descriptionBackgroundColor: Colors.yellow.withOpacity(0.3),
         dataRowsBackgroundColors: [Colors.white, Colors.green.shade50],
         gridData: forecastGraphData.gridData,

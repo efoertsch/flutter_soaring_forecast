@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:linked_scroll_controller/linked_scroll_controller.dart';
 
-// from https://github.com/crizant/flutter_multiplication_table/blob/master/lib/table_body.dart
+// from https://medium.com/nerd-for-tech/flutter-creating-a-two-direction-scrolling-table-with-fixed-head-and-column-4a34fc01378f
+// https://github.com/crizant/flutter_multiplication_table/blob/master/lib/table_body.dart
 // and modified as needed
 class ScrollableTable extends StatefulWidget {
   late final List<String> columnHeadings;
-  late final double headingColumnWidth;
+  late final double dataCellWidth;
   late final Color headingBackgroundColor;
   late final double descriptionColumnWidth;
+  late final double dataCellHeight;
   late final Color descriptionBackgroundColor;
   late final List<Color> dataRowsBackgroundColors;
   late final List<List<String>> gridData;
@@ -15,7 +17,8 @@ class ScrollableTable extends StatefulWidget {
 
   ScrollableTable(
       {required this.columnHeadings,
-      required this.headingColumnWidth,
+      required this.dataCellWidth,
+      required this.dataCellHeight,
       required this.headingBackgroundColor,
       required this.descriptionColumnWidth,
       required this.descriptionBackgroundColor,
@@ -54,13 +57,17 @@ class _ScrollableTableState extends State<ScrollableTable> {
         TableHead(
             scrollController: _headController,
             columnHeadings: widget.columnHeadings,
-            cellWidth: widget.headingColumnWidth,
+            descriptionColumnWidth: widget.descriptionColumnWidth,
+            cellWidth: widget.dataCellWidth,
+            cellHeight: widget.dataCellHeight,
             backgroundColor: widget.headingBackgroundColor),
         Expanded(
+          // this expanded needed to show body
           child: TableBody(
               scrollController: _bodyController,
               descriptionColumnWidth: widget.descriptionColumnWidth,
-              dataCellWidth: widget.headingColumnWidth,
+              dataCellWidth: widget.dataCellWidth,
+              dataCellHeight: widget.dataCellHeight,
               descriptionBackgroundColor: widget.descriptionBackgroundColor,
               dataRowBackgroundColors: widget.dataRowsBackgroundColors,
               gridData: widget.gridData,
@@ -75,25 +82,32 @@ class TableHead extends StatelessWidget {
   final ScrollController scrollController;
   final List<String> columnHeadings;
   final double cellWidth;
+  final double cellHeight;
   final Color? backgroundColor;
+  final double descriptionColumnWidth;
 
   TableHead(
       {required this.scrollController,
       required this.columnHeadings,
       required this.cellWidth,
-      this.backgroundColor});
+      required this.cellHeight,
+      this.backgroundColor,
+      required this.descriptionColumnWidth});
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       height: cellWidth,
-      width: cellWidth,
+      width: descriptionColumnWidth + columnHeadings.length * cellWidth,
       child: Row(
         children: [
-          GridTableCell(
-            color: backgroundColor ?? Colors.yellow.withOpacity(0.3),
-            value: " ",
-            cellWidth: cellWidth,
+          // The first column must match description(leftmost) column width
+          SizedBox(
+            width: descriptionColumnWidth,
+            child: GridTableCell(
+              color: backgroundColor ?? Colors.yellow.withOpacity(0.3),
+              value: " ",
+            ),
           ),
           Expanded(
             child: ListView.builder(
@@ -102,10 +116,12 @@ class TableHead extends StatelessWidget {
                 scrollDirection: Axis.horizontal,
                 itemCount: columnHeadings.length,
                 itemBuilder: (BuildContext context, int index) {
-                  return GridTableCell(
-                    color: Colors.yellow.withOpacity(0.3),
-                    value: columnHeadings[index - 1],
-                    cellWidth: cellWidth,
+                  return SizedBox(
+                    width: cellWidth,
+                    child: GridTableCell(
+                      color: Colors.yellow.withOpacity(0.3),
+                      value: columnHeadings[index],
+                    ),
                   );
                 }),
           ),
@@ -119,6 +135,7 @@ class TableBody extends StatefulWidget {
   final ScrollController scrollController;
   final double descriptionColumnWidth;
   final double dataCellWidth;
+  final double dataCellHeight;
   final Color descriptionBackgroundColor;
   final List<Color> dataRowBackgroundColors;
   final List<List<String>> gridData;
@@ -128,6 +145,7 @@ class TableBody extends StatefulWidget {
       {required this.scrollController,
       required this.descriptionColumnWidth,
       required this.dataCellWidth,
+      required this.dataCellHeight,
       required this.descriptionBackgroundColor,
       required this.dataRowBackgroundColors,
       required this.gridData,
@@ -161,6 +179,7 @@ class _TableBodyState extends State<TableBody> {
   Widget build(BuildContext context) {
     return Row(
       children: [
+        // First widget in row is the description
         SizedBox(
           width: widget.descriptionColumnWidth,
           child: ListView.builder(
@@ -168,14 +187,15 @@ class _TableBodyState extends State<TableBody> {
               physics: ClampingScrollPhysics(),
               itemCount: widget.descriptions.length,
               itemBuilder: (BuildContext context, int index) {
-                return GridTableCell(
-                  color: widget.descriptionBackgroundColor ??
-                      Colors.yellow.withOpacity(0.3),
+                return GridDescriptionCell(
+                  color: widget.descriptionBackgroundColor,
                   value: widget.descriptions[index],
                   cellWidth: widget.descriptionColumnWidth,
+                  cellHeight: widget.dataCellHeight,
                 );
               }),
         ),
+        // remaining elements in row is the data
         Expanded(
           child: SingleChildScrollView(
             controller: widget.scrollController,
@@ -186,14 +206,20 @@ class _TableBodyState extends State<TableBody> {
               child: ListView(
                 controller: _restColumnsController,
                 physics: const ClampingScrollPhysics(),
-                children: List.generate(widget.descriptions.length - 1, (y) {
+                // We build row by row, so each row contains all the hourly
+                // data for each forecast.
+                children: List.generate(widget.descriptions.length, (y) {
                   return Row(
-                    children: List.generate(widget.gridData.length - 1, (x) {
-                      return GridTableCell(
-                        value: widget.gridData[x][y],
-                        color: widget.dataRowBackgroundColors[
-                            y % widget.dataRowBackgroundColors.length],
-                        cellWidth: widget.dataCellWidth,
+                    children: List.generate(widget.gridData[0].length, (x) {
+                      // remaining widgets in row are the data for that particular forecast
+                      return SizedBox(
+                        width: widget.dataCellWidth,
+                        height: widget.dataCellHeight,
+                        child: GridTableCell(
+                          value: widget.gridData[y][x],
+                          color: widget.dataRowBackgroundColors[
+                              y % widget.dataRowBackgroundColors.length],
+                        ),
                       );
                     }),
                   );
@@ -210,16 +236,12 @@ class _TableBodyState extends State<TableBody> {
 class GridTableCell extends StatelessWidget {
   final String value;
   final Color color;
-  final double cellWidth;
 
-  GridTableCell(
-      {required this.value, required this.color, required this.cellWidth});
+  GridTableCell({required this.value, required this.color});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: cellWidth,
-      height: cellWidth,
       decoration: BoxDecoration(
         color: color,
         border: Border.all(
@@ -231,6 +253,41 @@ class GridTableCell extends StatelessWidget {
       child: Text(
         '${value ?? ''}',
         style: TextStyle(fontSize: 16.0),
+      ),
+    );
+  }
+}
+
+class GridDescriptionCell extends StatelessWidget {
+  final String value;
+  final Color color;
+  final double cellWidth;
+  final double cellHeight;
+
+  GridDescriptionCell(
+      {required this.value,
+      required this.color,
+      required this.cellWidth,
+      required this.cellHeight});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: cellWidth,
+      height: cellHeight,
+      child: Container(
+        decoration: BoxDecoration(
+          color: color,
+          border: Border.all(
+            color: Colors.black12,
+            width: 1.0,
+          ),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          '${value ?? ''}',
+          style: TextStyle(fontSize: 16.0),
+        ),
       ),
     );
   }
