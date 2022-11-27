@@ -112,7 +112,8 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
       var col = hours.indexOf(element["time"] as String);
       var row = descriptions.indexOf((element["name"] as String));
       var value = element["value"];
-      dataGrid[col - 1][row - 1] = value as String;
+      // debugPrint(" row: $row  col: $col");
+      dataGrid[row][col] = (value as double).toStringAsFixed(0);
     });
     return dataGrid;
   }

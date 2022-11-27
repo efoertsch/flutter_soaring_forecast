@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:linked_scroll_controller/linked_scroll_controller.dart';
 
+// from https://github.com/crizant/flutter_multiplication_table/blob/master/lib/table_body.dart
+// and modified as needed
 class ScrollableTable extends StatefulWidget {
   late final List<String> columnHeadings;
   late final double headingColumnWidth;
@@ -85,6 +87,7 @@ class TableHead extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       height: cellWidth,
+      width: cellWidth,
       child: Row(
         children: [
           GridTableCell(
