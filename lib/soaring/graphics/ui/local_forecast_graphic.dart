@@ -80,33 +80,34 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
           if (state is GraphDataState) {
             return Padding(
               padding: const EdgeInsets.only(left: 8.0, right: 8),
-              child: Column(
-                children: [
-                  Expanded(
-                    flex: 5,
-                    child: Column(
-                      children: [
-                        _getLocationTitleWidget(
-                            state.forecastData.turnpointTitle,
-                            state.forecastData.lat,
-                            state.forecastData.lng),
-                        //_getChartHeaderWidget('Cu Cloudbase (Sfc.LCL) MSL'),
-                        _getCloudbaseWidget(state.forecastData.altitudeData!),
-                        _getThermalUpdraftWidget(
-                            state.forecastData.thermalData!),
-                      ],
-                    ),
+              child: CustomScrollView(
+                slivers: <Widget>[
+                  SliverList(
+                    delegate: SliverChildListDelegate(<Widget>[
+                      _getLocationTitleWidget(state.forecastData.turnpointTitle,
+                          state.forecastData.lat, state.forecastData.lng),
+                      //_getChartHeaderWidget('Cu Cloudbase (Sfc.LCL) MSL'),
+                      _getCloudbaseWidget(state.forecastData.altitudeData!),
+                      _getThermalUpdraftWidget(state.forecastData.thermalData!)
+                    ]),
                   ),
-                  Expanded(
-                    flex: 2,
-                    child: _getGridDataWidget(
-                      state.forecastData,
+                  SliverFillRemaining(
+                    hasScrollBody: true,
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 10.0),
+                      child: CustomScrollView(slivers: <Widget>[
+                        SliverList(
+                          delegate: SliverChildListDelegate(
+                              <Widget>[_getGridDataWidget(state.forecastData)]),
+                        ),
+                      ]),
                     ),
                   ),
                 ],
               ),
             );
           }
+          ;
           return SizedBox.shrink();
         });
   }
@@ -136,21 +137,10 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
     }
   }
 
-  Container _getChartHeaderWidget(String title) {
+  Widget _getCloudbaseWidget(List<Map<String, Object>> forecastData) {
     return Container(
-      child: Center(
-        child: Text(
-          title,
-          style: TextStyle(fontSize: 20),
-        ),
-      ),
-    );
-  }
-
-  Container _getCloudbaseWidget(List<Map<String, Object>> forecastData) {
-    return Container(
-      margin: const EdgeInsets.only(top: 10),
-      width: _screenWidth - 75,
+      margin: const EdgeInsets.only(top: 8),
+      width: _screenWidth - 90,
       height: 300,
       child: Chart(
         data: forecastData,
@@ -251,7 +241,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
     );
   }
 
-  Container _getThermalUpdraftWidget(List<Map<String, Object>> forecastData) {
+  Widget _getThermalUpdraftWidget(List<Map<String, Object>> forecastData) {
     return Container(
       margin: const EdgeInsets.only(top: 0),
       width: _screenWidth - 75,
@@ -394,15 +384,18 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
     // get list of hours for which forecasts have been made
     final hours = forecastGraphData.hours;
     final descriptions = forecastGraphData.descriptions;
-    return ScrollableTable(
-        columnHeadings: hours,
-        dataCellWidth: 60,
-        dataCellHeight: 40,
-        headingBackgroundColor: Colors.yellow.withOpacity(0.3),
-        descriptionColumnWidth: 125,
-        descriptionBackgroundColor: Colors.yellow.withOpacity(0.3),
-        dataRowsBackgroundColors: [Colors.white, Colors.green.shade50],
-        gridData: forecastGraphData.gridData,
-        descriptions: descriptions);
+    return Padding(
+      padding: const EdgeInsets.only(top: 16.0),
+      child: ScrollableTable(
+          columnHeadings: hours,
+          dataCellWidth: 60,
+          dataCellHeight: 40,
+          headingBackgroundColor: Colors.yellow.withOpacity(0.3),
+          descriptionColumnWidth: 125,
+          descriptionBackgroundColor: Colors.yellow.withOpacity(0.3),
+          dataRowsBackgroundColors: [Colors.white, Colors.green.shade50],
+          gridData: forecastGraphData.gridData,
+          descriptions: descriptions),
+    );
   }
 }

@@ -61,18 +61,15 @@ class _ScrollableTableState extends State<ScrollableTable> {
             cellWidth: widget.dataCellWidth,
             cellHeight: widget.dataCellHeight,
             backgroundColor: widget.headingBackgroundColor),
-        Expanded(
-          // this expanded needed to show body
-          child: TableBody(
-              scrollController: _bodyController,
-              descriptionColumnWidth: widget.descriptionColumnWidth,
-              dataCellWidth: widget.dataCellWidth,
-              dataCellHeight: widget.dataCellHeight,
-              descriptionBackgroundColor: widget.descriptionBackgroundColor,
-              dataRowBackgroundColors: widget.dataRowsBackgroundColors,
-              gridData: widget.gridData,
-              descriptions: widget.descriptions),
-        ),
+        TableBody(
+            scrollController: _bodyController,
+            descriptionColumnWidth: widget.descriptionColumnWidth,
+            dataCellWidth: widget.dataCellWidth,
+            dataCellHeight: widget.dataCellHeight,
+            descriptionBackgroundColor: widget.descriptionBackgroundColor,
+            dataRowBackgroundColors: widget.dataRowsBackgroundColors,
+            gridData: widget.gridData,
+            descriptions: widget.descriptions),
       ],
     );
   }
@@ -185,6 +182,7 @@ class _TableBodyState extends State<TableBody> {
           child: ListView.builder(
               controller: _firstColumnController,
               physics: ClampingScrollPhysics(),
+              shrinkWrap: true,
               itemCount: widget.descriptions.length,
               itemBuilder: (BuildContext context, int index) {
                 return GridDescriptionCell(
@@ -203,6 +201,7 @@ class _TableBodyState extends State<TableBody> {
             physics: const ClampingScrollPhysics(),
             child: SizedBox(
               width: (widget.gridData[0].length) * widget.dataCellWidth,
+              height: (widget.descriptions.length * widget.dataCellHeight),
               child: ListView(
                 controller: _restColumnsController,
                 physics: const ClampingScrollPhysics(),
