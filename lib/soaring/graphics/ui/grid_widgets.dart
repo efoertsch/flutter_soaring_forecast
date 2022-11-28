@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
+import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
 import 'package:linked_scroll_controller/linked_scroll_controller.dart';
 
 // from https://medium.com/nerd-for-tech/flutter-creating-a-two-direction-scrolling-table-with-fixed-head-and-column-4a34fc01378f
@@ -13,7 +15,7 @@ class ScrollableTable extends StatefulWidget {
   late final Color descriptionBackgroundColor;
   late final List<Color> dataRowsBackgroundColors;
   late final List<List<String>> gridData;
-  late final List<String> descriptions;
+  late final List<RowDescription> descriptions;
 
   ScrollableTable(
       {required this.columnHeadings,
@@ -136,7 +138,7 @@ class TableBody extends StatefulWidget {
   final Color descriptionBackgroundColor;
   final List<Color> dataRowBackgroundColors;
   final List<List<String>> gridData;
-  final List<String> descriptions;
+  final List<RowDescription> descriptions;
 
   TableBody(
       {required this.scrollController,
@@ -187,7 +189,7 @@ class _TableBodyState extends State<TableBody> {
               itemBuilder: (BuildContext context, int index) {
                 return GridDescriptionCell(
                   color: widget.descriptionBackgroundColor,
-                  value: widget.descriptions[index],
+                  rowDescription: widget.descriptions[index],
                   cellWidth: widget.descriptionColumnWidth,
                   cellHeight: widget.dataCellHeight,
                 );
@@ -258,36 +260,53 @@ class GridTableCell extends StatelessWidget {
 }
 
 class GridDescriptionCell extends StatelessWidget {
-  final String value;
+  final RowDescription rowDescription;
   final Color color;
   final double cellWidth;
   final double cellHeight;
 
-  GridDescriptionCell(
-      {required this.value,
-      required this.color,
-      required this.cellWidth,
-      required this.cellHeight});
+  GridDescriptionCell({
+    required this.rowDescription,
+    required this.color,
+    required this.cellWidth,
+    required this.cellHeight,
+  });
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: cellWidth,
-      height: cellHeight,
-      child: Container(
-        decoration: BoxDecoration(
-          color: color,
-          border: Border.all(
-            color: Colors.black12,
-            width: 1.0,
+        width: cellWidth,
+        height: cellHeight,
+        child: Container(
+          decoration: BoxDecoration(
+            color: color,
+            border: Border.all(
+              color: Colors.black12,
+              width: 1.0,
+            ),
           ),
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          '${value ?? ''}',
-          style: TextStyle(fontSize: 16.0),
-        ),
-      ),
-    );
+          alignment: Alignment.center,
+          child: TextButton(
+            child: Text(rowDescription.description),
+            onPressed: (() {
+              if (rowDescription.helpDescription != null) {
+                CommonWidgets.showInfoDialog(
+                    context: context,
+                    title: rowDescription.description,
+                    msg: rowDescription.helpDescription!,
+                    button1Text: StandardLiterals.OK,
+                    button1Function: (() => Navigator.of(context).pop()));
+              }
+            }),
+            //_getRowDescriptionWidget(context, rowDescription),
+          ),
+        ));
   }
+}
+
+class RowDescription {
+  final String description;
+  final String? helpDescription;
+
+  RowDescription({required this.description, this.helpDescription});
 }

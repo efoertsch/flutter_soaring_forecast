@@ -18,7 +18,7 @@ import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
   final Repository repository;
   static const _altitudeParmList = [
-    "hwcrit",
+    "experimental1",
     "zsfclcldif",
     "zsfclcl",
     "zblcldif",
@@ -73,6 +73,8 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
     var descriptions = _getForecastDescriptions(allData);
     var gridData = _createGridData(allData, hours, descriptions);
     _forecastGraphData = ForecastGraphData(
+        date: inputData.date,
+        model: inputData.model,
         turnpointTitle: event.localForecastGraphData.turnpointName,
         lat: inputData.lat,
         lng: inputData.lng,
@@ -93,24 +95,23 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
     });
   }
 
-  List<String> _getForecastDescriptions(List<Map<String, Object>> gridData) {
+  List<Forecast> _getForecastDescriptions(List<Map<String, Object>> gridData) {
     // get list of unique forecast descriptions
-    final descriptions = <String>[];
-    gridData.forEach((element) {
-      if (!descriptions.contains(element["name"] as String)) {
-        descriptions.add(element["name"] as String);
-      }
-      ;
-    });
+    final descriptions = <Forecast>[];
+    descriptions.addAll(
+      _altitudeForecastList,
+    );
+    descriptions.addAll(_thermalForecastList);
     return descriptions;
   }
 
   List<List<String>> _createGridData(List<Map<String, Object>> gridData,
-      List<String> hours, List<String> descriptions) {
+      List<String> hours, List<Forecast> descriptions) {
     var dataGrid = _createGridMatrix(descriptions.length, hours.length);
     gridData.forEach((element) {
       var col = hours.indexOf(element["time"] as String);
-      var row = descriptions.indexOf((element["name"] as String));
+      var row = descriptions.indexWhere(
+          (forecast) => forecast.forecastName == element["code"] as String);
       var value = element["value"];
       // debugPrint(" row: $row  col: $col");
       dataGrid[row][col] = (value as double).toStringAsFixed(0);
@@ -220,7 +221,7 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
   }
 
   /// Prune map
-  /// Always add MSL Ht of Critical Updraft Strength (225fpm) (hcrit)
+  /// Always add MSL Ht of Critical Updraft Strength (175fpm) (hcrit)
   /// If Cu Potential (zsfclcldif) >0 , add  Cu Cloudbase (Sfc.LCL) MSL (zsfclcl) to the prunedMap
   /// If OD Potential (zblcldif) > 0, add  OD Cloudbase (BL CL) MSL (zblcl) to the prunedMap
 
@@ -228,7 +229,7 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
       List<Map<String, Object>> listMap) {
     final prunedMap = <Map<String, Object>>[];
     var thermalMap =
-        listMap.firstWhere((element) => element["code"] == "hwcrit");
+        listMap.firstWhere((element) => element["code"] == "experimental1");
     prunedMap.add(thermalMap);
     var cuPotential =
         listMap.firstWhere((element) => element["code"] == "zsfclcldif");

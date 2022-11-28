@@ -1,3 +1,5 @@
+import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
+
 class ForecastInputData {
   final String region;
   final String date;
@@ -29,17 +31,21 @@ class ForecastData {
 }
 
 class ForecastGraphData {
+  final String model;
+  final String date;
   final String? turnpointTitle;
   final double? lat;
   final double? lng;
   final List<Map<String, Object>> altitudeData;
   final List<Map<String, Object>> thermalData;
   final List<String> hours;
-  final List<String> descriptions;
+  final List<Forecast> descriptions;
   final List<List<String>> gridData;
 
   ForecastGraphData(
-      {this.turnpointTitle = null,
+      {required this.model,
+      required this.date,
+      this.turnpointTitle = null,
       required this.altitudeData,
       required this.thermalData,
       required this.hours,

@@ -12,6 +12,7 @@ import 'package:flutter_soaring_forecast/soaring/graphics/bloc/graphic_state.dar
 import 'package:flutter_soaring_forecast/soaring/graphics/data/forecast_graph_data.dart';
 import 'package:flutter_soaring_forecast/soaring/graphics/ui/grid_widgets.dart';
 import 'package:graphic/graphic.dart';
+import 'package:intl/intl.dart';
 
 class LocalForecastGraphic extends StatefulWidget {
   LocalForecastGraphic({Key? key}) : super(key: key);
@@ -25,8 +26,9 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
   final forecastChannel = StreamController<GestureSignal>.broadcast();
 
   bool _isWorking = false;
-
   double _screenWidth = 0;
+  double graphLegendOffset = 34; // used to place legends on graph
+  final abbrevDateformatter = DateFormat('E, MMM dd');
 
   @override
   Widget build(BuildContext context) {
@@ -86,6 +88,8 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
                     delegate: SliverChildListDelegate(<Widget>[
                       _getLocationTitleWidget(state.forecastData.turnpointTitle,
                           state.forecastData.lat, state.forecastData.lng),
+                      _getModelAndDateWidgets(
+                          state.forecastData.model, state.forecastData.date),
                       //_getChartHeaderWidget('Cu Cloudbase (Sfc.LCL) MSL'),
                       _getCloudbaseWidget(state.forecastData.altitudeData!),
                       _getThermalUpdraftWidget(state.forecastData.thermalData!)
@@ -127,7 +131,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
           child: Center(
             child: Text(
               text,
-              style: TextStyle(fontSize: 20),
+              style: textStyleBlackFontSize20,
             ),
           ),
         ),
@@ -135,6 +139,28 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
     } else {
       return SizedBox.shrink();
     }
+  }
+
+  Widget _getModelAndDateWidgets(String model, String date) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            model.toUpperCase(),
+            style: textStyleBlackFontSize14,
+          ),
+          Padding(
+            padding: const EdgeInsets.only(left: 8.0),
+            child: Text(
+              abbrevDateformatter.format(DateTime.tryParse(date)!),
+              style: textStyleBlackFontSize14,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _getCloudbaseWidget(List<Map<String, Object>> forecastData) {
@@ -145,7 +171,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
       child: Chart(
         data: forecastData,
         rebuild: false,
-        padding: (_) => const EdgeInsets.fromLTRB(10, 0, 10, 4),
+        padding: (_) => const EdgeInsets.fromLTRB(30, 0, 10, 4),
         variables: {
           'time': Variable(
             accessor: (Map map) => map['time'] as String,
@@ -204,34 +230,40 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
         gestureChannel: forecastChannel,
         annotations: [
           _getMarkAnnotation(
+              initialOffset: graphLegendOffset,
               colorIndex: 0,
               xPosIndex: 0,
               yOffset: 290,
               yPosIndex: -1,
               color: Defaults.colors10[0]),
           _getTagAnnotation(
-              label: "Altitude Thermal Strength >= 225fpm (MSL/Dry)",
+              initialOffset: graphLegendOffset + 9,
+              label: "MSL Thermal Updraft Strength @ 175fpm (Dry)",
               xPosIndex: 0,
               yOffset: 290,
               yPosIndex: -1),
           _getMarkAnnotation(
+              initialOffset: graphLegendOffset,
               colorIndex: 1,
               xPosIndex: 0,
               yOffset: 290,
               yPosIndex: 0,
               color: Defaults.colors10[1]),
           _getTagAnnotation(
+              initialOffset: graphLegendOffset + 9,
               label: "Cu Cloudbase(MSL)",
               xPosIndex: 0,
               yOffset: 290,
               yPosIndex: 0),
           _getMarkAnnotation(
+              initialOffset: graphLegendOffset,
               colorIndex: 2,
               xPosIndex: 1,
               yOffset: 290,
               yPosIndex: 0,
               color: Defaults.colors10[2]),
           _getTagAnnotation(
+              initialOffset: graphLegendOffset + 9,
               label: "OD Cloudbase(MSL)",
               xPosIndex: 1,
               yOffset: 290,
@@ -249,7 +281,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
       child: Padding(
         padding: const EdgeInsets.only(top: 20.0),
         child: Chart(
-          padding: (_) => const EdgeInsets.fromLTRB(10, 0, 10, 8),
+          padding: (_) => const EdgeInsets.fromLTRB(30, 0, 10, 8),
           rebuild: false,
           data: forecastData,
           variables: {
@@ -291,12 +323,14 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
           gestureChannel: forecastChannel,
           annotations: [
             _getMarkAnnotation(
+                initialOffset: graphLegendOffset,
                 colorIndex: 3,
                 xPosIndex: 0,
                 yOffset: 100,
                 yPosIndex: 0,
                 color: Colors.red),
             _getTagAnnotation(
+                initialOffset: graphLegendOffset + 9,
                 label: "Thermal Updraft ft/min",
                 xPosIndex: 0,
                 yOffset: 100,
@@ -308,7 +342,8 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
   }
 
   MarkAnnotation _getMarkAnnotation(
-      {required int colorIndex,
+      {required double initialOffset,
+      required int colorIndex,
       required int xPosIndex,
       required double yOffset,
       required double yPosIndex,
@@ -318,13 +353,14 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
         ..addRect(Rect.fromCircle(center: const Offset(0, 0), radius: 5)),
       style: Paint()..color = color,
       anchor: (size) => Offset(
-          25 + (xPosIndex == 0 ? 0 : (size.width / 2) * xPosIndex),
+          initialOffset + (xPosIndex == 0 ? 0 : (size.width / 2) * xPosIndex),
           yOffset + 12 * yPosIndex),
     );
   }
 
   TagAnnotation _getTagAnnotation(
-      {required String label,
+      {required double initialOffset,
+      required String label,
       required int xPosIndex,
       required double yOffset,
       required double yPosIndex}) {
@@ -335,7 +371,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
             style: textStyleBlackFontSize13, align: Alignment.centerRight),
       ),
       anchor: (size) => Offset(
-          34 + (xPosIndex == 0 ? 0 : (size.width / 2) * xPosIndex),
+          initialOffset + (xPosIndex == 0 ? 0 : (size.width / 2) * xPosIndex),
           yOffset + 12 * yPosIndex),
     );
   }
@@ -383,13 +419,19 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
   Widget _getGridDataWidget(ForecastGraphData forecastGraphData) {
     // get list of hours for which forecasts have been made
     final hours = forecastGraphData.hours;
-    final descriptions = forecastGraphData.descriptions;
+    List<RowDescription> descriptions = [];
+    forecastGraphData.descriptions.forEach((forecast) {
+      descriptions.add(RowDescription(
+          description: forecast.forecastNameDisplay,
+          helpDescription: forecast.forecastDescription));
+    });
+
     return Padding(
       padding: const EdgeInsets.only(top: 16.0),
       child: ScrollableTable(
           columnHeadings: hours,
           dataCellWidth: 60,
-          dataCellHeight: 40,
+          dataCellHeight: 50,
           headingBackgroundColor: Colors.yellow.withOpacity(0.3),
           descriptionColumnWidth: 125,
           descriptionBackgroundColor: Colors.yellow.withOpacity(0.3),
