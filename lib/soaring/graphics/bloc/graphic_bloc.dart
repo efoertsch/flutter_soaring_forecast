@@ -83,6 +83,11 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
         hours: hours,
         descriptions: descriptions,
         gridData: gridData);
+    // allData.forEach((map) {
+    //   map.entries.forEach((element) {
+    //     print("${element.key} : ${element.value.toString()}");
+    //   });
+    // });
     emit(GraphDataState(forecastData: _forecastGraphData!));
   }
 

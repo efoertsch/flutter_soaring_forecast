@@ -426,6 +426,8 @@ class _RaspScreenState extends State<RaspScreen>
       //debugPrint('Stopping timer');
       if (_tickerSubscription != null) {
         _tickerSubscription!.cancel();
+      }
+      if (_displayTimer != null) {
         _displayTimer!.cancelTimer();
         _displayTimer = null;
       }

@@ -10,6 +10,7 @@ import 'package:flutter_soaring_forecast/soaring/graphics/bloc/graphic_bloc.dart
 import 'package:flutter_soaring_forecast/soaring/graphics/bloc/graphic_event.dart';
 import 'package:flutter_soaring_forecast/soaring/graphics/bloc/graphic_state.dart';
 import 'package:flutter_soaring_forecast/soaring/graphics/data/forecast_graph_data.dart';
+import 'package:flutter_soaring_forecast/soaring/graphics/shapes/custom_shapes.dart';
 import 'package:flutter_soaring_forecast/soaring/graphics/ui/grid_widgets.dart';
 import 'package:graphic/graphic.dart';
 import 'package:intl/intl.dart';
@@ -29,6 +30,16 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
   double _screenWidth = 0;
   double graphLegendOffset = 34; // used to place legends on graph
   final abbrevDateformatter = DateFormat('E, MMM dd');
+
+  final altitudeGraphBackground = Colors.blue[200];
+
+  // Used to determine chart point colors, size, shape, and legends
+  bool cuInForecast = false;
+  bool odInForecast = false;
+  final sizeOfPoints = <double>[];
+  final colorsOfPoints = <Color>[];
+  final shapesOfPoints = <PointShape>[];
+  final annotationsOfPoints = <Annotation>[];
 
   @override
   Widget build(BuildContext context) {
@@ -73,47 +84,56 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
   }
 
   Widget _getForecastCharts() {
-    return BlocConsumer<GraphicBloc, GraphState>(
-        listener: (context, state) {},
-        buildWhen: (previous, current) {
-          return current is GraphDataState;
-        },
-        builder: (context, state) {
-          if (state is GraphDataState) {
-            return Padding(
-              padding: const EdgeInsets.only(left: 8.0, right: 8),
-              child: CustomScrollView(
-                slivers: <Widget>[
-                  SliverList(
-                    delegate: SliverChildListDelegate(<Widget>[
-                      _getLocationTitleWidget(state.forecastData.turnpointTitle,
-                          state.forecastData.lat, state.forecastData.lng),
-                      _getModelAndDateWidgets(
-                          state.forecastData.model, state.forecastData.date),
-                      //_getChartHeaderWidget('Cu Cloudbase (Sfc.LCL) MSL'),
-                      _getCloudbaseWidget(state.forecastData.altitudeData!),
-                      _getThermalUpdraftWidget(state.forecastData.thermalData!)
-                    ]),
-                  ),
-                  SliverFillRemaining(
-                    hasScrollBody: true,
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 10.0),
-                      child: CustomScrollView(slivers: <Widget>[
-                        SliverList(
-                          delegate: SliverChildListDelegate(
-                              <Widget>[_getGridDataWidget(state.forecastData)]),
-                        ),
-                      ]),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
-          ;
-          return SizedBox.shrink();
+    return BlocConsumer<GraphicBloc, GraphState>(listener: (context, state) {
+      if (state is GraphDataState) {
+        // Very Important! Determine what forecasts are present in data
+        /// Used to determine shapes, colors, legends, etc.
+        _checkForCuAndOdInForecast(state.forecastData.altitudeData);
+        print(" ----------   altitude data -------------");
+        state.forecastData.altitudeData.forEach((map) {
+          map.forEach((key, value) {
+            print("${key} : ${value.toString()}");
+          });
         });
+        print(" ------- end altitude data -------------");
+      }
+    }, buildWhen: (previous, current) {
+      return current is GraphDataState;
+    }, builder: (context, state) {
+      if (state is GraphDataState) {
+        return Padding(
+          padding: const EdgeInsets.only(left: 8.0, right: 8),
+          child: CustomScrollView(
+            slivers: <Widget>[
+              SliverList(
+                delegate: SliverChildListDelegate(<Widget>[
+                  _getLocationTitleWidget(state.forecastData.turnpointTitle,
+                      state.forecastData.lat, state.forecastData.lng),
+                  _getModelAndDateWidgets(
+                      state.forecastData.model, state.forecastData.date),
+                  _getCloudbaseWidget(state.forecastData.altitudeData!),
+                  _getThermalUpdraftWidget(state.forecastData.thermalData!)
+                ]),
+              ),
+              SliverFillRemaining(
+                hasScrollBody: true,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 10.0),
+                  child: CustomScrollView(slivers: <Widget>[
+                    SliverList(
+                      delegate: SliverChildListDelegate(
+                          <Widget>[_getGridDataWidget(state.forecastData)]),
+                    ),
+                  ]),
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+      ;
+      return SizedBox.shrink();
+    });
   }
 
   Widget _getLocationTitleWidget(
@@ -187,32 +207,20 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
         },
 
         coord: RectCoord(
-            horizontalRange: [0.01, 0.99], color: const Color(0xffdddddd)),
+            horizontalRange: [0.01, 0.99], color: altitudeGraphBackground),
         //coord: RectCoord(color: const Color(0xffdddddd)),
         elements: [
-          LineElement(
-            position: Varset('time') * Varset('value') / Varset('name'),
-            shape: ShapeAttr(value: BasicLineShape(smooth: true)),
-            size: SizeAttr(value: 4.0),
-            color: ColorAttr(
-              variable: 'name',
-              values: Defaults.colors10,
-              updaters: {
-                'groupMouse': {false: (color) => color.withAlpha(100)},
-                'groupTouch': {false: (color) => color.withAlpha(100)},
-              },
-            ),
-          ),
           PointElement(
-            size: SizeAttr(value: 4.0),
+            size: SizeAttr(variable: "name", values: sizeOfPoints),
             color: ColorAttr(
               variable: 'name',
-              values: Defaults.colors10,
+              values: colorsOfPoints,
               updaters: {
                 'groupMouse': {false: (color) => color.withAlpha(100)},
                 'groupTouch': {false: (color) => color.withAlpha(100)},
               },
             ),
+            shape: ShapeAttr(variable: 'name', values: shapesOfPoints),
           ),
         ],
         axes: [
@@ -228,47 +236,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
         //tooltip: TooltipGuide(),
         crosshair: CrosshairGuide(),
         gestureChannel: forecastChannel,
-        annotations: [
-          _getMarkAnnotation(
-              initialOffset: graphLegendOffset,
-              colorIndex: 0,
-              xPosIndex: 0,
-              yOffset: 290,
-              yPosIndex: -1,
-              color: Defaults.colors10[0]),
-          _getTagAnnotation(
-              initialOffset: graphLegendOffset + 9,
-              label: "MSL Thermal Updraft Strength @ 175fpm (Dry)",
-              xPosIndex: 0,
-              yOffset: 290,
-              yPosIndex: -1),
-          _getMarkAnnotation(
-              initialOffset: graphLegendOffset,
-              colorIndex: 1,
-              xPosIndex: 0,
-              yOffset: 290,
-              yPosIndex: 0,
-              color: Defaults.colors10[1]),
-          _getTagAnnotation(
-              initialOffset: graphLegendOffset + 9,
-              label: "Cu Cloudbase(MSL)",
-              xPosIndex: 0,
-              yOffset: 290,
-              yPosIndex: 0),
-          _getMarkAnnotation(
-              initialOffset: graphLegendOffset,
-              colorIndex: 2,
-              xPosIndex: 1,
-              yOffset: 290,
-              yPosIndex: 0,
-              color: Defaults.colors10[2]),
-          _getTagAnnotation(
-              initialOffset: graphLegendOffset + 9,
-              label: "OD Cloudbase(MSL)",
-              xPosIndex: 1,
-              yOffset: 290,
-              yPosIndex: 0),
-        ],
+        annotations: annotationsOfPoints,
       ),
     );
   }
@@ -321,24 +289,108 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
           //tooltip: TooltipGuide(),
           crosshair: CrosshairGuide(),
           gestureChannel: forecastChannel,
-          annotations: [
-            _getMarkAnnotation(
-                initialOffset: graphLegendOffset,
-                colorIndex: 3,
-                xPosIndex: 0,
-                yOffset: 100,
-                yPosIndex: 0,
-                color: Colors.red),
-            _getTagAnnotation(
-                initialOffset: graphLegendOffset + 9,
-                label: "Thermal Updraft ft/min",
-                xPosIndex: 0,
-                yOffset: 100,
-                yPosIndex: 0)
-          ],
+          annotations: _getGraphLegend(
+              label: "Thermal Updraft ft/min",
+              initialOffset: graphLegendOffset,
+              colorIndex: 0, // same as thermal in top graph
+              xPosIndex: 0,
+              yPosIndex: 0,
+              yOffset: 100),
         ),
       ),
     );
+  }
+
+  /// conditions might be that the forecast doesn't include Cu or OD so we need
+  ///
+  void _checkForCuAndOdInForecast(List<Map<String, Object>> altitudeData) {
+    colorsOfPoints.clear();
+    sizeOfPoints.clear();
+    shapesOfPoints.clear();
+    annotationsOfPoints.clear();
+
+    // always add thermal color,size, shape,etc
+    colorsOfPoints.add(Colors.red);
+    sizeOfPoints.add(30.0);
+    shapesOfPoints.add(ThermalShape(hollow: false));
+    annotationsOfPoints.addAll(_getGraphLegend(
+        label: "MSL Thermal Updraft Strength @ 175fpm (Dry)",
+        initialOffset: graphLegendOffset,
+        colorIndex: 0,
+        xPosIndex: 0,
+        yPosIndex: -1,
+        yOffset: 290));
+
+    // See if any OD Cloudbase forcast present
+    odInForecast = false;
+    cuInForecast = false;
+    for (var map in altitudeData) {
+      if (map.containsValue("zblcl")) {
+        odInForecast = true;
+        colorsOfPoints.add(Colors.black);
+        sizeOfPoints.add(30.0);
+        shapesOfPoints.add(CumulusShape(hollow: false));
+        annotationsOfPoints.addAll(_getGraphLegend(
+            label: "OD Cloudbase(MSL)",
+            initialOffset: graphLegendOffset,
+            colorIndex: 1,
+            xPosIndex: 0,
+            yPosIndex: 0,
+            yOffset: 290));
+        break;
+      }
+    }
+    // See if Cu Cloudbase present. But adjust positions if OD also present
+    for (var map in altitudeData) {
+      if (map.containsValue("zsfclcl")) {
+        cuInForecast = true;
+        colorsOfPoints.add(Colors.white);
+        sizeOfPoints.add(30.0);
+        shapesOfPoints.add(CumulusShape(hollow: false));
+        annotationsOfPoints.addAll(_getGraphLegend(
+            label: "Cu Cloudbase(MSL)",
+            initialOffset: graphLegendOffset,
+            colorIndex: odInForecast ? 2 : 1,
+            xPosIndex: odInForecast ? 1 : 0,
+            yPosIndex: 0,
+            yOffset: 290));
+        break;
+      }
+    }
+    // Hack alert.  Don't know why but SizaAttr/ColorAttr values requires at
+    // least 2 sizes in array so if no OD or Cu add values to get array lengths to 2
+    if (!odInForecast && !cuInForecast) {
+      colorsOfPoints.add(Colors.transparent);
+      sizeOfPoints.add(0);
+      shapesOfPoints.add(
+        CircleShape(hollow: true),
+      );
+    }
+  }
+
+  List<Annotation> _getGraphLegend(
+      {required String label,
+      required double initialOffset,
+      required int colorIndex,
+      required int xPosIndex,
+      required double yPosIndex,
+      required double yOffset}) {
+    var annotations = <Annotation>[
+      _getMarkAnnotation(
+        initialOffset: initialOffset,
+        colorIndex: colorIndex,
+        xPosIndex: xPosIndex,
+        yOffset: yOffset,
+        yPosIndex: yPosIndex,
+      ),
+      _getTagAnnotation(
+          initialOffset: initialOffset + 9,
+          label: label,
+          xPosIndex: xPosIndex,
+          yOffset: yOffset,
+          yPosIndex: yPosIndex)
+    ];
+    return annotations;
   }
 
   MarkAnnotation _getMarkAnnotation(
@@ -346,12 +398,11 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
       required int colorIndex,
       required int xPosIndex,
       required double yOffset,
-      required double yPosIndex,
-      required color}) {
+      required double yPosIndex}) {
     return MarkAnnotation(
       relativePath: Path()
         ..addRect(Rect.fromCircle(center: const Offset(0, 0), radius: 5)),
-      style: Paint()..color = color,
+      style: Paint()..color = colorsOfPoints[colorIndex],
       anchor: (size) => Offset(
           initialOffset + (xPosIndex == 0 ? 0 : (size.width / 2) * xPosIndex),
           yOffset + 12 * yPosIndex),
