@@ -16,6 +16,10 @@ import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_data_bloc.da
 import 'package:flutter_soaring_forecast/soaring/forecast/ui/rasp_screen.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast_types/bloc/forecast_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast_types/ui/forecast_list.dart';
+import 'package:flutter_soaring_forecast/soaring/graphics/bloc/graphic_bloc.dart';
+import 'package:flutter_soaring_forecast/soaring/graphics/bloc/graphic_event.dart';
+import 'package:flutter_soaring_forecast/soaring/graphics/data/forecast_graph_data.dart';
+import 'package:flutter_soaring_forecast/soaring/graphics/ui/local_forecast_graphic.dart';
 import 'package:flutter_soaring_forecast/soaring/pdfviewer/pdf_view_screen.dart';
 import 'package:flutter_soaring_forecast/soaring/region/bloc/region_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/region/ui/region_list_screen.dart';
@@ -302,6 +306,18 @@ class SoaringForecastApp extends StatelessWidget {
             );
           }
 
+          if (settings.name == LocalForecastGraphRouteBuilder.routeName) {
+            final graphData = settings.arguments as ForecastInputData;
+            return CustomMaterialPageRoute(
+              builder: (context) {
+                return LocalForecastGraphRouteBuilder(
+                  graphData: graphData,
+                );
+              },
+              settings: settings,
+            );
+          }
+
           assert(false, 'Need to implement ${settings.name}');
           return null;
         });
@@ -573,6 +589,7 @@ class WxBriefAuthBuilder extends StatelessWidget {
 class WxBriefRequestBuilder extends StatelessWidget {
   static const routeName = '/WxBriefRequest';
   final WxBriefBriefingRequest request;
+
   WxBriefRequestBuilder({required this.request});
 
   @override
@@ -593,5 +610,22 @@ class PdfViewRouteBuilder extends StatelessWidget {
 
   Widget build(BuildContext context) {
     return PdfViewScreen(fileName: fileName);
+  }
+}
+
+class LocalForecastGraphRouteBuilder extends StatelessWidget {
+  static const routeName = '/ForecastGraph';
+  final ForecastInputData graphData;
+
+  LocalForecastGraphRouteBuilder({required this.graphData});
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider<GraphicBloc>(
+      create: (BuildContext context) =>
+          GraphicBloc(repository: RepositoryProvider.of<Repository>(context))
+            ..add(LocalForecastDataEvent(localForecastGraphData: graphData)),
+      child: LocalForecastGraphic(),
+    );
   }
 }

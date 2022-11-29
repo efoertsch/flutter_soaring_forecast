@@ -14,6 +14,7 @@ import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/LatLngForecast.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image_set.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/util/animated_map_controller.dart';
+import 'package:flutter_soaring_forecast/soaring/graphics/data/forecast_graph_data.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/special_use_airspace.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/regions.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoint_utils.dart';
@@ -61,6 +62,8 @@ class ForecastMapState extends State<ForecastMap>
   var _forecastOverlaySliderIsVisible = false;
   Timer? _hideOpacityTimer = null;
 
+  double _mapZoom = 7;
+
   @override
   void initState() {
     super.initState();
@@ -90,10 +93,13 @@ class ForecastMapState extends State<ForecastMap>
   void _processMapEvent() {
     _mapControllerStream =
         _mapController.mapEventStream.listen((MapEvent mapEvent) {
-      //print("MapEvent:  ${mapEvent.toString()}");
-      if (mapEvent is MapEventFlingAnimationEnd) {
+      print("MapEvent:  ${mapEvent.toString()}");
+      if (mapEvent is MapEventFlingAnimationEnd ||
+          mapEvent is MapEventMoveEnd) {
         _sendEvent(NewLatLngBoundsEvent(_mapController.bounds!));
       }
+      _mapZoom = mapEvent.zoom;
+      debugPrint("Map zoom ${_mapZoom.toString()}");
     });
   }
 
@@ -120,6 +126,7 @@ class ForecastMapState extends State<ForecastMap>
         child: _forecastLegend(),
       ),
       _getOpacitySlider(),
+      _miscStatesHandlerWidget(),
     ]);
   }
 
@@ -220,7 +227,7 @@ class ForecastMapState extends State<ForecastMap>
             allowPanning: true,
             //onTap: (tapPosition, latlng) => print(latlng.toString()),
             onLongPress: (longPressPostion, latLng) =>
-                _getLocalForecast(latLng),
+                _getLocalForecast(latLng: latLng),
             onPositionChanged: ((mapPosition, hasGesture) =>
                 _updateMapPositon(mapPosition, hasGesture)),
           ),
@@ -290,6 +297,26 @@ class ForecastMapState extends State<ForecastMap>
     });
   }
 
+  Widget _miscStatesHandlerWidget() {
+    return BlocListener<RaspDataBloc, RaspDataState>(
+      listener: (context, state) {
+        if (state is DisplayLocalForecastGraphState) {
+          _displayLocalForecastGraph(context, state.localForecastGraphData);
+        }
+      },
+      child: SizedBox.shrink(),
+    );
+  }
+
+  void _displayLocalForecastGraph(
+      BuildContext context, ForecastInputData intputParms) {
+    Navigator.pushNamed(
+      context,
+      LocalForecastGraphRouteBuilder.routeName,
+      arguments: intputParms,
+    );
+  }
+
   void _updateTaskTurnpoints(List<TaskTurnpoint> taskTurnpoints) {
     print('number of task turnpoints ${taskTurnpoints.length.toString()} ');
     clearTaskFromMap(taskTurnpoints.length > 0);
@@ -334,6 +361,12 @@ class ForecastMapState extends State<ForecastMap>
       onTap: () {
         _sendEvent(DisplayTaskTurnpointEvent(taskTurnpoint));
       },
+      onLongPress: () {
+        _getLocalForecast(
+            latLng:
+                LatLng(taskTurnpoint.latitudeDeg, taskTurnpoint.longitudeDeg),
+            turnpointName: ("${taskTurnpoint.title} (${taskTurnpoint.code})"));
+      },
       child: Container(
           color: Colors.white,
           child: Column(
@@ -370,8 +403,8 @@ class ForecastMapState extends State<ForecastMap>
           LatLng(turnpoint.latitudeDeg, turnpoint.longitudeDeg);
 
       _turnpointMarkers.add(Marker(
-          width: 80.0,
-          height: 40.0,
+          width: _mapZoom < 9 ? 24 : 48,
+          height: _mapZoom < 9 ? 24 : 48,
           point: turnpointLatLng,
           builder: (context) => _getTurnpointMarker(turnpoint),
           anchorPos: AnchorPos.align(AnchorAlign.top)));
@@ -384,25 +417,31 @@ class ForecastMapState extends State<ForecastMap>
       onTap: () {
         _displayTurnpointOverheadView(turnpoint);
       },
+      onLongPress: () {
+        _getLocalForecast(
+            latLng: LatLng(turnpoint.latitudeDeg, turnpoint.longitudeDeg),
+            turnpointName: ("${turnpoint.title} (${turnpoint.code})"));
+      },
       child: ClipOval(
         child: Container(
-            width: 24,
-            height: 24,
             color: Colors.transparent,
             child: Stack(
               alignment: AlignmentDirectional.center,
               children: [
-                SvgPicture.asset(
-                  'assets/svg/ic_turnpoint_white_48dp.svg',
-                  fit: BoxFit.scaleDown,
-                  color:
-                      TurnpointUtils.getColorForTurnpointIcon(turnpoint.style),
+                SizedBox.expand(
+                  child: SvgPicture.asset(
+                    'assets/svg/ic_turnpoint_white_48dp.svg',
+                    color: TurnpointUtils.getColorForTurnpointIcon(
+                        turnpoint.style),
+                  ),
                 ),
                 Text(
                     turnpoint.title.length > 4
                         ? turnpoint.title.substring(0, 4)
                         : turnpoint.title,
-                    style: textStyleBlackFontSize12,
+                    style: _mapZoom < 9
+                        ? textStyleBlackFontSize12
+                        : textStyleBlackFontSize18,
                     textAlign: TextAlign.center),
               ],
             )),
@@ -558,11 +597,11 @@ class ForecastMapState extends State<ForecastMap>
     }
   }
 
-  _getLocalForecast(LatLng latLng) {
+  _getLocalForecast({required LatLng latLng, String? turnpointName = null}) {
     widget.stopAnimation();
     print('Local forecast requested at : ${latLng.latitude.toString()}  :'
         '  ${latLng.longitude.toString()}');
-    _sendEvent(DisplayLocalForecastEvent(latLng));
+    _sendEvent(DisplayLocalForecastEvent(latLng, turnpointName));
   }
 
   void _sendEvent(RaspDataEvent event) {

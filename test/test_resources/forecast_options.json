@@ -25,7 +25,7 @@
       "forecast_name": "hwcrit",
       "forecast_type": "full",
       "forecast_name_display": "MSL Ht of Critical Updraft Strength (225fpm)",
-      "forecast_description": "This parameter estimates the height at which the average dry updraft strength drops below 225 fpm and is expected to give better quantitative numbers for the maximum cloudless thermalling height than the BL Top height forecast, especially when mixing results from vertical wind shear rather than thermals.  (Note: the present assumptions tend to underpredict the max. thermalling height for dry conditions.) In the presence of clouds the maximum thermalling height may instead be limited by the cloud base. Being for dry thermals, this parameter omits the effect of cloudsuck",
+      "forecast_description": "This parameter estimates the height at which the average dry updraft strength drops below 225 fpm and is expected to give better quantitative numbers for the maximum cloudless thermalling height than the BL Top height forecast, especially when mixing results from vertical wind shear rather than thermals.  (Note: the present assumptions tend to underpredict the max. thermalling height for dry consitions.) In the presence of clouds the maximum thermalling height may instead be limited by the cloud base. Being for dry thermals, this parameter omits the effect of cloudsuck",
       "forecast_category": "thermal"
     },
     {
@@ -66,7 +66,7 @@
     {
       "forecast_name": "experimental1",
       "forecast_type": "",
-      "forecast_name_display": "Ht of Critical Updraft Strength (175fpm)",
+      "forecast_name_display": "MSL Ht of Critical Updraft Strength (175fpm)",
       "forecast_description": "This parameter estimates the height at which the average dry updraft strength drops below 175 fpm and is expected to give better quantitative numbers for the maximum cloudless thermalling height than the BL Top height forecast, especially when mixing results from vertical wind shear rather than thermals.  (Note: the present assumptions tend to underpredict the max. thermalling height for dry conditions.) In the presence of clouds the maximum thermalling height may instead be limited by the cloud base. Being for dry thermals, this parameter omits the effect of cloudsuck",
       "forecast_category": "thermal"
     },

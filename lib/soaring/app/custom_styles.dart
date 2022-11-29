@@ -46,3 +46,6 @@ const textStyleBlack87FontSize14 =
 
 const textStyleWhiteFontSize12 = TextStyle(color: Colors.white, fontSize: 12);
 const textStyleBlackFontSize12 = TextStyle(color: Colors.black, fontSize: 12);
+
+const textStyleWhiteFontSize13 = TextStyle(color: Colors.white, fontSize: 13);
+const textStyleBlackFontSize13 = TextStyle(color: Colors.black, fontSize: 13);

@@ -391,24 +391,24 @@ class _RaspScreenState extends State<RaspScreen>
   }
 
   Widget _miscStatesHandlerWidget() {
-    return BlocConsumer<RaspDataBloc, RaspDataState>(
-        listener: (context, state) {
-      if (state is RaspTaskTurnpoints) {
-        taskSelected = state.taskTurnpoints.isNotEmpty;
-        return;
-      }
-      if (state is RaspDisplayOptionsState) {
-        // debugPrint("Received RaspDisplayOptionsState");
-        _raspDisplayOptions = state.displayOptions;
-        return;
-      }
-      if (state is SelectedRegionNameState) {
-        _selectedRegionName = state.selectedRegionName;
-        return;
-      }
-    }, builder: (context, state) {
-      return SizedBox.shrink();
-    });
+    return BlocListener<RaspDataBloc, RaspDataState>(
+      listener: (context, state) {
+        if (state is RaspTaskTurnpoints) {
+          taskSelected = state.taskTurnpoints.isNotEmpty;
+          return;
+        }
+        if (state is RaspDisplayOptionsState) {
+          // debugPrint("Received RaspDisplayOptionsState");
+          _raspDisplayOptions = state.displayOptions;
+          return;
+        }
+        if (state is SelectedRegionNameState) {
+          _selectedRegionName = state.selectedRegionName;
+          return;
+        }
+      },
+      child: SizedBox.shrink(),
+    );
   }
 
   void _startStopImageAnimation() {
@@ -426,6 +426,8 @@ class _RaspScreenState extends State<RaspScreen>
       //debugPrint('Stopping timer');
       if (_tickerSubscription != null) {
         _tickerSubscription!.cancel();
+      }
+      if (_displayTimer != null) {
         _displayTimer!.cancelTimer();
         _displayTimer = null;
       }

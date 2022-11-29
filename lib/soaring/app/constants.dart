@@ -143,6 +143,8 @@ class StandardLiterals {
   static const OH_OH = "Oh-Oh!";
   static const UNDEFINED_STATE = 'Hmmm. Undefined state.';
   static const CONTINUE = "Continue";
+  static const CLOSE = "Close";
+  static const REFRESH = "Refresh";
 }
 
 class RaspMenu {
@@ -341,6 +343,11 @@ class WxBriefLiterals {
   \n\nThe route corridor is set to 50nm width, the minimum allowed by 1800WXBrief.''';
   static const String WXBRIEF_SENT_TO_MAILBOX =
       "Your briefing should arrive in our mailbox shortly";
+}
+
+class GraphLiterals {
+  static const String LOCAL_FORECAST = "Local Forecast";
+  static const String GRAPH_ERROR = "Graph Error";
 }
 
 // Turnpoint icon colors for type of runway
