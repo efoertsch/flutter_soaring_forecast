@@ -130,6 +130,7 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
     emit(WxBriefBriefingTypesState(_briefingTypes));
   }
 
+  /// tailoring options are displayed as reporting options
   FutureOr<void> _emitReportingOptions(Emitter<WxBriefState> emit) async {
     emit(WxBriefReportingOptionsState(_fullTailoringOptionList));
   }
@@ -315,21 +316,25 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
       WxBriefUpdateAircraftRegistrationEvent event,
       Emitter<WxBriefState> emit) async {
     await repository.setAircraftRegistration(event.registration);
+    _aircraftRegistration = event.registration;
   }
 
   FutureOr<void> _updateAccountName(
       WxBriefUpdateAccountNameEvent event, Emitter<WxBriefState> emit) async {
     repository.setWxBriefAccountName(event.accountName);
+    _wxbriefAccountName = event.accountName;
   }
 
   FutureOr<void> _updateReportingOptions(
       WxBriefUpdateReportingOptionsEvent event, Emitter<WxBriefState> emit) {
-    _fullTailoringOptionList = event.briefingOptions;
+    _fullTailoringOptionList.clear();
+    _fullTailoringOptionList.addAll(event.briefingOptions);
   }
 
   FutureOr<void> _updateProductOptions(
       WxBriefUpdateProductOptionsEvent event, Emitter<WxBriefState> emit) {
-    _fullProductCodeList = event.briefingOptions;
+    _fullProductCodeList.clear();
+    _fullProductCodeList.addAll(event.briefingOptions);
   }
 
   FutureOr<void> _setDepartureDate(

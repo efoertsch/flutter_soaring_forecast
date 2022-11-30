@@ -26,6 +26,21 @@ import 'package:flutter_soaring_forecast/soaring/wxbrief/bloc/wxbrief_state.dart
 import 'package:flutter_soaring_forecast/soaring/wxbrief/data/briefing_option.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+///  The following is used to determine which widgets to display
+///  Area Brief
+///               Departure Date      Reporting Options   Product Options
+///  Standard     Don't Display       Display             Don't Display
+///  Abbreviated  Don't Display       Display             Display
+///  NOTAMS       Display             Don't Display       Don't Display
+///  Outlook      Display             Don't Display       Don't Display
+///
+///  Route Brief
+///               Departure Date      Reporting Options   Product Options
+///  Standard     Don't Display       Display             Don't Display
+///  Abbreviated  Don't Display       Display             Display
+///  NOTAMS       Display             Don't Display       Don't Display
+///  Outlook      Display             Don't Display       Don't Display
+
 class WxBriefRequestScreen extends StatefulWidget {
   late final WxBriefBriefingRequest request;
 
@@ -49,7 +64,7 @@ class _WxBriefRequestScreenState extends State<WxBriefRequestScreen>
   String _selectedDepartureDate = "";
 
   WxBriefTypeOfBrief? _selectedBriefType;
-  List<BriefingOption> _fullTailoringOptionList = <BriefingOption>[];
+  List<BriefingOption> _fullReportOptionList = <BriefingOption>[];
 
   List<BriefingOption> _fullProductOptionList = <BriefingOption>[];
 
@@ -592,10 +607,14 @@ class _WxBriefRequestScreenState extends State<WxBriefRequestScreen>
               setState(() {
                 _selectedBriefType = value!;
                 if (_selectedBriefType == WxBriefTypeOfBrief.OUTLOOK) {
+                  // set to tomorrow
                   (_selectedDepartureDate = _departureDates[1]);
-                  _sendEvent(
-                      WxBriefUpdateDepartureDateEvent(_selectedDepartureDate));
+                } else {
+                  // set to today
+                  _selectedDepartureDate = _departureDates[0];
                 }
+                _sendEvent(
+                    WxBriefUpdateDepartureDateEvent(_selectedDepartureDate));
                 _sendEvent(WxBriefSetTypeOfBriefEvent(
                     wxBriefTypeOfBriefing: _selectedBriefType!));
               });
@@ -634,23 +653,27 @@ class _WxBriefRequestScreenState extends State<WxBriefRequestScreen>
   Widget _getReportingOptionsWidget() {
     return BlocConsumer<WxBriefBloc, WxBriefState>(listener: (context, state) {
       if (state is WxBriefReportingOptionsState) {
-        _fullTailoringOptionList.clear();
-        _fullTailoringOptionList.addAll(state.reportingOptions);
+        debugPrint("Listener for WxBriefReportingOptionsState fired");
+        _fullReportOptionList.clear();
+        _fullReportOptionList.addAll(state.reportingOptions);
+        debugPrint(
+            "_fullReportOptionList.length : ${_fullReportOptionList.length}");
       }
     }, buildWhen: (previous, current) {
       return current is WxBriefReportingOptionsState;
     }, builder: (context, state) {
-      if (state is WxBriefReportingOptionsState) {
-        return _getReportingOptions(_fullTailoringOptionList);
+      if (state is WxBriefReportingOptionsState &&
+          (_selectedBriefType == WxBriefTypeOfBrief.STANDARD ||
+              _selectedBriefType == WxBriefTypeOfBrief.ABBREVIATED)) {
+        debugPrint(
+            "Drawings ReportingOptions Widget - _fullReportOptionList.length : ${_fullReportOptionList.length}");
+        return _getReportingOptions(_fullReportOptionList);
       }
       return SizedBox.shrink();
     });
   }
 
   _getReportingOptions(List<BriefingOption> reportingOptions) {
-    if (reportingOptions.isEmpty) {
-      return SizedBox.shrink();
-    }
     return Column(
       children: [
         Align(
@@ -671,7 +694,7 @@ class _WxBriefRequestScreenState extends State<WxBriefRequestScreen>
 
   void _displayReportingOptionsDropDown() {
     List<CheckboxItem> currentReportingOptions = [];
-    currentReportingOptions.addAll(_fullTailoringOptionList
+    currentReportingOptions.addAll(_fullReportOptionList
         .where((option) => option.displayThisOption)
         .map((displayableOption) => CheckboxItem(
               displayableOption.displayDescription,
@@ -691,24 +714,30 @@ class _WxBriefRequestScreenState extends State<WxBriefRequestScreen>
 
   void _processReportingOptions(List<CheckboxItem> reportingOptions) {
     reportingOptions.forEach((displayOption) {
-      BriefingOption briefingOption = _fullTailoringOptionList.firstWhere(
+      BriefingOption briefingOption = _fullReportOptionList.firstWhere(
           (option) => option.displayDescription == displayOption.checkboxText);
       briefingOption.selectForBrief = displayOption.isChecked;
     });
     _sendEvent(WxBriefUpdateReportingOptionsEvent(
-        briefingOptions: _fullTailoringOptionList));
+        briefingOptions: _fullReportOptionList));
   }
 
   Widget _getProductOptionsWidget() {
     return BlocConsumer<WxBriefBloc, WxBriefState>(listener: (context, state) {
       if (state is WxBriefProductOptionsState) {
+        debugPrint("Listener for WxBriefProductOptionsState fired");
         _fullProductOptionList.clear();
         _fullProductOptionList.addAll(state.productOptions);
+        debugPrint(
+            " _fullProductOptionList.length : ${_fullProductOptionList.length}");
       }
     }, buildWhen: (previous, current) {
       return current is WxBriefProductOptionsState;
     }, builder: (context, state) {
-      if (state is WxBriefProductOptionsState) {
+      if (state is WxBriefProductOptionsState &&
+          _selectedBriefType == WxBriefTypeOfBrief.ABBREVIATED) {
+        debugPrint(
+            "Drawing ProductOptions Widget - _fullReportOptionList.length : ${_fullReportOptionList.length}");
         return _getProductOptions(_fullProductOptionList);
       }
       return SizedBox.shrink();
