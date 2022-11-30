@@ -68,7 +68,7 @@ class WxBriefReportingOptionsState extends WxBriefState {
 
   WxBriefReportingOptionsState(this.reportingOptions);
   @override
-  List<Object?> get props => [reportingOptions.join(" ")];
+  List<Object?> get props => [this, reportingOptions.join(" ")];
 }
 
 // Only used for abbreviation briefing
