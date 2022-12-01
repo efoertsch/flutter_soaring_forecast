@@ -70,6 +70,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
 
   void _processInitialRaspRegionEvent(
       InitialRaspRegionEvent event, Emitter<RaspDataState> emit) async {
+    emit(RaspWorkingState(working: true));
     try {
       await _loadForecastTypes();
       _emitForecasts(emit);
@@ -94,11 +95,14 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
         await _sendInitialForecastOverlayOpacity(emit);
         await _emitDisplayOptions(emit);
         await waitAFrame();
+        emit(RaspWorkingState(working: false));
         _emitRaspForecastImageSet(emit);
       }
     } catch (e) {
       print("Error: ${e.toString()}");
-      emit(RaspErrorState("Error getting regions."));
+      emit(RaspWorkingState(working: true));
+      emit(
+          RaspErrorState("Unexpected error occurred gathering forecast data."));
     }
   }
 
@@ -173,7 +177,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
 
   /// wstar_bsratio, wstar, ...
   Future _loadForecastTypes() async {
-    _forecasts = (await this.repository.getForecastList());
+    _forecasts = (await this.repository.getDisplayableForecastList());
     _selectedForecast = _forecasts!.first;
   }
 
