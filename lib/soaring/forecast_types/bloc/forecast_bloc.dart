@@ -18,7 +18,7 @@ class ForecastBloc extends Bloc<ForecastEvent, ForecastState> {
 
   void _listForecasts(
       ListForecastsEvent event, Emitter<ForecastState> emit) async {
-    _forecasts = await this.repository.getForecastList();
+    _forecasts = await this.repository.getDisplayableForecastList();
     emit(ListOfForecastsState(_forecasts));
   }
 
@@ -28,7 +28,7 @@ class ForecastBloc extends Bloc<ForecastEvent, ForecastState> {
     final deletedOK = await repository.deleteCustomForecastList();
     emit(ForecastShortMessageState(
         deletedOK ? "Reset To Default Order" : "Oops. Error on resetting!"));
-    _forecasts = await this.repository.getForecastList();
+    _forecasts = await this.repository.getDisplayableForecastList();
     emit(ListOfForecastsState(_forecasts));
   }
 

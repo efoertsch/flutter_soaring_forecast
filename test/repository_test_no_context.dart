@@ -34,7 +34,7 @@ void main() {
 
   test("Get forecast types", () async {
     repository
-        .getForecastList()
+        .getDisplayableForecastList()
         .then(expectAsync1((forecasts) => expect(forecasts.length, 43)));
     //print(foreastTypes.toString())))
   });

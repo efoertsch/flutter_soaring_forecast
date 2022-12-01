@@ -26,6 +26,7 @@ Forecast _$ForecastFromJson(Map<String, dynamic> json) => Forecast(
       forecastDescription: json['forecastDescription'] as String,
       forecastCategory: $enumDecodeNullable(
           _$ForecastCategoryEnumMap, json['forecastCategory']),
+      selectable: json['selectable'] as bool?,
     );
 
 Map<String, dynamic> _$ForecastToJson(Forecast instance) => <String, dynamic>{
@@ -34,6 +35,7 @@ Map<String, dynamic> _$ForecastToJson(Forecast instance) => <String, dynamic>{
       'forecastNameDisplay': instance.forecastNameDisplay,
       'forecastDescription': instance.forecastDescription,
       'forecastCategory': _$ForecastCategoryEnumMap[instance.forecastCategory],
+      'selectable': instance.selectable,
     };
 
 const _$ForecastTypeEnumMap = {

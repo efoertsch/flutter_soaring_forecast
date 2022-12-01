@@ -9,7 +9,7 @@ void main() {
       Builder(
         builder: (BuildContext context) {
           var actual = Repository(context)
-              .getForecastList()
+              .getDisplayableForecastList()
               .then(expectAsync1((forecasts) => expect(forecasts.length, 43)));
 
           // The builder function must return a widget.

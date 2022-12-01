@@ -238,3 +238,11 @@ class DisplayLocalForecastGraphState extends RaspDataState {
   @override
   List<Object?> get props => [localForecastGraphData];
 }
+
+class RaspWorkingState extends RaspDataState {
+  final bool working;
+  RaspWorkingState({required this.working});
+
+  @override
+  List<Object?> get props => [working];
+}

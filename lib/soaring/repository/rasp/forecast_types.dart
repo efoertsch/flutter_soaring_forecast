@@ -49,6 +49,7 @@ class Forecast extends Equatable {
   String forecastNameDisplay;
   String forecastDescription;
   ForecastCategory? forecastCategory;
+  bool? selectable;
 
   Forecast({
     required this.forecastName,
@@ -56,15 +57,16 @@ class Forecast extends Equatable {
     required this.forecastNameDisplay,
     required this.forecastDescription,
     required this.forecastCategory,
+    this.selectable,
   });
 
   factory Forecast.fromJson(Map<String, dynamic> json) => Forecast(
-        forecastName: json["forecast_name"],
-        forecastType: forecastTypeValues.map[json["forecast_type"]],
-        forecastNameDisplay: json["forecast_name_display"],
-        forecastDescription: json["forecast_description"],
-        forecastCategory: ForecastCategoryValues.map[json["forecast_category"]],
-      );
+      forecastName: json["forecast_name"],
+      forecastType: forecastTypeValues.map[json["forecast_type"]],
+      forecastNameDisplay: json["forecast_name_display"],
+      forecastDescription: json["forecast_description"],
+      forecastCategory: ForecastCategoryValues.map[json["forecast_category"]],
+      selectable: json["selectable"]);
 
   Map<String, dynamic> toJson() => {
         "forecast_name": forecastName,
@@ -72,6 +74,7 @@ class Forecast extends Equatable {
         "forecast_name_display": forecastNameDisplay,
         "forecast_description": forecastDescription,
         "forecast_category": ForecastCategoryValues.reverse[forecastCategory],
+        "selectable": selectable
       };
 
   @override
@@ -80,7 +83,8 @@ class Forecast extends Equatable {
         forecastType,
         forecastNameDisplay,
         forecastDescription,
-        forecastCategory
+        forecastCategory,
+        selectable
       ];
 }
 

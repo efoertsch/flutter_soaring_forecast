@@ -84,6 +84,9 @@ class Repository {
   static const String WXBRIEF_WINDS_ALOFT_WIDTH = "WXBRIEF_WINDS_ALOFT_WIDTH";
   static const String WX_BRIEF_SHOW_AUTH_SCREEN = "WX_BRIEF_SHOW_DISCLAIMER";
 
+  static final _fullForecastList = <Forecast>[];
+  static final _displayableForecastList = <Forecast>[];
+
   Repository._();
 
   // BuildContext should only be null if repository created in WorkManager task!!!
@@ -160,15 +163,39 @@ class Repository {
 
   /// Get the list of forecasts that are generated.
   /// Note we use a customized list held locally.
-  Future<List<Forecast>> getForecastList() async {
+  Future<List<Forecast>> getDisplayableForecastList() async {
     /// Retrieves a list of forecast types
     try {
-      var forecastList = await _getCustomForecastList();
-      if (!forecastList.isEmpty) {
-        return forecastList;
-      } else {
-        return await _getForecastListFromAssets();
+      if (_displayableForecastList.isNotEmpty) {
+        return _displayableForecastList;
       }
+      _displayableForecastList.addAll(await _getCustomForecastList());
+      // check again, user might not have saved a custom list
+      if (_displayableForecastList.isNotEmpty) {
+        return _displayableForecastList;
+      } else {
+        // Oh well, get the complete list and just return those forecasts
+        // that would have related server jpegs/pngs.
+        await getFullForecastList();
+        _displayableForecastList.addAll(_fullForecastList
+            .where((forecast) => forecast.selectable == true)
+            .toList());
+        return _displayableForecastList;
+      }
+    } catch (error, stackTrace) {
+      logger.e(stackTrace);
+      return <Forecast>[];
+    }
+  }
+
+  Future<List<Forecast>> getFullForecastList() async {
+    /// Retrieves a list of all forecast types - includes ones that aren't selectable
+    /// for a RASP forecast
+    try {
+      if (_fullForecastList.isEmpty) {
+        _fullForecastList.addAll(await _getForecastListFromAssets());
+      }
+      return _fullForecastList;
     } catch (error, stackTrace) {
       logger.e(stackTrace);
       return <Forecast>[];
@@ -198,8 +225,10 @@ class Repository {
   }
 
   Future<bool> saveForecasts(List<Forecast> forecasts) async {
+    _displayableForecastList.clear();
+    _displayableForecastList.addAll(forecasts);
     final jsonForecasts =
-        forecastTypesToJson(ForecastTypes(forecasts: forecasts));
+        forecastTypesToJson(ForecastTypes(forecasts: _displayableForecastList));
     return await saveGenericString(key: FORECAST_LIST, value: jsonForecasts);
   }
 

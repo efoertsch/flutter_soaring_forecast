@@ -28,7 +28,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
 
   bool _isWorking = false;
   double _screenWidth = 0;
-  double graphLegendOffset = 34; // used to place legends on graph
+  double graphLegendOffset = 40; // used to place legends on graph
   final abbrevDateformatter = DateFormat('E, MMM dd');
 
   final altitudeGraphBackground = Colors.blue[200];
@@ -87,7 +87,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
     return BlocConsumer<GraphicBloc, GraphState>(listener: (context, state) {
       if (state is GraphDataState) {
         // Very Important! Determine what forecasts are present in data
-        /// Used to determine shapes, colors, legends, etc.
+        // Used to determine shapes, colors, legends, etc.
         _checkForCuAndOdInForecast(state.forecastData.altitudeData);
         print(" ----------   altitude data -------------");
         state.forecastData.altitudeData.forEach((map) {

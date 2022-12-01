@@ -71,6 +71,7 @@ class _RaspScreenState extends State<RaspScreen>
     super.dispose();
   }
 
+  // Leaving this in for now to learn about the app life cycle
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     switch (state) {
@@ -115,14 +116,22 @@ class _RaspScreenState extends State<RaspScreen>
   Padding _getBody(BuildContext context) {
     return Padding(
       padding: EdgeInsets.all(8.0),
-      child: Column(mainAxisAlignment: MainAxisAlignment.start, children: [
-        _getForecastModelsAndDates(),
-        _getForecastTypes(),
-        _displayForecastTime(),
-        _getForecastWindow(),
-        _widgetForSnackBarMessages(),
-        _miscStatesHandlerWidget(),
-      ]),
+      child: Stack(
+        children: [
+          Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              _getForecastModelsAndDates(),
+              _getForecastTypes(),
+              _displayForecastTime(),
+              _getForecastWindow(),
+              _widgetForSnackBarMessages(),
+              _miscStatesHandlerWidget(),
+            ],
+          ),
+          _getProgressIndicator(),
+        ],
+      ),
     );
   }
 
@@ -371,12 +380,7 @@ class _RaspScreenState extends State<RaspScreen>
     return BlocConsumer<RaspDataBloc, RaspDataState>(
         listener: (context, state) {
       if (state is RaspErrorState) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: Colors.green,
-            content: Text(state.error),
-          ),
-        );
+        CommonWidgets.showErrorDialog(context, "OH-OH!", state.error);
       }
       if (state is TurnpointFoundState) {
         displayTurnpointView(context, state);
@@ -664,5 +668,33 @@ class _RaspScreenState extends State<RaspScreen>
   void _displayWxBriefRequest(WxBriefBriefingRequest request) async {
     await Navigator.pushNamed(context, WxBriefRequestBuilder.routeName,
         arguments: request);
+  }
+
+  // TODO creete common ProgressIndicator<Bloc,State>  widget and
+  // TODO WorkingState (along with error, info, ... states)
+  // TODO OK - This will be a bunch of refactoring
+  Widget _getProgressIndicator() {
+    return BlocConsumer<RaspDataBloc, RaspDataState>(
+      listener: (context, state) {},
+      buildWhen: (previous, current) {
+        return current is RaspWorkingState;
+      },
+      builder: (context, state) {
+        if (state is RaspWorkingState) {
+          if (state.working) {
+            return Container(
+              child: AbsorbPointer(
+                  absorbing: true,
+                  child: CircularProgressIndicator(
+                    color: Colors.blue,
+                  )),
+              alignment: Alignment.center,
+              color: Colors.transparent,
+            );
+          }
+        }
+        return SizedBox.shrink();
+      },
+    );
   }
 }
