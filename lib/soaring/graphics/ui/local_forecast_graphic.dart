@@ -40,6 +40,10 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
   final colorsOfPoints = <Color>[];
   final shapesOfPoints = <PointShape>[];
   final annotationsOfPoints = <Annotation>[];
+  final crossHairGuide = [
+    StrokeStyle(color: Colors.black38),
+    StrokeStyle(color: Colors.black38)
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -219,7 +223,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
         ],
         selections: {'tap': PointSelection(dim: Dim.x)},
         //tooltip: TooltipGuide(),
-        crosshair: CrosshairGuide(),
+        crosshair: CrosshairGuide(styles: crossHairGuide),
         gestureChannel: forecastChannel,
         annotations: annotationsOfPoints,
       ),
@@ -272,7 +276,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
           ],
           selections: {'tap': PointSelection(dim: Dim.x)},
           //tooltip: TooltipGuide(),
-          crosshair: CrosshairGuide(),
+          crosshair: CrosshairGuide(styles: crossHairGuide),
           gestureChannel: forecastChannel,
           annotations: _getGraphLegend(
               label: "Thermal Updraft ft/min",
