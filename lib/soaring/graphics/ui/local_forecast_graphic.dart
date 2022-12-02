@@ -26,8 +26,8 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final forecastChannel = StreamController<GestureSignal>.broadcast();
 
-  bool _isWorking = false;
   double _screenWidth = 0;
+  double _chartWidthMargin = 30;
   double graphLegendOffset = 40; // used to place legends on graph
   final abbrevDateformatter = DateFormat('E, MMM dd');
 
@@ -40,6 +40,10 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
   final colorsOfPoints = <Color>[];
   final shapesOfPoints = <PointShape>[];
   final annotationsOfPoints = <Annotation>[];
+  final crossHairGuide = [
+    StrokeStyle(color: Colors.black38),
+    StrokeStyle(color: Colors.black38)
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -77,13 +81,13 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
     return Stack(
       children: [
         _widgetForMessages(),
-        _getForecastCharts(),
+        _getForecastGraphWidgets(),
         _getProgressIndicator(),
       ],
     );
   }
 
-  Widget _getForecastCharts() {
+  Widget _getForecastGraphWidgets() {
     return BlocConsumer<GraphicBloc, GraphState>(listener: (context, state) {
       if (state is GraphDataState) {
         // Very Important! Determine what forecasts are present in data
@@ -96,6 +100,9 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
           });
         });
         print(" ------- end altitude data -------------");
+        // WidgetsBinding.instance!.addPostFrameCallback((_) {
+        //   _getModelSheetForGridDataWidget(context, state.forecastData);
+        // });
       }
     }, buildWhen: (previous, current) {
       return current is GraphDataState;
@@ -103,36 +110,18 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
       if (state is GraphDataState) {
         return Padding(
           padding: const EdgeInsets.only(left: 8.0, right: 8),
-          child: CustomScrollView(
-            slivers: <Widget>[
-              SliverList(
-                delegate: SliverChildListDelegate(<Widget>[
-                  _getLocationTitleWidget(state.forecastData.turnpointTitle,
-                      state.forecastData.lat, state.forecastData.lng),
-                  _getModelAndDateWidgets(
-                      state.forecastData.model, state.forecastData.date),
-                  _getCloudbaseWidget(state.forecastData.altitudeData!),
-                  _getThermalUpdraftWidget(state.forecastData.thermalData!)
-                ]),
-              ),
-              SliverFillRemaining(
-                hasScrollBody: true,
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 10.0),
-                  child: CustomScrollView(slivers: <Widget>[
-                    SliverList(
-                      delegate: SliverChildListDelegate(
-                          <Widget>[_getGridDataWidget(state.forecastData)]),
-                    ),
-                  ]),
-                ),
-              ),
-            ],
-          ),
+          child: Column(children: [
+            _getLocationTitleWidget(state.forecastData.turnpointTitle,
+                state.forecastData.lat, state.forecastData.lng),
+            _getModelAndDateWidgets(
+                state.forecastData.model, state.forecastData.date),
+            _getCloudbaseWidget(state.forecastData.altitudeData!),
+            _getThermalUpdraftWidget(state.forecastData.thermalData!),
+            _getShowGraphDataButtonWidget(state.forecastData),
+          ]),
         );
-      }
-      ;
-      return SizedBox.shrink();
+      } else
+        return SizedBox.shrink();
     });
   }
 
@@ -186,7 +175,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
   Widget _getCloudbaseWidget(List<Map<String, Object>> forecastData) {
     return Container(
       margin: const EdgeInsets.only(top: 8),
-      width: _screenWidth - 90,
+      width: _screenWidth - _chartWidthMargin,
       height: 300,
       child: Chart(
         data: forecastData,
@@ -234,7 +223,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
         ],
         selections: {'tap': PointSelection(dim: Dim.x)},
         //tooltip: TooltipGuide(),
-        crosshair: CrosshairGuide(),
+        crosshair: CrosshairGuide(styles: crossHairGuide),
         gestureChannel: forecastChannel,
         annotations: annotationsOfPoints,
       ),
@@ -244,7 +233,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
   Widget _getThermalUpdraftWidget(List<Map<String, Object>> forecastData) {
     return Container(
       margin: const EdgeInsets.only(top: 0),
-      width: _screenWidth - 75,
+      width: _screenWidth - _chartWidthMargin,
       height: 140,
       child: Padding(
         padding: const EdgeInsets.only(top: 20.0),
@@ -287,12 +276,13 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
           ],
           selections: {'tap': PointSelection(dim: Dim.x)},
           //tooltip: TooltipGuide(),
-          crosshair: CrosshairGuide(),
+          crosshair: CrosshairGuide(styles: crossHairGuide),
           gestureChannel: forecastChannel,
           annotations: _getGraphLegend(
               label: "Thermal Updraft ft/min",
               initialOffset: graphLegendOffset,
-              colorIndex: 0, // same as thermal in top graph
+              colorIndex: 0,
+              // same as thermal in top graph
               xPosIndex: 0,
               yPosIndex: 0,
               yOffset: 100),
@@ -467,6 +457,35 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
     );
   }
 
+  _getShowGraphDataButtonWidget(final ForecastGraphData forecastGraphData) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 16.0),
+      child: Center(
+        child: ElevatedButton(
+            child: Text("Show Graph Data"),
+            style: ElevatedButton.styleFrom(
+              minimumSize: Size(50, 40),
+              foregroundColor: Colors.white,
+              backgroundColor: Theme.of(context).colorScheme.primary,
+            ),
+            onPressed: () {
+              showModalBottomSheet<void>(
+                  context: context,
+                  enableDrag: true,
+                  isScrollControlled: true,
+                  barrierColor: Colors.transparent,
+                  builder: (BuildContext context) {
+                    return Container(
+                      height: MediaQuery.of(context).size.height * .80,
+                      color: Colors.white,
+                      child: _getGridDataWidget(forecastGraphData),
+                    );
+                  });
+            }),
+      ),
+    );
+  }
+
   Widget _getGridDataWidget(ForecastGraphData forecastGraphData) {
     // get list of hours for which forecasts have been made
     final hours = forecastGraphData.hours;
@@ -476,19 +495,17 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
           description: forecast.forecastNameDisplay,
           helpDescription: forecast.forecastDescription));
     });
-
     return Padding(
-      padding: const EdgeInsets.only(top: 16.0),
-      child: ScrollableTable(
-          columnHeadings: hours,
-          dataCellWidth: 60,
-          dataCellHeight: 50,
-          headingBackgroundColor: Colors.yellow.withOpacity(0.3),
-          descriptionColumnWidth: 125,
-          descriptionBackgroundColor: Colors.yellow.withOpacity(0.3),
-          dataRowsBackgroundColors: [Colors.white, Colors.green.shade50],
-          gridData: forecastGraphData.gridData,
-          descriptions: descriptions),
-    );
+        padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
+        child: ScrollableTable(
+            columnHeadings: hours,
+            dataCellWidth: 60,
+            dataCellHeight: 50,
+            headingBackgroundColor: Colors.yellow.withOpacity(0.3),
+            descriptionColumnWidth: 125,
+            descriptionBackgroundColor: Colors.yellow.withOpacity(0.3),
+            dataRowsBackgroundColors: [Colors.white, Colors.green.shade50],
+            gridData: forecastGraphData.gridData,
+            descriptions: descriptions));
   }
 }

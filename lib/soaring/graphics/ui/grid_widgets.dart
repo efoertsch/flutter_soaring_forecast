@@ -63,15 +63,17 @@ class _ScrollableTableState extends State<ScrollableTable> {
             cellWidth: widget.dataCellWidth,
             cellHeight: widget.dataCellHeight,
             backgroundColor: widget.headingBackgroundColor),
-        TableBody(
-            scrollController: _bodyController,
-            descriptionColumnWidth: widget.descriptionColumnWidth,
-            dataCellWidth: widget.dataCellWidth,
-            dataCellHeight: widget.dataCellHeight,
-            descriptionBackgroundColor: widget.descriptionBackgroundColor,
-            dataRowBackgroundColors: widget.dataRowsBackgroundColors,
-            gridData: widget.gridData,
-            descriptions: widget.descriptions),
+        Expanded(
+          child: TableBody(
+              scrollController: _bodyController,
+              descriptionColumnWidth: widget.descriptionColumnWidth,
+              dataCellWidth: widget.dataCellWidth,
+              dataCellHeight: widget.dataCellHeight,
+              descriptionBackgroundColor: widget.descriptionBackgroundColor,
+              dataRowBackgroundColors: widget.dataRowsBackgroundColors,
+              gridData: widget.gridData,
+              descriptions: widget.descriptions),
+        ),
       ],
     );
   }
@@ -100,7 +102,8 @@ class TableHead extends StatelessWidget {
       width: descriptionColumnWidth + columnHeadings.length * cellWidth,
       child: Row(
         children: [
-          // The first column must match description(leftmost) column width
+          // The first cell in the row must match description(leftmost) column width
+          // Note that it has no text
           SizedBox(
             width: descriptionColumnWidth,
             child: GridTableCell(
@@ -108,6 +111,8 @@ class TableHead extends StatelessWidget {
               value: " ",
             ),
           ),
+          // The rest of the cells in the row contain column descriptions for
+          // the table data
           Expanded(
             child: ListView.builder(
                 controller: scrollController,
@@ -174,6 +179,9 @@ class _TableBodyState extends State<TableBody> {
     super.dispose();
   }
 
+  // This builds a row that consists of the first cell being the
+  // description of the data in the row and the remaining rows contain
+  // the data
   @override
   Widget build(BuildContext context) {
     return Row(
