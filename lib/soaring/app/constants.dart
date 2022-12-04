@@ -140,7 +140,7 @@ class StandardLiterals {
   static const SUBMIT = "Submit";
   static const OK = "OK";
   static const HURRAH = "Hurrah!";
-  static const OH_OH = "Oh-Oh!";
+  static const UH_OH = "Uh-Oh!";
   static const UNDEFINED_STATE = 'Hmmm. Undefined state.';
   static const CONTINUE = "Continue";
   static const CLOSE = "Close";

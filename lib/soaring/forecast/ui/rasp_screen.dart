@@ -380,7 +380,8 @@ class _RaspScreenState extends State<RaspScreen>
     return BlocConsumer<RaspDataBloc, RaspDataState>(
         listener: (context, state) {
       if (state is RaspErrorState) {
-        CommonWidgets.showErrorDialog(context, "OH-OH!", state.error);
+        CommonWidgets.showErrorDialog(
+            context, StandardLiterals.UH_OH, state.error);
       }
       if (state is TurnpointFoundState) {
         displayTurnpointView(context, state);
@@ -670,7 +671,7 @@ class _RaspScreenState extends State<RaspScreen>
         arguments: request);
   }
 
-  // TODO creete common ProgressIndicator<Bloc,State>  widget and
+  // TODO create common ProgressIndicator<Bloc,State>  widget and
   // TODO WorkingState (along with error, info, ... states)
   // TODO OK - This will be a bunch of refactoring
   Widget _getProgressIndicator() {

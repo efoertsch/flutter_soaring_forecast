@@ -10,6 +10,7 @@ import 'package:flutter_soaring_forecast/soaring/graphics/data/forecast_graph_da
 import 'package:flutter_soaring_forecast/soaring/repository/options/special_use_airspace.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/regions.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/rasp/view_bounds.dart';
 
 /// https://medium.com/flutter-community/flutter-bloc-pattern-for-dummies-like-me-c22d40f05a56
 /// Event In - State Out
@@ -70,13 +71,22 @@ class RaspForecasts extends RaspDataState {
   List<Object?> get props => [forecasts, selectedForecast];
 }
 
-class RaspMapLatLngBounds extends RaspDataState {
+class ForecastBoundsState extends RaspDataState {
   final LatLngBounds latLngBounds;
 
-  RaspMapLatLngBounds(this.latLngBounds);
+  ForecastBoundsState(this.latLngBounds);
 
   @override
   List<Object?> get props => [latLngBounds];
+}
+
+class ViewBoundsState extends RaspDataState {
+  final ViewBounds viewBounds;
+
+  ViewBoundsState(this.viewBounds);
+
+  @override
+  List<Object?> get props => [viewBounds];
 }
 
 class RaspForecastTime extends RaspDataState {

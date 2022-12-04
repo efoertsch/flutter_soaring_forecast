@@ -31,6 +31,7 @@ import 'package:flutter_soaring_forecast/soaring/repository/options/rasp_options
 import 'package:flutter_soaring_forecast/soaring/repository/options/special_use_airspace.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/sua_region_files.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/turnpoint_regions.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/rasp/view_bounds.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/usgs/national_map.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/cup/cup_styles.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoint_utils.dart';
@@ -66,13 +67,15 @@ class Repository {
   static const String SELECTED_REGION = "SELECTED_REGION";
   static const String DEFAULT_SELECTED_REGION = "NewEngland";
   static const String FORECAST_LIST = "FORECAST_LIST";
+  static const String SELECTED_FORECAST = "SELECTED_FORECAST";
   static const String FORECAST_OVERLAY_OPACITY = 'FORECAST_OVERLAY_OPACITY';
   static const String CURRENT_TASK_ID = "CURRENT_TASK_ID";
   static const String SATELLITE_TYPE = "SATELLITE_TYPE";
   static const String SATELLITE_REGION = "SATELLITE_REGION";
   static const String AIRPORT_CODES_FOR_METAR = "AIRPORT_CODES_FOR_METAR_TAF";
   static const String ICAO_CODE_DELIMITER = " ";
-  static const String WXBRIEF_AIRPORT_ID = "";
+  static const String WXBRIEF_AIRPORT_ID = "WXBRIEF_AIRPORT_ID";
+  static const String VIEW_MAP_BOUNDS = "VIEW_MAP_BOUNDS";
 
   late final String satelliteRegionUS;
   late final String satelliteTypeVis;
@@ -232,6 +235,18 @@ class Repository {
     return await saveGenericString(key: FORECAST_LIST, value: jsonForecasts);
   }
 
+  Future<void> saveSelectedForecast(Forecast forecast) async {
+    String jsonString = jsonEncode(forecast);
+    await saveGenericString(key: SELECTED_FORECAST, value: jsonString);
+  }
+
+  Future<Forecast?> getSelectedForecast() async {
+    String jsonString =
+        await getGenericString(key: SELECTED_FORECAST, defaultValue: "");
+    if (jsonString.isEmpty) return null;
+    return Forecast.fromJson(jsonDecode(jsonString));
+  }
+
   /**
    * Get point forecast for specific lat/long
    *
@@ -261,8 +276,20 @@ class Repository {
         key: FORECAST_OVERLAY_OPACITY, value: forecastOverlayOpacity);
   }
 
-  dispose() {
-    // TODO what do I need to do here?
+  Future<void> saveViewBounds(ViewBounds mapBoundsAndZoom) async {
+    Map json = mapBoundsAndZoom.toJson();
+    var stringBounds = jsonEncode(json);
+    await saveGenericString(key: VIEW_MAP_BOUNDS, value: stringBounds);
+  }
+
+  Future<ViewBounds?> getViewBoundsAndZoom() async {
+    String stringBounds =
+        await getGenericString(key: VIEW_MAP_BOUNDS, defaultValue: "");
+    if (stringBounds.isEmpty) {
+      return null;
+    }
+    var mapBoundsAndZoom = ViewBounds.fromJson(jsonDecode(stringBounds));
+    return mapBoundsAndZoom;
   }
 
   // ----------- Get RASP forecast images -----------------------

@@ -126,7 +126,7 @@ class _ForecastListScreenState extends State<ForecastListScreen> {
           }
           if (state is ListOfForecastsState) {
             if (state.forecasts.length == 0) {
-              return Center(child: Text("Oh-oh! No Forecasts Found!"));
+              return Center(child: Text("Uh-oh! No Forecasts Found!"));
             } else {
               return _getCorrectListView(context, state.forecasts);
             }

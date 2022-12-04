@@ -12,6 +12,7 @@ import 'package:flutter_soaring_forecast/soaring/graphics/data/forecast_graph_da
 import 'package:flutter_soaring_forecast/soaring/repository/options/special_use_airspace.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/regions.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/rasp/view_bounds.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 
 import 'rasp_bloc.dart';
@@ -42,7 +43,8 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
   Forecast? _selectedForecast;
   List<SoaringForecastImageSet> _forecastImageSets = [];
   List<SoaringForecastImageSet> _soundingsImageSets = [];
-  LatLngBounds? _latLngBounds;
+  LatLngBounds? _regionLatLngBounds;
+  ViewBounds? _viewMapBoundsAndZoom;
 
   _DisplayType _displayType = _DisplayType.forecast;
 
@@ -56,12 +58,12 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     on<DisplayCurrentForecastEvent>(_processDisplayCurrentForecast);
     on<GetTaskTurnpointsEvent>(_getTurnpointsForTaskId);
     on<ClearTaskEvent>(_clearTask);
-    on<MapReadyEvent>(_checkForPreviouslySelectedTask);
+    //on<MapReadyEvent>(_checkForPreviouslySelectedTask);
     on<DisplayTaskTurnpointEvent>(_displayTaskTurnpoint);
     on<DisplayLocalForecastEvent>(_displayLocalForecast);
     on<RedisplayMarkersEvent>(_redisplayMarkers);
     on<SaveRaspDisplayOptionsEvent>(_processSaveRaspDisplayOptions);
-    on<NewLatLngBoundsEvent>(_processNewLatLongBounds);
+    on<ViewBoundsEvent>(_processViewBounds);
     on<DisplaySoundingsEvent>(_processSoundingsEvent);
     on<SetForecastOverlayOpacityEvent>(_setForecastOverlayOpacity);
     on<LoadForecastTypesEvents>(_reloadForecastTypes);
@@ -90,11 +92,13 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
         _setRegionModelNames();
         _emitRaspModels(emit);
         _emitRaspModelDates(emit);
-        _emitRaspLatLngBounds(emit);
+        await _emitMapLatLngBoundsAndZoom(emit);
         _getForecastImages();
         await _sendInitialForecastOverlayOpacity(emit);
         await _emitDisplayOptions(emit);
         await waitAFrame();
+        //await _emitRaspDisplayOptions(emit);
+        await _emitCurrentTask(emit);
         emit(RaspWorkingState(working: false));
         _emitRaspForecastImageSet(emit);
       }
@@ -121,6 +125,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
   void _processSelectedForecastEvent(
       SelectedRaspForecastEvent event, Emitter<RaspDataState> emit) async {
     _selectedForecast = event.forecast;
+    await repository.saveSelectedForecast(_selectedForecast!);
     _emitForecasts(emit);
     _getForecastImages();
     _emitRaspForecastImageSet(emit);
@@ -151,9 +156,16 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     print('emitted RaspForecasts');
   }
 
-  void _emitRaspLatLngBounds(Emitter<RaspDataState> emit) {
-    emit(RaspMapLatLngBounds(_latLngBounds!));
-    print('emitted RaspMapLatLngBounds');
+  // Note that _regionLatLngBounds must be previously defined
+  Future<void> _emitMapLatLngBoundsAndZoom(Emitter<RaspDataState> emit) async {
+    emit(ForecastBoundsState(_regionLatLngBounds!));
+    _viewMapBoundsAndZoom = await repository.getViewBoundsAndZoom();
+    if (_viewMapBoundsAndZoom != null) {
+      await waitAFrame();
+      emit(ViewBoundsState(
+          _viewMapBoundsAndZoom ?? ViewBounds(_regionLatLngBounds!)));
+      print('emitted ViewBoundsAndZoomState');
+    }
   }
 
   void _emitRaspForecastImageSet(Emitter<RaspDataState> emit) {
@@ -178,7 +190,10 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
   /// wstar_bsratio, wstar, ...
   Future _loadForecastTypes() async {
     _forecasts = (await this.repository.getDisplayableForecastList());
-    _selectedForecast = _forecasts!.first;
+    _selectedForecast = await repository.getSelectedForecast();
+    if (_selectedForecast == null) {
+      _selectedForecast = _forecasts!.first;
+    }
   }
 
   Future _getSelectedModelDates() async {
@@ -243,7 +258,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     // Making reasonable assumption that times in same order across models/dates
     _setSelectedTimeIndex();
     // While we are here
-    _latLngBounds = modelDateDetail.latLngBounds;
+    _regionLatLngBounds = modelDateDetail.latLngBounds;
   }
 
   void _setSelectedTimeIndex() {
@@ -375,14 +390,17 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
 
   void _clearTask(ClearTaskEvent event, Emitter<RaspDataState> emit) async {
     repository.setCurrentTaskId(-1);
+    _viewMapBoundsAndZoom = ViewBounds(_regionLatLngBounds!);
+    repository.saveViewBounds(_viewMapBoundsAndZoom!); // 7 default zoom
     emit(RaspTaskTurnpoints(<TaskTurnpoint>[]));
+    emit(ViewBoundsState(_viewMapBoundsAndZoom!));
   }
 
-  void _checkForPreviouslySelectedTask(
-      MapReadyEvent event, Emitter<RaspDataState> emit) async {
-    await _emitRaspDisplayOptions(emit);
-    await _emitCurrentTask(emit);
-  }
+  // void _checkForPreviouslySelectedTask(
+  //     MapReadyEvent event, Emitter<RaspDataState> emit) async {
+  //   await _emitRaspDisplayOptions(emit);
+  //   await _emitCurrentTask(emit);
+  // }
 
   Future<void> _emitCurrentTask(Emitter<RaspDataState> emit) async {
     var taskId = await repository.getCurrentTaskId();
@@ -405,11 +423,11 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     emit(RaspTaskTurnpoints(taskTurnpoints));
   }
 
-  _emitRaspDisplayOptions(Emitter<RaspDataState> emit) async {
-    final preferenceOptions = await repository.getRaspDisplayOptions();
-    print('emitting RaspDisplayOptionsState (to provision dialog dropdown)');
-    emit(RaspDisplayOptionsState(preferenceOptions));
-  }
+  // _emitRaspDisplayOptions(Emitter<RaspDataState> emit) async {
+  //   final preferenceOptions = await repository.getRaspDisplayOptions();
+  //   print('emitting RaspDisplayOptionsState (to provision dialog dropdown)');
+  //   emit(RaspDisplayOptionsState(preferenceOptions));
+  // }
 
   Future<List<TaskTurnpoint>> _addTaskTurnpointDetails(int taskId) async {
     List<TaskTurnpoint> taskTurnpoints =
@@ -478,8 +496,8 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
         {
           if (event.displayOption.selected) {
             // only send turnpoints based on current lat/long corners of map
-            List<Turnpoint> turnpoints =
-                await repository.getTurnpointsWithinBounds(_latLngBounds!);
+            List<Turnpoint> turnpoints = await repository
+                .getTurnpointsWithinBounds(_regionLatLngBounds!);
             emit(TurnpointsInBoundsState(turnpoints));
           } else {
             emit(TurnpointsInBoundsState(<Turnpoint>[]));
@@ -491,9 +509,9 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
   }
 
 // check new bounds and if needed send turnpoints and soundings within those bounds
-  FutureOr<void> _processNewLatLongBounds(
-      NewLatLngBoundsEvent event, Emitter<RaspDataState> emit) async {
-    _latLngBounds = event.latLngBounds;
+  FutureOr<void> _processViewBounds(
+      ViewBoundsEvent event, Emitter<RaspDataState> emit) async {
+    repository.saveViewBounds(ViewBounds(event.latLngBounds));
     await _emitDisplayOptions(emit);
     emit(RedisplayMarkersState());
   }
@@ -515,8 +533,8 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
           break;
         case (turnpointsDisplayOption):
           if (option.selected) {
-            final turnpoints =
-                await repository.getTurnpointsWithinBounds(_latLngBounds!);
+            final turnpoints = await repository
+                .getTurnpointsWithinBounds(_regionLatLngBounds!);
             await waitAFrame();
             emit(TurnpointsInBoundsState(turnpoints));
           } else {
@@ -534,6 +552,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
           break;
       }
     }
+    emit(RaspDisplayOptionsState(preferenceOptions));
   }
 
   Future<void> waitAFrame() async {

@@ -143,7 +143,7 @@ class _AirportsSearchState extends State<AirportsSearch>
         WidgetsBinding.instance.addPostFrameCallback((_) =>
             CommonWidgets.showInfoDialog(
                 context: context,
-                title: StandardLiterals.OH_OH,
+                title: StandardLiterals.UH_OH,
                 msg: AirportLiterals.DOWNLOAD_UNSUCCESSFUL,
                 button1Text: StandardLiterals.OK,
                 button1Function: _cancel));
