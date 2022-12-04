@@ -348,6 +348,8 @@ class WxBriefLiterals {
 class GraphLiterals {
   static const String LOCAL_FORECAST = "Local Forecast";
   static const String GRAPH_ERROR = "Graph Error";
+  static const String GRAPH_DATA = "Graph Data";
+  static const String GRAPH_DATA_MISSING = "Data used for graph is missing!";
 }
 
 // Turnpoint icon colors for type of runway
