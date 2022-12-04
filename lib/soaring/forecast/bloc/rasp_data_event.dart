@@ -113,10 +113,10 @@ class SaveRaspDisplayOptionsEvent extends RaspDataEvent {
   SaveRaspDisplayOptionsEvent(this.displayOption);
 }
 
-class NewLatLngBoundsEvent extends RaspDataEvent {
+class ViewBoundsEvent extends RaspDataEvent {
   final LatLngBounds latLngBounds;
 
-  NewLatLngBoundsEvent(LatLngBounds this.latLngBounds);
+  ViewBoundsEvent(this.latLngBounds);
 }
 
 class DisplayTurnointsEvent extends RaspDataEvent {

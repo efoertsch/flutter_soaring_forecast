@@ -48,7 +48,12 @@ class ForecastMapState extends State<ForecastMap>
   final _taskMarkers = <Marker>[];
   final List<Marker> _latLngMarkers = <Marker>[];
 
-  LatLngBounds _mapLatLngBounds = Constants.NewEnglandMapLatLngBounds;
+  // These bounds define the bounds of the forecast overlays
+  LatLngBounds _forecastLatLngBounds = Constants.NewEnglandMapLatLngBounds;
+
+  // These bounds define the bounds of the current view based on pinch/zoom
+  // or initial display of a task
+  LatLngBounds? _viewBounds;
 
   /// Use to center task route in googleMap frame
   LatLng? southwest;
@@ -83,22 +88,21 @@ class ForecastMapState extends State<ForecastMap>
   void afterFirstLayout(BuildContext context) {
     print("First layout complete");
     _firstLayoutComplete = true;
-    _sendEvent(InitialRaspRegionEvent());
     _mapController.onReady.then((value) {
-      _sendEvent(MapReadyEvent());
-      _processMapEvent();
+      _sendEvent(InitialRaspRegionEvent());
+      // _sendEvent(MapReadyEvent());
+      _createMapEventListener();
     });
   }
 
-  void _processMapEvent() {
+  void _createMapEventListener() {
     _mapControllerStream =
         _mapController.mapEventStream.listen((MapEvent mapEvent) {
       print("MapEvent:  ${mapEvent.toString()}");
-      if (mapEvent is MapEventFlingAnimationEnd ||
-          mapEvent is MapEventMoveEnd) {
-        _sendEvent(NewLatLngBoundsEvent(_mapController.bounds!));
-      }
       _mapZoom = mapEvent.zoom;
+      if (mapEvent is MapEventMoveEnd) {
+        _sendEvent(ViewBoundsEvent(_mapController.bounds!));
+      }
       debugPrint("Map zoom ${_mapZoom.toString()}");
     });
   }
@@ -164,7 +168,7 @@ class ForecastMapState extends State<ForecastMap>
           state is RedisplayMarkersState ||
           state is SuaDetailsState ||
           state is ForecastOverlayOpacityState ||
-          state is RaspMapLatLngBounds) {
+          state is ForecastBoundsState) {
         if (state is RaspForecastImageSet) {
           // print('Received RaspForecastImageSet in ForecastMap');
           soaringForecastImageSet = state.soaringForecastImageSet;
@@ -199,9 +203,11 @@ class ForecastMapState extends State<ForecastMap>
           updateForecastOverlay();
           return;
         }
-        if (state is RaspMapLatLngBounds) {
-          _mapLatLngBounds = state.latLngBounds;
-          _mapController.animatedFitBounds(_mapLatLngBounds);
+        // Forecastbounds set the bounds for the forecast image and must not change
+        if (state is ForecastBoundsState) {
+          _forecastLatLngBounds = state.latLngBounds;
+          _mapController.animatedFitBounds(_forecastLatLngBounds);
+          return;
         }
       }
       ;
@@ -216,13 +222,13 @@ class ForecastMapState extends State<ForecastMap>
           current is RedisplayMarkersState ||
           current is SuaDetailsState ||
           current is ForecastOverlayOpacityState ||
-          current is RaspMapLatLngBounds;
+          current is ForecastBoundsState;
     }, builder: (context, state) {
       return FlutterMap(
           mapController: _mapController,
           options: MapOptions(
             interactiveFlags: InteractiveFlag.pinchZoom | InteractiveFlag.drag,
-            bounds: _mapLatLngBounds,
+            bounds: _forecastLatLngBounds,
             boundsOptions: FitBoundsOptions(padding: EdgeInsets.all(8.0)),
             allowPanning: true,
             //onTap: (tapPosition, latlng) => print(latlng.toString()),
@@ -303,6 +309,13 @@ class ForecastMapState extends State<ForecastMap>
         if (state is DisplayLocalForecastGraphState) {
           _displayLocalForecastGraph(context, state.localForecastGraphData);
         }
+        //View bounds are whatever bounds were last set by the user view pinch/zoom
+        // or selecting a task
+        if (state is ViewBoundsState) {
+          _viewBounds = state.viewBounds.latLngBounds;
+          WidgetsBinding.instance.addPostFrameCallback(
+              (_) => _mapController.animatedFitBounds(_viewBounds!));
+        }
       },
       child: SizedBox.shrink(),
     );
@@ -321,7 +334,10 @@ class ForecastMapState extends State<ForecastMap>
     print('number of task turnpoints ${taskTurnpoints.length.toString()} ');
     clearTaskFromMap(taskTurnpoints.length > 0);
     if (taskTurnpoints.length == 0) {
-      _mapController.animatedFitBounds(_mapLatLngBounds);
+      if (_viewBounds == null) {
+        _mapController.animatedFitBounds(_forecastLatLngBounds);
+      }
+
       return;
     }
     List<LatLng> points = <LatLng>[];
@@ -344,16 +360,14 @@ class ForecastMapState extends State<ForecastMap>
       strokeWidth: 2.0,
       color: Colors.red,
     ));
+    // Only do this if view
     LatLng southwest = new LatLng(swLat, swLong);
     LatLng northeast = new LatLng(neLat, neLong);
     final latLngBounds = LatLngBounds(southwest, northeast);
     latLngBounds.pad(.2);
     _mapController.animatedFitBounds(
       latLngBounds,
-      // options: FitBoundsOptions(
-      //     padding: EdgeInsets.only(left: 100.0, right: 100.0))
     );
-    //_mapLatLngBounds = LatLngBounds(southwest, northeast);
   }
 
   Widget _getTaskTurnpointMarker(TaskTurnpoint taskTurnpoint) {
@@ -403,8 +417,8 @@ class ForecastMapState extends State<ForecastMap>
           LatLng(turnpoint.latitudeDeg, turnpoint.longitudeDeg);
 
       _turnpointMarkers.add(Marker(
-          width: _mapZoom < 9 ? 24 : 48,
-          height: _mapZoom < 9 ? 24 : 48,
+          width: _mapZoom < 9.5 ? 24 : 48,
+          height: _mapZoom < 9.5 ? 24 : 48,
           point: turnpointLatLng,
           builder: (context) => _getTurnpointMarker(turnpoint),
           anchorPos: AnchorPos.align(AnchorAlign.top)));
@@ -583,7 +597,7 @@ class ForecastMapState extends State<ForecastMap>
       var imageUrl = soaringForecastImageSet!.bodyImage!.imageUrl;
       var raspUrl = Constants.RASP_BASE_URL + imageUrl;
       var overlayImage = OverlayImage(
-          bounds: _mapLatLngBounds,
+          bounds: _forecastLatLngBounds,
           opacity: _forecastOverlayOpacity / 100,
           imageProvider: NetworkImage(raspUrl),
           gaplessPlayback: true);
