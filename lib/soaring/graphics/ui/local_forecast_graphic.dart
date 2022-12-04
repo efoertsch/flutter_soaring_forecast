@@ -22,9 +22,11 @@ class LocalForecastGraphic extends StatefulWidget {
   State<LocalForecastGraphic> createState() => _LocalForecastGraphicState();
 }
 
-class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
+class _LocalForecastGraphicState extends State<LocalForecastGraphic>
+    with TickerProviderStateMixin {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final forecastChannel = StreamController<GestureSignal>.broadcast();
+  late final AnimationController bottomSheetController;
 
   double _screenWidth = 0;
   double _chartWidthMargin = 30;
@@ -44,6 +46,21 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
     StrokeStyle(color: Colors.black38),
     StrokeStyle(color: Colors.black38)
   ];
+  ForecastGraphData? forecastGraphData;
+
+  @override
+  void initState() {
+    super.initState();
+    bottomSheetController = BottomSheet.createAnimationController(this);
+    bottomSheetController.duration = Duration(milliseconds: 2000);
+    bottomSheetController.drive(CurveTween(curve: Curves.easeIn));
+  }
+
+  @override
+  void dispose() {
+    bottomSheetController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -68,12 +85,11 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
   List<Widget> _getGraphMenu() {
     return <Widget>[
       TextButton(
-        child: const Text(StandardLiterals.REFRESH,
-            style: TextStyle(color: Colors.white)),
-        onPressed: () {
-          setState(() {});
-        },
-      ),
+          child: const Text(GraphLiterals.GRAPH_DATA,
+              style: TextStyle(color: Colors.white)),
+          onPressed: () {
+            _showGraphDataITable();
+          }),
     ];
   }
 
@@ -92,6 +108,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
       if (state is GraphDataState) {
         // Very Important! Determine what forecasts are present in data
         // Used to determine shapes, colors, legends, etc.
+        forecastGraphData = state.forecastData;
         _checkForCuAndOdInForecast(state.forecastData.altitudeData);
         print(" ----------   altitude data -------------");
         state.forecastData.altitudeData.forEach((map) {
@@ -117,7 +134,6 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
                 state.forecastData.model, state.forecastData.date),
             _getCloudbaseWidget(state.forecastData.altitudeData!),
             _getThermalUpdraftWidget(state.forecastData.thermalData!),
-            _getShowGraphDataButtonWidget(state.forecastData),
           ]),
         );
       } else
@@ -457,33 +473,25 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic> {
     );
   }
 
-  _getShowGraphDataButtonWidget(final ForecastGraphData forecastGraphData) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 16.0),
-      child: Center(
-        child: ElevatedButton(
-            child: Text("Show Graph Data"),
-            style: ElevatedButton.styleFrom(
-              minimumSize: Size(50, 40),
-              foregroundColor: Colors.white,
-              backgroundColor: Theme.of(context).colorScheme.primary,
-            ),
-            onPressed: () {
-              showModalBottomSheet<void>(
-                  context: context,
-                  enableDrag: true,
-                  isScrollControlled: true,
-                  barrierColor: Colors.transparent,
-                  builder: (BuildContext context) {
-                    return Container(
-                      height: MediaQuery.of(context).size.height * .80,
-                      color: Colors.white,
-                      child: _getGridDataWidget(forecastGraphData),
-                    );
-                  });
-            }),
-      ),
-    );
+  void _showGraphDataITable() {
+    if (forecastGraphData == null) {
+      CommonWidgets.showErrorDialog(
+          context, StandardLiterals.UH_OH, GraphLiterals.GRAPH_DATA_MISSING);
+    } else {
+      showModalBottomSheet<void>(
+          context: context,
+          transitionAnimationController: bottomSheetController,
+          enableDrag: true,
+          isScrollControlled: true,
+          barrierColor: Colors.transparent,
+          builder: (BuildContext context) {
+            return Container(
+              height: MediaQuery.of(context).size.height * .75,
+              color: Colors.white,
+              child: _getGridDataWidget(forecastGraphData!),
+            );
+          });
+    }
   }
 
   Widget _getGridDataWidget(ForecastGraphData forecastGraphData) {
