@@ -14,7 +14,6 @@ import 'package:flutter_soaring_forecast/soaring/graphics/data/forecast_graph_da
 import 'package:flutter_soaring_forecast/soaring/graphics/shapes/custom_shapes.dart';
 import 'package:flutter_soaring_forecast/soaring/graphics/ui/grid_widgets.dart';
 import 'package:graphic/graphic.dart';
-import 'package:intl/intl.dart';
 
 class LocalForecastGraphic extends StatefulWidget {
   LocalForecastGraphic({Key? key}) : super(key: key);
@@ -32,7 +31,6 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
   double _screenWidth = 0;
   double _chartWidthMargin = 30;
   double graphLegendOffset = 40; // used to place legends on graph
-  final abbrevDateformatter = DateFormat('E, MMM dd');
 
   final altitudeGraphBackground = Colors.blue[200];
 
@@ -246,28 +244,6 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
       }
     });
   }
-
-  // Widget _getModelAndDateWidgets(String model, String date) {
-  //   return Padding(
-  //     padding: const EdgeInsets.only(top: 8.0),
-  //     child: Row(
-  //       mainAxisAlignment: MainAxisAlignment.center,
-  //       children: [
-  //         Text(
-  //           model.toUpperCase(),
-  //           style: textStyleBlackFontSize14,
-  //         ),
-  //         Padding(
-  //           padding: const EdgeInsets.only(left: 8.0),
-  //           child: Text(
-  //             abbrevDateformatter.format(DateTime.tryParse(date)!),
-  //             style: textStyleBlackFontSize14,
-  //           ),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
 
   Widget _getCloudbaseWidget() {
     return BlocConsumer<GraphicBloc, GraphState>(listener: (context, state) {

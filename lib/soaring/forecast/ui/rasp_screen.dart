@@ -13,12 +13,12 @@ import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_data_state.d
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/rasp_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/ui/display_ticker.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/ui/forecast_map.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast/util/rasp_utils.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast_types/ui/common_forecast_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast_types/ui/forecast_list.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
 import 'package:flutter_soaring_forecast/soaring/tasks/ui/task_list.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_overhead_view.dart';
-import 'package:intl/intl.dart';
 
 import '../bloc/rasp_data_bloc.dart';
 import '../bloc/rasp_data_event.dart';
@@ -35,7 +35,6 @@ class RaspScreen extends StatefulWidget {
 //TODO - keep more data details in Bloc,
 class _RaspScreenState extends State<RaspScreen>
     with TickerProviderStateMixin, WidgetsBindingObserver {
-  final abbrevDateformatter = DateFormat('E, MMM dd');
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _forecastMapStateKey = GlobalKey<ForecastMapState>();
   late List<PreferenceOption> _raspDisplayOptions;
@@ -194,7 +193,7 @@ class _RaspScreenState extends State<RaspScreen>
     }, builder: (context, state) {
       //debugPrint('creating/updating forecastDatesDropDown');
       if (state is RaspModelDates) {
-        final _shortDOWs = _reformatDatesToDOW(state.forecastDates);
+        final _shortDOWs = reformatDatesToDOW(state.forecastDates);
         final _selectedForecastDOW =
             _shortDOWs[state.forecastDates.indexOf(state.selectedForecastDate)];
         final _forecastDates = state.forecastDates;
@@ -647,17 +646,6 @@ class _RaspScreenState extends State<RaspScreen>
 
   _cancel() {
     Navigator.pop(context);
-  }
-
-  List<String> _reformatDatesToDOW(List<String> forecastDates) {
-    final List<String> shortDOWs = [];
-    forecastDates.forEach((date) {
-      final realDate = DateTime.tryParse(date);
-      if (realDate != null) {
-        shortDOWs.add(abbrevDateformatter.format(realDate));
-      }
-    });
-    return shortDOWs;
   }
 
   void checkForUpdatedTaskOnReturnFromWindy(bool possibleTaskChange) {
