@@ -6,6 +6,7 @@ import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     show GraphLiterals, StandardLiterals;
 import 'package:flutter_soaring_forecast/soaring/app/custom_styles.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast/util/rasp_utils.dart';
 import 'package:flutter_soaring_forecast/soaring/graphics/bloc/graphic_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/graphics/bloc/graphic_event.dart';
 import 'package:flutter_soaring_forecast/soaring/graphics/bloc/graphic_state.dart';
@@ -13,7 +14,6 @@ import 'package:flutter_soaring_forecast/soaring/graphics/data/forecast_graph_da
 import 'package:flutter_soaring_forecast/soaring/graphics/shapes/custom_shapes.dart';
 import 'package:flutter_soaring_forecast/soaring/graphics/ui/grid_widgets.dart';
 import 'package:graphic/graphic.dart';
-import 'package:intl/intl.dart';
 
 class LocalForecastGraphic extends StatefulWidget {
   LocalForecastGraphic({Key? key}) : super(key: key);
@@ -31,7 +31,6 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
   double _screenWidth = 0;
   double _chartWidthMargin = 30;
   double graphLegendOffset = 40; // used to place legends on graph
-  final abbrevDateformatter = DateFormat('E, MMM dd');
 
   final altitudeGraphBackground = Colors.blue[200];
 
@@ -88,7 +87,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
           child: const Text(GraphLiterals.GRAPH_DATA,
               style: TextStyle(color: Colors.white)),
           onPressed: () {
-            _showGraphDataITable();
+            _showGraphDataTable();
           }),
     ];
   }
@@ -104,19 +103,162 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
   }
 
   Widget _getForecastGraphWidgets() {
+    return Padding(
+      padding: const EdgeInsets.only(left: 8.0, right: 8),
+      child: Column(children: [
+        _getLocationTitleWidget(),
+        getForecastModelsAndDates(),
+        // _getModelAndDateWidgets(
+        //     state.forecastData.model, state.forecastData.date),
+        _getCloudbaseWidget(),
+        _getThermalUpdraftWidget(),
+      ]),
+    );
+  }
+
+  Widget _getLocationTitleWidget() {
+    return BlocConsumer<GraphicBloc, GraphState>(listener: (context, state) {
+      if (state is GraphDataState) {
+        //
+      }
+    }, buildWhen: (previous, current) {
+      return current is GraphDataState;
+    }, builder: (context, state) {
+      if (state is GraphDataState) {
+        var text;
+        if (state.forecastData.turnpointTitle != null) {
+          text = state.forecastData.turnpointTitle!;
+        } else if (state.forecastData.lat != null &&
+            state.forecastData.lng != null) {
+          text = state.forecastData.lat!.toStringAsFixed(5) +
+              "/" +
+              state.forecastData.lng!.toStringAsFixed(5);
+        }
+        if (text != null) {
+          return Container(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 8.0),
+              child: Center(
+                child: Text(
+                  text,
+                  style: textStyleBlackFontSize20,
+                ),
+              ),
+            ),
+          );
+        } else {
+          return SizedBox.shrink();
+        }
+      }
+      return SizedBox.shrink();
+    });
+  }
+
+  Widget getForecastModelsAndDates() {
+    //debugPrint('creating/updating main ForecastModelsAndDates');
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.start,
+      children: [
+        Expanded(
+          flex: 3,
+          child: forecastModelDropDownList(),
+        ),
+        Expanded(
+            flex: 7,
+            child: Padding(
+              padding: EdgeInsets.only(left: 16.0),
+              child: forecastDatesDropDownList(),
+            )),
+      ],
+    );
+  }
+
+// Display GFS, NAM, ....
+  Widget forecastModelDropDownList() {
+    return BlocConsumer<GraphicBloc, GraphState>(listener: (context, state) {
+      if (state is GraphModelsState) {
+        //
+      }
+    }, buildWhen: (previous, current) {
+      return current is GraphicInitialState || current is GraphModelsState;
+    }, builder: (context, state) {
+      //debugPrint('creating/updating forecastModelDropDown');
+      if (state is GraphModelsState) {
+        return DropdownButton<String>(
+          style: CustomStyle.bold18(context),
+          value: (state.selectedModelName),
+          hint: Text('Select Model'),
+          isExpanded: true,
+          iconSize: 24,
+          elevation: 16,
+          onChanged: (String? newValue) {
+            // debugPrint('Selected model onChanged: $newValue');
+            _sendEvent(SelectedModelEvent(newValue!));
+          },
+          items: state.modelNames.map<DropdownMenuItem<String>>((String value) {
+            return DropdownMenuItem<String>(
+              value: value,
+              child: Text(value.toUpperCase()),
+            );
+          }).toList(),
+        );
+      } else {
+        return Text("Getting Forecast Models");
+      }
+    });
+  }
+
+// Display forecast dates for selected model (eg. GFS)
+  Widget forecastDatesDropDownList() {
+    return BlocConsumer<GraphicBloc, GraphState>(listener: (context, state) {
+      if (state is GraphModelsState) {
+        //
+      }
+    }, buildWhen: (previous, current) {
+      return current is GraphicInitialState || current is GraphModelDatesState;
+    }, builder: (context, state) {
+      //debugPrint('creating/updating forecastDatesDropDown');
+      if (state is GraphModelDatesState) {
+        final _shortDOWs = reformatDatesToDOW(state.forecastDates);
+        final _selectedForecastDOW =
+            _shortDOWs[state.forecastDates.indexOf(state.selectedForecastDate)];
+        final _forecastDates = state.forecastDates;
+        return DropdownButton<String>(
+          style: CustomStyle.bold18(context),
+          isExpanded: true,
+          value: _selectedForecastDOW,
+          onChanged: (String? newValue) {
+            final selectedForecastDate =
+                _forecastDates[_shortDOWs.indexOf(newValue!)];
+            _sendEvent(SelectedForecastDateEvent(selectedForecastDate));
+          },
+          items: _shortDOWs.map<DropdownMenuItem<String>>((String value) {
+            return DropdownMenuItem<String>(
+              value: value,
+              child: Text(value),
+            );
+          }).toList(),
+        );
+      } else {
+        return Text("Getting Forecast Dates");
+      }
+    });
+  }
+
+  Widget _getCloudbaseWidget() {
     return BlocConsumer<GraphicBloc, GraphState>(listener: (context, state) {
       if (state is GraphDataState) {
         // Very Important! Determine what forecasts are present in data
         // Used to determine shapes, colors, legends, etc.
         forecastGraphData = state.forecastData;
         _checkForCuAndOdInForecast(state.forecastData.altitudeData);
-        print(" ----------   altitude data -------------");
-        state.forecastData.altitudeData.forEach((map) {
-          map.forEach((key, value) {
-            print("${key} : ${value.toString()}");
-          });
-        });
-        print(" ------- end altitude data -------------");
+        // print(" ----------   altitude data -------------");
+        // state.forecastData.altitudeData.forEach((map) {
+        //   map.forEach((key, value) {
+        //     print("${key} : ${value.toString()}");
+        //   });
+        // });
+        // print(" ------- end altitude data -------------");
         // WidgetsBinding.instance!.addPostFrameCallback((_) {
         //   _getModelSheetForGridDataWidget(context, state.forecastData);
         // });
@@ -125,186 +267,148 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
       return current is GraphDataState;
     }, builder: (context, state) {
       if (state is GraphDataState) {
-        return Padding(
-          padding: const EdgeInsets.only(left: 8.0, right: 8),
-          child: Column(children: [
-            _getLocationTitleWidget(state.forecastData.turnpointTitle,
-                state.forecastData.lat, state.forecastData.lng),
-            _getModelAndDateWidgets(
-                state.forecastData.model, state.forecastData.date),
-            _getCloudbaseWidget(state.forecastData.altitudeData!),
-            _getThermalUpdraftWidget(state.forecastData.thermalData!),
-          ]),
+        return Container(
+          margin: const EdgeInsets.only(top: 8),
+          width: _screenWidth - _chartWidthMargin,
+          height: 300,
+          child: Chart(
+            data: state.forecastData.altitudeData,
+            rebuild: false,
+            padding: (_) => const EdgeInsets.fromLTRB(30, 0, 10, 4),
+            variables: {
+              'time': Variable(
+                accessor: (Map map) => map['time'] as String,
+              ),
+              'value': Variable(
+                accessor: (Map map) => map['value'] as num,
+                scale: LinearScale(
+                    formatter: (value) => '${value.toInt()}', min: 0),
+              ),
+              'name': Variable(
+                accessor: (Map map) => map['name'] as String,
+              ),
+            },
+
+            coord: RectCoord(
+                horizontalRange: [0.01, 0.99], color: altitudeGraphBackground),
+            //coord: RectCoord(color: const Color(0xffdddddd)),
+            elements: [
+              PointElement(
+                size: SizeAttr(variable: "name", values: sizeOfPoints),
+                color: ColorAttr(
+                  variable: 'name',
+                  values: colorsOfPoints,
+                  updaters: {
+                    'groupMouse': {false: (color) => color.withAlpha(100)},
+                    'groupTouch': {false: (color) => color.withAlpha(100)},
+                  },
+                ),
+                shape: ShapeAttr(variable: 'name', values: shapesOfPoints),
+              ),
+            ],
+            axes: [
+              Defaults.horizontalAxis..label = null,
+              Defaults.verticalAxis
+                ..label = (LabelStyle(
+                    style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold))),
+            ],
+            selections: {'tap': PointSelection(dim: Dim.x)},
+            //tooltip: TooltipGuide(),
+            crosshair: CrosshairGuide(styles: crossHairGuide),
+            gestureChannel: forecastChannel,
+            annotations: annotationsOfPoints,
+          ),
         );
-      } else
-        return SizedBox.shrink();
+      }
+      return SizedBox.shrink();
     });
   }
 
-  Widget _getLocationTitleWidget(
-      String? turnpointTitle, double? lat, double? lng) {
-    var text;
-    if (turnpointTitle != null) {
-      text = turnpointTitle;
-    } else if (lat != null && lng != null) {
-      text = lat.toStringAsFixed(5) + "/" + lng.toStringAsFixed(5);
-    }
-    if (text != null) {
-      return Container(
-        child: Padding(
-          padding: const EdgeInsets.only(top: 8.0),
-          child: Center(
-            child: Text(
-              text,
-              style: textStyleBlackFontSize20,
-            ),
-          ),
-        ),
-      );
-    } else {
-      return SizedBox.shrink();
-    }
-  }
-
-  Widget _getModelAndDateWidgets(String model, String date) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 8.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            model.toUpperCase(),
-            style: textStyleBlackFontSize14,
-          ),
-          Padding(
-            padding: const EdgeInsets.only(left: 8.0),
-            child: Text(
-              abbrevDateformatter.format(DateTime.tryParse(date)!),
-              style: textStyleBlackFontSize14,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _getCloudbaseWidget(List<Map<String, Object>> forecastData) {
-    return Container(
-      margin: const EdgeInsets.only(top: 8),
-      width: _screenWidth - _chartWidthMargin,
-      height: 300,
-      child: Chart(
-        data: forecastData,
-        rebuild: false,
-        padding: (_) => const EdgeInsets.fromLTRB(30, 0, 10, 4),
-        variables: {
-          'time': Variable(
-            accessor: (Map map) => map['time'] as String,
-          ),
-          'value': Variable(
-            accessor: (Map map) => map['value'] as num,
-            scale:
-                LinearScale(formatter: (value) => '${value.toInt()}', min: 0),
-          ),
-          'name': Variable(
-            accessor: (Map map) => map['name'] as String,
-          ),
-        },
-
-        coord: RectCoord(
-            horizontalRange: [0.01, 0.99], color: altitudeGraphBackground),
-        //coord: RectCoord(color: const Color(0xffdddddd)),
-        elements: [
-          PointElement(
-            size: SizeAttr(variable: "name", values: sizeOfPoints),
-            color: ColorAttr(
-              variable: 'name',
-              values: colorsOfPoints,
-              updaters: {
-                'groupMouse': {false: (color) => color.withAlpha(100)},
-                'groupTouch': {false: (color) => color.withAlpha(100)},
+  Widget _getThermalUpdraftWidget() {
+    return BlocConsumer<GraphicBloc, GraphState>(listener: (context, state) {
+      if (state is GraphDataState) {
+        // Very Important! Determine what forecasts are present in data
+        // Used to determine shapes, colors, legends, etc.
+        _checkForCuAndOdInForecast(state.forecastData.altitudeData);
+        // print(" ----------   thermal data -------------");
+        // state.forecastData.thermalData.forEach((map) {
+        //   map.forEach((key, value) {
+        //     print("${key} : ${value.toString()}");
+        //   });
+        // });
+        // print(" ------- end thermal data -------------");
+        // WidgetsBinding.instance!.addPostFrameCallback((_) {
+        //   _getModelSheetForGridDataWidget(context, state.forecastData);
+        // });
+      }
+    }, buildWhen: (previous, current) {
+      return current is GraphDataState;
+    }, builder: (context, state) {
+      if (state is GraphDataState) {
+        return Container(
+          margin: const EdgeInsets.only(top: 0),
+          width: _screenWidth - _chartWidthMargin,
+          height: 140,
+          child: Padding(
+            padding: const EdgeInsets.only(top: 20.0),
+            child: Chart(
+              padding: (_) => const EdgeInsets.fromLTRB(30, 0, 10, 8),
+              rebuild: false,
+              data: state.forecastData.thermalData,
+              variables: {
+                'time': Variable(
+                  accessor: (Map map) => map['time'] as String,
+                ),
+                'value': Variable(
+                  accessor: (Map map) => map['value'] as num,
+                  scale: LinearScale(
+                      formatter: (value) => '${value.toInt()}', min: 0),
+                ),
               },
+              coord: RectCoord(color: const Color(0xffdddddd)),
+              elements: [
+                LineElement(
+                  color: ColorAttr(
+                      variable: 'value', values: [Colors.red, Colors.red]),
+                  shape: ShapeAttr(value: BasicLineShape(smooth: true)),
+                  size: SizeAttr(value: 4.0),
+                ),
+              ],
+              axes: [
+                Defaults.horizontalAxis
+                  ..label = (LabelStyle(
+                      style: TextStyle(
+                          color: Colors.black,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold))),
+                Defaults.verticalAxis
+                  ..label = (LabelStyle(
+                      style: TextStyle(
+                          color: Colors.black,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold))),
+              ],
+              selections: {'tap': PointSelection(dim: Dim.x)},
+              //tooltip: TooltipGuide(),
+              crosshair: CrosshairGuide(styles: crossHairGuide),
+              gestureChannel: forecastChannel,
+              annotations: _getGraphLegend(
+                  label: "Thermal Updraft ft/min",
+                  initialOffset: graphLegendOffset,
+                  colorIndex: 0,
+                  // same as thermal in top graph
+                  xPosIndex: 0,
+                  yPosIndex: 0,
+                  yOffset: 100),
             ),
-            shape: ShapeAttr(variable: 'name', values: shapesOfPoints),
           ),
-        ],
-        axes: [
-          Defaults.horizontalAxis..label = null,
-          Defaults.verticalAxis
-            ..label = (LabelStyle(
-                style: TextStyle(
-                    color: Colors.black,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold))),
-        ],
-        selections: {'tap': PointSelection(dim: Dim.x)},
-        //tooltip: TooltipGuide(),
-        crosshair: CrosshairGuide(styles: crossHairGuide),
-        gestureChannel: forecastChannel,
-        annotations: annotationsOfPoints,
-      ),
-    );
-  }
-
-  Widget _getThermalUpdraftWidget(List<Map<String, Object>> forecastData) {
-    return Container(
-      margin: const EdgeInsets.only(top: 0),
-      width: _screenWidth - _chartWidthMargin,
-      height: 140,
-      child: Padding(
-        padding: const EdgeInsets.only(top: 20.0),
-        child: Chart(
-          padding: (_) => const EdgeInsets.fromLTRB(30, 0, 10, 8),
-          rebuild: false,
-          data: forecastData,
-          variables: {
-            'time': Variable(
-              accessor: (Map map) => map['time'] as String,
-            ),
-            'value': Variable(
-              accessor: (Map map) => map['value'] as num,
-              scale:
-                  LinearScale(formatter: (value) => '${value.toInt()}', min: 0),
-            ),
-          },
-          coord: RectCoord(color: const Color(0xffdddddd)),
-          elements: [
-            LineElement(
-              color: ColorAttr(
-                  variable: 'value', values: [Colors.red, Colors.red]),
-              shape: ShapeAttr(value: BasicLineShape(smooth: true)),
-              size: SizeAttr(value: 4.0),
-            ),
-          ],
-          axes: [
-            Defaults.horizontalAxis
-              ..label = (LabelStyle(
-                  style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold))),
-            Defaults.verticalAxis
-              ..label = (LabelStyle(
-                  style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold))),
-          ],
-          selections: {'tap': PointSelection(dim: Dim.x)},
-          //tooltip: TooltipGuide(),
-          crosshair: CrosshairGuide(styles: crossHairGuide),
-          gestureChannel: forecastChannel,
-          annotations: _getGraphLegend(
-              label: "Thermal Updraft ft/min",
-              initialOffset: graphLegendOffset,
-              colorIndex: 0,
-              // same as thermal in top graph
-              xPosIndex: 0,
-              yPosIndex: 0,
-              yOffset: 100),
-        ),
-      ),
-    );
+        );
+      }
+      return SizedBox.shrink();
+    });
   }
 
   /// conditions might be that the forecast doesn't include Cu or OD so we need
@@ -473,7 +577,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
     );
   }
 
-  void _showGraphDataITable() {
+  void _showGraphDataTable() {
     if (forecastGraphData == null) {
       CommonWidgets.showErrorDialog(
           context, StandardLiterals.UH_OH, GraphLiterals.GRAPH_DATA_MISSING);

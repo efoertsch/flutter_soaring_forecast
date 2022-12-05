@@ -1,9 +1,20 @@
-import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_soaring_forecast/soaring/graphics/data/forecast_graph_data.dart';
 
 @immutable
-abstract class GraphicEvent extends Equatable {}
+abstract class GraphicEvent {}
+
+class SelectedModelEvent extends GraphicEvent {
+  final String modelName;
+
+  SelectedModelEvent(this.modelName);
+}
+
+class SelectedForecastDateEvent extends GraphicEvent {
+  final String forecastDate;
+
+  SelectedForecastDateEvent(this.forecastDate);
+}
 
 class LocalForecastDataEvent extends GraphicEvent {
   final ForecastInputData localForecastGraphData;
@@ -11,10 +22,4 @@ class LocalForecastDataEvent extends GraphicEvent {
   LocalForecastDataEvent({
     required this.localForecastGraphData,
   });
-
-  @override
-  // TODO: implement props
-  List<Object?> get props => [localForecastGraphData];
 }
-
-// All the events related to turnpoints
