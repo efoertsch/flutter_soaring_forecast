@@ -450,7 +450,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
   void _displayLocalForecast(
       DisplayLocalForecastEvent event, Emitter<RaspDataState> emit) async {
     final localForecastGraphData = ForecastInputData(
-        region: _region!.name!,
+        region: _region!,
         date: _selectedForecastDate!,
         model: _selectedModelname!,
         times: _forecastTimes!,

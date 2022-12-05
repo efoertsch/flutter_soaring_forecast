@@ -1,7 +1,8 @@
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/rasp/regions.dart';
 
 class ForecastInputData {
-  final String region;
+  final Region region;
   final String date;
   final String model;
   final List<String> times;

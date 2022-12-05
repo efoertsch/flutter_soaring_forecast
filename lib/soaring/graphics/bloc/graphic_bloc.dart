@@ -1,11 +1,13 @@
 import 'dart:async';
 
 import 'package:collection/collection.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/graphics/bloc/graphic_event.dart';
 import 'package:flutter_soaring_forecast/soaring/graphics/bloc/graphic_state.dart';
 import 'package:flutter_soaring_forecast/soaring/graphics/data/forecast_graph_data.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/rasp/regions.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 
 //  For following forecasts, you actually need to combine values from 2 other forecasts to determine display
@@ -47,34 +49,65 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
   var _altitudeForecastList = <Forecast>[];
   var _thermalForecastList = <Forecast>[];
   var _combinedForecastList = <Forecast>[];
+  String? _selectedModelName;
+  String? _selectedForecastDate;
+  Region? _region;
+  String? _regionName;
+  List<String>? _modelNames;
+  ModelDates? _selectedModelDates;
+  List<String>? _forecastDates;
+  List<String>? _forecastTimes;
+  double? _lat;
+  double? _lng;
+  String? _turnpointName;
 
   static final _options = <Forecast>[];
   ForecastGraphData? _forecastGraphData;
 
   GraphicBloc({required this.repository}) : super(GraphicInitialState()) {
     on<LocalForecastDataEvent>(_getLocalForecastData);
+    on<SelectedModelEvent>(_processSelectedModelEvent);
+    on<SelectedForecastDateEvent>(_processSelectedDateEvent);
   }
 
   FutureOr<void> _getLocalForecastData(
       LocalForecastDataEvent event, Emitter<GraphState> emit) async {
     emit(GraphWorkingState(working: true));
-    final inputData = event.localForecastGraphData;
+    _assignInitialForecastFields(event.localForecastGraphData);
+    _setRegionModelNames();
+    _getSelectedModelDates();
+    _emitModelDates(emit);
+    _emitRaspModels(emit);
+    _composeRequestParamsString();
+    await _getForecastList();
+    await _generateGraphDataAndEmit(emit);
+    emit(GraphWorkingState(working: false));
+  }
+
+  void _assignInitialForecastFields(ForecastInputData inputData) {
+    _region = inputData.region;
+    _selectedModelName = inputData.model;
+    _selectedForecastDate = inputData.date;
+    _regionName = inputData.region.name;
+    _lat = inputData.lat;
+    _lng = inputData.lng;
+    _turnpointName = inputData.turnpointName;
+  }
+
+  Future<void> _generateGraphDataAndEmit(Emitter<GraphState> emit) async {
     final List<Map<String, Object>> altitudeForecastData = [];
     final List<Map<String, Object>> thermalForecastData = [];
     final List<Map<String, Object>> allData = [];
-    _composeRequestParamsString();
-    await _getForecastList();
-
     // loop through the forecast times
-    await Future.forEach(inputData.times, (time) async {
+    await Future.forEach(_forecastTimes!, (time) async {
       // and for each time call the RASP api and process response
       await _getForecastInfo(
-              region: inputData.region,
-              date: inputData.date,
-              model: inputData.model,
-              time: time.toString(),
-              lat: inputData.lat.toString(),
-              lng: inputData.lng.toString())
+              region: _regionName!,
+              date: _selectedForecastDate!,
+              model: _selectedModelName!,
+              time: time as String,
+              lat: _lat.toString(),
+              lng: _lng.toString())
           ?.then((hourlyForecastData) {
         if (hourlyForecastData != null) {
           // And combine the hourly forecast with prior hourly forecasts
@@ -91,24 +124,24 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
     // Wheew! Now have maps that contain the data for all forecast times
     // We need to sort altitude data so it can be properly graphed
     _sortAltitudeDataByCodeAndTime(altitudeForecastData);
+    // and finally combine it all
     final forecastGraphData = ForecastGraphData(
-        date: inputData.date,
-        model: inputData.model,
-        turnpointTitle: event.localForecastGraphData.turnpointName,
-        lat: inputData.lat,
-        lng: inputData.lng,
+        date: _selectedForecastDate!,
+        model: _selectedModelName!,
+        turnpointTitle: _turnpointName,
+        lat: _lat,
+        lng: _lng,
         altitudeData: altitudeForecastData,
         thermalData: thermalForecastData,
-        hours: inputData.times,
+        hours: _forecastTimes!,
         descriptions: _combinedForecastList,
         gridData:
-            _createGridData(allData, inputData.times, _combinedForecastList));
+            _createGridData(allData, _forecastTimes!, _combinedForecastList));
     // allData.forEach((map) {
     //   map.entries.forEach((element) {
     //     print("${element.key} : ${element.value.toString()}");
     //   });
     // });
-    emit(GraphWorkingState(working: false));
     emit(GraphDataState(forecastData: forecastGraphData));
   }
 
@@ -221,6 +254,11 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
         throw Exception(
             "Error occurred in getting local forecast:  ${httpResponse.response.statusMessage}");
       }
+    }, onError: (error, stackTrace) {
+      debugPrint(
+          "Getting forecast info for ${region!}  ${date}  ${model}  ${time}  ${_lat.toString()}  ${_lng.toString()} ");
+      debugPrint(error.toString());
+      debugPrint(stackTrace.toString());
     });
     return forecastList;
   }
@@ -317,5 +355,93 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
       }
     });
     return thermalListMap;
+  }
+
+  void _processSelectedModelEvent(
+      SelectedModelEvent event, Emitter<GraphState> emit) async {
+    emit(GraphWorkingState(working: true));
+    _selectedModelName = event.modelName;
+    // print('Selected model: $_selectedModelname');
+    // emits same list of models with new selected model
+    _emitRaspModels(emit);
+    _getSelectedModelDates();
+    _emitModelDates(emit);
+    await _generateGraphDataAndEmit(emit);
+    emit(GraphWorkingState(working: false));
+  }
+
+  void _processSelectedDateEvent(
+      SelectedForecastDateEvent event, Emitter<GraphState> emit) async {
+    emit(GraphWorkingState(working: true));
+    _selectedForecastDate = event.forecastDate;
+    _emitModelDates(emit);
+    // update times and images for new date
+    _setForecastTimesForDate();
+    await _generateGraphDataAndEmit(emit);
+    emit(GraphWorkingState(working: false));
+  }
+
+  void _emitModelDates(Emitter<GraphState> emit) {
+    emit(GraphModelDatesState(_forecastDates!, _selectedForecastDate!));
+    //debugPrint('emitted GraphModelDates');
+  }
+
+  void _getSelectedModelDates() {
+    _selectedModelDates = _region!
+        .getModelDates()
+        .firstWhere((modelDates) => modelDates.modelName == _selectedModelName);
+    _updateForecastDates();
+  }
+
+  //TODO DRY - Lots of common/similar code in RaspDataBloc
+  /// Get a list of both display dates (printDates November 12, 2019)
+  /// and dates for constructing calls to rasp (dates 2019-11-12)
+  void _updateForecastDates() {
+    _setForecastDates();
+    // stay on same date if new model has forecast for that date
+    if (_selectedForecastDate == null ||
+        !_forecastDates!.contains(_selectedForecastDate)) {
+      _selectedForecastDate = _forecastDates!.first;
+    }
+    _updateForecastTimesList();
+  }
+
+  void _setForecastDates() {
+    List<ModelDateDetails> modelDateDetails =
+        _selectedModelDates!.getModelDateDetailList();
+    _forecastDates = modelDateDetails
+        .map((modelDateDetails) => modelDateDetails.date!)
+        .toList();
+  }
+
+  void _updateForecastTimesList() {
+    var modelDateDetail = _selectedModelDates!
+        .getModelDateDetailList()
+        .firstWhere((modelDateDetails) =>
+            modelDateDetails.date == _selectedForecastDate)
+        .model;
+    _forecastTimes = modelDateDetail!.times;
+  }
+
+// A new date has been selected, so get the times for that date
+  void _setForecastTimesForDate() {
+    var modelDateDetail = _selectedModelDates!
+        .getModelDateDetailList()
+        .firstWhere((modelDateDetails) =>
+            modelDateDetails.date == _selectedForecastDate);
+    _forecastTimes = modelDateDetail.model!.times;
+  }
+
+  //
+  void _setRegionModelNames() {
+    _modelNames = _region!
+        .getModelDates()
+        .map((modelDates) => modelDates.modelName!)
+        .toList();
+  }
+
+  void _emitRaspModels(Emitter<GraphState> emit) {
+    emit(GraphModelsState(_modelNames!, _selectedModelName!));
+    // debugPrint('emitted GraphModelsState');
   }
 }
