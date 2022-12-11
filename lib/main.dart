@@ -25,6 +25,8 @@ import 'package:flutter_soaring_forecast/soaring/region/bloc/region_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/region/ui/region_list_screen.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 import 'package:flutter_soaring_forecast/soaring/satellite/geos/geos.dart';
+import 'package:flutter_soaring_forecast/soaring/settings/bloc/settings_bloc.dart';
+import 'package:flutter_soaring_forecast/soaring/settings/ui/settings_screen.dart';
 import 'package:flutter_soaring_forecast/soaring/tasks/bloc/task_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/tasks/ui/task_detail.dart';
 import 'package:flutter_soaring_forecast/soaring/tasks/ui/task_list.dart';
@@ -313,6 +315,15 @@ class SoaringForecastApp extends StatelessWidget {
                 return LocalForecastGraphRouteBuilder(
                   graphData: graphData,
                 );
+              },
+              settings: settings,
+            );
+          }
+
+          if (settings.name == SettingsRouteBuilder.routeName) {
+            return CustomMaterialPageRoute(
+              builder: (context) {
+                return SettingsRouteBuilder();
               },
               settings: settings,
             );
@@ -626,6 +637,18 @@ class LocalForecastGraphRouteBuilder extends StatelessWidget {
           GraphicBloc(repository: RepositoryProvider.of<Repository>(context))
             ..add(LocalForecastDataEvent(localForecastGraphData: graphData)),
       child: LocalForecastGraphic(),
+    );
+  }
+}
+
+class SettingsRouteBuilder extends StatelessWidget {
+  static const routeName = '/Settings';
+
+  Widget build(BuildContext context) {
+    return BlocProvider<SettingsBloc>(
+      create: (BuildContext context) =>
+          SettingsBloc(repository: RepositoryProvider.of<Repository>(context)),
+      child: SettingsScreen(),
     );
   }
 }

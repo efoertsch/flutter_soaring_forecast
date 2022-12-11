@@ -1,0 +1,51 @@
+[
+  {
+    "title": "RASP Options",
+    "options": [
+      {
+        "key": "DISPLAY_SUA",
+        "title": "Display SUA",
+        "description": "Display SUA on startup",
+        "default": true
+      },
+      {
+        "key": "DISPLAY_SOUNDINGS",
+        "title": "Display Sounding Locations",
+        "description": "Display Sounding Locations on startup",
+        "default": true
+      },
+      {
+        "key": "DISPLAY_TURNPOINTS",
+        "title": "Display Turnpoints",
+        "description": "Display Turnpoints (if loaded) on startup'",
+        "default": true
+      },
+      {
+        "key": "DISPLAY_LANDABLE_TURNPOINTS",
+        "title": "Display only landable turnpoints",
+        "description": "Display only turnpoints marked as landable",
+        "default": true
+      }
+    ]
+  },
+  {
+    "title": "Other Forecast Products",
+    "options": [
+      {
+        "key": "DISPLAY_WINDY",
+        "title": "Display Windy in nav drawer",
+        "default": true
+      },
+      {
+        "key": "DISPLAY_SKYSIGHT",
+        "title": "Display SkySight in nav drawer",
+        "default": true
+      },
+      {
+        "key": "DISPLAY_DRJACKS",
+        "title": "Display Dr. Jacks in nav drawer",
+        "default": true
+      }
+    ]
+  }
+]

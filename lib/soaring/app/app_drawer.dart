@@ -129,6 +129,13 @@ class AppDrawer {
                   context, SelectedAirportsRouteBuilder.routeName);
             },
           ),
+          ListTile(
+            title: Text('Settings'),
+            onTap: () {
+              Navigator.popAndPushNamed(
+                  context, SettingsRouteBuilder.routeName);
+            },
+          ),
           _getDivider(),
           ListTile(
             title: Text('Feedback'),
