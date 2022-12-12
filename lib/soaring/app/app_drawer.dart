@@ -42,134 +42,128 @@ class _AppDrawerWidgetState extends State<AppDrawerWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<RepositoryCubit>(
-        create: (context) => RepositoryCubit(
-            repository: RepositoryProvider.of<Repository>(context)),
-        child: Drawer(
-          child: ListView(
+    return Drawer(
+      child: ListView(
 // Important: Remove any padding from the ListView.
-            padding: EdgeInsets.zero,
-            children: <Widget>[
-              new SizedBox(
-                height: 80.0,
-                child: DrawerHeader(
-                  child: Container(
-                    alignment: Alignment.bottomLeft,
-                    child: Text(
-                      DrawerLiterals.SOARING_FORECAST,
-                      style: TextStyle(
-                          color: Colors.white, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.blue,
-                  ),
+        padding: EdgeInsets.zero,
+        children: <Widget>[
+          new SizedBox(
+            height: 80.0,
+            child: DrawerHeader(
+              child: Container(
+                alignment: Alignment.bottomLeft,
+                child: Text(
+                  DrawerLiterals.SOARING_FORECAST,
+                  style: TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.bold),
                 ),
               ),
-              ListTile(
-                  title: Text(
-                DrawerLiterals.OTHER_FORECASTS,
-                style: TextStyle(
-                  color: Colors.black54,
-                ),
-              )),
-              _getOptionalWidget(
-                  _getWindyVisibilitySetting, _getWindyMenuWidget),
-              _getOptionalWidget(
-                  _geSkySightVisibilitySetting, _getSkySightMenuWidget),
-              _getOptionalWidget(
-                  _getDrJacksVisibilitySetting, _getDrJacksMenuWidget),
-              _getDivider(),
-              ListTile(
-                  title: Text(
-                DrawerLiterals.ONE_800_WX_BRIEF,
-                style: TextStyle(
-                  color: Colors.black54,
-                ),
-              )),
-              ListTile(
-                  title: Text(DrawerLiterals.AREA_BRIEF),
-                  onTap: () {
-                    Navigator.popAndPushNamed(
-                        context, WxBriefRequestBuilder.routeName,
-                        arguments: WxBriefBriefingRequest.AREA_REQUEST);
-                  }),
-              ListTile(
-                  title: Text(DrawerLiterals.AIRPORT_METAR_TAF),
-                  onTap: () {
-                    Navigator.popAndPushNamed(
-                        context, AirportMetarTafRouteBuilder.routeName);
-                  }),
-              Divider(
-                height: 4,
-                thickness: 2,
+              decoration: BoxDecoration(
+                color: Colors.blue,
               ),
-              ListTile(
-                title: Text(DrawerLiterals.GEOS_NE),
-                onTap: () {
-                  Navigator.popAndPushNamed(
-                      context, GeosRouteBuilder.routeName);
-                },
-              ),
-              _getDivider(),
-              ListTile(
-                  title: Text(
-                DrawerLiterals.CUSTOMIZATION,
-                style: TextStyle(
-                  color: Colors.black54,
-                ),
-              )),
-              ListTile(
-                title: Text(DrawerLiterals.TASK_LIST),
-                onTap: () {
-                  Navigator.popAndPushNamed(
-                      context, TaskListRouteBuilder.routeName);
-                },
-              ),
-              ListTile(
-                  title: Text(DrawerLiterals.TURNPOINTS),
-                  onTap: () {
-                    Navigator.popAndPushNamed(
-                        context, TurnpointListRouteBuilder.routeName);
-                  }),
-              ListTile(
-                title: Text(DrawerLiterals.AIRPORT_LIST),
-                onTap: () {
-                  Navigator.popAndPushNamed(
-                      context, SelectedAirportsRouteBuilder.routeName);
-                },
-              ),
-              ListTile(
-                title: Text(DrawerLiterals.SETTINGS),
-                onTap: () {
-                  Navigator.popAndPushNamed(
-                      context, SettingsRouteBuilder.routeName);
-                },
-              ),
-              _getDivider(),
-              ListTile(
-                title: Text(DrawerLiterals.FEEDBACK),
-                onTap: () async {
-                  Email email = Email(
-                    //to: ['flightservice@soaringforecast.org'],
-                    to: [FEEDBACK_EMAIL_ADDRESS],
-                    subject: Feedback.FEEDBACK_TITLE +
-                        " - " +
-                        Platform.operatingSystem,
-                  );
-                  await EmailLauncher.launch(email);
-                },
-              ),
-              ListTile(
-                title: Text(DrawerLiterals.ABOUT),
-                onTap: () async {
-                  Navigator.popAndPushNamed(
-                      context, AboutInfoRouteBuilder.routeName);
-                },
-              ),
-            ],
+            ),
           ),
-        ));
+          ListTile(
+              title: Text(
+            DrawerLiterals.OTHER_FORECASTS,
+            style: TextStyle(
+              color: Colors.black54,
+            ),
+          )),
+          _getOptionalWidget(_getWindyVisibilitySetting, _getWindyMenuWidget),
+          _getOptionalWidget(
+              _geSkySightVisibilitySetting, _getSkySightMenuWidget),
+          _getOptionalWidget(
+              _getDrJacksVisibilitySetting, _getDrJacksMenuWidget),
+          _getDivider(),
+          ListTile(
+              title: Text(
+            DrawerLiterals.ONE_800_WX_BRIEF,
+            style: TextStyle(
+              color: Colors.black54,
+            ),
+          )),
+          ListTile(
+              title: Text(DrawerLiterals.AREA_BRIEF),
+              onTap: () {
+                Navigator.popAndPushNamed(
+                    context, WxBriefRequestBuilder.routeName,
+                    arguments: WxBriefBriefingRequest.AREA_REQUEST);
+              }),
+          ListTile(
+              title: Text(DrawerLiterals.AIRPORT_METAR_TAF),
+              onTap: () {
+                Navigator.popAndPushNamed(
+                    context, AirportMetarTafRouteBuilder.routeName);
+              }),
+          Divider(
+            height: 4,
+            thickness: 2,
+          ),
+          ListTile(
+            title: Text(DrawerLiterals.GEOS_NE),
+            onTap: () {
+              Navigator.popAndPushNamed(context, GeosRouteBuilder.routeName);
+            },
+          ),
+          _getDivider(),
+          ListTile(
+              title: Text(
+            DrawerLiterals.CUSTOMIZATION,
+            style: TextStyle(
+              color: Colors.black54,
+            ),
+          )),
+          ListTile(
+            title: Text(DrawerLiterals.TASK_LIST),
+            onTap: () {
+              Navigator.popAndPushNamed(
+                  context, TaskListRouteBuilder.routeName);
+            },
+          ),
+          ListTile(
+              title: Text(DrawerLiterals.TURNPOINTS),
+              onTap: () {
+                Navigator.popAndPushNamed(
+                    context, TurnpointListRouteBuilder.routeName);
+              }),
+          ListTile(
+            title: Text(DrawerLiterals.AIRPORT_LIST),
+            onTap: () {
+              Navigator.popAndPushNamed(
+                  context, SelectedAirportsRouteBuilder.routeName);
+            },
+          ),
+          ListTile(
+            title: Text(DrawerLiterals.SETTINGS),
+            onTap: () {
+              Navigator.popAndPushNamed(
+                  context, SettingsRouteBuilder.routeName);
+            },
+          ),
+          _getDivider(),
+          ListTile(
+            title: Text(DrawerLiterals.FEEDBACK),
+            onTap: () async {
+              Email email = Email(
+                //to: ['flightservice@soaringforecast.org'],
+                to: [FEEDBACK_EMAIL_ADDRESS],
+                subject:
+                    Feedback.FEEDBACK_TITLE + " - " + Platform.operatingSystem,
+              );
+              await EmailLauncher.launch(email);
+            },
+          ),
+          ListTile(
+            title: Text(DrawerLiterals.ABOUT),
+            onTap: () async {
+              Navigator.popAndPushNamed(
+                  context, AboutInfoRouteBuilder.routeName);
+            },
+          ),
+        ],
+      ),
+    );
   }
 
   static Widget _getDivider() {
