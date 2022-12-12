@@ -96,8 +96,10 @@ class _RaspScreenState extends State<RaspScreen>
     return SafeArea(
       child: Scaffold(
           key: _scaffoldKey,
-          drawer: AppDrawer().getDrawer(context,
-              refreshTaskDisplayFunction: checkForUpdatedTaskOnReturnFromWindy),
+          drawer: AppDrawerWidget(
+            context: context,
+            refreshTaskDisplayFunction: checkForUpdatedTaskOnReturnFromWindy,
+          ),
           appBar: _getAppBar(),
           body: _getBody(context)
           // }),
