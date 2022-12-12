@@ -665,6 +665,24 @@ class _$TurnpointDao extends TurnpointDao {
   }
 
   @override
+  Future<List<Turnpoint>> getLandableTurnpointsWithinBounds(
+    double swLatitudeDeg,
+    double swLongitudeDeg,
+    double neLatitudeDeg,
+    double neLongitudeDeg,
+  ) async {
+    return _queryAdapter.queryList(
+        'Select * from turnpoint where latitudeDeg between ?1 and ?3  and longitudeDeg between ?2 and ?4 and style between \'2\' and \'5\'',
+        mapper: (Map<String, Object?> row) => Turnpoint(id: row['id'] as int?, title: row['title'] as String, code: row['code'] as String, country: row['country'] as String, latitudeDeg: row['latitudeDeg'] as double, longitudeDeg: row['longitudeDeg'] as double, elevation: row['elevation'] as String, style: row['style'] as String, direction: row['direction'] as String, length: row['length'] as String, frequency: row['frequency'] as String, description: row['description'] as String, runwayWidth: row['runwayWidth'] as String),
+        arguments: [
+          swLatitudeDeg,
+          swLongitudeDeg,
+          neLatitudeDeg,
+          neLongitudeDeg
+        ]);
+  }
+
+  @override
   Future<int> insert(Turnpoint obj) {
     return _turnpointInsertionAdapter.insertAndReturnId(
         obj, OnConflictStrategy.replace);

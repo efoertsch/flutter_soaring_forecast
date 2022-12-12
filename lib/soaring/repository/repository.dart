@@ -28,6 +28,7 @@ import 'package:flutter_soaring_forecast/soaring/repository/one800wxbrief/metar_
 import 'package:flutter_soaring_forecast/soaring/repository/one800wxbrief/one800wxbrief.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/one800wxbrief/one800wxbrief_api.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/rasp_options_api.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/options/setttings.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/special_use_airspace.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/sua_region_files.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/turnpoint_regions.dart';
@@ -437,6 +438,16 @@ class Repository {
   Future<List<Turnpoint>> getTurnpointsWithinBounds(
       LatLngBounds latLngBounds) async {
     await makeDatabaseAvailable();
+    // key comes from settings.json
+    final landableOnly = await getGenericBool(
+        key: "DISPLAY_LANDABLE_TURNPOINTS", defaultValue: true);
+    if (landableOnly) {
+      return _appDatabase!.turnpointDao.getLandableTurnpointsWithinBounds(
+          latLngBounds.southWest!.latitude,
+          latLngBounds.southWest!.longitude,
+          latLngBounds.northEast!.latitude,
+          latLngBounds.northEast!.longitude);
+    }
     return _appDatabase!.turnpointDao.getTurnpointsWithinBounds(
         latLngBounds.southWest!.latitude,
         latLngBounds.southWest!.longitude,
@@ -1038,7 +1049,9 @@ class Repository {
   Future<bool> getGenericBool(
       {required String key, required bool defaultValue}) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    return await prefs.getBool(key) ?? defaultValue;
+    final value = await prefs.getBool(key);
+    debugPrint("getGenericBool  key: $key   value: $value");
+    return await value ?? defaultValue;
   }
 
   // ----- File access -----------------------------------------------
@@ -1071,5 +1084,20 @@ class Repository {
       }
     }
     return directory;
+  }
+
+  Future<List<Settings>> getSettingOptionsFromAssets() async {
+    final jsonString = await DefaultAssetBundle.of(_context!)
+        .loadString('assets/json/settings.json');
+    final settings = settingsFromJson(jsonString);
+    // loop through the settings to assign the saved value (or default)
+    settings.forEach((element) {
+      Future.forEach(element.options!, (option) async {
+        bool saveValue = await getGenericBool(
+            key: (option as Option).key, defaultValue: option.optionDefault);
+        option.savedValue = saveValue;
+      });
+    });
+    return settings;
   }
 }

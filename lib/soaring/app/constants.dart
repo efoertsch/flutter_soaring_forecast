@@ -352,6 +352,25 @@ class GraphLiterals {
   static const String GRAPH_DATA_MISSING = "Data used for graph is missing!";
 }
 
+class DrawerLiterals {
+  static const String SOARING_FORECAST = "SoaringForecast";
+  static const String OTHER_FORECASTS = "Other Forecasts";
+  static const String WINDY = "Windy";
+  static const String SKYSIGHT = "SkySight";
+  static const String DR_JACKS = "Dr Jacks";
+  static const String ONE_800_WX_BRIEF = "1800WxBrief";
+  static const String AREA_BRIEF = "Area Brief";
+  static const String AIRPORT_METAR_TAF = "Airport METAR/TAF";
+  static const String GEOS_NE = " GEOS NE";
+  static const String CUSTOMIZATION = "Customization";
+  static const String TASK_LIST = "Task List";
+  static const String TURNPOINTS = "Turnpoints";
+  static const String AIRPORT_LIST = "Airport List";
+  static const String SETTINGS = "Settings";
+  static const String FEEDBACK = "Feedback";
+  static const String ABOUT = "About";
+}
+
 // Turnpoint icon colors for type of runway
 const Color grassRunway = Color(0xFF3CB043);
 const Color asphaltRunway = Colors.black;

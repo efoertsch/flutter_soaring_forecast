@@ -1,0 +1,33 @@
+[
+  {
+    "title": "RASP Options",
+    "options": [
+      {
+        "key": "DISPLAY_LANDABLE_TURNPOINTS",
+        "title": "Display only landable turnpoints",
+        "description": "Display only turnpoints marked as landable",
+        "default": true
+      }
+    ]
+  },
+  {
+    "title": "Other Forecast Products",
+    "options": [
+      {
+        "key": "DISPLAY_WINDY",
+        "title": "Display Windy in nav drawer",
+        "default": true
+      },
+      {
+        "key": "DISPLAY_SKYSIGHT",
+        "title": "Display SkySight in nav drawer",
+        "default": true
+      },
+      {
+        "key": "DISPLAY_DRJACKS",
+        "title": "Display Dr. Jacks in nav drawer",
+        "default": true
+      }
+    ]
+  }
+]

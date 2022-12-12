@@ -43,4 +43,12 @@ abstract class TurnpointDao extends BaseDao<Turnpoint> {
       "Select * from turnpoint where latitudeDeg between :swLatitudeDeg and :neLatitudeDeg  and longitudeDeg between :swLongitudeDeg and :neLongitudeDeg")
   Future<List<Turnpoint>> getTurnpointsWithinBounds(double swLatitudeDeg,
       double swLongitudeDeg, double neLatitudeDeg, double neLongitudeDeg);
+
+  @Query(
+      "Select * from turnpoint where latitudeDeg between :swLatitudeDeg and :neLatitudeDeg  and longitudeDeg between :swLongitudeDeg and :neLongitudeDeg and style between '2' and '5'")
+  Future<List<Turnpoint>> getLandableTurnpointsWithinBounds(
+      double swLatitudeDeg,
+      double swLongitudeDeg,
+      double neLatitudeDeg,
+      double neLongitudeDeg);
 }
