@@ -98,12 +98,12 @@ class ForecastMapState extends State<ForecastMap>
   void _createMapEventListener() {
     _mapControllerStream =
         _mapController.mapEventStream.listen((MapEvent mapEvent) {
-      print("MapEvent:  ${mapEvent.toString()}");
+      // print("MapEvent:  ${mapEvent.toString()}");
       _mapZoom = mapEvent.zoom;
       if (mapEvent is MapEventMoveEnd) {
         _sendEvent(ViewBoundsEvent(_mapController.bounds!));
       }
-      debugPrint("Map zoom ${_mapZoom.toString()}");
+      // debugPrint("Map zoom ${_mapZoom.toString()}");
     });
   }
 
@@ -682,11 +682,13 @@ class ForecastMapState extends State<ForecastMap>
     suaDetails.features?.forEach((airspace) {
       Color? polygonColor = null;
       String? label = null;
+      bool isDashed = false;
       if (airspace.properties != null && airspace.properties!.type != null) {
         label = airspace.properties!.type!;
         for (var suaType in Constants.SUAColor.values) {
           if (suaType.suaClassType == airspace.properties!.type) {
             polygonColor = suaType.airspaceColor;
+            isDashed = suaType.dashedLine;
           }
         }
       }
@@ -695,6 +697,7 @@ class ForecastMapState extends State<ForecastMap>
           borderStrokeWidth: 2,
           points: airspace.geometry!.coordinates,
           label: label ?? "Unknown",
+          isDotted: isDashed,
           isFilled: true,
           labelStyle: textStyleBlack87FontSize14,
           color: polygonColor ?? Color(0x400000F80),

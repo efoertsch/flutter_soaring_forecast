@@ -88,18 +88,43 @@ final List<PreferenceOption> RaspDisplayOptions = [
 enum SUAColor {
   //: Color(0x0000FF).withOpacity(0.5)
 
-  classB(suaClassType: "CLASS B", airspaceColor: Color(0x400000FF)),
-  classC(suaClassType: "CLASS C", airspaceColor: Color(0x40FF00FF)),
-  classD(suaClassType: "CLASS D", airspaceColor: Color(0x400000FF)),
-  classE(suaClassType: "CLASS C", airspaceColor: Color(0x40FF00FF)),
-  classMATZ(suaClassType: "MATZ", airspaceColor: Color(0x40FF0000)),
-  classDanger(suaClassType: "DANGER", airspaceColor: Color(0x40FF0000)),
-  classProhibited(suaClassType: "PROHIBITED", airspaceColor: Color(0x800000FF));
+  classB(
+      suaClassType: "CLASS B",
+      airspaceColor: Color(0x400000FF),
+      dashedLine: false),
+  classC(
+      suaClassType: "CLASS C",
+      airspaceColor: Color(0x40FF00FF),
+      dashedLine: false),
+  classD(
+      suaClassType: "CLASS D",
+      airspaceColor: Color(0x400000FF),
+      dashedLine: true),
+  classE(
+      suaClassType: "CLASS C",
+      airspaceColor: Color(0x40FF00FF),
+      dashedLine: true),
+  classMATZ(
+      suaClassType: "MATZ",
+      airspaceColor: Color(0x40FF0000),
+      dashedLine: false),
+  classDanger(
+      suaClassType: "DANGER",
+      airspaceColor: Color(0x40FF0000),
+      dashedLine: false),
+  classProhibited(
+      suaClassType: "PROHIBITED",
+      airspaceColor: Color(0x800000FF),
+      dashedLine: false);
 
-  const SUAColor({required this.suaClassType, required this.airspaceColor});
+  const SUAColor(
+      {required this.suaClassType,
+      required this.airspaceColor,
+      required this.dashedLine});
 
   final String suaClassType;
   final Color airspaceColor;
+  final bool dashedLine;
 }
 
 enum WxBriefBriefingRequest {
