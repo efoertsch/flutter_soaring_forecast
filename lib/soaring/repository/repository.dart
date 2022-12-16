@@ -261,10 +261,10 @@ class Repository {
    * @return
    */
   Future<HttpResponse> getLatLngForecast(String region, String date,
-      String model, String time, String lat, String lon, String forecastType) {
+      String model, String time, String lat, String lon, String forecasts) {
     final String contentType = "application/x-www-form-urlencoded";
     return _raspClient.getLatLongPointForecast(
-        contentType, region, date, model, time, lat, lon, forecastType);
+        contentType, region, date, model, time, lat, lon, forecasts);
   }
 
   Future<double> getForecastOverlayOpacity() async {

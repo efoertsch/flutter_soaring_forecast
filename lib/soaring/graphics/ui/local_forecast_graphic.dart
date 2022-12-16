@@ -96,23 +96,29 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
     return Stack(
       children: [
         _widgetForMessages(),
-        _getForecastGraphWidgets(),
+        _getForecastScreenWidgets(),
         _getProgressIndicator(),
       ],
     );
   }
 
-  Widget _getForecastGraphWidgets() {
+  Widget _getForecastScreenWidgets() {
+    final widgets = <Widget>[];
+    widgets.add(_getLocationTitleWidget());
+    widgets.add(_getForecastModelsAndDates());
+    widgets.add(_getGraphWidgets());
     return Padding(
       padding: const EdgeInsets.only(left: 8.0, right: 8),
-      child: Column(children: [
-        _getLocationTitleWidget(),
-        getForecastModelsAndDates(),
-        // _getModelAndDateWidgets(
-        //     state.forecastData.model, state.forecastData.date),
-        _getCloudbaseWidget(),
-        _getThermalUpdraftWidget(),
-      ]),
+      child: Column(children: widgets),
+    );
+  }
+
+  Widget _getGraphWidgets() {
+    return Expanded(
+      child: SingleChildScrollView(
+          child: Column(
+        children: [_getCloudbaseWidget(), _getThermalUpdraftWidget()],
+      )),
     );
   }
 
@@ -154,7 +160,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
     });
   }
 
-  Widget getForecastModelsAndDates() {
+  Widget _getForecastModelsAndDates() {
     //debugPrint('creating/updating main ForecastModelsAndDates');
     return Row(
       mainAxisAlignment: MainAxisAlignment.start,

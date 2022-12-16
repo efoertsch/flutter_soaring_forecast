@@ -22,13 +22,14 @@ abstract class RaspClient {
       @Path("region") String region, @Path("date") String date);
 
   /*
-  * @param region - NewEngland
-  * @param yyyymmddDate - 2018-03-31
-  * @param forecastType - gfs
-  * @param forecastParameter - wstar_bsratio
-  * @param forecastTime - 1500
-  * @param bitmapType - body
-  * @return something like NewEngland/2018-03-31/gfs/wstar_bsratio.1500local.d2.body.png
+  * @param region - "NewEngland"
+  * @param yyyymmddDate - "2018-03-31"
+  * @param forecastType - "gfs"
+  * @param forecastTime - "1500"
+  * @param lat - "43.1394043"
+  * @param lon - "-72.0759888"
+  * @param forecasts  -  "wstar hwcrit" space separated forecast codes
+  * @return
   */
   // Got error when putting Content-type in @Headers annotation
   @POST("/cgi/get_rasp_blipspot.cgi")
@@ -40,5 +41,5 @@ abstract class RaspClient {
       @Field("time") String time,
       @Field("lat") String lat,
       @Field("lon") String lon,
-      @Field("param") String forecastType);
+      @Field("param") String forecasts);
 }
