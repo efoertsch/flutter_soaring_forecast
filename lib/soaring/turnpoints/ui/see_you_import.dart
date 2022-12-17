@@ -67,14 +67,19 @@ class _SeeYouImportScreenState extends State<SeeYouImportScreen>
   BlocConsumer<TurnpointBloc, TurnpointState> _getBody() {
     return BlocConsumer<TurnpointBloc, TurnpointState>(
         listener: (context, state) {
-      //TODO handle error msg
       if (state is TurnpointShortMessageState) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: Colors.green,
-            content: Text(state.shortMsg),
-          ),
-        );
+        CommonWidgets.showInfoDialog(
+            context: context,
+            title: TurnpointMenu.importTurnpoints,
+            msg: state.shortMsg,
+            button1Text: StandardLiterals.OK,
+            button1Function: Navigator.of(context).pop);
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   SnackBar(
+        //     backgroundColor: Colors.green,
+        //     content: Text(state.shortMsg),
+        //   ),
+        // );
       }
     }, buildWhen: (previous, current) {
       return current is TurnpointsInitialState ||
