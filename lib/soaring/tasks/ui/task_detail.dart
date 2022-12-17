@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/main.dart';
 import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
+import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
+    show StandardLiterals, TaskLiterals;
 import 'package:flutter_soaring_forecast/soaring/app/custom_styles.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/task/task.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/taskturnpoint/task_turnpoint.dart';
@@ -60,7 +62,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
 
   AppBar _getAppBar() {
     return AppBar(
-      title: Text('Task Detail'),
+      title: Text(TaskLiterals.TASK_DETAIL),
       leading: BackButton(
         onPressed: _onWillPop,
       ),
@@ -78,7 +80,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
         );
       }
       if (state is TaskErrorState) {
-        CommonWidgets.showErrorDialog(context, 'Task Error', state.errorMsg);
+        CommonWidgets.showErrorDialog(
+            context, TaskLiterals.TASK_ERROR, state.errorMsg);
       }
       if (state is TaskModifiedState) {
         setState(() {
@@ -114,7 +117,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
               _addTurnpointsButton(),
             ]);
       }
-      return Center(child: Text("Unhandled State"));
+      return Center(child: Text(StandardLiterals.UNDEFINED_STATE));
     });
   }
 
@@ -126,7 +129,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
       Padding(
           padding: const EdgeInsets.only(
               left: 8.0, top: 16.0, right: 8.0, bottom: 8.0),
-          child: Text('Task:', style: Theme.of(context).textTheme.subtitle1)),
+          child: Text(TaskLiterals.TASK,
+              style: Theme.of(context).textTheme.subtitle1)),
       Expanded(
         child: Padding(
           padding: const EdgeInsets.all(8.0),
@@ -148,7 +152,10 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
   Widget _taskDistance(Task task) {
     return Padding(
         padding: const EdgeInsets.all(8.0),
-        child: Text('Distance: ' + task.distance.toStringAsFixed(1) + 'km',
+        child: Text(
+            TaskLiterals.DISTANCE +
+                task.distance.toStringAsFixed(1) +
+                TaskLiterals.KM,
             style: Theme.of(context).textTheme.subtitle1));
   }
 
@@ -158,7 +165,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
       child: Align(
         alignment: Alignment.topLeft,
         child: Text(
-          'Turnpoints:',
+          TaskLiterals.TURNPOINTS,
           style: Theme.of(context).textTheme.subtitle1,
         ),
       ),
@@ -216,9 +223,9 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
             .add(SwipeDeletedTaskTurnpointEvent(taskTurnpoint.taskOrder));
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Removed ${taskTurnpoint.title}'),
+          content: Text('${StandardLiterals.REMOVED} ${taskTurnpoint.title}'),
           action: SnackBarAction(
-            label: 'Undo',
+            label: StandardLiterals.UNDO,
             onPressed: () {
               BlocProvider.of<TaskBloc>(context)
                   .add(AddBackTaskTurnpointEvent(taskTurnpoint));
@@ -270,9 +277,9 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
                               alignment: Alignment.centerRight,
                               child: Text(
                                 taskTurnpoint.taskOrder == 0
-                                    ? 'Start'
+                                    ? TaskLiterals.START
                                     : (taskTurnpoint.lastTurnpoint
-                                        ? 'Finish'
+                                        ? TaskLiterals.FINISH
                                         : ''),
                                 textAlign: TextAlign.right,
                                 style: textStyleBoldBlack87FontSize14,
@@ -286,10 +293,11 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
                         child: Padding(
                           padding: const EdgeInsets.only(left: 8.0, top: 4.0),
                           child: Text(
-                            'From prior point: ' +
+                            TaskLiterals.FROM_PRIOR_POINT +
+                                ' ' +
                                 taskTurnpoint.distanceFromPriorTurnpoint
                                     .toStringAsFixed(1) +
-                                'km',
+                                TaskLiterals.KM,
                             textAlign: TextAlign.left,
                             style: textStyleBoldBlack87FontSize14,
                           ),
@@ -300,10 +308,11 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
                         child: Padding(
                           padding: const EdgeInsets.only(left: 8.0, top: 4.0),
                           child: Text(
-                            'From start: ' +
+                            TaskLiterals.FROM_START +
+                                ' ' +
                                 taskTurnpoint.distanceFromStartingPoint
                                     .toStringAsFixed(1) +
-                                'km',
+                                TaskLiterals.KM,
                             textAlign: TextAlign.left,
                             style: textStyleBoldBlack87FontSize14,
                           ),
@@ -348,7 +357,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
             _getTurnpointsForTask();
           },
           child: Text(
-            'Add Turnpoints',
+            TaskLiterals.ADD_TURNPOINTS,
             style: TextStyle(
               color: Colors.white,
               fontSize: Theme.of(context).textTheme.subtitle1?.fontSize,
@@ -400,11 +409,11 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
     if (widget.displaySaveButton) {
       CommonWidgets.showInfoDialog(
           context: context,
-          title: "Unsaved Changes!",
-          msg: "Changes will be lost. Continue?",
-          button1Text: "No",
+          title: StandardLiterals.UNSAVED_CHANGES,
+          msg: StandardLiterals.CHANGES_WILL_BE_LOST,
+          button1Text: StandardLiterals.NO,
           button1Function: _dismissDialogFunction,
-          button2Text: "Yes",
+          button2Text: StandardLiterals.YES,
           button2Function: _cancelUpdateFunction);
     } else {
       Navigator.pop(context);

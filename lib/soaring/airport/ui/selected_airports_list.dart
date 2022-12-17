@@ -10,6 +10,8 @@ import 'package:flutter_soaring_forecast/soaring/airport/bloc/airport_event.dart
 import 'package:flutter_soaring_forecast/soaring/airport/bloc/airport_state.dart';
 import 'package:flutter_soaring_forecast/soaring/airport/ui/common_airport_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
+import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
+    show AirportLiterals, MetarTafMenu, StandardLiterals;
 import 'package:flutter_soaring_forecast/soaring/floor/airport/airport.dart';
 
 class SelectedAirportsList extends StatefulWidget {
@@ -59,7 +61,7 @@ class _SelectedAirportsListState extends State<SelectedAirportsList>
 
   AppBar _getAppBar() {
     return AppBar(
-        title: Text("METAR/TAF Airports"),
+        title: Text(AirportLiterals.METAR_TAF_AIRPORTS),
         leading: BackButton(
           onPressed: _onWillPop,
         ),
@@ -69,7 +71,7 @@ class _SelectedAirportsListState extends State<SelectedAirportsList>
   List<Widget> getAirportMenu() {
     return <Widget>[
       TextButton(
-        child: Text("ADD"),
+        child: Text(MetarTafMenu.add, style: TextStyle(color: Colors.white)),
         onPressed: () {
           _addNewAirport();
         },
@@ -79,6 +81,18 @@ class _SelectedAirportsListState extends State<SelectedAirportsList>
 
   Widget _getBody() {
     return BlocConsumer<AirportBloc, AirportState>(listener: (context, state) {
+      if (state is AirportsLoadedState) {
+        if (state.airports.isEmpty) {
+          CommonWidgets.showInfoDialog(
+              context: context,
+              title: AirportLiterals.METAR_TAF_AIRPORTS,
+              msg: AirportLiterals.NO_AIRPORTS_SELECTED_YET,
+              button1Text: StandardLiterals.NO,
+              button1Function: _onWillPop,
+              button2Text: StandardLiterals.YES,
+              button2Function: _removeDialogAndSelectAirport);
+        }
+      }
       if (state is AirportShortMessageState) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -99,7 +113,7 @@ class _SelectedAirportsListState extends State<SelectedAirportsList>
       if (state is AirportsLoadedState) {
         if (state.airports.isEmpty) {
           return Center(
-            child: Text('No airports found.'),
+            child: Text(AirportLiterals.NO_AIRPORTS_FOUND),
           );
         }
         return _getAirportListView(context: context, airports: state.airports);
@@ -108,10 +122,10 @@ class _SelectedAirportsListState extends State<SelectedAirportsList>
       if (state is AirportsErrorState) {
         WidgetsBinding.instance.addPostFrameCallback((_) =>
             CommonWidgets.showErrorDialog(
-                context, 'Airports Error', state.errorMsg));
+                context, AirportLiterals.AIRPORTS_ERROR, state.errorMsg));
       }
       return Center(
-        child: Text('Hmmm. Undefined state.'),
+        child: Text(StandardLiterals.UNDEFINED_STATE),
       );
     });
   }
@@ -169,9 +183,9 @@ class _SelectedAirportsListState extends State<SelectedAirportsList>
             .add(SwipeDeletedAirportEvent(airport));
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Removed ${airport.name}'),
+          content: Text('${StandardLiterals.REMOVED} ${airport.name}'),
           action: SnackBarAction(
-            label: 'Undo',
+            label: StandardLiterals.UNDO,
             onPressed: () {
               BlocProvider.of<AirportBloc>(context)
                   .add(AddBackAirportEvent(airport, index));
@@ -190,6 +204,11 @@ class _SelectedAirportsListState extends State<SelectedAirportsList>
         ],
       ),
     );
+  }
+
+  Future<void> _removeDialogAndSelectAirport() async {
+    Navigator.of(context).pop();
+    await _addNewAirport();
   }
 
   Future<void> _addNewAirport() async {

@@ -75,12 +75,18 @@ class _TurnpointsListState extends State<TurnpointsList>
     return BlocConsumer<TurnpointBloc, TurnpointState>(
         listener: (context, state) {
       if (state is TurnpointShortMessageState) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: Colors.green,
-            content: Text(state.shortMsg),
-          ),
-        );
+        CommonWidgets.showInfoDialog(
+            context: context,
+            title: TurnpointMenu.turnpoints,
+            msg: state.shortMsg,
+            button1Text: StandardLiterals.OK,
+            button1Function: Navigator.of(context).pop);
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   SnackBar(
+        //     backgroundColor: Colors.green,
+        //     content: Text(state.shortMsg),
+        //   ),
+        // );
       }
     }, buildWhen: (previous, current) {
       return current is TurnpointsInitialState ||

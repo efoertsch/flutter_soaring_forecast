@@ -157,6 +157,7 @@ enum WxBriefFormat {
   }
 }
 
+// TODO Consolidate all classes into one. It got a bit out of control...
 //------------- Translatable values --------------------------------------------
 class StandardLiterals {
   static const YES = "Yes";
@@ -170,6 +171,10 @@ class StandardLiterals {
   static const CONTINUE = "Continue";
   static const CLOSE = "Close";
   static const REFRESH = "Refresh";
+  static const UNDO = "Undo";
+  static const REMOVED = "Removed";
+  static const UNSAVED_CHANGES = "Unsaved Changes!";
+  static const CHANGES_WILL_BE_LOST = "Changes will be lost. Continue?";
 }
 
 class RaspMenu {
@@ -198,6 +203,20 @@ class MapBackgroundMenu {
   static const String hybrid = 'Hybrid';
 }
 
+class TaskLiterals {
+  static const String TASK = "Task";
+  static const String TASK_DETAIL = "Task Detail";
+  static const String TASK_ERROR = "Task Error";
+  static const String DISTANCE = "Distance:";
+  static const String KM = "km";
+  static const String TURNPOINTS = "Turnpoints:";
+  static const String START = "Start";
+  static const String FINISH = "Finish";
+  static const String FROM_PRIOR_POINT = "From prior point:";
+  static const String FROM_START = "From start:";
+  static const String ADD_TURNPOINTS = "Add Turnpoints";
+}
+
 class TurnpointMenu {
   static const String searchTurnpoints = "Search";
   static const String importTurnpoints = 'Import Turnpoints';
@@ -206,6 +225,7 @@ class TurnpointMenu {
   static const String emailTurnpoints = 'Email Turnpoints';
   static const String clearTurnpointDatabase = 'Clear Turnpoint Database';
   static const String customImport = 'Custom Import';
+  static const String turnpoints = "Turnpoints";
 }
 
 class TurnpointEditMenu {
@@ -288,6 +308,7 @@ class AirportMenu {
 }
 
 class AirportLiterals {
+  static const String METAR_TAF_AIRPORTS = "METAR/TAF Airports";
   static const String DOWNLOAD_AIRPORTS = "Download Airports?";
   static const String NO_AIRPORTS_FOUND_MSG =
       "Hmmm. Looks like we need to download the airport database. Is it Ok to download now? It might take 30 secs or so.";
@@ -298,6 +319,10 @@ class AirportLiterals {
   static const String REFRESH_AIRPORTS = "Refresh Airports?";
   static const String CONFIRM_DELETE_RELOAD =
       "Are you sure you want to delete/reload the Airport database?";
+  static const String NO_AIRPORTS_FOUND = "No airports found";
+  static const String AIRPORTS_ERROR = 'Airports Error';
+  static const String NO_AIRPORTS_SELECTED_YET =
+      "No airports have been selected yet. Would you like to add some?";
 }
 
 class MetarOrTAF {
