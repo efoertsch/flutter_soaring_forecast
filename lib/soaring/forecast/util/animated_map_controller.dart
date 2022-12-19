@@ -11,7 +11,7 @@ class AnimatedMapController extends MapControllerImpl {
   AnimatedMapController(this.tickerProvider);
 
   @override
-  set state(MapState state) {
+  set state(FlutterMapState state) {
     _stateWrapper = MapStateWrapper(state);
     super.state = state;
   }
@@ -29,7 +29,7 @@ class AnimatedMapController extends MapControllerImpl {
 }
 
 class MapStateWrapper {
-  final MapState state;
+  final FlutterMapState state;
 
   MapStateWrapper(this.state);
 

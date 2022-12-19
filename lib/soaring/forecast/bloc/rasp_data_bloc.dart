@@ -14,15 +14,9 @@ import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/regions.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/view_bounds.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
+import 'package:latlong2/latlong.dart';
 
 import 'rasp_bloc.dart';
-
-class DelayEmitState {
-  final Emitter<RaspDataState> emit;
-  final RaspDataState state;
-
-  DelayEmitState(this.emit, this.state);
-}
 
 enum _DisplayType { forecast, sounding }
 
@@ -44,12 +38,14 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
   List<SoaringForecastImageSet> _forecastImageSets = [];
   List<SoaringForecastImageSet> _soundingsImageSets = [];
   LatLngBounds? _regionLatLngBounds;
+  LatLng? _centerOfRegion;
   ViewBounds? _viewMapBoundsAndZoom;
 
   _DisplayType _displayType = _DisplayType.forecast;
 
   RaspDataBloc({required this.repository}) : super(RaspInitialState()) {
     on<InitialRaspRegionEvent>(_processInitialRaspRegionEvent);
+    on<MapReadyEvent>(_processMapReadyEvent);
     on<SelectedRaspModelEvent>(_processSelectedModelEvent);
     on<SelectRaspForecastDateEvent>(_processSelectedDateEvent);
     on<NextTimeEvent>(_processNextTimeEventAndEmitImage);
@@ -58,7 +54,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     on<DisplayCurrentForecastEvent>(_processDisplayCurrentForecast);
     on<GetTaskTurnpointsEvent>(_getTurnpointsForTaskId);
     on<ClearTaskEvent>(_clearTask);
-    //on<MapReadyEvent>(_checkForPreviouslySelectedTask);
+    on<SwitchedRegionEvent>(_processSwitchedRegion);
     on<DisplayTaskTurnpointEvent>(_displayTaskTurnpoint);
     on<DisplayLocalForecastEvent>(_displayLocalForecast);
     on<RedisplayMarkersEvent>(_redisplayMarkers);
@@ -72,6 +68,10 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
 
   void _processInitialRaspRegionEvent(
       InitialRaspRegionEvent event, Emitter<RaspDataState> emit) async {
+    await _emitForecastRegionInfo(emit);
+  }
+
+  Future<void> _emitForecastRegionInfo(Emitter<RaspDataState> emit) async {
     emit(RaspWorkingState(working: true));
     try {
       await _loadForecastTypes();
@@ -92,15 +92,8 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
         _setRegionModelNames();
         _emitRaspModels(emit);
         _emitRaspModelDates(emit);
-        await _emitMapLatLngBoundsAndZoom(emit);
-        _getForecastImages();
-        await _sendInitialForecastOverlayOpacity(emit);
-        await _emitDisplayOptions(emit);
-        await waitAFrame();
-        //await _emitRaspDisplayOptions(emit);
-        await _emitCurrentTask(emit);
+        _emitCenterOfMap(emit);
         emit(RaspWorkingState(working: false));
-        _emitRaspForecastImageSet(emit);
       }
     } catch (e) {
       print("Error: ${e.toString()}");
@@ -108,6 +101,37 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
       emit(
           RaspErrorState("Unexpected error occurred gathering forecast data."));
     }
+  }
+
+  void _processMapReadyEvent(
+      MapReadyEvent event, Emitter<RaspDataState> emit) async {
+    await _emitForecastMapInfo(emit);
+  }
+
+  Future<void> _emitForecastMapInfo(Emitter<RaspDataState> emit) async {
+    try {
+      emit(RaspWorkingState(working: true));
+      await _emitForecastBounds(emit);
+      _getForecastImages();
+      await _sendInitialForecastOverlayOpacity(emit);
+      await _emitDisplayOptions(emit);
+      //await _emitRaspDisplayOptions(emit);
+      await _emitCurrentTask(emit);
+      emit(RaspWorkingState(working: false));
+      _emitRaspForecastImageSet(emit);
+    } catch (e) {
+      print("Error: ${e.toString()}");
+      emit(RaspWorkingState(working: true));
+      emit(
+          RaspErrorState("Unexpected error occurred gathering forecast data."));
+    }
+  }
+
+  void _processSwitchedRegion(
+      SwitchedRegionEvent event, Emitter<RaspDataState> emit) async {
+    repository.setCurrentTaskId(-1);
+    await _emitForecastRegionInfo(emit);
+    await _emitForecastMapInfo(emit);
   }
 
   void _processSelectedModelEvent(
@@ -157,15 +181,14 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
   }
 
   // Note that _regionLatLngBounds must be previously defined
-  Future<void> _emitMapLatLngBoundsAndZoom(Emitter<RaspDataState> emit) async {
+  Future<void> _emitForecastBounds(Emitter<RaspDataState> emit) async {
     emit(ForecastBoundsState(_regionLatLngBounds!));
-    _viewMapBoundsAndZoom = await repository.getViewBoundsAndZoom();
-    if (_viewMapBoundsAndZoom != null) {
-      await waitAFrame();
-      emit(ViewBoundsState(
-          _viewMapBoundsAndZoom ?? ViewBounds(_regionLatLngBounds!)));
-      print('emitted ViewBoundsAndZoomState');
-    }
+    // _viewMapBoundsAndZoom = await repository.getViewBoundsAndZoom();
+    // if (_viewMapBoundsAndZoom != null) {
+    //   emit(ViewBoundsState(
+    //       _viewMapBoundsAndZoom ?? ViewBounds(_regionLatLngBounds!)));
+    //   print('emitted ViewBoundsAndZoomState');
+    // }
   }
 
   void _emitRaspForecastImageSet(Emitter<RaspDataState> emit) {
@@ -259,6 +282,8 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     _setSelectedTimeIndex();
     // While we are here
     _regionLatLngBounds = modelDateDetail.latLngBounds;
+    _centerOfRegion =
+        LatLng(modelDateDetail.center[0], modelDateDetail.center[1]);
   }
 
   void _setSelectedTimeIndex() {
@@ -393,7 +418,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     _viewMapBoundsAndZoom = ViewBounds(_regionLatLngBounds!);
     repository.saveViewBounds(_viewMapBoundsAndZoom!); // 7 default zoom
     emit(RaspTaskTurnpoints(<TaskTurnpoint>[]));
-    emit(ViewBoundsState(_viewMapBoundsAndZoom!));
+    //emit(ViewBoundsState(_viewMapBoundsAndZoom!));
   }
 
   // void _checkForPreviouslySelectedTask(
@@ -513,7 +538,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
       ViewBoundsEvent event, Emitter<RaspDataState> emit) async {
     repository.saveViewBounds(ViewBounds(event.latLngBounds));
     await _emitDisplayOptions(emit);
-    emit(RedisplayMarkersState());
+    // emit(RedisplayMarkersState());
   }
 
 // initial check for display options (soundings, turnpoints, sua) and send them if needed
@@ -523,10 +548,8 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
       switch (option.key) {
         case (soundingsDisplayOption):
           if (option.selected) {
-            await waitAFrame();
             emit(RaspSoundingsState(_region?.soundings ?? <Soundings>[]));
           } else {
-            await waitAFrame();
             emit(RaspSoundingsState(<Soundings>[]));
           }
           print('emitted RaspSoundingsState');
@@ -535,10 +558,8 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
           if (option.selected) {
             final turnpoints = await repository
                 .getTurnpointsWithinBounds(_regionLatLngBounds!);
-            await waitAFrame();
             emit(TurnpointsInBoundsState(turnpoints));
           } else {
-            await waitAFrame();
             emit(TurnpointsInBoundsState(<Turnpoint>[]));
           }
           print('emitted TurnpointsInBoundsState');
@@ -555,9 +576,11 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     emit(RaspDisplayOptionsState(preferenceOptions));
   }
 
-  Future<void> waitAFrame() async {
-    await Future.delayed(Duration(milliseconds: 100));
-  }
+  // Used to allow prior emitted state to be process by Flutter before another
+  // emit fired
+  // Future<void> waitAFrame() async {
+  //   await Future.delayed(Duration(milliseconds: 100));
+  // }
 
   FutureOr<void> _processSoundingsEvent(
       DisplaySoundingsEvent event, Emitter<RaspDataState> emit) {
@@ -614,5 +637,9 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
   FutureOr<void> _checkForUpdatedTask(
       RefreshTaskEvent event, Emitter<RaspDataState> emit) {
     _emitCurrentTask(emit);
+  }
+
+  void _emitCenterOfMap(Emitter<RaspDataState> emit) {
+    emit(CenterOfMapState(_centerOfRegion!));
   }
 }
