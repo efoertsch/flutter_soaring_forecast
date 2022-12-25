@@ -17,6 +17,10 @@ class InitialRaspRegionEvent extends RaspDataEvent {
   InitialRaspRegionEvent();
 }
 
+class SwitchedRegionEvent extends RaspDataEvent {
+  SwitchedRegionEvent();
+}
+
 class SelectedRaspModelEvent extends RaspDataEvent {
   final String modelName;
 

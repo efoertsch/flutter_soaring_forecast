@@ -627,7 +627,7 @@ class _RaspScreenState extends State<RaspScreen>
       debugPrint("selected region: result");
       // user switched to another region
       if (result != _selectedRegionName) ;
-      _sendEvent(InitialRaspRegionEvent());
+      _sendEvent(SwitchedRegionEvent());
     }
   }
 

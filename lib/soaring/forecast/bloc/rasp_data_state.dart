@@ -11,6 +11,7 @@ import 'package:flutter_soaring_forecast/soaring/repository/options/special_use_
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/regions.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/view_bounds.dart';
+import 'package:latlong2/latlong.dart';
 
 /// https://medium.com/flutter-community/flutter-bloc-pattern-for-dummies-like-me-c22d40f05a56
 /// Event In - State Out
@@ -78,6 +79,15 @@ class ForecastBoundsState extends RaspDataState {
 
   @override
   List<Object?> get props => [latLngBounds];
+}
+
+class CenterOfMapState extends RaspDataState {
+  final LatLng latLng;
+
+  CenterOfMapState(this.latLng);
+
+  @override
+  List<Object?> get props => [latLng];
 }
 
 class ViewBoundsState extends RaspDataState {
