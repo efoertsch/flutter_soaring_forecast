@@ -7,7 +7,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:flutter_soaring_forecast/main.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
-    as Constants;
+    show NewEnglandMapLatLngBounds, RASP_BASE_URL, SUAColor;
 import 'package:flutter_soaring_forecast/soaring/app/custom_styles.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/taskturnpoint/task_turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
@@ -48,7 +48,7 @@ class ForecastMapState extends State<ForecastMap>
   final List<Marker> _latLngMarkers = <Marker>[];
 
   // These bounds define the bounds of the forecast overlays
-  LatLngBounds _forecastLatLngBounds = Constants.NewEnglandMapLatLngBounds;
+  LatLngBounds _forecastLatLngBounds = NewEnglandMapLatLngBounds;
 
   /// Use to center task route in map
   LatLng? _southwest;
@@ -78,16 +78,9 @@ class ForecastMapState extends State<ForecastMap>
   }
 
   void _processMapEvent(MapEvent mapEvent) {
-    _printMapBounds("MapEvent  ${mapEvent} : bounds from _mapController",
-        _mapController.bounds!);
+    // _printMapBounds("MapEvent  ${mapEvent} : bounds from _mapController",
+    //     _mapController.bounds!);
     _mapZoom = mapEvent.zoom;
-    // if (mapEvent is MapEventMove) {
-    //   _printMapBounds( "MapEventMove bounds from _mapController" , _mapController.bounds!);
-    // }
-    // if (mapEvent is MapEventMoveEnd) {
-    //   _sendEvent(ViewBoundsEvent(_mapController.bounds!));
-    // }
-    // debugPrint("Map zoom ${_mapZoom.toString()}");
   }
 
   void _printMapBounds(String msg, LatLngBounds latLngBounds) {
@@ -109,6 +102,7 @@ class ForecastMapState extends State<ForecastMap>
 
   Stack _getMapAndLegendWidget() {
     return Stack(children: [
+      _miscStatesHandlerWidget(),
       Container(
         alignment: Alignment.center,
         child: _forecastMap(),
@@ -118,7 +112,6 @@ class ForecastMapState extends State<ForecastMap>
         child: _forecastLegend(),
       ),
       _getOpacitySlider(),
-      _miscStatesHandlerWidget(),
     ]);
   }
 
@@ -135,7 +128,7 @@ class ForecastMapState extends State<ForecastMap>
               panEnabled: true,
               maxScale: 4.0,
               child: Image(
-                image: NetworkImage(Constants.RASP_BASE_URL +
+                image: NetworkImage(RASP_BASE_URL +
                     state.soaringForecastImageSet.sideImage!.imageUrl),
                 gaplessPlayback: true,
               ),
@@ -150,15 +143,53 @@ class ForecastMapState extends State<ForecastMap>
         listener: (context, state) {
       if (state is CenterOfMapState) {
         _mapCenter = state.latLng;
-        // if (_mapIsReady) {
-        //   WidgetsBinding.instance!.addPostFrameCallback((_) {
-        //     _mapController.latLngToScreenPoint(latLng)
-        //   });
-        // }
+      }
+      if (state is RaspForecastImageSet) {
+        // print('Received RaspForecastImageSet in ForecastMap');
+        soaringForecastImageSet = state.soaringForecastImageSet;
+        updateForecastOverlay();
+        return;
+      }
+      if (state is RaspTaskTurnpoints) {
+        _updateTaskTurnpoints(state.taskTurnpoints);
+        return;
+      }
+      if (state is LocalForecastState) {
+        _placeLocalForecastMarker(state.latLngForecast);
+        return;
+      }
+      if (state is RaspSoundingsState) {
+        //  print('Received Soundings in ForecastMap');
+        _placeSoundingMarkers(state.soundings);
+        return;
+      }
+      if (state is TurnpointsInBoundsState) {
+        //print('Received TurnpointsInBoundsState in ForecastMap');
+        _updateTurnpointMarkers(state.turnpoints);
+        return;
+      }
+      if (state is SuaDetailsState) {
+        // print('Received SuaDetailsState');
+        _updateSuaDetails(state.suaDetails);
+        return;
+      }
+      if (state is ForecastOverlayOpacityState) {
+        _forecastOverlayOpacity = state.opacity;
+        updateForecastOverlay();
+        return;
       }
     }, buildWhen: (previous, current) {
-      //print("forecast state is:" + current.toString());
-      return current is RaspInitialState || current is CenterOfMapState;
+      return current is RaspInitialState ||
+          current is CenterOfMapState ||
+          current is RaspForecastImageSet ||
+          current is RaspTaskTurnpoints ||
+          current is LocalForecastState ||
+          current is RaspSoundingsState ||
+          current is TurnpointsInBoundsState ||
+          current is RedisplayMarkersState ||
+          current is SuaDetailsState ||
+          current is ForecastOverlayOpacityState ||
+          current is ForecastBoundsState;
     }, builder: (context, state) {
       if (state is RaspInitialState) {
         return SizedBox.shrink();
@@ -223,8 +254,7 @@ class ForecastMapState extends State<ForecastMap>
                         panEnabled: true,
                         maxScale: 4.0,
                         child: Image(
-                          image:
-                              NetworkImage(Constants.RASP_BASE_URL + imageUrl),
+                          image: NetworkImage(RASP_BASE_URL + imageUrl),
                           gaplessPlayback: true,
                         ),
                       ),
@@ -257,43 +287,9 @@ class ForecastMapState extends State<ForecastMap>
         }
         if (state is ForecastBoundsState) {
           _forecastLatLngBounds = state.latLngBounds;
-          _printMapBounds(
-              "ForecastBoundsState  bounds ", _forecastLatLngBounds!);
+          // _printMapBounds(
+          //     "ForecastBoundsState  bounds ", _forecastLatLngBounds!);
           _mapController.animatedFitBounds(_forecastLatLngBounds);
-          return;
-        }
-        if (state is RaspForecastImageSet) {
-          // print('Received RaspForecastImageSet in ForecastMap');
-          soaringForecastImageSet = state.soaringForecastImageSet;
-          updateForecastOverlay();
-          return;
-        }
-        if (state is RaspTaskTurnpoints) {
-          _updateTaskTurnpoints(state.taskTurnpoints);
-          return;
-        }
-        if (state is LocalForecastState) {
-          _placeLocalForecastMarker(state.latLngForecast);
-          return;
-        }
-        if (state is RaspSoundingsState) {
-          //  print('Received Soundings in ForecastMap');
-          _placeSoundingMarkers(state.soundings);
-          return;
-        }
-        if (state is TurnpointsInBoundsState) {
-          //print('Received TurnpointsInBoundsState in ForecastMap');
-          _updateTurnpointMarkers(state.turnpoints);
-          return;
-        }
-        if (state is SuaDetailsState) {
-          // print('Received SuaDetailsState');
-          _updateSuaDetails(state.suaDetails);
-          return;
-        }
-        if (state is ForecastOverlayOpacityState) {
-          _forecastOverlayOpacity = state.opacity;
-          updateForecastOverlay();
           return;
         }
       },
@@ -314,7 +310,7 @@ class ForecastMapState extends State<ForecastMap>
     print('number of task turnpoints ${taskTurnpoints.length.toString()} ');
     clearTaskFromMap(taskTurnpoints.length > 0);
     if (taskTurnpoints.length == 0) {
-      _printMapBounds("TaskTurnpoints.length = 0 ", _forecastLatLngBounds);
+      //  _printMapBounds("TaskTurnpoints.length = 0 ", _forecastLatLngBounds);
       _mapController.animatedFitBounds(_forecastLatLngBounds);
     } else {
       List<LatLng> points = <LatLng>[];
@@ -342,7 +338,7 @@ class ForecastMapState extends State<ForecastMap>
       LatLng northeast = new LatLng(_neLat, _neLong);
       final latLngBounds = LatLngBounds(southwest, northeast);
       latLngBounds.pad(.2);
-      _printMapBounds("_updateTaskTurnpoints ", latLngBounds);
+      // _printMapBounds("_updateTaskTurnpoints ", latLngBounds);
       _mapController.animatedFitBounds(latLngBounds);
     }
   }
@@ -565,6 +561,7 @@ class ForecastMapState extends State<ForecastMap>
     if (_firstLayoutComplete) {
       displayForecastNoAnimation();
     }
+    WidgetsBinding.instance.addPostFrameCallback((_) => setState(() {}));
   }
 
   void displayForecastNoAnimation() {
@@ -572,7 +569,7 @@ class ForecastMapState extends State<ForecastMap>
       // print(
       //     "forecast overlay: " + soaringForecastImageSet!.bodyImage!.imageUrl);
       var imageUrl = soaringForecastImageSet!.bodyImage!.imageUrl;
-      var raspUrl = Constants.RASP_BASE_URL + imageUrl;
+      var raspUrl = RASP_BASE_URL + imageUrl;
       var overlayImage = OverlayImage(
           bounds: _forecastLatLngBounds,
           opacity: _forecastOverlayOpacity / 100,
@@ -642,22 +639,26 @@ class ForecastMapState extends State<ForecastMap>
   }
 
   void _updateSuaDetails(SUA suaDetails) async {
-    // print("Processing suaDetails");
     _suaPolygons.clear();
+    final suaColors = SUAColor.values;
 
     suaDetails.features?.forEach((airspace) {
       Color? polygonColor = null;
       String? label = null;
       bool isDashed = false;
-      if (airspace.properties != null && airspace.properties!.type != null) {
-        label = airspace.properties!.type!;
-        for (var suaType in Constants.SUAColor.values) {
-          if (suaType.suaClassType == airspace.properties!.type) {
-            polygonColor = suaType.airspaceColor;
-            isDashed = suaType.dashedLine;
-          }
-        }
+      label = airspace.properties!.type!;
+      try {
+        final suaColor = suaColors
+            .firstWhere((sua) => sua.suaClassType == airspace.properties!.type);
+        polygonColor = suaColor.airspaceColor;
+        isDashed = suaColor.dashedLine;
+        debugPrint(
+            "${airspace.properties!.title} has type ${suaColor.suaClassType}  and isDashed: $isDashed");
+      } catch (e) {
+        debugPrint(
+            "Undefined SUA type ${airspace.properties!.type} in SUAColor. ");
       }
+
       //print("SUA label: $label");
       _suaPolygons.add(Polygon(
           borderStrokeWidth: 2,
