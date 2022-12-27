@@ -65,19 +65,16 @@ dependencies:
   http: ^0.13.5
   workmanager: ^0.5.0   #0.5.0-dev.8   # to help download airports file (used for METAR/TAF)
   flutter_launcher_icons: ^0.10.0
-
-  flutter_map: ^3.0.0 # or the latest version on Pub, current used for rasp map
-  #map_controller: 0.9.1  # used to process/display SUA plus handle state with showing/removing markers
-  google_maps_flutter: ^2.2.0 # used for overhead view of turnpoints
+  google_maps_flutter: ^2.2.2 # used for overhead view of turnpoints
+  #marker_icon: ^1.0.0   # Creates icon for google map marker
 
   flutter:
     sdk: flutter
- # map_controller:       # library not developed enough for what I need
- #   path: ../map_controller
-
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.5
+  custom_marker:    # had to change name to match project name in custom_marker pubspec.yaml
+    path: ../custom_marker   # https://github.com/mmolaei7878/custom_marker
 
 
 

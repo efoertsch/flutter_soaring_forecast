@@ -1,16 +1,14 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/taskturnpoint/task_turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
-import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/LatLngForecast.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image_set.dart';
 import 'package:flutter_soaring_forecast/soaring/graphics/data/forecast_graph_data.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/special_use_airspace.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/regions.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/view_bounds.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 /// https://medium.com/flutter-community/flutter-bloc-pattern-for-dummies-like-me-c22d40f05a56
 /// Event In - State Out
@@ -120,12 +118,6 @@ class TurnpointFoundState extends RaspDataState {
   final Turnpoint turnpoint;
 
   TurnpointFoundState(this.turnpoint);
-}
-
-class LocalForecastState extends RaspDataState {
-  final LatLngForecast latLngForecast;
-
-  LocalForecastState(this.latLngForecast);
 }
 
 class RedisplayMarkersState extends RaspDataState {

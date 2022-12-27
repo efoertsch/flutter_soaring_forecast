@@ -1,27 +1,29 @@
 import 'dart:async';
 
 import 'package:after_layout/after_layout.dart';
+import 'package:custom_marker/marker_icon.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:flutter_map/plugin_api.dart';
 import 'package:flutter_soaring_forecast/main.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
-    show NewEnglandMapLatLngBounds, RASP_BASE_URL, SUAColor;
+    show
+        NewEnglandMapCenter,
+        NewEnglandMapLatLngBounds,
+        RASP_BASE_URL,
+        SUAColor;
 import 'package:flutter_soaring_forecast/soaring/app/custom_styles.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/taskturnpoint/task_turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_bloc.dart';
-import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/LatLngForecast.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image_set.dart';
-import 'package:flutter_soaring_forecast/soaring/forecast/util/animated_map_controller.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast/ui/task_turnpoint_marker_widget.dart';
 import 'package:flutter_soaring_forecast/soaring/graphics/data/forecast_graph_data.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/special_use_airspace.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/regions.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoint_utils.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_overhead_view.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class ForecastMap extends StatefulWidget {
   final Function stopAnimation;
@@ -35,17 +37,26 @@ class ForecastMap extends StatefulWidget {
 
 class ForecastMapState extends State<ForecastMap>
     with AfterLayoutMixin<ForecastMap>, TickerProviderStateMixin {
-  late final AnimatedMapController _mapController;
+  late final GoogleMapController? _mapController;
+  final Completer<GoogleMapController> _controller =
+      Completer<GoogleMapController>();
+
   bool _firstLayoutComplete = false;
   LatLng? _mapCenter;
   SoaringForecastImageSet? soaringForecastImageSet;
-  final List<Polyline> _taskTurnpointCourse = <Polyline>[];
+
+  // For google map markers, lines, polygons,...
+  Map<MarkerId, Marker> _taskTurnpointMarkers = <MarkerId, Marker>{};
+  Map<PolylineId, Polyline> _taskTurnpointCourse = <PolylineId, Polyline>{};
+  List<Widget> _taskTurnpointMarkerWidgets = [];
+  List<GlobalKey> _taskTurnpointGlobalKeys = [];
+
+  //final List<Polyline> _taskTurnpointCourse = <Polyline>[];
   final List<Marker> _mapMarkers = <Marker>[];
   final List<Marker> _soundingMarkers = <Marker>[];
   final List<Marker> _turnpointMarkers = <Marker>[];
   final List<Polygon> _suaPolygons = <Polygon>[];
   final _taskMarkers = <Marker>[];
-  final List<Marker> _latLngMarkers = <Marker>[];
 
   // These bounds define the bounds of the forecast overlays
   LatLngBounds _forecastLatLngBounds = NewEnglandMapLatLngBounds;
@@ -67,7 +78,6 @@ class ForecastMapState extends State<ForecastMap>
   @override
   void initState() {
     super.initState();
-    _mapController = AnimatedMapController(this);
   }
 
   @override
@@ -77,31 +87,18 @@ class ForecastMapState extends State<ForecastMap>
     _sendEvent(InitialRaspRegionEvent());
   }
 
-  void _processMapEvent(MapEvent mapEvent) {
-    // _printMapBounds("MapEvent  ${mapEvent} : bounds from _mapController",
-    //     _mapController.bounds!);
-    _mapZoom = mapEvent.zoom;
-  }
-
   void _printMapBounds(String msg, LatLngBounds latLngBounds) {
     debugPrint(msg +
-        " latLngBounds: ${latLngBounds.southWest!.toString()}  ${latLngBounds.northEast!.toString()}");
+        " latLngBounds: ${latLngBounds.southwest!.toString()}  ${latLngBounds.northeast!.toString()}");
   }
 
-  var _overlayImages = <OverlayImage>[];
+  // Google maps currently doesnt support overlays!!!
+  // var _overlayImages = <OverlayImage>[];
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      child: Stack(children: [
-        _getMapAndLegendWidget(),
-        _getSoundingDisplayWidget(),
-      ]),
-    );
-  }
-
-  Stack _getMapAndLegendWidget() {
-    return Stack(children: [
+        child: Stack(children: [
       _miscStatesHandlerWidget(),
       Container(
         alignment: Alignment.center,
@@ -112,7 +109,8 @@ class ForecastMapState extends State<ForecastMap>
         child: _forecastLegend(),
       ),
       _getOpacitySlider(),
-    ]);
+      _getSoundingDisplayWidget(),
+    ]));
   }
 
   Widget _forecastLegend() {
@@ -151,11 +149,7 @@ class ForecastMapState extends State<ForecastMap>
         return;
       }
       if (state is RaspTaskTurnpoints) {
-        _updateTaskTurnpoints(state.taskTurnpoints);
-        return;
-      }
-      if (state is LocalForecastState) {
-        _placeLocalForecastMarker(state.latLngForecast);
+        _mapTaskTurnpoints(state.taskTurnpoints);
         return;
       }
       if (state is RaspSoundingsState) {
@@ -183,7 +177,6 @@ class ForecastMapState extends State<ForecastMap>
           current is CenterOfMapState ||
           current is RaspForecastImageSet ||
           current is RaspTaskTurnpoints ||
-          current is LocalForecastState ||
           current is RaspSoundingsState ||
           current is TurnpointsInBoundsState ||
           current is RedisplayMarkersState ||
@@ -194,41 +187,27 @@ class ForecastMapState extends State<ForecastMap>
       if (state is RaspInitialState) {
         return SizedBox.shrink();
       }
-      return FlutterMap(
-          mapController: _mapController,
-          options: MapOptions(
-            onMapReady: (() {
-              _sendEvent(MapReadyEvent());
-              _mapIsReady = true;
-            }),
-            center: _mapCenter,
-            interactiveFlags: InteractiveFlag.drag |
-                InteractiveFlag.pinchMove |
-                InteractiveFlag.pinchZoom,
-            onMapEvent: ((mapEvent) => _processMapEvent(mapEvent)),
-            //bounds: _forecastLatLngBounds,
-            // boundsOptions: FitBoundsOptions(padding: EdgeInsets.all(8.0)),
-            onLongPress: (longPressPostion, latLng) =>
-                _getLocalForecast(latLng: latLng),
-          ),
-          children: [
-            // !!!---- Order of layers very important for receiving click events --- !!!
-            TileLayer(
-              urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-              subdomains: ['a', 'b', 'c'],
-            ),
-            OverlayImageLayer(
-              key: null,
-              overlayImages: _overlayImages,
-            ),
-            PolygonLayer(polygons: _suaPolygons),
-            PolylineLayer(
-              polylines: _taskTurnpointCourse,
-            ),
-            MarkerLayer(
-              markers: _mapMarkers,
-            ),
-          ]);
+      List<Widget> widgetStack = [];
+      widgetStack.addAll(_taskTurnpointMarkerWidgets.toList());
+      var googleMap = GoogleMap(
+        initialCameraPosition: CameraPosition(
+          target: NewEnglandMapCenter,
+          zoom: 7.0,
+        ),
+        mapType: MapType.hybrid,
+        onMapCreated: (GoogleMapController controller) {
+          _controller.complete(controller);
+          _sendEvent(MapReadyEvent());
+          _mapIsReady = true;
+        },
+        onLongPress: (latLng) => _getLocalForecast(latLng: latLng),
+        polylines: Set<Polyline>.of(_taskTurnpointCourse.values),
+        markers: Set<Marker>.of(_mapMarkers),
+      );
+      widgetStack.add(googleMap);
+      return Stack(
+        children: widgetStack,
+      );
     });
   }
 
@@ -289,7 +268,7 @@ class ForecastMapState extends State<ForecastMap>
           _forecastLatLngBounds = state.latLngBounds;
           // _printMapBounds(
           //     "ForecastBoundsState  bounds ", _forecastLatLngBounds!);
-          _mapController.animatedFitBounds(_forecastLatLngBounds);
+          _goToNewBounds(latLngBounds: _forecastLatLngBounds);
           return;
         }
       },
@@ -306,41 +285,76 @@ class ForecastMapState extends State<ForecastMap>
     );
   }
 
-  void _updateTaskTurnpoints(List<TaskTurnpoint> taskTurnpoints) {
+  void _mapTaskTurnpoints(List<TaskTurnpoint> taskTurnpoints) async {
     print('number of task turnpoints ${taskTurnpoints.length.toString()} ');
     clearTaskFromMap(taskTurnpoints.length > 0);
     if (taskTurnpoints.length == 0) {
+      _taskTurnpointGlobalKeys.clear();
+      _taskTurnpointMarkers.clear();
+      _taskTurnpointCourse.clear();
+      _taskTurnpointMarkerWidgets.clear();
       //  _printMapBounds("TaskTurnpoints.length = 0 ", _forecastLatLngBounds);
-      _mapController.animatedFitBounds(_forecastLatLngBounds);
+      _goToNewBounds(latLngBounds: _forecastLatLngBounds);
     } else {
-      List<LatLng> points = <LatLng>[];
+      List<LatLng> polyLinePoints = <LatLng>[];
+      int lineId = 0;
       for (var taskTurnpoint in taskTurnpoints) {
         // print('adding taskturnpoint: ${taskTurnpoint.title}');
+        var globalKey = GlobalKey();
+        _taskTurnpointGlobalKeys.add(globalKey);
+        _taskTurnpointMarkerWidgets.add(TaskTurnpointMarkerWidget(
+            globalKey: globalKey,
+            taskTurnpoint: taskTurnpoint,
+            stopAnimation: widget.stopAnimation));
+
         var turnpointLatLng =
             LatLng(taskTurnpoint.latitudeDeg, taskTurnpoint.longitudeDeg);
-        points.add(turnpointLatLng);
-        _taskMarkers.add(Marker(
-            width: 80.0,
-            height: 40.0,
-            point: turnpointLatLng,
-            builder: (context) => _getTaskTurnpointMarker(taskTurnpoint),
-            anchorPos: AnchorPos.align(AnchorAlign.top)));
+        polyLinePoints.add(turnpointLatLng);
+
         updateMapLatLngCorner(turnpointLatLng);
       }
       _rebuildMarkerArray();
-      _taskTurnpointCourse.add(Polyline(
-        points: points,
-        strokeWidth: 2.0,
+      final polyLineId = PolylineId(lineId.toString());
+      _taskTurnpointCourse[polyLineId] = Polyline(
+        polylineId: PolylineId(lineId.toString()),
+        points: polyLinePoints,
+        width: 2,
         color: Colors.red,
-      ));
+      );
       // Only do this if view
       LatLng southwest = new LatLng(_swLat, _swLong);
       LatLng northeast = new LatLng(_neLat, _neLong);
-      final latLngBounds = LatLngBounds(southwest, northeast);
-      latLngBounds.pad(.2);
+      final latLngBounds =
+          LatLngBounds(southwest: southwest, northeast: northeast);
       // _printMapBounds("_updateTaskTurnpoints ", latLngBounds);
-      _mapController.animatedFitBounds(latLngBounds);
+      _goToNewBounds(latLngBounds: latLngBounds, padding: .2);
+      _createTaskTurnpointMarkers(_taskTurnpointGlobalKeys, taskTurnpoints);
     }
+  }
+
+  // Turnpoint markers require async await to create bitmaps of widgets.
+  Future<void> _createTaskTurnpointMarkers(final List<GlobalKey> globalKeys,
+      final List<TaskTurnpoint> taskTurnpoints) async {
+    WidgetsBinding.instance!.addPostFrameCallback((_) async {
+      if (globalKeys.length != taskTurnpoints.length) {
+        //TODO return error
+        return;
+      }
+      for (int i = 0; i < taskTurnpoints.length; ++i) {
+        var markerTitle = "${taskTurnpoints[i].id}_${taskTurnpoints[i].taskId}";
+        final markerId = MarkerId(markerTitle);
+        var turnpointLatLng = LatLng(
+            taskTurnpoints[i].latitudeDeg, taskTurnpoints[i].longitudeDeg);
+        _taskTurnpointMarkers[markerId] = Marker(
+          markerId: markerId,
+          icon: await MarkerIcon.widgetToIcon(globalKeys[i]),
+          position: turnpointLatLng,
+        );
+      }
+      _turnpointMarkers.addAll(_taskTurnpointMarkers.values);
+      _rebuildMarkerArray();
+      setState(() {});
+    });
   }
 
   Widget _getTaskTurnpointMarker(TaskTurnpoint taskTurnpoint) {
@@ -390,11 +404,9 @@ class ForecastMapState extends State<ForecastMap>
           LatLng(turnpoint.latitudeDeg, turnpoint.longitudeDeg);
 
       _turnpointMarkers.add(Marker(
-          width: _mapZoom < 9.5 ? 24 : 48,
-          height: _mapZoom < 9.5 ? 24 : 48,
-          point: turnpointLatLng,
-          builder: (context) => _getTurnpointMarker(turnpoint),
-          anchorPos: AnchorPos.align(AnchorAlign.top)));
+        markerId: MarkerId("${turnpoint.id}"),
+        position: turnpointLatLng,
+      ));
     }
     _rebuildMarkerArray();
   }
@@ -443,11 +455,9 @@ class ForecastMapState extends State<ForecastMap>
       var soundingLatLng = LatLng(
           double.parse(sounding.latitude!), double.parse(sounding.longitude!));
       _soundingMarkers.add(Marker(
-          height: 40.0,
-          width: 70.0,
-          point: soundingLatLng,
-          builder: (context) => _getSoundingMarker(sounding),
-          anchorPos: AnchorPos.align(AnchorAlign.top)));
+        markerId: MarkerId("Sounding:${sounding.position}"),
+        position: soundingLatLng,
+      ));
     }
     _rebuildMarkerArray();
   }
@@ -509,44 +519,6 @@ class ForecastMapState extends State<ForecastMap>
     });
   }
 
-  void _placeLocalForecastMarker(LatLngForecast latLngForecast) {
-    _latLngMarkers.clear();
-    var latLngMarker = Marker(
-      width: 200.0,
-      height: 200.0,
-      point: latLngForecast.latLng,
-      builder: (context) => _getLatLngForecastMarker(latLngForecast),
-      //anchorPos: AnchorPos.align(AnchorAlign.top),
-    );
-    _latLngMarkers.add(latLngMarker);
-    _rebuildMarkerArray();
-  }
-
-  Widget _getLatLngForecastMarker(LatLngForecast latLngForecast) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.start,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          color: Colors.white,
-          constraints: BoxConstraints(maxHeight: 200),
-          child: TextFormField(
-              readOnly: true,
-              initialValue: latLngForecast.getForecastText(),
-              textAlign: TextAlign.center,
-              style: TextStyle(backgroundColor: Colors.white),
-              maxLines: 5,
-              minLines: 5,
-              onTap: () {
-                _removeLocalForecastMarker();
-              }),
-        ),
-        Icon(Icons.arrow_drop_down, color: Colors.white),
-      ],
-    );
-  }
-
   void clearTaskFromMap(bool taskDefined) {
     _taskTurnpointCourse.clear();
     _taskMarkers.clear();
@@ -565,23 +537,24 @@ class ForecastMapState extends State<ForecastMap>
   }
 
   void displayForecastNoAnimation() {
-    if (soaringForecastImageSet != null) {
-      // print(
-      //     "forecast overlay: " + soaringForecastImageSet!.bodyImage!.imageUrl);
-      var imageUrl = soaringForecastImageSet!.bodyImage!.imageUrl;
-      var raspUrl = RASP_BASE_URL + imageUrl;
-      var overlayImage = OverlayImage(
-          bounds: _forecastLatLngBounds,
-          opacity: _forecastOverlayOpacity / 100,
-          imageProvider: NetworkImage(raspUrl),
-          gaplessPlayback: true);
-
-      if (_overlayImages.length == 0) {
-        _overlayImages.add(overlayImage);
-      } else {
-        _overlayImages[0] = overlayImage;
-      }
-    }
+    // google maps currently does not implement overlays
+    // if (soaringForecastImageSet != null) {
+    //   // print(
+    //   //     "forecast overlay: " + soaringForecastImageSet!.bodyImage!.imageUrl);
+    //   var imageUrl = soaringForecastImageSet!.bodyImage!.imageUrl;
+    //   var raspUrl = RASP_BASE_URL + imageUrl;
+    //   var overlayImage = OverlayImage(
+    //       bounds: _forecastLatLngBounds,
+    //       opacity: _forecastOverlayOpacity / 100,
+    //       imageProvider: NetworkImage(raspUrl),
+    //       gaplessPlayback: true);
+    //
+    //   if (_overlayImages.length == 0) {
+    //     _overlayImages.add(overlayImage);
+    //   } else {
+    //     _overlayImages[0] = overlayImage;
+    //   }
+    // }
   }
 
   _getLocalForecast({required LatLng latLng, String? turnpointName = null}) {
@@ -623,14 +596,6 @@ class ForecastMapState extends State<ForecastMap>
     _mapMarkers.addAll(_turnpointMarkers);
     _mapMarkers.addAll(_soundingMarkers);
     _mapMarkers.addAll(_taskMarkers);
-    _mapMarkers.addAll(_latLngMarkers);
-  }
-
-  // Currently only display max of 1, so if changes in future need to revisit logic
-  void _removeLocalForecastMarker() {
-    _latLngMarkers.clear();
-    _rebuildMarkerArray();
-    _sendEvent(RedisplayMarkersEvent());
   }
 
   void _displayTurnpointOverheadView(Turnpoint turnpoint) async {
@@ -642,6 +607,7 @@ class ForecastMapState extends State<ForecastMap>
     _suaPolygons.clear();
     final suaColors = SUAColor.values;
 
+    int polygonCount = 0;
     suaDetails.features?.forEach((airspace) {
       Color? polygonColor = null;
       String? label = null;
@@ -661,14 +627,12 @@ class ForecastMapState extends State<ForecastMap>
 
       //print("SUA label: $label");
       _suaPolygons.add(Polygon(
-          borderStrokeWidth: 2,
+          polygonId: PolygonId(polygonCount.toString()),
+          strokeWidth: 2,
           points: airspace.geometry!.coordinates,
-          label: label ?? "Unknown",
-          isDotted: isDashed,
-          isFilled: true,
-          labelStyle: textStyleBlack87FontSize14,
-          color: polygonColor ?? Color(0x400000F80),
-          borderColor: (polygonColor ?? Color(0xFF0000F80)).withOpacity(1)));
+          strokeColor: polygonColor ?? Color(0x400000F80),
+          fillColor: (polygonColor ?? Color(0xFF0000F80)).withOpacity(1)));
+      ++polygonCount;
     });
   }
 
@@ -758,5 +722,12 @@ class ForecastMapState extends State<ForecastMap>
         _forecastOverlaySliderIsVisible = false;
       });
     });
+  }
+
+  Future<void> _goToNewBounds(
+      {required LatLngBounds latLngBounds, double? padding}) async {
+    final GoogleMapController controller = await _controller.future;
+    controller.animateCamera(
+        CameraUpdate.newLatLngBounds(latLngBounds, padding ?? 0.0));
   }
 }

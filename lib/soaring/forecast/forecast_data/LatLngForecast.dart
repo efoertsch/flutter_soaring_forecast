@@ -1,6 +1,6 @@
 import 'dart:core';
 
-import 'package:latlong2/latlong.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class LatLngForecast {
   final LatLng latLng;

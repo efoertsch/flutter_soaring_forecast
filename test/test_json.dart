@@ -10,7 +10,7 @@ main() {
   test('SerializableLatLngBounds', () {
     Map<String, dynamic> jsonObject = json.decode(jsonString);
     var mapBoundsAndZoom = ViewBounds.fromJson(jsonObject);
-    print("${mapBoundsAndZoom.latLngBounds.north}");
-    expect(mapBoundsAndZoom.latLngBounds.north == 47.23, true);
+    print("${mapBoundsAndZoom.latLngBounds.northeast.latitude}");
+    expect(mapBoundsAndZoom.latLngBounds.northeast.latitude == 47.2, true);
   });
 }

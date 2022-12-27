@@ -5,7 +5,7 @@ import 'package:flutter_soaring_forecast/soaring/windy/data/windy_altitude.dart'
 import 'package:flutter_soaring_forecast/soaring/windy/data/windy_layer.dart';
 import 'package:flutter_soaring_forecast/soaring/windy/data/windy_model.dart';
 import 'package:flutter_soaring_forecast/soaring/windy/data/windy_startup_parms.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 @immutable
 abstract class WindyState extends Equatable {}

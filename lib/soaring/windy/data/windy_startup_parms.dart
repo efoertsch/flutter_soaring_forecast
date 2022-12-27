@@ -1,5 +1,4 @@
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class WindyStartupParms {
   late final String key;
@@ -24,10 +23,10 @@ class WindyStartupParms {
         "long": long,
         "mapLatLngBounds": [
           [
-            toLatLongJson(mapLatLngBounds.southWest!),
+            toLatLongJson(mapLatLngBounds.southwest),
           ],
           [
-            toLatLongJson(mapLatLngBounds.northEast!),
+            toLatLongJson(mapLatLngBounds.northeast),
           ]
         ],
         "zoom": zoom

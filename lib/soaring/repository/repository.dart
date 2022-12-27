@@ -8,7 +8,6 @@ import 'package:floor/floor.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
-import 'package:flutter_map/src/geo/latlng_bounds.dart';
 import 'package:flutter_soaring_forecast/auth/secrets.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     show
@@ -41,6 +40,7 @@ import 'package:flutter_soaring_forecast/soaring/windy/data/windy_altitude.dart'
 import 'package:flutter_soaring_forecast/soaring/windy/data/windy_layer.dart';
 import 'package:flutter_soaring_forecast/soaring/windy/data/windy_model.dart';
 import 'package:flutter_soaring_forecast/soaring/wxbrief/data/briefing_option.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:logger/logger.dart' as DLogger; // Level conflict with Dio
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
@@ -443,16 +443,16 @@ class Repository {
         key: "DISPLAY_LANDABLE_TURNPOINTS", defaultValue: true);
     if (landableOnly) {
       return _appDatabase!.turnpointDao.getLandableTurnpointsWithinBounds(
-          latLngBounds.southWest!.latitude,
-          latLngBounds.southWest!.longitude,
-          latLngBounds.northEast!.latitude,
-          latLngBounds.northEast!.longitude);
+          latLngBounds.southwest.latitude,
+          latLngBounds.southwest.longitude,
+          latLngBounds.northeast.latitude,
+          latLngBounds.northeast.longitude);
     }
     return _appDatabase!.turnpointDao.getTurnpointsWithinBounds(
-        latLngBounds.southWest!.latitude,
-        latLngBounds.southWest!.longitude,
-        latLngBounds.northEast!.latitude,
-        latLngBounds.northEast!.longitude);
+        latLngBounds.southwest!.latitude,
+        latLngBounds.southwest!.longitude,
+        latLngBounds.northeast!.latitude,
+        latLngBounds.northeast!.longitude);
   }
 
   Future<List<Turnpoint>> findTurnpoints(String query) async {

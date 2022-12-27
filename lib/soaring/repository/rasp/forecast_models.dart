@@ -1,8 +1,7 @@
 import 'dart:convert';
 
-import 'package:flutter_map/flutter_map.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:json_annotation/json_annotation.dart';
-import 'package:latlong2/latlong.dart';
 
 part 'forecast_models.g.dart';
 
@@ -67,8 +66,9 @@ class Model {
   // -----------  Custom code -----------------
   LatLngBounds get latLngBounds {
     // Google map version
-    // return LatLngBounds(southwest: southWestLatLng, northeast: northEastLatLng);
-    return LatLngBounds(southWestLatLng, northEastLatLng);
+    return LatLngBounds(southwest: southWestLatLng, northeast: northEastLatLng);
+    // flutter_map version
+    //return LatLngBounds(southWestLatLng, northEastLatLng);
   }
 
   LatLng get southWestLatLng {

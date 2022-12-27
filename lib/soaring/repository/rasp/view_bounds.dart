@@ -1,5 +1,4 @@
-import 'package:flutter_map/flutter_map.dart' show LatLngBounds;
-import 'package:latlong2/latlong.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class ViewBounds {
   late final LatLngBounds latLngBounds;
@@ -11,15 +10,15 @@ class ViewBounds {
     var swLng = json['swLng'];
     var neLat = json['neLat'];
     var neLng = json['neLng'];
-    var viewBounds =
-        ViewBounds(LatLngBounds(LatLng(swLat, swLng), LatLng(neLat, neLng)));
+    var viewBounds = ViewBounds(LatLngBounds(
+        southwest: LatLng(swLat, swLng), northeast: LatLng(neLat, neLng)));
     return viewBounds;
   }
 
   Map<String, dynamic> toJson() => {
-        'swLat': latLngBounds.southWest!.latitude,
-        'swLng': latLngBounds.southWest!.longitude,
-        'neLat': latLngBounds.northEast!.latitude,
-        'neLng': latLngBounds.northEast!.longitude,
+        'swLat': latLngBounds.southwest!.latitude,
+        'swLng': latLngBounds.southwest!.longitude,
+        'neLat': latLngBounds.northeast!.latitude,
+        'neLng': latLngBounds.northeast!.longitude,
       };
 }

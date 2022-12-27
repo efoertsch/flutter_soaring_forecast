@@ -1,10 +1,9 @@
 library constants;
 
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 //-------- Non translatable values --------------------------------------------
 /// Hold any system wide constants
@@ -28,7 +27,8 @@ const String NEW_LINE = '\n';
 
 final LatLng NewEnglandMapCenter = LatLng(43.1394043, -72.0759888);
 final LatLngBounds NewEnglandMapLatLngBounds = LatLngBounds(
-    LatLng(41.2665329, -73.6473083), LatLng(45.0120811, -70.5046997));
+    southwest: LatLng(41.2665329, -73.6473083),
+    northeast: LatLng(45.0120811, -70.5046997));
 
 enum ImageTypes { body, head, side, foot }
 
