@@ -113,7 +113,7 @@ class _RaspClient implements RaspClient {
   }
 
   @override
-  Future<HttpResponse<dynamic>> getLatLongDayForecast(
+  Future<HttpResponse<dynamic>> getDaysForecastForLatLong(
     contentType,
     region,
     date,

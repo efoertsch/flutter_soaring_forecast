@@ -55,7 +55,7 @@ abstract class RaspClient {
   */
 // Got error when putting Content-type in @Headers annotation
   @POST("/cgi/get_multirasp_blipspot.cgi")
-  Future<HttpResponse> getForecastForLatLong(
+  Future<HttpResponse> getDaysForecastForLatLong(
       @Header("Content-Type") String contentType,
       @Field("region") String region,
       @Field("date") String date,

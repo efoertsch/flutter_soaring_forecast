@@ -279,10 +279,10 @@ class Repository {
   */
 // Got error when putting Content-type in @Headers annotation
 
-  Future<HttpResponse> getForecastForLatLong(String region, String date,
+  Future<HttpResponse> getDaysForecastForLatLong(String region, String date,
       String model, String times, String lat, String lon, String params) {
     final String contentType = "application/x-www-form-urlencoded";
-    return _raspClient.getForecastForLatLong(
+    return _raspClient.getDaysForecastForLatLong(
         contentType, region, date, model, times, lat, lon, params);
   }
 
