@@ -78,7 +78,7 @@ class _RaspClient implements RaspClient {
     time,
     lat,
     lon,
-    forecastType,
+    forecasts,
   ) async {
     const _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
@@ -91,7 +91,7 @@ class _RaspClient implements RaspClient {
       'time': time,
       'lat': lat,
       'lon': lon,
-      'param': forecastType,
+      'param': forecasts,
     };
     final _result =
         await _dio.fetch(_setStreamType<HttpResponse<dynamic>>(Options(
@@ -103,6 +103,49 @@ class _RaspClient implements RaspClient {
             .compose(
               _dio.options,
               '/cgi/get_rasp_blipspot.cgi',
+              queryParameters: queryParameters,
+              data: _data,
+            )
+            .copyWith(baseUrl: baseUrl ?? _dio.options.baseUrl)));
+    final value = _result.data;
+    final httpResponse = HttpResponse(value, _result);
+    return httpResponse;
+  }
+
+  @override
+  Future<HttpResponse<dynamic>> getLatLongDayForecast(
+    contentType,
+    region,
+    date,
+    model,
+    time,
+    lat,
+    lon,
+    forecasts,
+  ) async {
+    const _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{r'Content-Type': contentType};
+    _headers.removeWhere((k, v) => v == null);
+    final _data = {
+      'region': region,
+      'date': date,
+      'model': model,
+      'times': time,
+      'lat': lat,
+      'lon': lon,
+      'params': forecasts,
+    };
+    final _result =
+        await _dio.fetch(_setStreamType<HttpResponse<dynamic>>(Options(
+      method: 'POST',
+      headers: _headers,
+      extra: _extra,
+      contentType: contentType,
+    )
+            .compose(
+              _dio.options,
+              '/cgi/get_multirasp_blipspot.cgi',
               queryParameters: queryParameters,
               data: _data,
             )

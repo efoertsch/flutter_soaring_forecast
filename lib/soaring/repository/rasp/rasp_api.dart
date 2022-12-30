@@ -23,12 +23,12 @@ abstract class RaspClient {
 
   /*
   * @param region - "NewEngland"
-  * @param yyyymmddDate - "2018-03-31"
-  * @param forecastType - "gfs"
-  * @param forecastTime - "1500"
+  * @param date - "2018-03-31"
+  * @param model - "gfs"
+  * @param time - "1500"
   * @param lat - "43.1394043"
   * @param lon - "-72.0759888"
-  * @param forecasts  -  "wstar hwcrit" space separated forecast codes
+  * @param param  -  "wstar hwcrit" space separated forecast codes
   * @return
   */
   // Got error when putting Content-type in @Headers annotation
@@ -42,4 +42,26 @@ abstract class RaspClient {
       @Field("lat") String lat,
       @Field("lon") String lon,
       @Field("param") String forecasts);
+
+/*
+  * @param region - "NewEngland"
+  * @param date - "2018-03-31"
+  * @param model - "gfs"
+  * @param time - "0900@1000@1100"   times separated by @
+  * @param lat - "43.1394043"
+  * @param lon - "-72.0759888"
+  * @param param  -  "wstar@hwcrit" @ separated forecast codes
+  * @return
+  */
+// Got error when putting Content-type in @Headers annotation
+  @POST("/cgi/get_multirasp_blipspot.cgi")
+  Future<HttpResponse> getForecastForLatLong(
+      @Header("Content-Type") String contentType,
+      @Field("region") String region,
+      @Field("date") String date,
+      @Field("model") String model,
+      @Field("times") String time,
+      @Field("lat") String lat,
+      @Field("lon") String lon,
+      @Field("params") String forecasts);
 }
