@@ -113,7 +113,7 @@ class _RaspClient implements RaspClient {
   }
 
   @override
-  Future<HttpResponse<dynamic>> getDaysForecastForLatLong(
+  Future<HttpResponse<String>> getDaysForecastForLatLong(
     contentType,
     region,
     date,
@@ -124,21 +124,21 @@ class _RaspClient implements RaspClient {
     forecasts,
   ) async {
     const _extra = <String, dynamic>{};
-    final queryParameters = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{
+      r'region': region,
+      r'date': date,
+      r'model': model,
+      r'time': time,
+      r'lat': lat,
+      r'lon': lon,
+      r'param': forecasts,
+    };
     final _headers = <String, dynamic>{r'Content-Type': contentType};
     _headers.removeWhere((k, v) => v == null);
-    final _data = {
-      'region': region,
-      'date': date,
-      'model': model,
-      'times': time,
-      'lat': lat,
-      'lon': lon,
-      'params': forecasts,
-    };
+    final _data = <String, dynamic>{};
     final _result =
-        await _dio.fetch(_setStreamType<HttpResponse<dynamic>>(Options(
-      method: 'POST',
+        await _dio.fetch<String>(_setStreamType<HttpResponse<String>>(Options(
+      method: 'GET',
       headers: _headers,
       extra: _extra,
       contentType: contentType,
@@ -150,7 +150,7 @@ class _RaspClient implements RaspClient {
               data: _data,
             )
             .copyWith(baseUrl: baseUrl ?? _dio.options.baseUrl)));
-    final value = _result.data;
+    final value = _result.data!;
     final httpResponse = HttpResponse(value, _result);
     return httpResponse;
   }

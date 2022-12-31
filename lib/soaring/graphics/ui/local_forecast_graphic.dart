@@ -426,7 +426,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
     annotationsOfPoints.clear();
 
     // always add thermal color,size, shape,etc
-    colorsOfPoints.add(Colors.red);
+    colorsOfPoints.add(Colors.red.shade200);
     sizeOfPoints.add(30.0);
     shapesOfPoints.add(ThermalShape(hollow: false));
     annotationsOfPoints.addAll(_getGraphLegend(
@@ -592,6 +592,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
           context: context,
           transitionAnimationController: bottomSheetController,
           enableDrag: true,
+          isDismissible: false,
           isScrollControlled: true,
           barrierColor: Colors.transparent,
           builder: (BuildContext context) {

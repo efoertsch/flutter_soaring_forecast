@@ -98,11 +98,11 @@ class Repository {
     if (_repository == null) {
       _repository = Repository._();
       _context = context;
-      // _dio.interceptors.add(LogInterceptor(
-      //     responseBody: true,
-      //     request: true,
-      //     requestBody: true,
-      //     requestHeader: true));
+      _dio.interceptors.add(LogInterceptor(
+          responseBody: true,
+          request: true,
+          requestBody: true,
+          requestHeader: true));
       _dio.options.receiveTimeout = 300000;
       _dio.options.followRedirects = true;
       // _dio.interceptors.add(
@@ -279,11 +279,19 @@ class Repository {
   */
 // Got error when putting Content-type in @Headers annotation
 
-  Future<HttpResponse> getDaysForecastForLatLong(String region, String date,
-      String model, String times, String lat, String lon, String params) {
+  Future<HttpResponse<String>> getDaysForecastForLatLong(
+      String region,
+      String date,
+      String model,
+      String times,
+      String lat,
+      String lon,
+      String params) {
     final String contentType = "application/x-www-form-urlencoded";
-    return _raspClient.getDaysForecastForLatLong(
+    final responseBody = _raspClient.getDaysForecastForLatLong(
         contentType, region, date, model, times, lat, lon, params);
+    debugPrint("responseBody: ${responseBody.toString()}");
+    return responseBody;
   }
 
   Future<double> getForecastOverlayOpacity() async {

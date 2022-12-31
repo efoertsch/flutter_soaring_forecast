@@ -111,16 +111,15 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
       // 2nd and subsequent lines
       // space separated list forecast param , forecast for each hour
       // eg. experimental1   1000  2000 3000
-      var allData = _extractDailyForecastValues(response);
+      allData.addAll(_extractDailyForecastValues(response));
       // allData contains a map of all hourly forecasts for the day
-      // so now we need to extract the forecasts used for the graphing
+      // so now we need to extract the forecas ts used for the graphing
       // thermal height, Cu and OD cloud base and thermal strength
       altitudeForecastData.addAll(_getAltitudeForecasts(allData));
       thermalForecastData.addAll(_getThermalForecast(allData));
     }).onError((error, stackTrace) {
       emit(GraphErrorMsgState(error.toString()));
     });
-
     // Wheew! Now we have maps that contain the data for all forecast times
     // We need to sort altitude data so it can be properly graphed
     _sortAltitudeDataByCodeAndTime(altitudeForecastData);
@@ -219,7 +218,8 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
       String model, String time, String lat, String lng) async {
     final forecastList = <String>[];
     await repository
-        .getLatLngForecast(region, date, model, time, lat, lng, _forecastParams)
+        .getDaysForecastForLatLong(
+            region, date, model, time, lat, lng, _forecastParams)
         .then((httpResponse) {
       if (httpResponse.response.statusCode! >= 200 &&
           httpResponse.response.statusCode! < 300) {
@@ -241,30 +241,27 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
   List<Map<String, Object>> _extractDailyForecastValues(List<String> response) {
     final listMap = <Map<String, Object>>[];
     for (int i = 0; i < response.length; ++i) {
-      if (i > 0) {
-        final forecastMap = Map<String, Object>();
-        // first row of response should be string
-        var forecastValues = response[i].split(" ");
-        // The size of the forecastValues list should equal  the param name + the number of forecast times
-        if (forecastValues.length == 1 + (_forecastTimes?.length ?? 0)) {
-          // Get the param name and remove from list (so list size equals the number of times requested
-          var param = forecastValues.remove(0);
-          var forecastNameDisplay = _combinedForecastList
-              .firstWhere((forecast) => forecast.forecastName == param)
-              .forecastNameDisplay;
-          for (int j = 0; i < forecastValues.length; ++i) {
-            forecastMap.addAll({
-              "time": _forecastTimes![i],
-              "code": param,
-              "value": forecastValues[i],
-              "name": forecastNameDisplay
-            });
-          }
+      // first row of response should be string
+      var forecastValues = response[i].trim().split(" ");
+      // The size of the forecastValues list should equal  the param name + the number of forecast times
+      if (forecastValues.length == 1 + (_forecastTimes?.length ?? 0)) {
+        // Get the param name and remove from list (so list size equals the number of times requested)
+        var param = forecastValues.removeAt(0);
+        var forecastNameDisplay = _combinedForecastList
+            .firstWhere((forecast) => forecast.forecastName == param)
+            .forecastNameDisplay;
+        for (int j = 0; j < forecastValues.length; ++j) {
+          final forecastMap = Map<String, Object>();
+          forecastMap.addAll({
+            "time": _forecastTimes![j],
+            "code": param,
+            "value": (double.tryParse(forecastValues[j]) ?? 0),
+            "name": forecastNameDisplay
+          });
+          listMap.addAll({forecastMap});
         }
-        listMap.addAll({forecastMap});
       }
     }
-    ;
     return listMap;
   }
 
@@ -299,20 +296,42 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
   List<Map<String, Object>> _pruneAltitudeMap(
       List<Map<String, Object>> listMap) {
     final prunedMap = <Map<String, Object>>[];
-    var thermalMap =
-        listMap.firstWhere((element) => element["code"] == "experimental1");
-    prunedMap.add(thermalMap);
-    var cuPotential =
-        listMap.firstWhere((element) => element["code"] == "zsfclcldif");
-    var cuMsl = listMap.firstWhere((element) => element["code"] == "zsfclcl");
-    if (cuPotential["value"] as double > 0) {
-      prunedMap.add(cuMsl);
+    final allCuPotential = <Map<String, Object>>[];
+    final allCu = <Map<String, Object>>[];
+    final allOdPotential = <Map<String, Object>>[];
+    final allOd = <Map<String, Object>>[];
+
+    listMap.forEach((element) {
+      if (element["code"] == "experimental1") {
+        // All thermal height get added directly
+        prunedMap.add(element);
+      } else if (element["code"] == "zsfclcldif") {
+        allCuPotential.add(element);
+      } else if (element["code"] == "zsfclcl") {
+        allCu.add(element);
+      } else if (element["code"] == "zblcldif") {
+        allOdPotential.add(element);
+      } else if (element["code"] == "zblcl") {
+        allOd.add(element);
+      }
+    });
+
+    // If CuPotential > 0 then take the Cu value
+    if (allCuPotential.length == allCu.length) {
+      for (int i = 0; i < allCuPotential.length; ++i) {
+        if ((allCuPotential[i]["value"] as double ?? 0.0) > 0) {
+          prunedMap.add(allCu[i]);
+        }
+      }
     }
-    var odPotential =
-        listMap.firstWhere((element) => element["code"] == "zblcldif");
-    var odMsl = listMap.firstWhere((element) => element["code"] == "zblcl");
-    if (odPotential["value"] as double > 0) {
-      prunedMap.add(odMsl);
+
+    // If OD Potential > 0 then take the OD value
+    if (allOdPotential.length == allOd.length) {
+      for (int i = 0; i < allOdPotential.length; ++i) {
+        if ((allOdPotential[i]["value"] as double ?? 0.0) > 0) {
+          prunedMap.add(allOd[i]);
+        }
+      }
     }
     return prunedMap;
   }
