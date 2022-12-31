@@ -98,11 +98,11 @@ class Repository {
     if (_repository == null) {
       _repository = Repository._();
       _context = context;
-      // _dio.interceptors.add(LogInterceptor(
-      //     responseBody: true,
-      //     request: true,
-      //     requestBody: true,
-      //     requestHeader: true));
+      _dio.interceptors.add(LogInterceptor(
+          responseBody: true,
+          request: true,
+          requestBody: true,
+          requestHeader: true));
       _dio.options.receiveTimeout = 300000;
       _dio.options.followRedirects = true;
       // _dio.interceptors.add(
@@ -257,7 +257,7 @@ class Repository {
    * @param time   - eg 1200
    * @param lat
    * @param lon
-   * @param forecastType - a space separated list of forecast types
+   * @param forecasts - a space separated list of forecast types
    * @return
    */
   Future<HttpResponse> getLatLngForecast(String region, String date,
@@ -265,6 +265,33 @@ class Repository {
     final String contentType = "application/x-www-form-urlencoded";
     return _raspClient.getLatLongPointForecast(
         contentType, region, date, model, time, lat, lon, forecasts);
+  }
+
+  /*
+  * @param region - "NewEngland"
+  * @param date - "2018-03-31"
+  * @param model - "gfs"
+  * @param time - "0900@1000@1100"   times separated by @
+  * @param lat - "43.1394043"
+  * @param lon - "-72.0759888"
+  * @param param  -  "wstar@hwcrit" @ separated forecast codes
+  * @return
+  */
+// Got error when putting Content-type in @Headers annotation
+
+  Future<HttpResponse<String>> getDaysForecastForLatLong(
+      String region,
+      String date,
+      String model,
+      String times,
+      String lat,
+      String lon,
+      String params) {
+    final String contentType = "application/x-www-form-urlencoded";
+    final responseBody = _raspClient.getDaysForecastForLatLong(
+        contentType, region, date, model, times, lat, lon, params);
+    debugPrint("responseBody: ${responseBody.toString()}");
+    return responseBody;
   }
 
   Future<double> getForecastOverlayOpacity() async {

@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/graphics/bloc/graphic_event.dart';
@@ -45,7 +44,8 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
     "bltopwinddir"
   ];
 
-  var _requestParms = "";
+  String _forecastParams = "";
+  String _forecastTimesParams = "";
   var _altitudeForecastList = <Forecast>[];
   var _thermalForecastList = <Forecast>[];
   var _combinedForecastList = <Forecast>[];
@@ -98,30 +98,29 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
     final List<Map<String, Object>> altitudeForecastData = [];
     final List<Map<String, Object>> thermalForecastData = [];
     final List<Map<String, Object>> allData = [];
-    // loop through the forecast times
-    await Future.forEach(_forecastTimes!, (time) async {
-      // and for each time call the RASP api and process response
-      await _getForecastInfo(
-              region: _regionName!,
-              date: _selectedForecastDate!,
-              model: _selectedModelName!,
-              time: time as String,
-              lat: _lat.toString(),
-              lng: _lng.toString())
-          ?.then((hourlyForecastData) {
-        if (hourlyForecastData != null) {
-          // And combine the hourly forecast with prior hourly forecasts
-          altitudeForecastData.addAll(
-              hourlyForecastData.altitudeData ?? <Map<String, Object>>[]);
-          thermalForecastData.addAll(
-              hourlyForecastData.thermalData ?? <Map<String, Object>>[]);
-          allData.addAll(hourlyForecastData.allData ?? <Map<String, Object>>[]);
-        }
-      }).onError((error, stackTrace) {
-        emit(GraphErrorMsgState(error.toString()));
-      });
+    await _getLatLongForecast(
+            _regionName!,
+            _selectedForecastDate!,
+            _selectedModelName!,
+            _forecastTimesParams,
+            _lat.toString(),
+            _lng.toString())
+        .then((response) {
+      // The dailyForecast should consist of
+      // 1st line spaces
+      // 2nd and subsequent lines
+      // space separated list forecast param , forecast for each hour
+      // eg. experimental1   1000  2000 3000
+      allData.addAll(_extractDailyForecastValues(response));
+      // allData contains a map of all hourly forecasts for the day
+      // so now we need to extract the forecas ts used for the graphing
+      // thermal height, Cu and OD cloud base and thermal strength
+      altitudeForecastData.addAll(_getAltitudeForecasts(allData));
+      thermalForecastData.addAll(_getThermalForecast(allData));
+    }).onError((error, stackTrace) {
+      emit(GraphErrorMsgState(error.toString()));
     });
-    // Wheew! Now have maps that contain the data for all forecast times
+    // Wheew! Now we have maps that contain the data for all forecast times
     // We need to sort altitude data so it can be properly graphed
     _sortAltitudeDataByCodeAndTime(altitudeForecastData);
     // and finally combine it all
@@ -147,11 +146,13 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
 
   // Compose space separated list of forecast parameters for sending to RASP api
   void _composeRequestParamsString() {
-    _requestParms = _altitudeParmList.join(" ") +
-        " " +
-        _thermalParmList.join(" ") +
-        " " +
-        _windParmList.join(" ");
+    _forecastParams = _altitudeParmList.join("@") +
+        "@" +
+        _thermalParmList.join("@") +
+        "@" +
+        _windParmList.join("@");
+
+    _forecastTimesParams = _forecastTimes!.join("@");
   }
 
   /// Need to sort the forecasts so that graphing routine can properly assign point colors
@@ -192,7 +193,7 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
     }
     // Create list of all forecasts you will be requesting from api
     _combinedForecastList.clear();
-    _requestParms.split(" ").forEach((element) {
+    _forecastParams.split("@").forEach((element) {
       _combinedForecastList.add(
           _options.singleWhere((forecast) => forecast.forecastName == element));
     });
@@ -212,39 +213,13 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
     });
   }
 
-  ///For each forecast time, call the local forecast api
-  Future<ForecastData>? _getForecastInfo(
-      {required String region,
-      required String date,
-      required String model,
-      required String time,
-      required String lat,
-      required String lng}) async {
-    var forecastData;
-    // call the api and process the response
-    await _getLatLongForecast(region, date, model, time, lat, lng)
-        .then((responseList) {
-      var allData = _extractAllForecastValues(time, responseList);
-      // collect all the altitude values for the specified time in one list
-      var altitudeGraphValues = _getAltitudeForecasts(allData);
-      // collect all the thermal values for the specified time in one list
-      var thermalGraphValues = _getThermalForecast(allData);
-      // return all the forecast data needed for the specified time
-      forecastData = ForecastData(
-        altitudeData: altitudeGraphValues,
-        thermalData: thermalGraphValues,
-        allData: allData,
-      );
-    });
-    return forecastData;
-  }
-
   /// Call the RASP api and return response parsed into lines
   Future<List<String>> _getLatLongForecast(String region, String date,
       String model, String time, String lat, String lng) async {
     final forecastList = <String>[];
     await repository
-        .getLatLngForecast(region, date, model, time, lat, lng, _requestParms)
+        .getDaysForecastForLatLong(
+            region, date, model, time, lat, lng, _forecastParams)
         .then((httpResponse) {
       if (httpResponse.response.statusCode! >= 200 &&
           httpResponse.response.statusCode! < 300) {
@@ -263,33 +238,30 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
     return forecastList;
   }
 
-  List<Map<String, Object>> _extractAllForecastValues(
-      String time, List<String> response) {
+  List<Map<String, Object>> _extractDailyForecastValues(List<String> response) {
     final listMap = <Map<String, Object>>[];
-    // For each forecast name (e.g. OD Cloudbase (BL CL) MSL)
-    _combinedForecastList.forEach((forecast) {
-      final forecastMap = Map<String, Object>();
-      // find the line in the response with that name
-      final forecastString = response.firstWhereOrNull(
-          (line) => line.contains(forecast.forecastNameDisplay));
-      if (forecastString != null) {
-        // and get the associated value
-        final forecastValue = forecastString
-            .trim()
-            .substring(forecast.forecastNameDisplay.length)
-            .trim();
-        var value = (forecastValue == "-") ? 0.0 : double.parse(forecastValue);
-        // and then add the display name and forecasted value to the map
-        // forecastMap.addAll({forecast.forecastNameDisplay: value});
-        forecastMap.addAll({
-          "time": time,
-          "code": forecast.forecastName,
-          "value": value,
-          "name": forecast.forecastNameDisplay
-        });
-        listMap.addAll({forecastMap});
+    for (int i = 0; i < response.length; ++i) {
+      // first row of response should be string
+      var forecastValues = response[i].trim().split(" ");
+      // The size of the forecastValues list should equal  the param name + the number of forecast times
+      if (forecastValues.length == 1 + (_forecastTimes?.length ?? 0)) {
+        // Get the param name and remove from list (so list size equals the number of times requested)
+        var param = forecastValues.removeAt(0);
+        var forecastNameDisplay = _combinedForecastList
+            .firstWhere((forecast) => forecast.forecastName == param)
+            .forecastNameDisplay;
+        for (int j = 0; j < forecastValues.length; ++j) {
+          final forecastMap = Map<String, Object>();
+          forecastMap.addAll({
+            "time": _forecastTimes![j],
+            "code": param,
+            "value": (double.tryParse(forecastValues[j]) ?? 0),
+            "name": forecastNameDisplay
+          });
+          listMap.addAll({forecastMap});
+        }
       }
-    });
+    }
     return listMap;
   }
 
@@ -300,12 +272,12 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
     final altitudeListMap = <Map<String, Object>>[];
     // For each forecast name (e.g. OD Cloudbase (BL CL) MSL)
     _altitudeForecastList.forEach((forecastCode) {
-      var altitudeMap = listMap.firstWhereOrNull(
-          (element) => element["code"] == forecastCode.forecastName);
-      // find the line in the response with that name
-      if (altitudeMap != null) {
-        altitudeListMap.add(altitudeMap);
-      }
+      // The listmap contains hourly forecasts for each forecast parm so need to add each one
+      listMap.forEach((element) {
+        if (element["code"] == forecastCode.forecastName) {
+          altitudeListMap.add(element);
+        }
+      });
     });
     // Ok, got all altitude parms but we need to prune the map of values we don't want
     // to display on graph
@@ -324,20 +296,42 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
   List<Map<String, Object>> _pruneAltitudeMap(
       List<Map<String, Object>> listMap) {
     final prunedMap = <Map<String, Object>>[];
-    var thermalMap =
-        listMap.firstWhere((element) => element["code"] == "experimental1");
-    prunedMap.add(thermalMap);
-    var cuPotential =
-        listMap.firstWhere((element) => element["code"] == "zsfclcldif");
-    var cuMsl = listMap.firstWhere((element) => element["code"] == "zsfclcl");
-    if (cuPotential["value"] as double > 0) {
-      prunedMap.add(cuMsl);
+    final allCuPotential = <Map<String, Object>>[];
+    final allCu = <Map<String, Object>>[];
+    final allOdPotential = <Map<String, Object>>[];
+    final allOd = <Map<String, Object>>[];
+
+    listMap.forEach((element) {
+      if (element["code"] == "experimental1") {
+        // All thermal height get added directly
+        prunedMap.add(element);
+      } else if (element["code"] == "zsfclcldif") {
+        allCuPotential.add(element);
+      } else if (element["code"] == "zsfclcl") {
+        allCu.add(element);
+      } else if (element["code"] == "zblcldif") {
+        allOdPotential.add(element);
+      } else if (element["code"] == "zblcl") {
+        allOd.add(element);
+      }
+    });
+
+    // If CuPotential > 0 then take the Cu value
+    if (allCuPotential.length == allCu.length) {
+      for (int i = 0; i < allCuPotential.length; ++i) {
+        if ((allCuPotential[i]["value"] as double ?? 0.0) > 0) {
+          prunedMap.add(allCu[i]);
+        }
+      }
     }
-    var odPotential =
-        listMap.firstWhere((element) => element["code"] == "zblcldif");
-    var odMsl = listMap.firstWhere((element) => element["code"] == "zblcl");
-    if (odPotential["value"] as double > 0) {
-      prunedMap.add(odMsl);
+
+    // If OD Potential > 0 then take the OD value
+    if (allOdPotential.length == allOd.length) {
+      for (int i = 0; i < allOdPotential.length; ++i) {
+        if ((allOdPotential[i]["value"] as double ?? 0.0) > 0) {
+          prunedMap.add(allOd[i]);
+        }
+      }
     }
     return prunedMap;
   }
@@ -345,14 +339,13 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
   List<Map<String, Object>> _getThermalForecast(
       List<Map<String, Object>> listMap) {
     final thermalListMap = <Map<String, Object>>[];
-    // For each forecast name (e.g. OD Cloudbase (BL CL) MSL)
+    // For each thermal forecast (e.g. wstar)
     _thermalForecastList.forEach((forecast) {
-      var altitudeMap = listMap.firstWhereOrNull(
-          (element) => element["code"] == forecast.forecastName);
-      // find the line in the response with that name
-      if (altitudeMap != null) {
-        thermalListMap.add(altitudeMap);
-      }
+      listMap.forEach((element) {
+        if (element["code"] == forecast.forecastName) {
+          thermalListMap.add(element);
+        }
+      });
     });
     return thermalListMap;
   }
