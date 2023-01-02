@@ -24,5 +24,4 @@ the range of supported deployment target versions is 11.0 to 16.1.99.'
    1. Execute build command: flutter build ipa --obfuscate --split-debug-info=build/app/outputs/symbols
    2. Fails with similar error above
    3. Executed open /Users/ericfoertsch/Documents/git/flutter_soaring_forecast/build/ios/archive/Runner.xcarchive
-
-   '
+   
