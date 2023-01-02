@@ -184,7 +184,8 @@ class Repository {
         _displayableForecastList.addAll(_fullForecastList
             .where((forecast) => forecast.selectable == true)
             .toList());
-        return _displayableForecastList;
+        // Shallow copy of list
+        return _displayableForecastList.toList();
       }
     } catch (error, stackTrace) {
       logger.e(stackTrace);
@@ -225,6 +226,7 @@ class Repository {
   }
 
   Future<bool> deleteCustomForecastList() async {
+    _displayableForecastList.clear();
     return await _deleteGenericString(key: FORECAST_LIST);
   }
 

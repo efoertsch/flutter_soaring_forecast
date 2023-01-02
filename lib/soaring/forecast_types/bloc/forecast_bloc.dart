@@ -39,7 +39,8 @@ class ForecastBloc extends Bloc<ForecastEvent, ForecastState> {
       var forecast = _forecasts[event.oldIndex];
       _forecasts.removeAt(event.oldIndex);
       _forecasts.insert(event.newIndex, forecast);
-      final savedOK = await repository.saveForecasts(_forecasts);
+      // save shallow copy
+      final savedOK = await repository.saveForecasts(_forecasts.toList());
       if (savedOK) {
         emit(ListOfForecastsState(_forecasts));
       } else {
