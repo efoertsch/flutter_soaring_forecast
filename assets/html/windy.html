@@ -166,8 +166,8 @@ function createMarkersAndPolyLine(taskTurnpoints) {
       mapPolyLine.push(latLong);
       var marker = L.marker(latLong,{ opacity: 0.01 });
       marker.bindTooltip(shortenString(taskTurnpoints[i].title,10) + "<br> "
-         + taskTurnpoints[i].distanceFromPriorTurnpoint.toFixed(1) + "/"
-         + taskTurnpoints[i].distanceFromStartingPoint.toFixed(1) +"km"
+         + taskTurnpoints[i].distanceFromPriorTurnpoint.toFixed(0) + "/"
+         + taskTurnpoints[i].distanceFromStartingPoint.toFixed(0) +"km"
       , {permanent: true, className: "turnpoint_label", offset: [0,0],direction:'center' });
       // !!! Remove .toFixed(1) if testing on Chrome !!!
       //marker.bindPopup(taskTurnpoints[i].title + "<br>" + taskTurnpoints[i].distanceFromStartingPoint.toFixed(1) +"km)");

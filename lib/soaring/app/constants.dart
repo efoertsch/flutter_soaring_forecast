@@ -415,7 +415,7 @@ class DrawerLiterals {
   static const String CUSTOMIZATION = "Customization";
   static const String TASK_LIST = "Task List";
   static const String TURNPOINTS = "Turnpoints";
-  static const String AIRPORT_LIST = "Airport List";
+  static const String TAF_METAR_LIST = "METAR/TAF List";
   static const String SETTINGS = "Settings";
   static const String FEEDBACK = "Feedback";
   static const String ABOUT = "About";
