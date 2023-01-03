@@ -193,7 +193,7 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
 
   void _updateTaskDetails(Emitter<TaskState> emit) {
     _calculateDistances();
-    _createTaskName();
+    //_createTaskName();
     emit(TasksTurnpointsLoadedState(
         task: _currentTask, taskTurnpoints: _taskTurnpoints));
     emit(TaskModifiedState());
@@ -305,18 +305,11 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
 
   void _checkForTaskName() {
     if (_currentTask.taskName.isEmpty) {
-      _createTaskName();
-    }
-    ;
-  }
-
-  void _createTaskName() {
-    if (_currentTask.taskName.isEmpty) {
       StringBuffer defaultTaskName = StringBuffer();
       String shortName = "";
       _taskTurnpoints.forEach((taskTurnpoint) {
-        shortName = taskTurnpoint.title.length >= 4
-            ? taskTurnpoint.title.substring(0, 4)
+        shortName = taskTurnpoint.title.length >= 5
+            ? taskTurnpoint.title.substring(0, 5)
             : taskTurnpoint.title;
         defaultTaskName
             .write(defaultTaskName.isEmpty ? shortName : '-' + shortName);

@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/main.dart';
 import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
+import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
+    show TaskLiterals;
 import 'package:flutter_soaring_forecast/soaring/app/custom_styles.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/task/task.dart';
 import 'package:flutter_soaring_forecast/soaring/tasks/bloc/task_bloc.dart';
@@ -40,20 +42,31 @@ class TaskListScreen extends StatelessWidget {
   SafeArea _buildScaffold(BuildContext context) {
     return SafeArea(
       child: Scaffold(
-        appBar: _getAppBar(),
+        appBar: _getAppBar(context),
         body: _getBody(),
-        floatingActionButton: _getTaskDetailFAB(context),
       ),
     );
   }
 
-  AppBar _getAppBar() {
+  AppBar _getAppBar(BuildContext context) {
     return AppBar(
-      leading: BackButton(
-        onPressed: () => Navigator.pop(_context),
+        leading: BackButton(
+          onPressed: () => Navigator.pop(_context),
+        ),
+        title: Text(TaskLiterals.TASK_LIST),
+        actions: _getMenu(context));
+  }
+
+  List<Widget> _getMenu(BuildContext context) {
+    return <Widget>[
+      TextButton(
+        child: const Text(TaskLiterals.ADD_TASK,
+            style: TextStyle(color: Colors.white)),
+        onPressed: () {
+          _goToTaskDetail(context, -1);
+        },
       ),
-      title: Text('Task List'),
-    );
+    ];
   }
 
   BlocConsumer<TaskBloc, TaskState> _getBody() {
@@ -106,16 +119,6 @@ class TaskListScreen extends StatelessWidget {
     );
   }
 
-  FloatingActionButton _getTaskDetailFAB(BuildContext context) {
-    return FloatingActionButton(
-      onPressed: () {
-        _goToTaskDetail(context, -1);
-      },
-      backgroundColor: Colors.green,
-      child: const Icon(Icons.add),
-    );
-  }
-
   Widget _getTaskListView(List<Task> tasks) {
     return Expanded(
       child: ReorderableListView(
@@ -146,6 +149,7 @@ class TaskListScreen extends StatelessWidget {
 
   Widget _createTaskItem(Task task) {
     return Dismissible(
+      direction: DismissDirection.startToEnd,
       background: Container(
         color: Colors.red,
         padding: EdgeInsets.only(left: 20.0),
@@ -154,7 +158,9 @@ class TaskListScreen extends StatelessWidget {
           children: <Widget>[
             Icon(
               Icons.delete,
-            )
+            ),
+            Expanded(
+                child: Text(task.taskName, style: textStyleBlackFontSize20)),
           ],
         ),
       ),
