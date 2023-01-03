@@ -205,6 +205,8 @@ class MapBackgroundMenu {
 
 class TaskLiterals {
   static const String TASK = "Task";
+  static const String TASK_NAME = "Task Name:";
+  static const String TASK_LIST = "Task List";
   static const String TASK_DETAIL = "Task Detail";
   static const String TASK_ERROR = "Task Error";
   static const String DISTANCE = "Distance:";
@@ -215,6 +217,10 @@ class TaskLiterals {
   static const String FROM_PRIOR_POINT = "From prior point:";
   static const String FROM_START = "From start:";
   static const String ADD_TURNPOINTS = "Add Turnpoints";
+  static const String ADD_TASK = "ADD";
+  static const String SAVE_TASK = "SAVE";
+  static var LEAVE_BLANK_FOR_DEFAULT_NAME =
+      "Leave blank for default name when saved";
 }
 
 class TurnpointMenu {

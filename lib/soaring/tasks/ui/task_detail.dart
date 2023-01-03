@@ -55,7 +55,6 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
         resizeToAvoidBottomInset: false,
         appBar: _getAppBar(),
         body: _getBody(),
-        floatingActionButton: _displayFloatingActionButton(context),
       ),
     );
   }
@@ -66,7 +65,25 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
       leading: BackButton(
         onPressed: _onWillPop,
       ),
+      actions: _getMenu(),
     );
+  }
+
+  List<Widget> _getMenu() {
+    return <Widget>[
+      Visibility(
+        visible: widget.displaySaveButton,
+        child: TextButton(
+          child: const Text(TaskLiterals.SAVE_TASK,
+              style: TextStyle(color: Colors.white)),
+          onPressed: () {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+            BlocProvider.of<TaskBloc>(context).add(SaveTaskTurnpointsEvent());
+            widget.displaySaveButton = false;
+          },
+        ),
+      ),
+    ];
   }
 
   BlocConsumer<TaskBloc, TaskState> _getBody() {
@@ -125,38 +142,60 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
     textEditingController.text = task.taskName;
     textEditingController.selection =
         TextSelection.collapsed(offset: textEditingController.text.length);
-    return Row(mainAxisAlignment: MainAxisAlignment.start, children: [
-      Padding(
-          padding: const EdgeInsets.only(
-              left: 8.0, top: 16.0, right: 8.0, bottom: 8.0),
-          child: Text(TaskLiterals.TASK,
-              style: Theme.of(context).textTheme.subtitle1)),
-      Expanded(
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: TextField(
-            controller: textEditingController,
-            onChanged: (text) {
-              //task.taskName = text;
-              // textEditingController.selection = TextSelection.collapsed(
-              //     offset: textEditingController.text.length);
-              BlocProvider.of<TaskBloc>(context)
-                  .add(TaskNamedChangedEvent(text));
-            },
+    return Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.baseline,
+        textBaseline: TextBaseline.alphabetic,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(
+                left: 8.0, top: 16.0, right: 8.0, bottom: 8.0),
+            child: Text(
+              TaskLiterals.TASK_NAME,
+              style: textStyleBoldBlackFontSize16,
+            ),
           ),
-        ),
-      ),
-    ]);
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: TextField(
+                style: textStyleBoldBlackFontSize18,
+                minLines: 1,
+                maxLines: 2,
+                controller: textEditingController,
+                decoration: new InputDecoration.collapsed(
+                    hintText: TaskLiterals.LEAVE_BLANK_FOR_DEFAULT_NAME),
+                onChanged: (text) {
+                  //task.taskName = text;
+                  // textEditingController.selection = TextSelection.collapsed(
+                  //     offset: textEditingController.text.length);
+                  BlocProvider.of<TaskBloc>(context)
+                      .add(TaskNamedChangedEvent(text));
+                },
+              ),
+            ),
+          ),
+        ]);
   }
 
   Widget _taskDistance(Task task) {
     return Padding(
         padding: const EdgeInsets.all(8.0),
-        child: Text(
-            TaskLiterals.DISTANCE +
-                task.distance.toStringAsFixed(1) +
-                TaskLiterals.KM,
-            style: Theme.of(context).textTheme.subtitle1));
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            Text(
+              TaskLiterals.DISTANCE,
+              style: textStyleBoldBlackFontSize16,
+            ),
+            Text(
+              " ${task.distance.toStringAsFixed(1)} ${TaskLiterals.KM}",
+              style: textStyleBoldBlackFontSize18,
+            ),
+          ],
+        ));
   }
 
   Widget _turnpointsLabel() {
@@ -205,6 +244,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
   // Creates a row within the listview for task turnpoint info
   Widget _createTaskTurnpointItem(TaskTurnpoint taskTurnpoint) {
     return Dismissible(
+      direction: DismissDirection.startToEnd,
       background: Container(
         color: Colors.red,
         padding: EdgeInsets.only(left: 20.0),
@@ -213,6 +253,10 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
           children: <Widget>[
             Icon(
               Icons.delete,
+            ),
+            Text(
+              taskTurnpoint.title,
+              style: textStyleBoldBlackFontSize16,
             )
           ],
         ),
@@ -364,21 +408,6 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Visibility _displayFloatingActionButton(BuildContext context) {
-    return Visibility(
-      visible: widget.displaySaveButton,
-      child: FloatingActionButton(
-        backgroundColor: Colors.green,
-        child: const Icon(Icons.save),
-        onPressed: () {
-          ScaffoldMessenger.of(context).hideCurrentSnackBar();
-          BlocProvider.of<TaskBloc>(context).add(SaveTaskTurnpointsEvent());
-          widget.displaySaveButton = false;
-        },
       ),
     );
   }
