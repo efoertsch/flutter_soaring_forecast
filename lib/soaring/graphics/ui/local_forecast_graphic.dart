@@ -426,7 +426,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
     annotationsOfPoints.clear();
 
     // always add thermal color,size, shape,etc
-    colorsOfPoints.add(Colors.red.shade200);
+    colorsOfPoints.add(Colors.red);
     sizeOfPoints.add(30.0);
     shapesOfPoints.add(ThermalShape(hollow: false));
     annotationsOfPoints.addAll(_getGraphLegend(
@@ -473,7 +473,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
         break;
       }
     }
-    // Hack alert.  Don't know why but SizaAttr/ColorAttr values requires at
+    // Hack alert.  Don't know why but SizeAttr/ColorAttr values requires at
     // least 2 sizes in array so if no OD or Cu add values to get array lengths to 2
     if (!odInForecast && !cuInForecast) {
       colorsOfPoints.add(Colors.transparent);

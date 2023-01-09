@@ -9,7 +9,6 @@ import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart'
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image_set.dart';
 import 'package:flutter_soaring_forecast/soaring/graphics/data/forecast_graph_data.dart';
-import 'package:flutter_soaring_forecast/soaring/repository/options/special_use_airspace.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/regions.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/view_bounds.dart';
@@ -367,7 +366,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     var stripOld = forecastTime.startsWith("old")
         ? forecastTime.substring(4)
         : forecastTime;
-    return "/$regionName/$forecastDate/$model/$forecastType.${stripOld}local.d2.$imageType.png";
+    return "$regionName/$forecastDate/$model/$forecastType.${stripOld}local.d2.$imageType.png";
   }
 
   /// Create url for fetching sounding image
@@ -513,7 +512,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
           if (event.displayOption.selected) {
             await _getSuaDetails(emit);
           } else {
-            emit(SuaDetailsState(SUA()));
+            emit(SuaDetailsState("{}"));
           }
           break;
         }
@@ -605,7 +604,8 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
   }
 
   _getSuaDetails(Emitter<RaspDataState> emit) async {
-    var sua = await repository.getSuaForRegion(_region!.name!);
+    // var sua = await repository.getSuaForRegion(_region!.name!);
+    String? sua = await repository.getGeoJsonSUAForRegion(_region!.name!);
     if (sua != null) {
       // print("repository returned sua so emitting");
       emit(SuaDetailsState(sua));

@@ -69,6 +69,8 @@ dependencies:
   flutter_map: ^3.0.0 # or the latest version on Pub, current used for rasp map
   #map_controller: 0.9.1  # used to process/display SUA plus handle state with showing/removing markers
   google_maps_flutter: ^2.2.0 # used for overhead view of turnpoints
+  geojson_vector_slicer:
+    path: ../geojson_vector_slicer
 
   flutter:
     sdk: flutter

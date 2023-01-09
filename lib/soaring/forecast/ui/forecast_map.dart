@@ -6,8 +6,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:flutter_soaring_forecast/main.dart';
+import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
-    show NewEnglandMapLatLngBounds, RASP_BASE_URL, SUAColor;
+    show NewEnglandMapLatLngBounds, RASP_BASE_URL, SUAColor, StandardLiterals;
 import 'package:flutter_soaring_forecast/soaring/app/custom_styles.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/taskturnpoint/task_turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
@@ -21,7 +22,15 @@ import 'package:flutter_soaring_forecast/soaring/repository/rasp/regions.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoint_utils.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_overhead_view.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:geojson_vector_slicer/geojson/classes.dart';
+import 'package:geojson_vector_slicer/geojson/geojson.dart';
+import 'package:geojson_vector_slicer/geojson/geojson_options.dart';
+import 'package:geojson_vector_slicer/geojson/geojson_widget.dart';
+import 'package:geojson_vector_slicer/geojson/index.dart';
+import 'package:geojson_vector_slicer/vector_tile/vector_tile.dart';
 import 'package:latlong2/latlong.dart';
+
+import '../../app/label.dart';
 
 class ForecastMap extends StatefulWidget {
   final Function stopAnimation;
@@ -63,6 +72,17 @@ class ForecastMapState extends State<ForecastMap>
   Timer? _hideOpacityTimer = null;
   double _mapZoom = 7;
   bool _mapIsReady = false;
+  final suaColors = SUAColor.values;
+
+  late GeoJSONVT geoJsonIndex = GeoJSONVT({}, GeoJSONVTOptions(buffer: 32));
+  late GeoJSONVT? highlightedIndex =
+      GeoJSONVT({}, GeoJSONVTOptions(buffer: 32, debug: 0));
+  var infoText = 'No Info';
+  var tileSize = 256.0;
+  var tilePointCheckZoom = 14;
+  GeoJSON geoJSON = GeoJSON();
+  VectorTileIndex vectorTileIndex = VectorTileIndex();
+  String? suaSelected;
 
   @override
   void initState() {
@@ -169,8 +189,7 @@ class ForecastMapState extends State<ForecastMap>
         return;
       }
       if (state is SuaDetailsState) {
-        // print('Received SuaDetailsState');
-        _updateSuaDetails(state.suaDetails);
+        _updateGeoJsonSuaDetails(state.suaDetails);
         return;
       }
       if (state is ForecastOverlayOpacityState) {
@@ -210,6 +229,7 @@ class ForecastMapState extends State<ForecastMap>
             // boundsOptions: FitBoundsOptions(padding: EdgeInsets.all(8.0)),
             onLongPress: (longPressPostion, latLng) =>
                 _getLocalForecast(latLng: latLng),
+            onTap: (tapPosition, point) => _seeIfSUATapped(point),
           ),
           children: [
             // !!!---- Order of layers very important for receiving click events --- !!!
@@ -228,8 +248,51 @@ class ForecastMapState extends State<ForecastMap>
             MarkerLayer(
               markers: _mapMarkers,
             ),
+            _getGeoJsonWidget(),
           ]);
     });
+  }
+
+  Future<void> _seeIfSUATapped(LatLng point) async {
+    suaSelected = null;
+    // figure which tile we're on, then grab that tiles features to loop through
+    // to find which feature the tap was on. Zoom 14 is kinda arbitrary here
+    var pt = const Epsg3857()
+        .latLngToPoint(point, _mapController.zoom.floorToDouble());
+    var x = (pt.x / tileSize).floor();
+    var y = (pt.y / tileSize).floor();
+    var tile = geoJsonIndex.getTile(_mapController.zoom.floor(), x, y);
+    //print("$x, $y  $point $pt  tile ${tile!.x} ${tile!.y} ${tile!.z}");
+
+    if (tile != null) {
+      StringBuffer sb = StringBuffer();
+      // Multiple SUA areas/features may show up in one tile,
+      // eg overlapping Boston 'wedding cake' SUAs
+      for (var feature in tile.features) {
+        var polygonList = feature.geometry;
+        if (feature.type != 1) {
+          if (geoJSON.isGeoPointInPoly(pt, polygonList, size: tileSize)) {
+            if (feature.tags.containsKey('TITLE')) {
+              sb.write("Title: ${feature.tags['TITLE']}\n");
+              sb.write("Type : ${feature.tags['TYPE']}\n");
+              sb.write("Base : ${feature.tags['BASE']}\n");
+              sb.write("Tops : ${feature.tags['TOPS']}\n\n");
+            }
+            // Don't
+            // highlightedIndex = await GeoJSON().createIndex(null,
+            //     geoJsonMap: feature.tags['source'], tolerance: 0);
+          }
+        }
+      }
+      if (sb.isNotEmpty) {
+        CommonWidgets.showInfoDialog(
+            context: context,
+            title: "SUA",
+            msg: sb.toString(),
+            button1Text: StandardLiterals.OK,
+            button1Function: (() => Navigator.pop(context)));
+      }
+    }
   }
 
   Widget _getSoundingDisplayWidget() {
@@ -638,38 +701,74 @@ class ForecastMapState extends State<ForecastMap>
         arguments: TurnpointOverHeadArgs(turnpoint: turnpoint));
   }
 
-  void _updateSuaDetails(SUA suaDetails) async {
+  void _updateGeoJsonSuaDetails(String suaDetails) async {
     _suaPolygons.clear();
-    final suaColors = SUAColor.values;
+      final suaColors = SUAColor.values;
+      geoJsonIndex = await geoJSON.createIndex(suaDetails,
+          tileSize: tileSize,
+          keepSource: true,
+          buffer: 32,
+          sourceIsGeoJson: true);
+  }
 
-    suaDetails.features?.forEach((airspace) {
-      Color? polygonColor = null;
-      String? label = null;
-      bool isDashed = false;
-      label = airspace.properties!.type!;
-      try {
-        final suaColor = suaColors
-            .firstWhere((sua) => sua.suaClassType == airspace.properties!.type);
-        polygonColor = suaColor.airspaceColor;
-        isDashed = suaColor.dashedLine;
-        debugPrint(
-            "${airspace.properties!.title} has type ${suaColor.suaClassType}  and isDashed: $isDashed");
-      } catch (e) {
-        debugPrint(
-            "Undefined SUA type ${airspace.properties!.type} in SUAColor. ");
-      }
-
-      //print("SUA label: $label");
-      _suaPolygons.add(Polygon(
-          borderStrokeWidth: 2,
-          points: airspace.geometry!.coordinates,
-          label: label ?? "Unknown",
-          isDotted: isDashed,
-          isFilled: true,
-          labelStyle: textStyleBlack87FontSize14,
-          color: polygonColor ?? Color(0x400000F80),
-          borderColor: (polygonColor ?? Color(0xFF0000F80)).withOpacity(1)));
-    });
+  Widget _getGeoJsonWidget() {
+    return GeoJSONWidget(
+      drawClusters: false,
+      drawFeatures: true,
+      index: geoJsonIndex,
+      options: GeoJSONOptions(
+        featuresHaveSameStyle: false,
+        overallStyleFunc: (TileFeature feature) {
+          var paint = Paint()
+            ..style = PaintingStyle.stroke
+            ..color = Colors.blue.shade200
+            ..strokeWidth = 5
+            ..isAntiAlias = false;
+          if (feature.type == 3) {
+            // lineString
+            ///paint.style = PaintingStyle.fill;
+          }
+          return paint;
+        },
+        // f
+        ///clusterFunc: () { return Text("Cluster"); },
+        ///lineStringFunc: () { if(CustomImages.imageLoaded) return CustomImages.plane;}
+        lineStringStyle: (feature) {
+          return Paint()
+            ..style = PaintingStyle.stroke
+            ..color = Colors.red
+            ..strokeWidth = 2
+            ..isAntiAlias = true;
+        },
+        polygonFunc: null,
+        polygonStyle: (feature) {
+          var suaColor = suaColors.firstWhere(
+              (sua) => sua.suaClassType == feature.tags['TYPE'],
+              orElse: (() => SUAColor.classUnKnown));
+          suaColor.airspaceColor;
+          var paint = Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 2
+            ..isAntiAlias = true
+            ..color = suaColor.airspaceColor;
+          paint.isAntiAlias = false;
+          return paint;
+        },
+        polygonLabel: (feature, canvas, offsets) {
+          Label.paintText(
+            canvas,
+            offsets,
+            feature.tags['TYPE'],
+            // If I don't include as TextStyle I get class conflict. Don't know why AS is showing that
+            textStyleBlack87FontSize14,
+            _mapController.rotation, // rotationRad,
+            rotate: true, //polygonOpt.rotateLabel,
+            labelPlacement:
+                PolygonLabelPlacement.centroid, //polygonOpt.labelPlacement
+          );
+        },
+      ),
+    );
   }
 
   Widget _getOpacitySlider() {
