@@ -22,7 +22,7 @@ class ThermalShape extends PointShapeBase {
       ..addOval(Rect.fromCenter(
         center: Offset(point.dx, point.dy + size),
         width: size,
-        height: size * 2,
+        height: size * 1.5,
       ));
   }
 }

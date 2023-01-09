@@ -115,6 +115,10 @@ enum SUAColor {
   classProhibited(
       suaClassType: "PROHIBITED",
       airspaceColor: Color(0x800000FF),
+      dashedLine: false),
+  classUnKnown(
+      suaClassType: "UNKNOWN",
+      airspaceColor: Color(0x40FF0000),
       dashedLine: false);
 
   const SUAColor(

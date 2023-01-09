@@ -327,7 +327,7 @@ class Repository {
       SoaringForecastImage soaringForecastImage) async {
     String fullUrl = RASP_BASE_URL + soaringForecastImage.imageUrl;
     File file = await ImageCacheManager().getSingleFile(fullUrl);
-    //logger.d("Downloading forecast image: $fullUrl");
+    //debugPrint("Downloading forecast image: $fullUrl");
     Image image = Image.file(file);
     soaringForecastImage.setImage(image);
     return Future<SoaringForecastImage>.value(soaringForecastImage);
@@ -354,7 +354,7 @@ class Repository {
   // Set up Floor database
   Future<AppDatabase> makeDatabaseAvailable() async {
     if (_appDatabase == null) {
-      logger.d('App database being created');
+      debugPrint('App database being created');
       _appDatabase =
           await $FloorAppDatabase.databaseBuilder('app_database.db').build();
     }
@@ -548,7 +548,7 @@ class Repository {
     turnpoints.addAll(
         await TurnpointsImporter.getTurnpointsFromTurnpointExchange(endUrl));
     var ids = await insertAllTurnpoints(turnpoints);
-    logger.d("Number turnpoints downloaded: ${ids.length}");
+    debugPrint("Number turnpoints downloaded: ${ids.length}");
     return turnpoints;
   }
 
@@ -557,7 +557,7 @@ class Repository {
     turnpoints
         .addAll(await TurnpointsImporter.getTurnpointsFromFile(turnpointFile));
     var ids = await insertAllTurnpoints(turnpoints);
-    logger.d("Number turnpoints downloaded: ${ids.length}");
+    debugPrint("Number turnpoints downloaded: ${ids.length}");
     return turnpoints;
   }
 
@@ -728,10 +728,11 @@ class Repository {
     String? oldSuaFilename = await _seeIfRegionSuaFileExists(region);
     if (oldSuaFilename != null) {
       suaString = await _readAppDocFile(oldSuaFilename);
-      logger.d("Found existing sua file $oldSuaFilename in app directory");
+      debugPrint("Found existing sua file $oldSuaFilename in app directory");
       sua = SUA.fromJson(json.decode(suaString));
     } else {
-      logger.d("No sua file related to region $region found in app directory");
+      debugPrint(
+          "No sua file related to region $region found in app directory");
     }
     // Now see if newer SUA available
     var suaRegionsString = await _raspOptionsClient.getSUARegions();
@@ -746,7 +747,7 @@ class Repository {
             .suaFileName;
         if (oldSuaFilename == null ||
             (!(oldSuaFilename).endsWith(region + '_' + suaFileName))) {
-          logger.d(
+          debugPrint(
               "Need to get SUA file from server (no sua on device or new file available");
           // so get details from server
           suaString = await _raspOptionsClient.downloadSuaFile(suaFileName);
@@ -764,12 +765,65 @@ class Repository {
       } catch (e) {
         // some error maybe no SUA files, or region not in list of sua files
         // ignoring
-        logger.d("Exception when getting sua file: ${e.toString()}");
+        debugPrint("Exception when getting sua file: ${e.toString()}");
       }
       if (sua != null) {
-        logger.d("returning sua: ${sua.type!.toString()}");
+        // debugPrint("returning sua: ${sua.type!.toString()}");
       } else {
-        logger.d("No SUA found");
+        debugPrint("No SUA found");
+      }
+      return sua;
+    }
+  }
+
+  Future<String?> getGeoJsonSUAForRegion(String region) async {
+    String? sua = null;
+    // See if SUA on device and send it if found
+    String? oldSuaFilename = await _seeIfRegionSuaFileExists(region);
+    if (oldSuaFilename != null) {
+      sua = await _readAppDocFile(oldSuaFilename);
+      debugPrint("Found existing sua file $oldSuaFilename in app directory");
+    } else {
+      debugPrint(
+          "No sua file related to region $region found in app directory");
+    }
+    // Now see if newer SUA available
+    var suaRegionsString = await _raspOptionsClient.getSUARegions();
+    if (suaRegionsString != null) {
+      SUARegionFiles? suaRegionFiles =
+          SUARegionFiles.fromJson(jsonDecode(suaRegionsString));
+      try {
+        String? suaFileName = suaRegionFiles.suaRegions
+            .singleWhere(
+              (suaRegion) => suaRegion.region == region,
+            )
+            .suaFileName;
+        if (oldSuaFilename == null ||
+            (!(oldSuaFilename).endsWith(region + '_' + suaFileName))) {
+          debugPrint(
+              "Need to get SUA file from server (no sua on device or new file available");
+          // so get details from server
+          String? newSua =
+              await _raspOptionsClient.downloadSuaFile(suaFileName);
+          // and if OK save them to file
+          if (newSua != null) {
+            await _writeStringToAppDocsFile(region + '_' + suaFileName, newSua);
+            // and delete the old file
+            if (oldSuaFilename != null) {
+              await _deleteFileFromAppDocsDirectory(oldSuaFilename);
+            }
+            sua = newSua;
+          }
+        }
+      } catch (e) {
+        // some error maybe no SUA files, or region not in list of sua files
+        // ignoring
+        debugPrint("Exception when getting sua file: ${e.toString()}");
+      }
+      if (sua != null) {
+        //debugPrint("returning sua: ${sua}");
+      } else {
+        debugPrint("No SUA found");
       }
       return sua;
     }
@@ -796,7 +850,7 @@ class Repository {
       final contents = await file.readAsStringSync();
       return contents;
     } catch (e) {
-      logger.d("Error reading $fileName");
+      debugPrint("Error reading $fileName");
       return "";
     }
   }
@@ -818,7 +872,7 @@ class Repository {
               (file) => file is File && fileEndsWith.hasMatch(file.path),
               orElse: () => null)!
           .path);
-      // logger.d("SUA file found: $fileName");
+      // debugPrint("SUA file found: $fileName");
     } catch (e) {
       // may get Bad State: No element execption if no file found. We ignore exception
     }

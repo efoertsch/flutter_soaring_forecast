@@ -432,6 +432,13 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  geojson_vector_slicer:
+    dependency: "direct main"
+    description:
+      path: "../geojson_vector_slicer"
+      relative: true
+    source: path
+    version: "0.0.0+1"
   glob:
     dependency: transitive
     description:
@@ -905,6 +912,13 @@ packages:
     dependency: transitive
     description:
       name: proj4dart
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "2.1.0"
+  protobuf:
+    dependency: transitive
+    description:
+      name: protobuf
       url: "https://pub.dartlang.org"
     source: hosted
     version: "2.1.0"
