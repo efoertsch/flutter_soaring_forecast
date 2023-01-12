@@ -260,7 +260,10 @@ class SoaringForecastApp extends StatelessWidget {
           }
 
           if (settings.name == AirportsSearchRouteBuilder.routeName) {
-            final String? option = settings.arguments as String;
+            String? option = null;
+            if (settings.arguments != null){
+              option = settings.arguments as String;
+            }
             return CustomMaterialPageRoute(
               builder: (context) {
                 return AirportsSearchRouteBuilder(option: option);
@@ -277,6 +280,7 @@ class SoaringForecastApp extends StatelessWidget {
               settings: settings,
             );
           }
+
           if (settings.name == WxBriefAuthBuilder.routeName) {
             return CustomMaterialPageRoute(
               builder: (context) {

@@ -333,8 +333,7 @@ class _TurnpointsListState extends State<TurnpointsList>
 
   Future<void> _addNewTurnpoint() async {
     var object = await Navigator.pushNamed(
-        context, TurnpointEditRouteBuilder.routeName,
-        arguments: null);
+        context, TurnpointEditRouteBuilder.routeName);
     processTurnpointEditResult(object);
   }
 

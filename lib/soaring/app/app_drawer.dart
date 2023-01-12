@@ -128,13 +128,6 @@ class _AppDrawerWidgetState extends State<AppDrawerWidget> {
                     context, TurnpointListRouteBuilder.routeName);
               }),
           ListTile(
-            title: Text(DrawerLiterals.TAF_METAR_LIST),
-            onTap: () {
-              Navigator.popAndPushNamed(
-                  context, SelectedAirportsRouteBuilder.routeName);
-            },
-          ),
-          ListTile(
             title: Text(DrawerLiterals.SETTINGS),
             onTap: () {
               Navigator.popAndPushNamed(

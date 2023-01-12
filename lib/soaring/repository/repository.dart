@@ -28,7 +28,7 @@ import 'package:flutter_soaring_forecast/soaring/repository/one800wxbrief/metar_
 import 'package:flutter_soaring_forecast/soaring/repository/one800wxbrief/one800wxbrief.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/one800wxbrief/one800wxbrief_api.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/rasp_options_api.dart';
-import 'package:flutter_soaring_forecast/soaring/repository/options/setttings.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/options/settings.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/special_use_airspace.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/sua_region_files.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/turnpoint_regions.dart';
@@ -355,8 +355,15 @@ class Repository {
   Future<AppDatabase> makeDatabaseAvailable() async {
     if (_appDatabase == null) {
       debugPrint('App database being created');
-      _appDatabase =
-          await $FloorAppDatabase.databaseBuilder('app_database.db').build();
+      // Oops. Added this so as not to lose existing Android users info
+      if (Platform.isAndroid) {
+        _appDatabase =
+        await $FloorAppDatabase.databaseBuilder('app_database').build();
+      } else if (Platform.isIOS) {
+        _appDatabase =
+        await $FloorAppDatabase.databaseBuilder('app_database.db').build();
+      }
+
     }
     return _appDatabase!;
   }

@@ -5,7 +5,7 @@ import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     show StandardLiterals;
 import 'package:flutter_soaring_forecast/soaring/app/custom_styles.dart';
-import 'package:flutter_soaring_forecast/soaring/repository/options/setttings.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/options/settings.dart';
 import 'package:flutter_soaring_forecast/soaring/settings/bloc/settings_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/settings/bloc/settings_event.dart';
 import 'package:flutter_soaring_forecast/soaring/settings/bloc/settings_state.dart';

@@ -212,8 +212,7 @@ class _SelectedAirportsListState extends State<SelectedAirportsList>
   }
 
   Future<void> _addNewAirport() async {
-    await Navigator.pushNamed(context, AirportsSearchRouteBuilder.routeName,
-        arguments: null);
+    await Navigator.pushNamed(context, AirportsSearchRouteBuilder.routeName);
     _sendEvent(GetSelectedAirportsListEvent());
   }
 
