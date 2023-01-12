@@ -180,14 +180,12 @@ class _AirportMetarTafState extends State<AirportMetarTaf>
   }
 
   Future<void> _addNewAirport() async {
-    await Navigator.pushNamed(context, AirportsSearchRouteBuilder.routeName,
-        arguments: null);
+    await Navigator.pushNamed(context, AirportsSearchRouteBuilder.routeName);
     _sendEvent(GetAirportMetarAndTafsEvent());
   }
 
   Future<void> _showSelectedAirports() async {
-    await Navigator.pushNamed(context, SelectedAirportsRouteBuilder.routeName,
-        arguments: null);
+    await Navigator.pushNamed(context, SelectedAirportsRouteBuilder.routeName);
     _sendEvent(GetAirportMetarAndTafsEvent());
   }
 

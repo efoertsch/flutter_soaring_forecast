@@ -1,4 +1,4 @@
-package soaringforecast.org.flutter_soaring_forecast
+package org.soaringforecast.rasp
 
 import io.flutter.embedding.android.FlutterActivity
 

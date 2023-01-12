@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter_soaring_forecast/soaring/repository/options/setttings.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/options/settings.dart';
 
 @immutable
 abstract class SettingsState {}
