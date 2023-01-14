@@ -454,6 +454,7 @@ class _RaspScreenState extends State<RaspScreen>
         child: const Text(RaspMenu.selectTask,
             style: TextStyle(color: Colors.white)),
         onPressed: () {
+          //throw Exception(); for testing Crashlytics but exception intercepted by GestureDetector
           _selectTask();
         },
       ),

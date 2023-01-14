@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:io';
 
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -44,6 +46,9 @@ import 'package:flutter_soaring_forecast/soaring/wxbrief/ui/wxbrief_auth_screen.
 import 'package:flutter_soaring_forecast/soaring/wxbrief/ui/wxbrief_request_screen.dart';
 import 'package:workmanager/workmanager.dart';
 
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+
 // https://github.com/fluttercommunity/flutter_workmanager#customisation-android-only
 @pragma(
     'vm:entry-point') // Mandatory if the App is obfuscated or using Flutter 3.1+
@@ -71,6 +76,9 @@ void main() async {
   if (kReleaseMode) {
     debugPrint = (String? message, {int? wrapWidth}) {};
   }
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   // Since iOS less definitive on when background task will run, just have user kick it off when requested.
   if (Platform.isAndroid) {
@@ -83,7 +91,13 @@ void main() async {
         .registerOneOffTask("oneTimeDownload", "workmanager.background.task");
   }
 
-  runApp(RepositorySetup());
+  runZonedGuarded(() {
+    runApp(RepositorySetup());
+  }, (error, stackTrace) {
+    print('runZonedGuarded: Caught error in my root zone.');
+    FirebaseCrashlytics.instance.recordError(error, stackTrace);
+  });
+
 }
 
 class RepositorySetup extends StatelessWidget {
