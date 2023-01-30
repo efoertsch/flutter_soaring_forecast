@@ -31,14 +31,18 @@ the range of supported deployment target versions is 11.0 to 16.1.99.'
 Android release
 Reference obfuscate process at https://docs.flutter.dev/deployment/obfuscate  
 1. Make sure build.gradle has correct package name 
-2. For an APK build to build and install from AS terminal (for testing before creating bundle)
-   flutter build apk --flavor prod --split-per-abi    
-3. Install apk (check - make sure apk path and name correct based on build output )
-   adb install build/app/outputs/flutter-apk/app-armeabi-v7a-prod-release.apk
+2. To create an APK, install from AS terminal (for testing before creating bundle)
+   flutter build apk --flavor prod --split-per-abi --obfuscate --split-debug-info=./android/release_debug_symbols   
+3. Install apk (check - make sure apk path and name correct based on build output ) based on device architecture. 
+   Example below is for arm device.
+   adb install build/app/outputs/flutter-apk/app-armeabi-v7a-prod-release.apk (match release type to device)
+4. To create app bundle:
+   flutter build appbundle  --flavor prod --obfuscate --split-debug-info=./android/release_debug_symbols
+   
+   In this case output went to: build/app/outputs/bundle/prodRelease/app-prod-release.aab
+5. Upload to Play Store test track or test app bundle using bundletool (https://github.com/google/bundletool).
+6. Upload symbols file to play store:
+    Files to upload: https://stackoverflow.com/questions/62568757/playstore-error-app-bundle-contains-native-code-and-youve-not-uploaded-debug/68778908#68778908
+7. After testing upload or move test version on play store to production
 
-4. WIP - debug building obfuscated apl
-      flutter build apk --flavor prod --split-per-abi --obfuscate --split-debug-info=/flutter_soaring_forecast/android/release_debug_symbols
-5. WIP Rename symbols file so it won't be overwritten next time release apk built
-6. After testing apk rebuild using package option
-7. Upload to Google PlayStore
 
