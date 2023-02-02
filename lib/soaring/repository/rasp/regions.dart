@@ -168,6 +168,19 @@ class Region {
     return _modelDates
         .firstWhere(((modelDates) => modelDates.modelName == modelName));
   }
+
+  // Model in form of 'hrrr','rap,...   Date in form of YYYY-MM-DD
+  ModelDateDetails? doModelDateDetailsExist(String modelName, String date ){
+    ModelDates? modelDates = _modelDates
+        .firstWhereOrNull((modelDates) => (modelDates.modelName == modelName));
+    if (modelDates == null) {
+      // model doesn't exist
+      return null;
+    }
+    // model exists but see if that model has a forecast for the requested date
+    return  modelDates.getModelDateDetailList().firstWhereOrNull((modelDateDetail) => modelDateDetail.date == date);
+
+  }
 }
 
 //---------- End Custom Code -----------------------
@@ -259,7 +272,7 @@ class ModelDates {
   }
 }
 
-/// For a specific model and date , hold the date deta
+/// For a specific model and date , hold the date data
 class ModelDateDetails {
   String? printDate;
   String? date;

@@ -155,7 +155,7 @@ class _WxBriefAuthScreenState extends State<WxBriefAuthScreen> {
           onChanged: (newValue) {
             setState(() {
               _doNotShowAgain = newValue!;
-              _sendEvent(SetWxBriefDisplayAuthScreenEvent(!newValue!));
+              _sendEvent(SetWxBriefDisplayAuthScreenEvent(!newValue));
             });
           },
         ),

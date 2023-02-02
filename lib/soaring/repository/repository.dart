@@ -77,6 +77,8 @@ class Repository {
   static const String ICAO_CODE_DELIMITER = " ";
   static const String WXBRIEF_AIRPORT_ID = "WXBRIEF_AIRPORT_ID";
   static const String VIEW_MAP_BOUNDS = "VIEW_MAP_BOUNDS";
+  static const String SIMPLE_FORECAST_SELECT = "SIMPLE_FORECAST";
+
 
   late final String satelliteRegionUS;
   late final String satelliteTypeVis;
@@ -130,6 +132,14 @@ class Repository {
   ///  1. Get the list of available forecast regions (e.g. NewEngland, Mifflin) and forecast dates, etc for each region
   Future<Regions> getRegions() async {
     return _raspClient.getRegions();
+  }
+
+  Future<bool> isSimpleForecast() async{
+    return await getGenericBool(key: SIMPLE_FORECAST_SELECT, defaultValue: true);
+  }
+  // true is to display 'simple' forecast select, false to display 'expert' forecast select
+  void setSimpleForecast(bool isSimpleForecast)async {
+    await saveGenericBool(key: SIMPLE_FORECAST_SELECT, value: isSimpleForecast);
   }
 
   Future<String> getSelectedRegionName() async {
@@ -268,6 +278,7 @@ class Repository {
     return _raspClient.getLatLongPointForecast(
         contentType, region, date, model, time, lat, lon, forecasts);
   }
+
 
   /*
   * @param region - "NewEngland"

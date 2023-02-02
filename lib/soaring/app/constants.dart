@@ -38,6 +38,10 @@ enum TurnpointEditReturn { noChange, tpAddedUpdated, tpDeleted }
 
 enum ForecastCategoryEnum { thermal, wave, wind }
 
+// Order must be most current, 'best' model
+enum ModelsEnum {hrrr, rap, nam, gfs }
+enum BeginnerDateSwitch{previous, next}
+
 final Widget waveIcon = SvgPicture.asset('assets/svg/wave.svg');
 final Widget windIcon = SvgPicture.asset('assets/svg/wind.svg');
 final Widget thermalIcon = SvgPicture.asset('assets/svg/thermal.svg');

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/taskturnpoint/task_turnpoint.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/regions.dart';
 import 'package:latlong2/latlong.dart';
@@ -151,3 +152,12 @@ class SetForecastOverlayOpacityEvent extends RaspDataEvent {
 }
 
 class RefreshTaskEvent extends RaspDataEvent {}
+
+class BeginnerDateSwitchEvent extends RaspDataEvent {
+  final BeginnerDateSwitch beginnerDateSwitch;
+
+  BeginnerDateSwitchEvent(this.beginnerDateSwitch);
+}
+
+
+

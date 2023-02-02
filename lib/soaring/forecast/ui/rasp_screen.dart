@@ -7,7 +7,7 @@ import 'package:flutter_soaring_forecast/soaring/app/app_drawer.dart';
 import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
-    as Constants;
+as Constants;
 import 'package:flutter_soaring_forecast/soaring/app/custom_styles.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_data_state.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/rasp_widgets.dart';
@@ -56,6 +56,8 @@ class _RaspScreenState extends State<RaspScreen>
 
   bool taskSelected = false;
 
+  bool _simpleForecastState = true;
+
   // Executed only when class created
   @override
   void initState() {
@@ -102,8 +104,8 @@ class _RaspScreenState extends State<RaspScreen>
           ),
           appBar: _getAppBar(),
           body: _getBody(context)
-          // }),
-          ),
+        // }),
+      ),
     );
   }
 
@@ -122,7 +124,7 @@ class _RaspScreenState extends State<RaspScreen>
           Column(
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              _getForecastModelsAndDates(),
+              _getBeginnerExpertWidget(),
               _getForecastTypes(),
               _displayForecastTime(),
               _getForecastWindow(),
@@ -134,6 +136,24 @@ class _RaspScreenState extends State<RaspScreen>
         ],
       ),
     );
+  }
+
+  Widget _getBeginnerExpertWidget() {
+    return BlocConsumer<RaspDataBloc, RaspDataState>(
+        listener: (context, state) {
+          if (state is BeginnerForecastState) {
+            _simpleForecastState = state.simpleForecast;
+          }
+        },
+        buildWhen: (previous, current) {
+          return current is BeginnerForecastDateModelState;
+        }, builder: (context, state) {
+      if (_simpleForecastState) {
+        return _getBeginnerForecast();
+      } else {
+        return _getForecastModelsAndDates();
+      }
+    });
   }
 
   Widget _getForecastModelsAndDates() {
@@ -149,18 +169,76 @@ class _RaspScreenState extends State<RaspScreen>
             flex: 7,
             child: Padding(
               padding: EdgeInsets.only(left: 16.0),
-              child: forecastDatesDropDownList(),
+              child: _getForecastDatesDropDownList(),
             )),
       ],
     );
+  }
+
+  Widget _getBeginnerForecast() {
+    //debugPrint('creating/updating main ForecastModelsAndDates');
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      mainAxisSize: MainAxisSize.max,
+      children: [
+        Align(
+          alignment: Alignment.centerLeft,
+          child: Padding(
+            padding: const EdgeInsets.only(left:8.0),
+            child: InkWell(
+              onTap: () {
+                stopAnimation();
+                _sendEvent(BeginnerDateSwitchEvent(BeginnerDateSwitch.previous));
+                setState(() {});
+              },
+              child: IncrDecrIconWidget.getIncIconWidget('<'),
+            ),
+          ),
+        ),
+        Spacer(),
+        Align(
+            alignment: Alignment.center,
+            child: _getSimpleForecastDataAndModel()),
+        Spacer(),
+        Align(
+          alignment: Alignment.centerRight,
+          child: Padding(
+            padding: const EdgeInsets.only(right:8.0),
+            child: InkWell(
+              onTap: () {
+                stopAnimation();
+                _sendEvent(BeginnerDateSwitchEvent(BeginnerDateSwitch.next));;
+                setState(() {});
+              },
+              child: IncrDecrIconWidget.getIncIconWidget('>'),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _getSimpleForecastDataAndModel() {
+    return BlocBuilder<RaspDataBloc, RaspDataState>(
+        buildWhen: (previous, current)
+    {
+      return current is BeginnerForecastDateModelState;
+    }, builder: (context, state) {
+    //debugPrint('creating/updating forecastModelDropDown');
+    if (state is BeginnerForecastDateModelState) {
+    return Text("${state.date}    (${state.model.toUpperCase()})",
+      style: CustomStyle.bold18(context),);
+    }
+    return SizedBox.shrink();
+    });
   }
 
 // Display GFS, NAM, ....
   Widget forecastModelDropDownList() {
     return BlocBuilder<RaspDataBloc, RaspDataState>(
         buildWhen: (previous, current) {
-      return current is RaspInitialState || current is RaspForecastModels;
-    }, builder: (context, state) {
+          return current is RaspInitialState || current is RaspForecastModels;
+        }, builder: (context, state) {
       //debugPrint('creating/updating forecastModelDropDown');
       if (state is RaspForecastModels) {
         return DropdownButton<String>(
@@ -188,16 +266,16 @@ class _RaspScreenState extends State<RaspScreen>
   }
 
 // Display forecast dates for selected model (eg. GFS)
-  Widget forecastDatesDropDownList() {
+  Widget _getForecastDatesDropDownList() {
     return BlocBuilder<RaspDataBloc, RaspDataState>(
         buildWhen: (previous, current) {
-      return current is RaspInitialState || current is RaspModelDates;
-    }, builder: (context, state) {
+          return current is RaspInitialState || current is RaspModelDates;
+        }, builder: (context, state) {
       //debugPrint('creating/updating forecastDatesDropDown');
       if (state is RaspModelDates) {
         final _shortDOWs = reformatDatesToDOW(state.forecastDates);
         final _selectedForecastDOW =
-            _shortDOWs[state.forecastDates.indexOf(state.selectedForecastDate)];
+        _shortDOWs[state.forecastDates.indexOf(state.selectedForecastDate)];
         final _forecastDates = state.forecastDates;
         return DropdownButton<String>(
           style: CustomStyle.bold18(context),
@@ -205,7 +283,7 @@ class _RaspScreenState extends State<RaspScreen>
           value: _selectedForecastDOW,
           onChanged: (String? newValue) {
             final selectedForecastDate =
-                _forecastDates[_shortDOWs.indexOf(newValue!)];
+            _forecastDates[_shortDOWs.indexOf(newValue!)];
             _sendEvent(SelectRaspForecastDateEvent(selectedForecastDate));
           },
           items: _shortDOWs.map<DropdownMenuItem<String>>((String value) {
@@ -225,8 +303,8 @@ class _RaspScreenState extends State<RaspScreen>
   Widget _getForecastTypes() {
     return BlocBuilder<RaspDataBloc, RaspDataState>(
         buildWhen: (previous, current) {
-      return current is RaspInitialState || current is RaspForecasts;
-    }, builder: (context, state) {
+          return current is RaspInitialState || current is RaspForecasts;
+        }, builder: (context, state) {
       //debugPrint('creating/updating ForecastTypes');
       if (state is RaspForecasts) {
         return _getSelectedForecastDisplay(context, state.selectedForecast);
@@ -314,10 +392,10 @@ class _RaspScreenState extends State<RaspScreen>
               flex: 6,
               child: BlocBuilder<RaspDataBloc, RaspDataState>(
                   buildWhen: (previous, current) {
-                return current is RaspInitialState ||
-                    current is RaspForecastImageSet ||
-                    current is SoundingForecastImageSet;
-              }, builder: (context, state) {
+                    return current is RaspInitialState ||
+                        current is RaspForecastImageSet ||
+                        current is SoundingForecastImageSet;
+                  }, builder: (context, state) {
                 var localTime;
                 //debugPrint('creating/updating ForecastTime value');
                 if (state is RaspForecastImageSet ||
@@ -380,14 +458,14 @@ class _RaspScreenState extends State<RaspScreen>
   Widget _widgetForSnackBarMessages() {
     return BlocConsumer<RaspDataBloc, RaspDataState>(
         listener: (context, state) {
-      if (state is RaspErrorState) {
-        CommonWidgets.showErrorDialog(
-            context, StandardLiterals.UH_OH, state.error);
-      }
-      if (state is TurnpointFoundState) {
-        displayTurnpointView(context, state);
-      }
-    }, builder: (context, state) {
+          if (state is RaspErrorState) {
+            CommonWidgets.showErrorDialog(
+                context, StandardLiterals.UH_OH, state.error);
+          }
+          if (state is TurnpointFoundState) {
+            displayTurnpointView(context, state);
+          }
+        }, builder: (context, state) {
       if (state is RaspErrorState) {
         return SizedBox.shrink();
       } else {
@@ -577,8 +655,8 @@ class _RaspScreenState extends State<RaspScreen>
     }
   }
 
-  void displayTurnpointView(
-      BuildContext context, TurnpointFoundState state) async {
+  void displayTurnpointView(BuildContext context,
+      TurnpointFoundState state) async {
     await Navigator.pushNamed(
       context,
       TurnpointViewRouteBuilder.routeName,
@@ -626,7 +704,7 @@ class _RaspScreenState extends State<RaspScreen>
     if (result != null && result is String) {
       debugPrint("selected region: result");
       // user switched to another region
-      if (result != _selectedRegionName) ;
+      if (result != _selectedRegionName);
       _sendEvent(SwitchedRegionEvent());
     }
   }
@@ -636,7 +714,7 @@ class _RaspScreenState extends State<RaspScreen>
 
     newDisplayOptions.forEach((newOption) {
       final oldOption = _raspDisplayOptions.firstWhere(
-          (oldOption) => oldOption.displayText == newOption.checkboxText);
+              (oldOption) => oldOption.displayText == newOption.checkboxText);
       if (newOption.isChecked != oldOption.selected) {
         // some change in checked status
         oldOption.selected = newOption.isChecked;
