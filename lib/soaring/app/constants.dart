@@ -40,7 +40,7 @@ enum ForecastCategoryEnum { thermal, wave, wind }
 
 // Order must be most current, 'best' model
 enum ModelsEnum {hrrr, rap, nam, gfs }
-enum BeginnerDateSwitch{previous, next}
+enum ForecastDateChange{previous, next}
 
 final Widget waveIcon = SvgPicture.asset('assets/svg/wave.svg');
 final Widget windIcon = SvgPicture.asset('assets/svg/wind.svg');
@@ -196,6 +196,8 @@ class RaspMenu {
   static const String one800WxBrief = '1800WxBrief';
   static const String notamsBrief = "NOTAMS";
   static const String routeBrief = "Route Brief";
+  static const String beginnerMode = "Beginner Mode";
+  static const String expertMode = "Expert Mode";
 }
 
 class RaspDisplayOptionsMenu {

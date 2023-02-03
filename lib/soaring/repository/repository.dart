@@ -77,7 +77,7 @@ class Repository {
   static const String ICAO_CODE_DELIMITER = " ";
   static const String WXBRIEF_AIRPORT_ID = "WXBRIEF_AIRPORT_ID";
   static const String VIEW_MAP_BOUNDS = "VIEW_MAP_BOUNDS";
-  static const String SIMPLE_FORECAST_SELECT = "SIMPLE_FORECAST";
+  static const String BEGINNER_FORECAST_MODE = "BEGINNER_FORECAST_MODE";
 
 
   late final String satelliteRegionUS;
@@ -134,12 +134,12 @@ class Repository {
     return _raspClient.getRegions();
   }
 
-  Future<bool> isSimpleForecast() async{
-    return await getGenericBool(key: SIMPLE_FORECAST_SELECT, defaultValue: true);
+  Future<bool> isBeginnerForecastMode() async{
+    return await getGenericBool(key: BEGINNER_FORECAST_MODE, defaultValue: true);
   }
   // true is to display 'simple' forecast select, false to display 'expert' forecast select
-  void setSimpleForecast(bool isSimpleForecast)async {
-    await saveGenericBool(key: SIMPLE_FORECAST_SELECT, value: isSimpleForecast);
+  Future<void> setBeginnerForecastMode(bool isBeginnerForecastMode) async {
+    await saveGenericBool(key: BEGINNER_FORECAST_MODE, value: isBeginnerForecastMode);
   }
 
   Future<String> getSelectedRegionName() async {

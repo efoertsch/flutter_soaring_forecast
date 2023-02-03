@@ -189,10 +189,10 @@ class RaspWorkingState extends RaspDataState {
   RaspWorkingState({required this.working});
 }
 
-class BeginnerForecastState extends RaspDataState{
-  final bool simpleForecast ;
+class BeginnerModeState extends RaspDataState{
+  final bool beginnerMode ;
 
-  BeginnerForecastState(this.simpleForecast);
+  BeginnerModeState(this.beginnerMode);
 }
 
 class BeginnerForecastDateModelState extends RaspDataState {
