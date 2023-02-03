@@ -32,7 +32,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
   String? _selectedForecastDate; // selected date  2019-12-19
   List<String>? _forecastTimes;
   int _selectedForecastTimeIndex = 4; // start at   1300 forecast
-  int _beginnerDateIndex = 0;
+  //int _beginnerDateIndex = 0;
 
   List<Forecast>? _forecasts;
   Forecast? _selectedForecast;
@@ -672,45 +672,49 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
 
   // For simple startup, get the 'best' model available for the current date
   void _getBeginnerModeStartup(Emitter<RaspDataState> emit) {
-    _beginnerDateIndex  = 0;
+    _selectedForecastDate = _region?.dates?.first;
     _getBeginnerModeDateDetails();
-    _emitBeginnerForecastModateDataState(emit);
+    _emitBeginnerModelDateState(emit);
   }
 
-  void _emitBeginnerForecastModateDataState(Emitter<RaspDataState> emit) {
+  void _emitBeginnerModelDateState(Emitter<RaspDataState> emit) {
     if (_beginnerModeModelDataDetails == null) {
       emit(RaspErrorState("Oops. No forecast models available!"));
     }
-    emit(BeginnerForecastDateModelState(_region!.dates![_beginnerDateIndex] ,_beginnerModeModelDataDetails!.model!.name,));
+    emit(BeginnerForecastDateModelState(_selectedForecastDate! ,_beginnerModeModelDataDetails!.model!.name,));
   }
 
   // Go to either previous or next date for beginner mode
   FutureOr<void> _processBeginnerDateSwitch(
       ForecastDateSwitchEvent event,
       Emitter<RaspDataState> emit) async {
-    if (event.forecastDateSwitch == ForecastDateChange.previous) {
-      _beginnerDateIndex = (_beginnerDateIndex - 1 >= 0)
-          ? _beginnerDateIndex - 1
-          : _region!.dates!.length - 1;
-    } else {
-      _beginnerDateIndex =  (_beginnerDateIndex + 1  < _region!.dates!.length)
-          ? _beginnerDateIndex + 1
-          : 0;
+    int?  dateIndex =  _region?.dates?.indexOf(_selectedForecastDate!);
+    if (dateIndex != null) {
+      if (event.forecastDateSwitch == ForecastDateChange.previous) {
+        _selectedForecastDate = (dateIndex - 1 >= 0)
+            ? _region!.dates![dateIndex - 1]
+            : _region!.dates!.last;
+      } else {
+        _selectedForecastDate = (dateIndex + 1 < _region!.dates!.length)
+            ? _region!.dates![dateIndex + 1]
+            : _region!.dates!.first;
+      }
     }
      _getBeginnerModeDateDetails();
     _selectedModelName = _beginnerModeModelDataDetails?.model?.name ?? "Unknown";
     if (_beginnerModeModelDataDetails != null) {
-      emit(BeginnerForecastDateModelState(_region!.dates![_beginnerDateIndex], _selectedModelName!));
+      emit(BeginnerForecastDateModelState(_selectedForecastDate!, _selectedModelName!));
     }
     // we need to keep values in sync for 'expert' mode if user switches to that mode
     _getDatesForSelectedModel();
+    _getForecastImages();
+    _emitRaspForecastImageSet(emit);
   }
 
 
   // Set the forecast date (yyyy-mm-dd)
   // Search in order for HRRR, RAP, NAM, GFS
   void _getBeginnerModeDateDetails() {
-    _selectedForecastDate = _region?.dates?[_beginnerDateIndex];
     ModelDateDetails? modelDateDetails;
     // iterate through models to  to see if forecast ex
     for (var model in ModelsEnum.values) {
@@ -734,7 +738,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
   }
 
 
-  // Switch display from beginner to expert or vica-versa
+  // Switch display from beginner to expert or visa-versa
   // if switching from expert to simple may switch modes (to get most 'accurate' for day)
   // if switched from simple to expert stay on current model
   void _processBeginnerModeEvent(BeginnerModeEvent event, Emitter<RaspDataState> emit) async {
@@ -742,20 +746,18 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     await repository.setBeginnerForecastMode(event.beginnerMode);
     if (_beginnerModeSelected) {
       //  switched from expert to beginner
-      // set the date index
-      _beginnerDateIndex = _region!.dates!.indexOf(_selectedForecastDate!);
+      // keep same date but might need to change the model
       _getBeginnerModeDateDetails();
-      emit(BeginnerForecastDateModelState(_region!.dates![_beginnerDateIndex], _selectedModelName!));
+      emit(BeginnerForecastDateModelState(_selectedForecastDate ?? '', _selectedModelName!));
+      _getForecastImages();
+      _emitRaspForecastImageSet(emit);
       } else {
       //  switched from beginner to expert
       // stay on same model and date so just send info to update ui
       _emitRaspModels(emit);
       _emitRaspModelDates(emit);
 
-
     }
-
-
 
   }
 }

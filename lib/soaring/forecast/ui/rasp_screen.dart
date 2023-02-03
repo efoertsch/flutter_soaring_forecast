@@ -45,7 +45,6 @@ class _RaspScreenState extends State<RaspScreen>
   String _selectedForecastDOW = '';
   List<String> _forecastDates = [];
 
-
 // TODO internationalize literals
   String _pauseAnimationLabel = "Pause";
   String _loopAnimationLabel = "Loop";
@@ -159,18 +158,19 @@ class _RaspScreenState extends State<RaspScreen>
         _modelNames.clear();
         _modelNames.addAll(state.modelNames);
       }
-      if (state is RaspModelDates){
+      if (state is RaspModelDates) {
         _shortDOWs.clear();
-          _shortDOWs.addAll(reformatDatesToDOW(state.forecastDates));
-          _selectedForecastDOW =
-        _shortDOWs[state.forecastDates.indexOf(state.selectedForecastDate)];
-          _forecastDates.clear();
-         _forecastDates.addAll(state.forecastDates);
+        _shortDOWs.addAll(reformatDatesToDOW(state.forecastDates));
+        _selectedForecastDOW =
+            _shortDOWs[state.forecastDates.indexOf(state.selectedForecastDate)];
+        _forecastDates.clear();
+        _forecastDates.addAll(state.forecastDates);
       }
     }, buildWhen: (previous, current) {
       return current is BeginnerModeState ||
-      current is  RaspForecastModels ||
-      current is RaspModelDates;
+          current is BeginnerForecastDateModelState ||
+          current is RaspForecastModels ||
+          current is RaspModelDates;
     }, builder: (context, state) {
       if (_beginnerMode) {
         return _getBeginnerForecast();
@@ -247,44 +247,44 @@ class _RaspScreenState extends State<RaspScreen>
 
 // Display GFS, NAM, ....
   Widget forecastModelDropDownList() {
-        return DropdownButton<String>(
-          style: CustomStyle.bold18(context),
-          value: _selectedModelName,
-          hint: Text('Select Model'),
-          isExpanded: true,
-          iconSize: 24,
-          elevation: 16,
-          onChanged: (String? newValue) {
-            // debugPrint('Selected model onChanged: $newValue');
-            _sendEvent(SelectedRaspModelEvent(newValue!));
-          },
-          items: _modelNames.map<DropdownMenuItem<String>>((String value) {
-            return DropdownMenuItem<String>(
-              value: value,
-              child: Text(value.toUpperCase()),
-            );
-          }).toList(),
+    return DropdownButton<String>(
+      style: CustomStyle.bold18(context),
+      value: _selectedModelName,
+      hint: Text('Select Model'),
+      isExpanded: true,
+      iconSize: 24,
+      elevation: 16,
+      onChanged: (String? newValue) {
+        // debugPrint('Selected model onChanged: $newValue');
+        _sendEvent(SelectedRaspModelEvent(newValue!));
+      },
+      items: _modelNames.map<DropdownMenuItem<String>>((String value) {
+        return DropdownMenuItem<String>(
+          value: value,
+          child: Text(value.toUpperCase()),
         );
+      }).toList(),
+    );
   }
 
 // Display forecast dates for selected model (eg. GFS)
   Widget _getForecastDatesDropDownList() {
-        return DropdownButton<String>(
-          style: CustomStyle.bold18(context),
-          isExpanded: true,
-          value: _selectedForecastDOW,
-          onChanged: (String? newValue) {
-            final selectedForecastDate =
-                _forecastDates[_shortDOWs.indexOf(newValue!)];
-            _sendEvent(SelectRaspForecastDateEvent(selectedForecastDate));
-          },
-          items: _shortDOWs.map<DropdownMenuItem<String>>((String value) {
-            return DropdownMenuItem<String>(
-              value: value,
-              child: Text(value),
-            );
-          }).toList(),
+    return DropdownButton<String>(
+      style: CustomStyle.bold18(context),
+      isExpanded: true,
+      value: _selectedForecastDOW,
+      onChanged: (String? newValue) {
+        final selectedForecastDate =
+            _forecastDates[_shortDOWs.indexOf(newValue!)];
+        _sendEvent(SelectRaspForecastDateEvent(selectedForecastDate));
+      },
+      items: _shortDOWs.map<DropdownMenuItem<String>>((String value) {
+        return DropdownMenuItem<String>(
+          value: value,
+          child: Text(value),
         );
+      }).toList(),
+    );
   }
 
 // Display description of forecast types (eq. 'Thermal Updraft Velocity (W*)' for wstar)
