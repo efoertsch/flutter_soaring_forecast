@@ -614,9 +614,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
           description: forecast.forecastNameDisplay,
           helpDescription: forecast.forecastDescription));
     });
-    return Padding(
-        padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
-        child: ScrollableTable(
+    return ScrollableTable(
             columnHeadings: hours,
             dataCellWidth: 60,
             dataCellHeight: 50,
@@ -625,6 +623,6 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
             descriptionBackgroundColor: Colors.yellow.withOpacity(0.3),
             dataRowsBackgroundColors: [Colors.white, Colors.green.shade50],
             gridData: forecastGraphData.gridData,
-            descriptions: descriptions));
+            descriptions: descriptions);
   }
 }

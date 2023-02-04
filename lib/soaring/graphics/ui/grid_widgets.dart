@@ -54,27 +54,32 @@ class _ScrollableTableState extends State<ScrollableTable> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        TableHead(
-            scrollController: _headController,
-            columnHeadings: widget.columnHeadings,
-            descriptionColumnWidth: widget.descriptionColumnWidth,
-            cellWidth: widget.dataCellWidth,
-            cellHeight: widget.dataCellHeight,
-            backgroundColor: widget.headingBackgroundColor),
-        Expanded(
-          child: TableBody(
-              scrollController: _bodyController,
-              descriptionColumnWidth: widget.descriptionColumnWidth,
-              dataCellWidth: widget.dataCellWidth,
-              dataCellHeight: widget.dataCellHeight,
-              descriptionBackgroundColor: widget.descriptionBackgroundColor,
-              dataRowBackgroundColors: widget.dataRowsBackgroundColors,
-              gridData: widget.gridData,
-              descriptions: widget.descriptions),
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TableHead(
+                scrollController: _headController,
+                columnHeadings: widget.columnHeadings,
+                descriptionColumnWidth: widget.descriptionColumnWidth,
+                cellWidth: widget.dataCellWidth,
+                cellHeight: widget.dataCellHeight,
+                backgroundColor: widget.headingBackgroundColor),
+            TableBody(
+                scrollController: _bodyController,
+                descriptionColumnWidth: widget.descriptionColumnWidth,
+                dataCellWidth: widget.dataCellWidth,
+                dataCellHeight: widget.dataCellHeight,
+                descriptionBackgroundColor: widget.descriptionBackgroundColor,
+                dataRowBackgroundColors: widget.dataRowsBackgroundColors,
+                gridData: widget.gridData,
+                descriptions: widget.descriptions),
+          ],
         ),
-      ],
+      ),
     );
   }
 }
@@ -113,22 +118,20 @@ class TableHead extends StatelessWidget {
           ),
           // The rest of the cells in the row contain column descriptions for
           // the table data
-          Expanded(
-            child: ListView.builder(
-                controller: scrollController,
-                physics: ClampingScrollPhysics(),
-                scrollDirection: Axis.horizontal,
-                itemCount: columnHeadings.length,
-                itemBuilder: (BuildContext context, int index) {
-                  return SizedBox(
-                    width: cellWidth,
-                    child: GridTableCell(
-                      color: Colors.yellow.withOpacity(0.3),
-                      value: columnHeadings[index],
-                    ),
-                  );
-                }),
-          ),
+          ListView.builder(
+              controller: scrollController,
+              physics: ClampingScrollPhysics(),
+              scrollDirection: Axis.horizontal,
+              itemCount: columnHeadings.length,
+              itemBuilder: (BuildContext context, int index) {
+                return SizedBox(
+                  width: cellWidth,
+                  child: GridTableCell(
+                    color: Colors.yellow.withOpacity(0.3),
+                    value: columnHeadings[index],
+                  ),
+                );
+              }),
         ],
       ),
     );
@@ -203,37 +206,36 @@ class _TableBodyState extends State<TableBody> {
                 );
               }),
         ),
+
         // remaining elements in row is the data
-        Expanded(
-          child: SingleChildScrollView(
-            controller: widget.scrollController,
-            scrollDirection: Axis.horizontal,
-            physics: const ClampingScrollPhysics(),
-            child: SizedBox(
-              width: (widget.gridData[0].length) * widget.dataCellWidth,
-              height: (widget.descriptions.length * widget.dataCellHeight),
-              child: ListView(
-                controller: _restColumnsController,
-                physics: const ClampingScrollPhysics(),
-                // We build row by row, so each row contains all the hourly
-                // data for each forecast.
-                children: List.generate(widget.descriptions.length, (y) {
-                  return Row(
-                    children: List.generate(widget.gridData[0].length, (x) {
-                      // remaining widgets in row are the data for that particular forecast
-                      return SizedBox(
-                        width: widget.dataCellWidth,
-                        height: widget.dataCellHeight,
-                        child: GridTableCell(
-                          value: widget.gridData[y][x],
-                          color: widget.dataRowBackgroundColors[
-                              y % widget.dataRowBackgroundColors.length],
-                        ),
-                      );
-                    }),
-                  );
-                }),
-              ),
+        SingleChildScrollView(
+          controller: widget.scrollController,
+          scrollDirection: Axis.horizontal,
+          physics: const ClampingScrollPhysics(),
+          child: SizedBox(
+            width: (widget.gridData[0].length) * widget.dataCellWidth,
+            height: (widget.descriptions.length * widget.dataCellHeight),
+            child: ListView(
+              controller: _restColumnsController,
+              physics: const ClampingScrollPhysics(),
+              // We build row by row, so each row contains all the hourly
+              // data for each forecast.
+              children: List.generate(widget.descriptions.length, (y) {
+                return Row(
+                  children: List.generate(widget.gridData[0].length, (x) {
+                    // remaining widgets in row are the data for that particular forecast
+                    return SizedBox(
+                      width: widget.dataCellWidth,
+                      height: widget.dataCellHeight,
+                      child: GridTableCell(
+                        value: widget.gridData[y][x],
+                        color: widget.dataRowBackgroundColors[
+                            y % widget.dataRowBackgroundColors.length],
+                      ),
+                    );
+                  }),
+                );
+              }),
             ),
           ),
         ),
@@ -260,7 +262,7 @@ class GridTableCell extends StatelessWidget {
       ),
       alignment: Alignment.center,
       child: Text(
-        '${value }',
+        '${value}',
         style: TextStyle(fontSize: 16.0),
       ),
     );
