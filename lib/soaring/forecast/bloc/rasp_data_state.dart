@@ -3,6 +3,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/taskturnpoint/task_turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/LatLngForecast.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image_set.dart';
 import 'package:flutter_soaring_forecast/soaring/graphics/data/forecast_graph_data.dart';
@@ -186,4 +187,16 @@ class DisplayLocalForecastGraphState extends RaspDataState {
 class RaspWorkingState extends RaspDataState {
   final bool working;
   RaspWorkingState({required this.working});
+}
+
+class BeginnerModeState extends RaspDataState{
+  final bool beginnerMode ;
+
+  BeginnerModeState(this.beginnerMode);
+}
+
+class BeginnerForecastDateModelState extends RaspDataState {
+  final String date;
+  final String model;
+  BeginnerForecastDateModelState (this.date, this.model);
 }

@@ -151,3 +151,18 @@ class SetForecastOverlayOpacityEvent extends RaspDataEvent {
 }
 
 class RefreshTaskEvent extends RaspDataEvent {}
+
+class ForecastDateSwitchEvent extends RaspDataEvent {
+  final ForecastDateChange forecastDateSwitch;
+
+  ForecastDateSwitchEvent(this.forecastDateSwitch);
+}
+
+class BeginnerModeEvent extends RaspDataEvent{
+  final bool beginnerMode;
+
+  BeginnerModeEvent(this.beginnerMode);
+}
+
+
+

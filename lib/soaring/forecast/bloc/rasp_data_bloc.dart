@@ -9,6 +9,7 @@ import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart'
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image_set.dart';
 import 'package:flutter_soaring_forecast/soaring/graphics/data/forecast_graph_data.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_models.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/regions.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/view_bounds.dart';
@@ -24,13 +25,14 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
   final Repository repository;
   Regions? _regions;
   Region? _region;
-  List<String>? _modelNames; // gfs, nam, rap, hrr
-  String? _selectedModelname; // nam
+  List<String> _modelNames = []; // gfs, nam, rap, hrr
+  String? _selectedModelName; // nam
   ModelDates? _selectedModelDates; // all dates/times for the selected model
   List<String>? _forecastDates; // array of dates like  2019-12-19
   String? _selectedForecastDate; // selected date  2019-12-19
   List<String>? _forecastTimes;
   int _selectedForecastTimeIndex = 4; // start at   1300 forecast
+  //int _beginnerDateIndex = 0;
 
   List<Forecast>? _forecasts;
   Forecast? _selectedForecast;
@@ -41,6 +43,13 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
   ViewBounds? _viewMapBoundsAndZoom;
 
   _DisplayType _displayType = _DisplayType.forecast;
+
+  // For a 'simple' forecast where forecast model selected based on date and best(?) model
+  // available for the date
+  // Models selected should be in order of hrrr, rap, nam, gfs
+  bool _beginnerModeSelected = true;
+  ModelDateDetails? _beginnerModeModelDataDetails;
+
 
   RaspDataBloc({required this.repository}) : super(RaspInitialState()) {
     on<InitialRaspRegionEvent>(_processInitialRaspRegionEvent);
@@ -62,7 +71,9 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     on<DisplaySoundingsEvent>(_processSoundingsEvent);
     on<SetForecastOverlayOpacityEvent>(_setForecastOverlayOpacity);
     on<LoadForecastTypesEvents>(_reloadForecastTypes);
-    on<RefreshTaskEvent>(_checkForUpdatedTask);
+    on<RefreshTaskEvent>(_refreshTask);
+    on<ForecastDateSwitchEvent>(_processBeginnerDateSwitch);
+    on<BeginnerModeEvent>(_processBeginnerModeEvent);
   }
 
   void _processInitialRaspRegionEvent(
@@ -89,8 +100,19 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
         await _getSelectedModelDates();
         // need to get all dates before you can generate the list of models
         _setRegionModelNames();
-        _emitRaspModels(emit);
-        _emitRaspModelDates(emit);
+        // on startup default mode is first on list
+        _selectedModelName = _selectedModelDates!.modelName!;
+        _beginnerModeSelected = await repository.isBeginnerForecastMode();
+        emit(BeginnerModeState(_beginnerModeSelected));
+        // A simple forecast is one where the app selected the 'best' forecast for the date
+        // So forecast (if available) goes in order of hrrr, rap, nam, gfs
+        if (_beginnerModeSelected) {
+          _getBeginnerModeStartup(emit);
+        } else {
+          // expert forecast selections
+          _emitRaspModels(emit);
+          _emitRaspModelDates(emit);
+        }
         _emitCenterOfMap(emit);
         emit(RaspWorkingState(working: false));
       }
@@ -135,7 +157,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
 
   void _processSelectedModelEvent(
       SelectedRaspModelEvent event, Emitter<RaspDataState> emit) {
-    _selectedModelname = event.modelName;
+    _selectedModelName = event.modelName;
     // print('Selected model: $_selectedModelname');
     // emits same list of models with new selected model
     _emitRaspModels(emit);
@@ -165,18 +187,18 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
   }
 
   void _emitRaspModels(Emitter<RaspDataState> emit) {
-    emit(RaspForecastModels(_modelNames!, _selectedModelname!));
-    print('emitted RaspForecastModels');
+    emit(RaspForecastModels(_modelNames, _selectedModelName!));
+    //print('emitted RaspForecastModels');
   }
 
   void _emitRaspModelDates(Emitter<RaspDataState> emit) {
     emit(RaspModelDates(_forecastDates!, _selectedForecastDate!));
-    print('emitted RaspForecastDates');
+   // print('emitted RaspForecastDates');
   }
 
   void _emitForecasts(Emitter<RaspDataState> emit) {
     emit(RaspForecasts(_forecasts!, _selectedForecast!));
-    print('emitted RaspForecasts');
+    //print('emitted RaspForecasts');
   }
 
   // Note that _regionLatLngBounds must be previously defined
@@ -202,11 +224,12 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
   }
 
   void _setRegionModelNames() {
-    _modelNames = _region!
+    _modelNames.clear();
+    _modelNames.addAll( _region!
         .getModelDates()
         .map((modelDates) => modelDates.modelName!)
-        .toList();
-    _selectedModelname = _selectedModelDates!.modelName!;
+        .toList());
+
   }
 
   /// wstar_bsratio, wstar, ...
@@ -231,7 +254,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     // first get the set of dates available for the model
     _selectedModelDates = _region!
         .getModelDates()
-        .firstWhere((modelDate) => modelDate.modelName == _selectedModelname);
+        .firstWhere((modelDate) => modelDate.modelName == _selectedModelName);
     // then get the display dates, the date to initially display for the model
     // (and also set the forecast times for that date)
     _updateForecastDates();
@@ -280,6 +303,10 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     // Making reasonable assumption that times in same order across models/dates
     _setSelectedTimeIndex();
     // While we are here
+    _setLatLngAndCenter(modelDateDetail);
+  }
+
+  void _setLatLngAndCenter(Model modelDateDetail) {
     _regionLatLngBounds = modelDateDetail.latLngBounds;
     _centerOfRegion =
         LatLng(modelDateDetail.center[0], modelDateDetail.center[1]);
@@ -307,13 +334,13 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     for (var time in _forecastTimes!) {
       // Get forecast overlay
       imageUrl = _createForecastImageUrl(_region!.name!, _selectedForecastDate!,
-          _selectedModelname!, _selectedForecast!.forecastName, time, 'body');
+          _selectedModelName!, _selectedForecast!.forecastName, time, 'body');
       soaringForecastBodyImage = SoaringForecastImage(imageUrl, time);
       soaringForecastImages.add(soaringForecastBodyImage);
 
       // Get scale image
       imageUrl = _createForecastImageUrl(_region!.name!, _selectedForecastDate!,
-          _selectedModelname!, _selectedForecast!.forecastName, time, 'side');
+          _selectedModelName!, _selectedForecast!.forecastName, time, 'side');
       soaringForecastSideImage = SoaringForecastImage(imageUrl, time);
       soaringForecastImages.add(soaringForecastSideImage);
 
@@ -335,7 +362,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     for (var time in _forecastTimes!) {
       // Get forecast overlay
       imageUrl = _createSoundingImageUrl(_region!.name!, _selectedForecastDate!,
-          _selectedModelname!, soundingIndex.toString(), time);
+          _selectedModelName!, soundingIndex.toString(), time);
       soaringForecastBodyImage = SoaringForecastImage(imageUrl, time);
       soundingImages.add(soaringForecastBodyImage);
 
@@ -476,7 +503,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     final localForecastGraphData = ForecastInputData(
         region: _region!,
         date: _selectedForecastDate!,
-        model: _selectedModelname!,
+        model: _selectedModelName!,
         times: _forecastTimes!,
         lat: event.latLng.latitude,
         lng: event.latLng.longitude,
@@ -561,7 +588,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
           } else {
             emit(TurnpointsInBoundsState(<Turnpoint>[]));
           }
-          print('emitted TurnpointsInBoundsState');
+         // print('emitted TurnpointsInBoundsState');
           break;
         case (suaDisplayOption):
           if (option.selected) {
@@ -634,12 +661,103 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     _emitForecasts(emit);
   }
 
-  FutureOr<void> _checkForUpdatedTask(
+  FutureOr<void> _refreshTask(
       RefreshTaskEvent event, Emitter<RaspDataState> emit) {
     _emitCurrentTask(emit);
   }
 
   void _emitCenterOfMap(Emitter<RaspDataState> emit) {
     emit(CenterOfMapState(_centerOfRegion!));
+  }
+
+  // For simple startup, get the 'best' model available for the current date
+  void _getBeginnerModeStartup(Emitter<RaspDataState> emit) {
+    _selectedForecastDate = _region?.dates?.first;
+    _getBeginnerModeDateDetails();
+    _emitBeginnerModelDateState(emit);
+  }
+
+  void _emitBeginnerModelDateState(Emitter<RaspDataState> emit) {
+    if (_beginnerModeModelDataDetails == null) {
+      emit(RaspErrorState("Oops. No forecast models available!"));
+    }
+    emit(BeginnerForecastDateModelState(_selectedForecastDate! ,_beginnerModeModelDataDetails!.model!.name,));
+  }
+
+  // Go to either previous or next date for beginner mode
+  FutureOr<void> _processBeginnerDateSwitch(
+      ForecastDateSwitchEvent event,
+      Emitter<RaspDataState> emit) async {
+    int?  dateIndex =  _region?.dates?.indexOf(_selectedForecastDate!);
+    if (dateIndex != null) {
+      if (event.forecastDateSwitch == ForecastDateChange.previous) {
+        _selectedForecastDate = (dateIndex - 1 >= 0)
+            ? _region!.dates![dateIndex - 1]
+            : _region!.dates!.last;
+      } else {
+        _selectedForecastDate = (dateIndex + 1 < _region!.dates!.length)
+            ? _region!.dates![dateIndex + 1]
+            : _region!.dates!.first;
+      }
+    }
+     _getBeginnerModeDateDetails();
+    _selectedModelName = _beginnerModeModelDataDetails?.model?.name ?? "Unknown";
+    if (_beginnerModeModelDataDetails != null) {
+      emit(BeginnerForecastDateModelState(_selectedForecastDate!, _selectedModelName!));
+    }
+    // we need to keep values in sync for 'expert' mode if user switches to that mode
+    _getDatesForSelectedModel();
+    _getForecastImages();
+    _emitRaspForecastImageSet(emit);
+  }
+
+
+  // Set the forecast date (yyyy-mm-dd)
+  // Search in order for HRRR, RAP, NAM, GFS
+  void _getBeginnerModeDateDetails() {
+    ModelDateDetails? modelDateDetails;
+    // iterate through models to  to see if forecast ex
+    for (var model in ModelsEnum.values) {
+      modelDateDetails =
+          _region?.doModelDateDetailsExist(model.name, _selectedForecastDate!);
+      if (modelDateDetails != null) {
+        // okay the 'best' model for that date has been found
+        // get the times available for that model
+        _forecastTimes = modelDateDetails.model!.times;
+        _setSelectedTimeIndex();
+        // While we are here
+        _setLatLngAndCenter(modelDateDetails.model!);
+        break;
+      }
+    }
+    _beginnerModeModelDataDetails = modelDateDetails;
+    _selectedModelName = modelDateDetails?.model?.name;
+    if (_modelNames.isEmpty) {
+      _setRegionModelNames();
+    }
+  }
+
+
+  // Switch display from beginner to expert or visa-versa
+  // if switching from expert to simple may switch modes (to get most 'accurate' for day)
+  // if switched from simple to expert stay on current model
+  void _processBeginnerModeEvent(BeginnerModeEvent event, Emitter<RaspDataState> emit) async {
+    _beginnerModeSelected = event.beginnerMode;
+    await repository.setBeginnerForecastMode(event.beginnerMode);
+    if (_beginnerModeSelected) {
+      //  switched from expert to beginner
+      // keep same date but might need to change the model
+      _getBeginnerModeDateDetails();
+      emit(BeginnerForecastDateModelState(_selectedForecastDate ?? '', _selectedModelName!));
+      _getForecastImages();
+      _emitRaspForecastImageSet(emit);
+      } else {
+      //  switched from beginner to expert
+      // stay on same model and date so just send info to update ui
+      _emitRaspModels(emit);
+      _emitRaspModelDates(emit);
+
+    }
+
   }
 }

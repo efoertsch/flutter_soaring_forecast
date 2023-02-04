@@ -6,10 +6,18 @@ final abbrevDateformatter = DateFormat('E, MMM dd');
 List<String> reformatDatesToDOW(List<String> forecastDates) {
   final List<String> shortDOWs = [];
   forecastDates.forEach((date) {
-    final realDate = DateTime.tryParse(date);
-    if (realDate != null) {
-      shortDOWs.add(abbrevDateformatter.format(realDate));
+    final String? reformatedDate = reformatDateToDOW(date);
+    if (reformatedDate != null) {
+      shortDOWs.add(reformatedDate);
     }
   });
   return shortDOWs;
+}
+
+String? reformatDateToDOW(String forecastDate){
+  final realDate = DateTime.tryParse(forecastDate);
+  if (realDate != null) {
+    return abbrevDateformatter.format(realDate);
+  }
+  return null;
 }

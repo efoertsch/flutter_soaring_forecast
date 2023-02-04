@@ -231,7 +231,7 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
       }
     }, onError: (error, stackTrace) {
       debugPrint(
-          "Getting forecast info for ${region!}  ${date}  ${model}  ${time}  ${_lat.toString()}  ${_lng.toString()} ");
+          "Getting forecast info for ${region}  ${date}  ${model}  ${time}  ${_lat.toString()}  ${_lng.toString()} ");
       debugPrint(error.toString());
       debugPrint(stackTrace.toString());
     });
@@ -319,7 +319,7 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
     // If CuPotential > 0 then take the Cu value
     if (allCuPotential.length == allCu.length) {
       for (int i = 0; i < allCuPotential.length; ++i) {
-        if ((allCuPotential[i]["value"] as double ?? 0.0) > 0) {
+        if ((allCuPotential[i]["value"] as double ) > 0) {
           prunedMap.add(allCu[i]);
         }
       }
@@ -328,7 +328,7 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
     // If OD Potential > 0 then take the OD value
     if (allOdPotential.length == allOd.length) {
       for (int i = 0; i < allOdPotential.length; ++i) {
-        if ((allOdPotential[i]["value"] as double ?? 0.0) > 0) {
+        if ((allOdPotential[i]["value"] as double ) > 0) {
           prunedMap.add(allOd[i]);
         }
       }

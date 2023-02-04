@@ -1,3 +1,14 @@
+Development:
+
+Since flavors created for Android you need to compile/run the code 
+from the terminal window (or at least that is how I am doing it)
+So:
+1. Start and emulator 
+2. Execute from terminal
+   flutter run --flavor dev
+
+
+Production:
 
 For any production release:
 1. Update release number in pubspec.yml

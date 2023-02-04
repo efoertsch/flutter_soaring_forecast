@@ -260,7 +260,7 @@ class GridTableCell extends StatelessWidget {
       ),
       alignment: Alignment.center,
       child: Text(
-        '${value ?? ''}',
+        '${value }',
         style: TextStyle(fontSize: 16.0),
       ),
     );
