@@ -79,6 +79,9 @@ class _ScrollableTableState extends State<ScrollableTable> {
   }
 }
 
+/// This creates a row containing the column descriptions.
+/// Note the first cell is blank (as it is above the row column descriptions),
+/// then follows the forecast hours
 class TableHead extends StatelessWidget {
   final ScrollController scrollController;
   final List<String> columnHeadings;
@@ -97,44 +100,50 @@ class TableHead extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: cellWidth,
-      width: descriptionColumnWidth + columnHeadings.length * cellWidth,
-      child: Row(
-        children: [
-          // The first cell in the row must match description(leftmost) column width
-          // Note that it has no text
-          SizedBox(
-            width: descriptionColumnWidth,
-            child: GridTableCell(
-              color: backgroundColor ?? Colors.yellow.withOpacity(0.3),
-              value: " ",
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: SizedBox(
+        height: cellWidth,
+        width: descriptionColumnWidth + columnHeadings.length * cellWidth,
+        child: Row(
+          children: [
+            // The first cell in the row must match description(leftmost) column width
+            // It has no text
+            SizedBox(
+              width: descriptionColumnWidth,
+              child: GridTableCell(
+                color: backgroundColor ?? Colors.yellow.withOpacity(0.3),
+                value: " ",
+              ),
             ),
-          ),
-          // The rest of the cells in the row contain column descriptions for
-          // the table data
-          Expanded(
-            child: ListView.builder(
-                controller: scrollController,
-                physics: ClampingScrollPhysics(),
-                scrollDirection: Axis.horizontal,
-                itemCount: columnHeadings.length,
-                itemBuilder: (BuildContext context, int index) {
-                  return SizedBox(
-                    width: cellWidth,
-                    child: GridTableCell(
-                      color: Colors.yellow.withOpacity(0.3),
-                      value: columnHeadings[index],
-                    ),
-                  );
-                }),
-          ),
-        ],
+            // The rest of the cells in the row contain column descriptions for
+            // the table data
+            Expanded(
+              child: ListView.builder(
+                  controller: scrollController,
+                  physics: ClampingScrollPhysics(),
+                  scrollDirection: Axis.horizontal,
+                  itemCount: columnHeadings.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    return SizedBox(
+                      width: cellWidth,
+                      child: GridTableCell(
+                        color: Colors.yellow.withOpacity(0.3),
+                        value: columnHeadings[index],
+                      ),
+                    );
+                  }),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
+/// This contains the table data.
+/// The first cell contains the row description
+/// Subsequent cells contain the hourly forecast data
 class TableBody extends StatefulWidget {
   final ScrollController scrollController;
   final double descriptionColumnWidth;
@@ -203,6 +212,7 @@ class _TableBodyState extends State<TableBody> {
                 );
               }),
         ),
+
         // remaining elements in row is the data
         Expanded(
           child: SingleChildScrollView(
@@ -260,7 +270,7 @@ class GridTableCell extends StatelessWidget {
       ),
       alignment: Alignment.center,
       child: Text(
-        '${value }',
+        '${value}',
         style: TextStyle(fontSize: 16.0),
       ),
     );

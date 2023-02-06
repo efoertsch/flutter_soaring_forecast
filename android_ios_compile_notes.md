@@ -1,11 +1,19 @@
 Development:
 
-Since flavors created for Android you need to compile/run the code 
-from the terminal window (or at least that is how I am doing it)
-So:
-1. Start and emulator 
-2. Execute from terminal
-   flutter run --flavor dev
+For Android
+
+Two flavors have been created - dev and prod. 
+Options to execute/build the different flavors
+1. Go to Run/Edit Configurations 
+   1. Under Flutter/main.dart and 'Additional run args' add '--flavor dev' (or prod)
+   2. With this option you can click on run/debug icons
+   
+2. From the terminal window
+   1. Start an emulator if needed 
+   2. Execute from terminal (can't click on run/debug icons)
+      flutter run --flavor dev (or prod)
+   3. Note this ties up terminal and you need to cntrl-c to step
+   
 
 
 Production:
