@@ -24,7 +24,6 @@ class LocalForecastGraphic extends StatefulWidget {
 
 class _LocalForecastGraphicState extends State<LocalForecastGraphic>
     with TickerProviderStateMixin {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final forecastChannel = StreamController<GestureSignal>.broadcast();
   late final AnimationController bottomSheetController;
 
@@ -614,15 +613,18 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
           description: forecast.forecastNameDisplay,
           helpDescription: forecast.forecastDescription));
     });
-    return ScrollableTable(
-            columnHeadings: hours,
-            dataCellWidth: 60,
-            dataCellHeight: 50,
-            headingBackgroundColor: Colors.yellow.withOpacity(0.3),
-            descriptionColumnWidth: 125,
-            descriptionBackgroundColor: Colors.yellow.withOpacity(0.3),
-            dataRowsBackgroundColors: [Colors.white, Colors.green.shade50],
-            gridData: forecastGraphData.gridData,
-            descriptions: descriptions);
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: ScrollableTable(
+              columnHeadings: hours,
+              dataCellWidth: 60,
+              dataCellHeight: 50,
+              headingBackgroundColor: Colors.yellow.withOpacity(0.3),
+              descriptionColumnWidth: 125,
+              descriptionBackgroundColor: Colors.yellow.withOpacity(0.3),
+              dataRowsBackgroundColors: [Colors.white, Colors.green.shade50],
+              gridData: forecastGraphData.gridData,
+              descriptions: descriptions),
+    );
   }
 }
