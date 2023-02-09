@@ -4,9 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
-    show GraphLiterals, StandardLiterals;
+    show ForecastDateChange, GraphLiterals, StandardLiterals;
 import 'package:flutter_soaring_forecast/soaring/app/custom_styles.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/util/rasp_utils.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast/widgets/model_date_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/graphics/bloc/graphic_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/graphics/bloc/graphic_event.dart';
 import 'package:flutter_soaring_forecast/soaring/graphics/bloc/graphic_state.dart';
@@ -45,6 +46,14 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
     StrokeStyle(color: Colors.black38)
   ];
   ForecastGraphData? forecastGraphData;
+
+  bool _beginnerMode = true;
+  String _selectedModelName = '';
+  List<String> _modelNames = [];
+  List<String> _forecastDates = [];
+  String _selectedForecastDate = '';
+  List<String> _shortDOWs = [];
+  String _selectedForecastDOW = '';
 
   @override
   void initState() {
@@ -88,7 +97,35 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
           onPressed: () {
             _showGraphDataTable();
           }),
+    PopupMenuButton<String>(
+    onSelected: handleClick,
+    icon: Icon(Icons.more_vert),
+    itemBuilder: (BuildContext context) {
+      return {
+        _beginnerMode ? StandardLiterals.expertMode : StandardLiterals
+            .beginnerMode,
+      }.map((String choice) {
+        return PopupMenuItem<String>(
+          value: choice,
+          child: Text(choice),
+        );
+      }).toList();
+    },
+    )
     ];
+  }
+
+  void handleClick(String value) async {
+    switch (value) {
+      case StandardLiterals.expertMode:
+      case StandardLiterals.beginnerMode:
+      // toggle flag
+        setState(() {
+          _beginnerMode = !_beginnerMode;
+          _sendEvent(BeginnerModeEvent(_beginnerMode));
+        });
+        break;
+    }
   }
 
   Widget _getBody() {
@@ -104,20 +141,11 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
   Widget _getForecastScreenWidgets() {
     final widgets = <Widget>[];
     widgets.add(_getLocationTitleWidget());
-    widgets.add(_getForecastModelsAndDates());
+    widgets.add(_getBeginnerExpertWidget());
     widgets.add(_getGraphWidgets());
     return Padding(
       padding: const EdgeInsets.only(left: 8.0, right: 8),
       child: Column(children: widgets),
-    );
-  }
-
-  Widget _getGraphWidgets() {
-    return Expanded(
-      child: SingleChildScrollView(
-          child: Column(
-        children: [_getCloudbaseWidget(), _getThermalUpdraftWidget()],
-      )),
     );
   }
 
@@ -159,6 +187,62 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
     });
   }
 
+  Widget _getBeginnerExpertWidget() {
+    return BlocConsumer<GraphicBloc, GraphState>(
+      listener: (context, state) {
+        if (state is BeginnerModeState) {
+          _beginnerMode = state.beginnerMode;
+        }
+        if (state is BeginnerForecastDateModelState) {
+          _selectedForecastDate = state.date;
+          _selectedForecastDOW =  reformatDateToDOW(_selectedForecastDate)?? '';
+          _selectedModelName = state.model;
+        }
+        if (state is GraphModelsState) {
+          _selectedModelName = state.selectedModelName;
+          _modelNames.clear();
+          _modelNames.addAll(state.modelNames);
+        }
+        if (state is GraphModelDatesState) {
+          _forecastDates = state.forecastDates;
+          _selectedForecastDate = state.selectedForecastDate;
+           _shortDOWs = reformatDatesToDOW(state.forecastDates);
+           _selectedForecastDOW =
+          _shortDOWs[state.forecastDates.indexOf(state.selectedForecastDate)];
+        }
+      },
+      buildWhen: (previous, current) {
+        return current is BeginnerModeState ||
+            current is BeginnerForecastDateModelState ||
+            current is GraphModelsState ||
+            current is GraphModelDatesState;
+      },
+      builder: (context, state) {
+        if (_beginnerMode) {
+          return _getBeginnerForecast();
+        } else {
+          return _getForecastModelsAndDates();
+        }
+      },
+    );
+  }
+
+
+  Widget _getBeginnerForecast() {
+    return BeginnerForecast(
+        context: context,
+        leftArrowOnTap: (() {
+          _sendEvent(ForecastDateSwitchEvent(ForecastDateChange.previous));
+          setState(() {});
+        }),
+        rightArrowOnTap: (() {
+          _sendEvent(ForecastDateSwitchEvent(ForecastDateChange.next));
+          setState(() {});
+        }),
+        displayText: "(${_selectedModelName.toUpperCase()}) $_selectedForecastDOW "
+    );
+  }
+
   Widget _getForecastModelsAndDates() {
     //debugPrint('creating/updating main ForecastModelsAndDates');
     return Row(
@@ -166,88 +250,39 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
       children: [
         Expanded(
           flex: 3,
-          child: forecastModelDropDownList(),
+          child: ModelDropDownList(
+            selectedModelName: _selectedModelName,
+            modelNames: _modelNames,
+            onModelChange: (String value){
+              _sendEvent(SelectedModelEvent(value));
+            },
+          ),
         ),
         Expanded(
             flex: 7,
             child: Padding(
               padding: EdgeInsets.only(left: 16.0),
-              child: forecastDatesDropDownList(),
+              child: ForecastDatesDropDown(
+                selectedForecastDate: _selectedForecastDOW,
+                forecastDates: _shortDOWs,
+                onForecastDateChange: (String value){
+                  final selectedForecastDate =
+                  _forecastDates[_shortDOWs.indexOf(value)];
+                  _sendEvent(SelectedForecastDateEvent(selectedForecastDate));
+                },
+              ),
             )),
       ],
     );
   }
 
-// Display GFS, NAM, ....
-  Widget forecastModelDropDownList() {
-    return BlocConsumer<GraphicBloc, GraphState>(listener: (context, state) {
-      if (state is GraphModelsState) {
-        //
-      }
-    }, buildWhen: (previous, current) {
-      return current is GraphicInitialState || current is GraphModelsState;
-    }, builder: (context, state) {
-      //debugPrint('creating/updating forecastModelDropDown');
-      if (state is GraphModelsState) {
-        return DropdownButton<String>(
-          style: CustomStyle.bold18(context),
-          value: (state.selectedModelName),
-          hint: Text('Select Model'),
-          isExpanded: true,
-          iconSize: 24,
-          elevation: 16,
-          onChanged: (String? newValue) {
-            // debugPrint('Selected model onChanged: $newValue');
-            _sendEvent(SelectedModelEvent(newValue!));
-          },
-          items: state.modelNames.map<DropdownMenuItem<String>>((String value) {
-            return DropdownMenuItem<String>(
-              value: value,
-              child: Text(value.toUpperCase()),
-            );
-          }).toList(),
-        );
-      } else {
-        return Text("Getting Forecast Models");
-      }
-    });
-  }
-
-// Display forecast dates for selected model (eg. GFS)
-  Widget forecastDatesDropDownList() {
-    return BlocConsumer<GraphicBloc, GraphState>(listener: (context, state) {
-      if (state is GraphModelsState) {
-        //
-      }
-    }, buildWhen: (previous, current) {
-      return current is GraphicInitialState || current is GraphModelDatesState;
-    }, builder: (context, state) {
-      //debugPrint('creating/updating forecastDatesDropDown');
-      if (state is GraphModelDatesState) {
-        final _shortDOWs = reformatDatesToDOW(state.forecastDates);
-        final _selectedForecastDOW =
-            _shortDOWs[state.forecastDates.indexOf(state.selectedForecastDate)];
-        final _forecastDates = state.forecastDates;
-        return DropdownButton<String>(
-          style: CustomStyle.bold18(context),
-          isExpanded: true,
-          value: _selectedForecastDOW,
-          onChanged: (String? newValue) {
-            final selectedForecastDate =
-                _forecastDates[_shortDOWs.indexOf(newValue!)];
-            _sendEvent(SelectedForecastDateEvent(selectedForecastDate));
-          },
-          items: _shortDOWs.map<DropdownMenuItem<String>>((String value) {
-            return DropdownMenuItem<String>(
-              value: value,
-              child: Text(value),
-            );
-          }).toList(),
-        );
-      } else {
-        return Text("Getting Forecast Dates");
-      }
-    });
+  Widget _getGraphWidgets() {
+    return Expanded(
+      child: SingleChildScrollView(
+          child: Column(
+        children: [_getCloudbaseWidget(), _getThermalUpdraftWidget()],
+      )),
+    );
   }
 
   Widget _getCloudbaseWidget() {
@@ -574,7 +609,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
   Widget _widgetForMessages() {
     return BlocListener<GraphicBloc, GraphState>(
       listener: (context, state) async {
-        if (state is GraphErrorMsgState) {
+        if (state is GraphErrorState) {
           CommonWidgets.showErrorDialog(context, "Error", state.error);
         }
       },
@@ -616,15 +651,15 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: ScrollableTable(
-              columnHeadings: hours,
-              dataCellWidth: 60,
-              dataCellHeight: 50,
-              headingBackgroundColor: Colors.yellow.withOpacity(0.3),
-              descriptionColumnWidth: 125,
-              descriptionBackgroundColor: Colors.yellow.withOpacity(0.3),
-              dataRowsBackgroundColors: [Colors.white, Colors.green.shade50],
-              gridData: forecastGraphData.gridData,
-              descriptions: descriptions),
+          columnHeadings: hours,
+          dataCellWidth: 60,
+          dataCellHeight: 50,
+          headingBackgroundColor: Colors.yellow.withOpacity(0.3),
+          descriptionColumnWidth: 125,
+          descriptionBackgroundColor: Colors.yellow.withOpacity(0.3),
+          dataRowsBackgroundColors: [Colors.white, Colors.green.shade50],
+          gridData: forecastGraphData.gridData,
+          descriptions: descriptions),
     );
   }
 }

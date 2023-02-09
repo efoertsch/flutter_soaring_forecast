@@ -8,6 +8,8 @@ import 'package:latlong2/latlong.dart';
 
 /// https://medium.com/flutter-community/flutter-bloc-pattern-for-dummies-like-me-c22d40f05a56
 /// Event In - State Out
+///
+//TODO consolidate with GraphicEvent
 @immutable
 abstract class RaspDataEvent {}
 
