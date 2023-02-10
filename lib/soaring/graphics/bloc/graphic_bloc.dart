@@ -64,7 +64,6 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
   ModelDateDetails? _beginnerModeModelDataDetails;
 
   static final _options = <Forecast>[];
-  ForecastGraphData? _forecastGraphData;
 
   bool _beginnerModeSelected = true;
 
@@ -86,7 +85,8 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
     emit(BeginnerModeState(_beginnerModeSelected));
 
     if (_beginnerModeSelected) {
-      _getBeginnerModeStartup(emit);
+      _getBeginnerModeStartup();
+      _emitBeginnerModelDateState(emit);
     } else {
       _emitModelDates(emit);
       _emitRaspModels(emit);
@@ -126,7 +126,7 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
       // eg. experimental1   1000  2000 3000
       allData.addAll(_extractDailyForecastValues(response));
       // allData contains a map of all hourly forecasts for the day
-      // so now we need to extract the forecas ts used for the graphing
+      // so now we need to extract the forecasts used for the graphing
       // thermal height, Cu and OD cloud base and thermal strength
       altitudeForecastData.addAll(_getAltitudeForecasts(allData));
       thermalForecastData.addAll(_getThermalForecast(allData));
@@ -332,7 +332,7 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
     // If CuPotential > 0 then take the Cu value
     if (allCuPotential.length == allCu.length) {
       for (int i = 0; i < allCuPotential.length; ++i) {
-        if ((allCuPotential[i]["value"] as double ) > 0) {
+        if ((allCuPotential[i]["value"] as double) > 0) {
           prunedMap.add(allCu[i]);
         }
       }
@@ -341,7 +341,7 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
     // If OD Potential > 0 then take the OD value
     if (allOdPotential.length == allOd.length) {
       for (int i = 0; i < allOdPotential.length; ++i) {
-        if ((allOdPotential[i]["value"] as double ) > 0) {
+        if ((allOdPotential[i]["value"] as double) > 0) {
           prunedMap.add(allOd[i]);
         }
       }
@@ -451,12 +451,20 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
     // debugPrint('emitted GraphModelsState');
   }
 
-
+  // Assign values only if not already assigned (code in anticipation of option to
+  // have local forecast be initial screen )
   // For simple startup, get the 'best' model available for the current date
-  void _getBeginnerModeStartup(Emitter<GraphState> emit) {
-    _selectedForecastDate = _region?.dates?.first;
-    _getBeginnerModeDateDetails();
-    _emitBeginnerModelDateState(emit);
+  void _getBeginnerModeStartup() {
+    if (_selectedForecastDate == null ||
+        _selectedForecastDate!.isEmpty ||
+        _selectedModelName == null ||
+        _selectedModelName!.isEmpty) {
+      _selectedForecastDate = _region?.dates?.first;
+      _getBeginnerModeDateDetails();
+    } else {
+      _beginnerModeModelDataDetails = _region?.doModelDateDetailsExist(
+          _selectedModelName!, _selectedForecastDate!);
+    }
   }
 
   // Set the forecast date (yyyy-mm-dd)
@@ -485,15 +493,17 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
     if (_beginnerModeModelDataDetails == null) {
       emit(GraphErrorState("Oops. No forecast models available!"));
     }
-    emit(BeginnerForecastDateModelState(_selectedForecastDate! ,_beginnerModeModelDataDetails!.model!.name,));
+    emit(BeginnerForecastDateModelState(
+      _selectedForecastDate!,
+      _beginnerModeModelDataDetails!.model!.name,
+    ));
   }
 
   // Go to either previous or next date for beginner mode
   FutureOr<void> _processBeginnerDateSwitch(
-      ForecastDateSwitchEvent event,
-      Emitter<GraphState> emit) async {
+      ForecastDateSwitchEvent event, Emitter<GraphState> emit) async {
     emit(GraphWorkingState(working: true));
-    int?  dateIndex =  _region?.dates?.indexOf(_selectedForecastDate!);
+    int? dateIndex = _region?.dates?.indexOf(_selectedForecastDate!);
     if (dateIndex != null) {
       if (event.forecastDateSwitch == ForecastDateChange.previous) {
         _selectedForecastDate = (dateIndex - 1 >= 0)
@@ -506,9 +516,11 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
       }
     }
     _getBeginnerModeDateDetails();
-    _selectedModelName = _beginnerModeModelDataDetails?.model?.name ?? "Unknown";
+    _selectedModelName =
+        _beginnerModeModelDataDetails?.model?.name ?? "Unknown";
     if (_beginnerModeModelDataDetails != null) {
-      emit(BeginnerForecastDateModelState(_selectedForecastDate!, _selectedModelName!));
+      emit(BeginnerForecastDateModelState(
+          _selectedForecastDate!, _selectedModelName!));
     }
     // we need to keep values in sync for 'expert' mode if user switches to that mode
     _getDatesForSelectedModel();
@@ -528,20 +540,20 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
     _updateForecastDates();
   }
 
-
-
   // Switch display from beginner to expert or visa-versa
   // if switching from expert to simple may switch modes (to get most 'accurate' for day)
   // if switched from simple to expert stay on current model
-  void _processBeginnerModeEvent(BeginnerModeEvent event, Emitter<GraphState> emit) async {
-    emit(GraphWorkingState(working:true));
+  void _processBeginnerModeEvent(
+      BeginnerModeEvent event, Emitter<GraphState> emit) async {
+    emit(GraphWorkingState(working: true));
     _beginnerModeSelected = event.beginnerMode;
     await repository.setBeginnerForecastMode(event.beginnerMode);
     if (_beginnerModeSelected) {
       //  switched from expert to beginner
       // keep same date but might need to change the model
       _getBeginnerModeDateDetails();
-      emit(BeginnerForecastDateModelState(_selectedForecastDate ?? '', _selectedModelName!));
+      emit(BeginnerForecastDateModelState(
+          _selectedForecastDate ?? '', _selectedModelName!));
       await _generateGraphDataAndEmit(emit);
       emit(GraphWorkingState(working: false));
     } else {
@@ -551,10 +563,9 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
       _emitRaspModelDates(emit);
     }
     emit(GraphWorkingState(working: false));
-
   }
+
   void _emitRaspModelDates(Emitter<GraphState> emit) {
     emit(GraphModelDatesState(_forecastDates!, _selectedForecastDate!));
-
   }
 }
