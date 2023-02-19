@@ -3,11 +3,21 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_soaring_forecast/soaring/graphics/data/forecast_graph_data.dart';
 
 @immutable
-abstract class GraphState extends Equatable {}
+abstract class GraphState {}
 
 class GraphicInitialState extends GraphState {
-  @override
-  List<Object?> get props => [];
+}
+
+class BeginnerModeState extends GraphState{
+  final bool beginnerMode ;
+
+  BeginnerModeState(this.beginnerMode);
+}
+
+class BeginnerForecastDateModelState extends GraphState {
+  final String date;
+  final String model;
+  BeginnerForecastDateModelState (this.date, this.model);
 }
 
 class GraphDataState extends GraphState {
@@ -15,25 +25,19 @@ class GraphDataState extends GraphState {
 
   GraphDataState({required this.forecastData});
 
-  @override
-  List<Object?> get props => [forecastData.toString()];
 }
 
-class GraphErrorMsgState extends GraphState {
+class GraphErrorState extends GraphState {
   final String error;
 
-  GraphErrorMsgState(this.error);
+  GraphErrorState(this.error);
 
-  @override
-  List<Object?> get props => [error];
 }
 
 class GraphWorkingState extends GraphState {
   final bool working;
   GraphWorkingState({required this.working});
 
-  @override
-  List<Object?> get props => [working];
 }
 
 //  list of forecast dates available for the selected forecast model and the
@@ -44,8 +48,6 @@ class GraphModelDatesState extends GraphState {
 
   GraphModelDatesState(this.forecastDates, this.selectedForecastDate);
 
-  @override
-  List<Object?> get props => [forecastDates, selectedForecastDate];
 }
 
 // GFS, NAM, etc and the default (or previously saved selected model
@@ -55,6 +57,4 @@ class GraphModelsState extends GraphState {
 
   GraphModelsState(this.modelNames, this.selectedModelName);
 
-  @override
-  List<Object?> get props => [modelNames, selectedModelName];
 }

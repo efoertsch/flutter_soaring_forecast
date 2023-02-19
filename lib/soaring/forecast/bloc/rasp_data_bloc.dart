@@ -677,6 +677,31 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     _emitBeginnerModelDateState(emit);
   }
 
+  // Set the forecast date (yyyy-mm-dd)
+  // Search in order for HRRR, RAP, NAM, GFS
+  void _getBeginnerModeDateDetails() {
+    ModelDateDetails? modelDateDetails;
+    // iterate through models to  to see if forecast ex
+    for (var model in ModelsEnum.values) {
+      modelDateDetails =
+          _region?.doModelDateDetailsExist(model.name, _selectedForecastDate!);
+      if (modelDateDetails != null) {
+        // okay the 'best' model for that date has been found
+        // get the times available for that model
+        _forecastTimes = modelDateDetails.model!.times;
+        _setSelectedTimeIndex();
+        // While we are here
+        _setLatLngAndCenter(modelDateDetails.model!);
+        break;
+      }
+    }
+    _beginnerModeModelDataDetails = modelDateDetails;
+    _selectedModelName = modelDateDetails?.model?.name;
+    if (_modelNames.isEmpty) {
+      _setRegionModelNames();
+    }
+  }
+
   void _emitBeginnerModelDateState(Emitter<RaspDataState> emit) {
     if (_beginnerModeModelDataDetails == null) {
       emit(RaspErrorState("Oops. No forecast models available!"));
@@ -709,32 +734,6 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     _getDatesForSelectedModel();
     _getForecastImages();
     _emitRaspForecastImageSet(emit);
-  }
-
-
-  // Set the forecast date (yyyy-mm-dd)
-  // Search in order for HRRR, RAP, NAM, GFS
-  void _getBeginnerModeDateDetails() {
-    ModelDateDetails? modelDateDetails;
-    // iterate through models to  to see if forecast ex
-    for (var model in ModelsEnum.values) {
-      modelDateDetails =
-          _region?.doModelDateDetailsExist(model.name, _selectedForecastDate!);
-      if (modelDateDetails != null) {
-        // okay the 'best' model for that date has been found
-        // get the times available for that model
-        _forecastTimes = modelDateDetails.model!.times;
-        _setSelectedTimeIndex();
-        // While we are here
-        _setLatLngAndCenter(modelDateDetails.model!);
-        break;
-      }
-    }
-    _beginnerModeModelDataDetails = modelDateDetails;
-    _selectedModelName = modelDateDetails?.model?.name;
-    if (_modelNames.isEmpty) {
-      _setRegionModelNames();
-    }
   }
 
 

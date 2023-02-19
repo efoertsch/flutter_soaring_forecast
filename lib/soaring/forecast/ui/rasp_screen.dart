@@ -14,6 +14,7 @@ import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/rasp_wid
 import 'package:flutter_soaring_forecast/soaring/forecast/ui/display_ticker.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/ui/forecast_map.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/util/rasp_utils.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast/widgets/model_date_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast_types/ui/common_forecast_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast_types/ui/forecast_list.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
@@ -32,7 +33,6 @@ class RaspScreen extends StatefulWidget {
   _RaspScreenState createState() => _RaspScreenState();
 }
 
-//TODO - keep more data details in Bloc,
 class _RaspScreenState extends State<RaspScreen>
     with TickerProviderStateMixin, WidgetsBindingObserver {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
@@ -77,7 +77,7 @@ class _RaspScreenState extends State<RaspScreen>
     super.dispose();
   }
 
-  // Leaving this in for now to learn about the app life cycle
+  // Leaving this in for now to learn about the Flutter app life cycle
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     switch (state) {
@@ -180,6 +180,23 @@ class _RaspScreenState extends State<RaspScreen>
     });
   }
 
+  Widget _getBeginnerForecast() {
+    return BeginnerForecast(
+        context: context,
+        leftArrowOnTap: (() {
+          stopAnimation();
+          _sendEvent(ForecastDateSwitchEvent(ForecastDateChange.previous));
+          setState(() {});
+        }),
+        rightArrowOnTap: (() {
+          stopAnimation();
+          _sendEvent(ForecastDateSwitchEvent(ForecastDateChange.next));
+          setState(() {});
+        }),
+        displayText: "(${_selectedModelName.toUpperCase()}) $_selectedForecastDOW"
+    );
+  }
+
   Widget _getForecastModelsAndDates() {
     //debugPrint('creating/updating main ForecastModelsAndDates');
     return Row(
@@ -187,105 +204,32 @@ class _RaspScreenState extends State<RaspScreen>
       children: [
         Expanded(
           flex: 3,
-          child: forecastModelDropDownList(),
+          child: ModelDropDownList(
+            selectedModelName: _selectedModelName,
+            modelNames: _modelNames,
+            onModelChange: (String value){
+              _sendEvent(SelectedRaspModelEvent(value));
+            },
+          ),
         ),
         Expanded(
             flex: 7,
             child: Padding(
               padding: EdgeInsets.only(left: 16.0),
-              child: _getForecastDatesDropDownList(),
+              child: ForecastDatesDropDown(
+                selectedForecastDate: _selectedForecastDOW,
+                forecastDates: _shortDOWs,
+                onForecastDateChange: (String value){
+                   final selectedForecastDate =
+                    _forecastDates[_shortDOWs.indexOf(value)];
+                  _sendEvent(SelectRaspForecastDateEvent(selectedForecastDate));
+                },
+              ),
             )),
       ],
     );
   }
 
-  Widget _getBeginnerForecast() {
-    //debugPrint('creating/updating main ForecastModelsAndDates');
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      mainAxisSize: MainAxisSize.max,
-      children: [
-        Align(
-          alignment: Alignment.centerLeft,
-          child: InkWell(
-            onTap: () {
-              stopAnimation();
-              _sendEvent(ForecastDateSwitchEvent(ForecastDateChange.previous));
-              setState(() {});
-            },
-            child: Padding(
-              padding: const EdgeInsets.only(left: 8.0, right: 24.0),
-              child: IncrDecrIconWidget.getIncIconWidget('<'),
-            ),
-          ),
-        ),
-        Spacer(),
-        Align(
-            alignment: Alignment.center,
-            child: Text(
-              "(${_selectedModelName.toUpperCase()}) $_selectedForecastDOW",
-              style: CustomStyle.bold18(context),
-            )),
-        Spacer(),
-        Align(
-          alignment: Alignment.centerRight,
-          child: InkWell(
-            onTap: () {
-              stopAnimation();
-              _sendEvent(ForecastDateSwitchEvent(ForecastDateChange.next));
-              setState(() {});
-            },
-            child: Padding(
-              padding: const EdgeInsets.only(left: 24.0, right: 8.0),
-              child: IncrDecrIconWidget.getIncIconWidget('>'),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-// Display GFS, NAM, ....
-  Widget forecastModelDropDownList() {
-    return DropdownButton<String>(
-      style: CustomStyle.bold18(context),
-      value: _selectedModelName,
-      hint: Text('Select Model'),
-      isExpanded: true,
-      iconSize: 24,
-      elevation: 16,
-      onChanged: (String? newValue) {
-        // debugPrint('Selected model onChanged: $newValue');
-        _sendEvent(SelectedRaspModelEvent(newValue!));
-      },
-      items: _modelNames.map<DropdownMenuItem<String>>((String value) {
-        return DropdownMenuItem<String>(
-          value: value,
-          child: Text(value.toUpperCase()),
-        );
-      }).toList(),
-    );
-  }
-
-// Display forecast dates for selected model (eg. GFS)
-  Widget _getForecastDatesDropDownList() {
-    return DropdownButton<String>(
-      style: CustomStyle.bold18(context),
-      isExpanded: true,
-      value: _selectedForecastDOW,
-      onChanged: (String? newValue) {
-        final selectedForecastDate =
-            _forecastDates[_shortDOWs.indexOf(newValue!)];
-        _sendEvent(SelectRaspForecastDateEvent(selectedForecastDate));
-      },
-      items: _shortDOWs.map<DropdownMenuItem<String>>((String value) {
-        return DropdownMenuItem<String>(
-          value: value,
-          child: Text(value),
-        );
-      }).toList(),
-    );
-  }
 
 // Display description of forecast types (eq. 'Thermal Updraft Velocity (W*)' for wstar)
   Widget _getForecastTypes() {
@@ -535,7 +479,7 @@ class _RaspScreenState extends State<RaspScreen>
             RaspMenu.reorderForecasts,
             RaspMenu.opacity,
             RaspMenu.selectRegion,
-            _beginnerMode ? RaspMenu.expertMode : RaspMenu.beginnerMode
+            _beginnerMode ? StandardLiterals.expertMode :StandardLiterals.beginnerMode
           }.map((String choice) {
             if (choice == RaspMenu.clearTask) {
               return PopupMenuItem<String>(
@@ -625,8 +569,8 @@ class _RaspScreenState extends State<RaspScreen>
       case RaspMenu.selectRegion:
         _showRegionListScreen();
         break;
-      case RaspMenu.expertMode:
-      case RaspMenu.beginnerMode:
+      case StandardLiterals.expertMode:
+      case StandardLiterals.beginnerMode:
         // toggle flag
         setState(() {
           _beginnerMode = !_beginnerMode;
