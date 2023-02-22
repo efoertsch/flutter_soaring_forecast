@@ -82,24 +82,75 @@ class _SettingsScreenState extends State<SettingsScreen>
   }
 
   Widget _createSettingTileWidget(final Option option) {
-    bool currentValue = option.savedValue!;
     return StatefulBuilder(
         builder: (BuildContext context, StateSetter setState) {
-      return SwitchListTile(
-          title: Text(option.title),
-          value: currentValue,
-          onChanged: (value) {
-            setState(() {
-              currentValue = value;
-              _sendEvent(SettingsSetEvent(option.key, value));
-            });
-          },
-          subtitle:
-              option.description == null ? null : Text(option.description!));
+      if (option.dataType == 'bool') {
+        bool currentValue = option.savedValue!;
+        return SwitchListTile(
+            title: Text(option.title),
+            value: currentValue,
+            onChanged: (value) {
+              setState(() {
+                currentValue = value;
+                _sendEvent(SettingsSetBoolEvent(option.key, value));
+              });
+            },
+            subtitle:
+                option.description == null ? null : Text(option.description!));
+      }
+      if (option.dataType == "String") {
+        return Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(option.title, style: textStyleBlackFontSize16),
+                option.description == null
+                    ? SizedBox.shrink()
+                    : Text(option.description!,
+                        style: textStyleBlackFontSize14),
+              ],
+            ),
+            Spacer(),
+            InkWell(
+              child: Text(option.savedValue, style: textStyleBlackFontSize16),
+              onTap: (() => _displayForecastHourDialog(option)),
+            ),
+          ]),
+        );
+      }
+      return SizedBox.shrink();
     });
   }
 
   void _sendEvent(SettingsEvent event) {
     BlocProvider.of<SettingsBloc>(context).add(event);
+  }
+
+  _displayForecastHourDialog(Option option) {
+    String oldValue = option.savedValue;
+    CommonWidgets.showRadioListInfoDialog(
+        context: context,
+        title: "Forecast Hour",
+        msg: "Select Initial Forecast Hr",
+        option: option,
+        button1Text: StandardLiterals.CANCEL,
+        button1Function: () {
+          option.savedValue = oldValue;
+          _cancel();
+        },
+        button2Text: StandardLiterals.OK,
+        button2Function: () {
+          setState(() {
+            _sendEvent(SettingsSetStringEvent(
+                option.key, option.savedValue as String));
+          });
+          _cancel();
+        });
+  }
+
+  _cancel() {
+    Navigator.pop(context);
   }
 }

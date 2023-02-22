@@ -92,6 +92,7 @@ class Repository {
 
   static final _fullForecastList = <Forecast>[];
   static final _displayableForecastList = <Forecast>[];
+  static final List<Settings> _settingsList = <Settings>[];
 
   Repository._();
 
@@ -359,6 +360,14 @@ class Repository {
     File file = await ImageCacheManager().getSingleFile(url);
     Image image = Image.file(file);
     return Future<Image>.value(image);
+  }
+
+
+  // TODO Got to be a better way for doing this
+  Future<String>  getDefaultForecastTime()  async{
+    getSettingOptionsFromAssets();
+    return getGenericString(key:'INITIAL_FORECAST_HOUR', defaultValue: '0900');
+
   }
 
   //--------  Floor -----------------------------------------------------------------------
@@ -1190,15 +1199,28 @@ class Repository {
   Future<List<Settings>> getSettingOptionsFromAssets() async {
     final jsonString = await DefaultAssetBundle.of(_context!)
         .loadString('assets/json/settings.json');
-    final settings = settingsFromJson(jsonString);
-    // loop through the settings to assign the saved value (or default)
-    settings.forEach((element) {
-      Future.forEach(element.options!, (option) async {
-        bool saveValue = await getGenericBool(
-            key: (option as Option).key, defaultValue: option.optionDefault);
-        option.savedValue = saveValue;
+    if (_settingsList.isEmpty) {
+      final settings = settingsFromJson(jsonString);
+      // loop through the settings to assign the saved value (or default)
+      settings.forEach((element) {
+        Future.forEach(element.options!, (option) async {
+          if ((option as Option).dataType == "bool") {
+            bool saveValue = await getGenericBool(
+                key: option.key, defaultValue: option.optionDefault);
+            option.savedValue = saveValue;
+          }
+          if (option.dataType == "String") {
+            String saveValue = await getGenericString(
+                key: (option as Option).key,
+                defaultValue: option.optionDefault);
+            option.savedValue = saveValue;
+          }
+        }
+        );
       });
-    });
-    return settings;
+      _settingsList.addAll(settings);
+    }
+    return _settingsList;
   }
+
 }

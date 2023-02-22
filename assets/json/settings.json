@@ -6,7 +6,17 @@
         "key": "DISPLAY_LANDABLE_TURNPOINTS",
         "title": "Display only landable turnpoints",
         "description": "Display only turnpoints marked as landable",
-        "default": true
+        "default": true,
+        "data_type": "bool"
+      },
+      {
+        "key": "INITIAL_FORECAST_HOUR",
+        "title": "Initial Forecast Hour",
+        "description": "Initial Hour for which forecast is displayed",
+        "default": "1100",
+        "data_type": "String",
+        "possible_values": ["0900","1000","1100","1200","1300","1400",
+          "1500","1600","1700"]
       }
     ]
   },
@@ -16,17 +26,20 @@
       {
         "key": "DISPLAY_WINDY",
         "title": "Display Windy in nav drawer",
-        "default": true
+        "default": true,
+        "data_type": "bool"
       },
       {
         "key": "DISPLAY_SKYSIGHT",
         "title": "Display SkySight in nav drawer",
-        "default": true
+        "default": true,
+        "data_type": "bool"
       },
       {
         "key": "DISPLAY_DRJACKS",
         "title": "Display Dr. Jacks in nav drawer",
-        "default": true
+        "default": true,
+        "data_type": "bool"
       }
     ]
   }

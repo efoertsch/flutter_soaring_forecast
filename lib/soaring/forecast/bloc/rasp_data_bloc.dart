@@ -102,9 +102,11 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
         _setRegionModelNames();
         // on startup default mode is first on list
         _selectedModelName = _selectedModelDates!.modelName!;
+        // get default time to start displaying forecast
+        _setDefaultForecastTime();
         _beginnerModeSelected = await repository.isBeginnerForecastMode();
         emit(BeginnerModeState(_beginnerModeSelected));
-        // A simple forecast is one where the app selected the 'best' forecast for the date
+        // A 'beginner' forecast is one where the app selected the 'best' forecast for the date
         // So forecast (if available) goes in order of hrrr, rap, nam, gfs
         if (_beginnerModeSelected) {
           _getBeginnerModeStartup(emit);
@@ -758,5 +760,10 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
 
     }
 
+  }
+
+  void _setDefaultForecastTime() async {
+    String defaultTime = await repository.getDefaultForecastTime();
+    _selectedForecastTimeIndex = _forecastTimes != null? _forecastTimes!.indexOf(defaultTime) : 0;
   }
 }

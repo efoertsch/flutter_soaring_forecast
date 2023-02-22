@@ -41,19 +41,25 @@ class Option {
     required this.title,
     this.description,
     required this.optionDefault,
+    this.dataType,
+    required this.possibleValues,
   });
 
   final String key;
   final String title;
   final String? description;
-  final bool optionDefault;
-  bool? savedValue;
+  final dynamic optionDefault;
+  dynamic savedValue;
+  final String? dataType;
+  final List<dynamic> possibleValues;
 
   factory Option.fromJson(Map<String, dynamic> json) => Option(
         key: json["key"] == null ? null : json["key"],
         title: json["title"] == null ? null : json["title"],
         description: json["description"] == null ? null : json["description"],
         optionDefault: json["default"] == null ? null : json["default"],
+        dataType: json["data_type"] == null ? "bool" : json["data_type"],
+        possibleValues: json["possible_values"] == null ? null: json["possible_values"],
       );
 
   Map<String, dynamic> toJson() => {
@@ -61,5 +67,7 @@ class Option {
         "title": title,
         "description": description == null ? null : description,
         "default": optionDefault,
+        "dataType": dataType,
+        "possible_values": possibleValues,
       };
 }

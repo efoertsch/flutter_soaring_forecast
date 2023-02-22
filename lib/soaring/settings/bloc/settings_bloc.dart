@@ -12,7 +12,8 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
 
   SettingsBloc({required this.repository}) : super(SettingsInitialState()) {
     on<GetInitialSettingsEvent>(_getInitialSettings);
-    on<SettingsSetEvent>(_saveAppSetting);
+    on<SettingsSetBoolEvent>(_saveBoolSetting);
+    on<SettingsSetStringEvent>(_saveStringSetting);
   }
 
   FutureOr<void> _getInitialSettings(event, Emitter<SettingsState> emit) async {
@@ -23,8 +24,13 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     });
   }
 
-  FutureOr<void> _saveAppSetting(
-      SettingsSetEvent event, Emitter<SettingsState> emit) {
+  FutureOr<void> _saveBoolSetting(
+      SettingsSetBoolEvent event, Emitter<SettingsState> emit) {
     repository.saveGenericBool(key: event.key, value: event.value);
+  }
+
+  FutureOr<void> _saveStringSetting(
+      SettingsSetStringEvent event, Emitter<SettingsState> emit) {
+    repository.saveGenericString(key: event.key, value: event.value);
   }
 }
