@@ -2,6 +2,8 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
+import '../repository/options/settings.dart';
+
 class CommonWidgets {
   static Widget backArrowToHomeScreen() {
     return Builder(
@@ -320,18 +322,23 @@ class CommonWidgets {
         required final Function button1Function,
         final String? button2Text,
         final Function? button2Function,
-        required String groupValue,
-        required final List<String> options}) async {
+        required Option option,
+        }) async {
     return showDialog<List<String>?>(
       context: context,
       barrierDismissible: false, // user must tap button!
       builder: (BuildContext context) {
         return StatefulBuilder(builder: (context, setState) {
           return AlertDialog(
-            title: Text(title),
+            title: Center(child: Text(title)),
             content: Container(
               width: double.minPositive,
-              child: getRadioButtonTiles(context, options, groupValue, setState),
+              child: Column(
+                children: [
+                  Text(msg),
+                  Expanded(child: getRadioButtonTiles(context, option,  setState)),
+                ],
+              ),
             ),
             actions: composeDialogButtons(
                 button1Text: button1Text,
@@ -345,19 +352,19 @@ class CommonWidgets {
   }
 
   static Widget getRadioButtonTiles(BuildContext context,
-      List<String> radioListItems, String groupValue, StateSetter setState) {
+      Option option, StateSetter setState) {
     return ListView.separated(
         shrinkWrap: true,
-        itemCount: radioListItems.length,
+        itemCount: option.possibleValues.length,
         itemBuilder: (BuildContext context, int index) {
           return RadioListTile<String>(
-            title: Text(radioListItems[index]),
-            value: radioListItems[index],
+            title: Text(option.possibleValues[index]),
+            value: option.possibleValues[index],
             onChanged: (value) {
               setState(() {
-                groupValue = value!;
+                option.savedValue = value!;
               });
-            }, groupValue: groupValue,
+            }, groupValue: option.savedValue,
           );
         },
         separatorBuilder: (context, index) {

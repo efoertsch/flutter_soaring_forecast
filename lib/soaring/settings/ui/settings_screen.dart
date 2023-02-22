@@ -117,7 +117,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                 InkWell(
                   child: Text(
                       option.savedValue, style: textStyleBlackFontSize16),
-                  onTap: _displayForecastHourDialog(option),
+                  onTap: (() =>_displayForecastHourDialog(option)),
                 ),
               ]),
             );
@@ -131,20 +131,20 @@ class _SettingsScreenState extends State<SettingsScreen>
   }
 
   _displayForecastHourDialog(Option option ) {
-    String currentValue = option.savedValue as String;
-    List<String> possibleValues = option.possibleValues.cast<String>();
     CommonWidgets.showRadioListInfoDialog(context: context,
         title: "Forecast Hour",
         msg: "Select Initial Forecast Hr",
-         groupValue: currentValue,
-         options: possibleValues,
+         option: option,
         button1Text: StandardLiterals.CANCEL,
         button1Function: _cancel,
       button2Text: StandardLiterals.OK,
-      button2Function: (() {
-      _sendEvent(SettingsSetStringEvent(option.key,  currentValue));
+      button2Function: () {
+      setState(() {
+        _sendEvent(SettingsSetStringEvent(option.key,  option.savedValue as String));
+      });
+
        Navigator.pop(context );
-      }));
+      });
   }
 
   _cancel() {
