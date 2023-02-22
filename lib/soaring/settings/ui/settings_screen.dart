@@ -39,11 +39,11 @@ class _SettingsScreenState extends State<SettingsScreen>
   Widget _getSettingWidgets() {
     return BlocConsumer<SettingsBloc, SettingsState>(
         listener: (context, state) {
-      if (state is SettingsErrorState) {
-        CommonWidgets.showErrorDialog(
-            context, StandardLiterals.UH_OH, state.error);
-      }
-    }, buildWhen: (previous, current) {
+          if (state is SettingsErrorState) {
+            CommonWidgets.showErrorDialog(
+                context, StandardLiterals.UH_OH, state.error);
+          }
+        }, buildWhen: (previous, current) {
       return current is SettingsInitialState || current is SettingOptionsState;
     }, builder: (context, state) {
       if (state is SettingOptionsState) {
@@ -82,24 +82,75 @@ class _SettingsScreenState extends State<SettingsScreen>
   }
 
   Widget _createSettingTileWidget(final Option option) {
-    bool currentValue = option.savedValue!;
     return StatefulBuilder(
         builder: (BuildContext context, StateSetter setState) {
-      return SwitchListTile(
-          title: Text(option.title),
-          value: currentValue,
-          onChanged: (value) {
-            setState(() {
-              currentValue = value;
-              _sendEvent(SettingsSetEvent(option.key, value));
-            });
-          },
-          subtitle:
-              option.description == null ? null : Text(option.description!));
-    });
+          if (option.dataType == 'bool') {
+            bool currentValue = option.savedValue!;
+            return SwitchListTile(
+                title: Text(option.title),
+                value: currentValue,
+                onChanged: (value) {
+                  setState(() {
+                    currentValue = value;
+                    _sendEvent(SettingsSetBoolEvent(option.key, value));
+                  });
+                },
+                subtitle:
+                option.description == null ? null : Text(option.description!));
+          }
+          if (option.dataType == "String") {
+
+            return Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(option.title, style: textStyleBlackFontSize16),
+                    option.description == null
+                        ? SizedBox.shrink()
+                        : Text(option.description!,
+                        style: textStyleBlackFontSize14),
+                  ],
+                ),
+                Spacer(),
+                InkWell(
+                  child: Text(
+                      option.savedValue, style: textStyleBlackFontSize16),
+                  onTap: _displayForecastHourDialog(option),
+                ),
+              ]),
+            );
+          }
+          return SizedBox.shrink();
+        });
   }
 
   void _sendEvent(SettingsEvent event) {
     BlocProvider.of<SettingsBloc>(context).add(event);
   }
+
+  _displayForecastHourDialog(Option option ) {
+    String currentValue = option.savedValue as String;
+    List<String> possibleValues = option.possibleValues.cast<String>();
+    CommonWidgets.showRadioListInfoDialog(context: context,
+        title: "Forecast Hour",
+        msg: "Select Initial Forecast Hr",
+         groupValue: currentValue,
+         options: possibleValues,
+        button1Text: StandardLiterals.CANCEL,
+        button1Function: _cancel,
+      button2Text: StandardLiterals.OK,
+      button2Function: (() {
+      _sendEvent(SettingsSetStringEvent(option.key,  currentValue));
+       Navigator.pop(context );
+      }));
+  }
+
+  _cancel() {
+    Navigator.pop(context);
+  }
 }
+
+
+

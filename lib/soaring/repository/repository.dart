@@ -1194,10 +1194,16 @@ class Repository {
     // loop through the settings to assign the saved value (or default)
     settings.forEach((element) {
       Future.forEach(element.options!, (option) async {
+        if ((option as Option).dataType == "bool") {
         bool saveValue = await getGenericBool(
             key: (option as Option).key, defaultValue: option.optionDefault);
-        option.savedValue = saveValue;
-      });
+        option.savedValue = saveValue;}
+        if ((option as Option).dataType == "String"){
+          String saveValue = await getGenericString(
+              key: (option as Option).key, defaultValue: option.optionDefault);
+          option.savedValue = saveValue;}
+        }
+      );
     });
     return settings;
   }

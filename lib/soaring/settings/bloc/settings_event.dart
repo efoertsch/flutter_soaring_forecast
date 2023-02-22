@@ -5,9 +5,18 @@ abstract class SettingsEvent {}
 
 class GetInitialSettingsEvent extends SettingsEvent {}
 
-class SettingsSetEvent extends SettingsEvent {
+class SettingsSetBoolEvent extends SettingsEvent {
   final String key;
   final bool value;
 
-  SettingsSetEvent(this.key, this.value);
+  SettingsSetBoolEvent(this.key, this.value);
 }
+
+
+class SettingsSetStringEvent extends SettingsEvent {
+  final String key;
+  final String value;
+
+  SettingsSetStringEvent(this.key, this.value);
+}
+

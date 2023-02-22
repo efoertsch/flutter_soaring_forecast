@@ -311,6 +311,59 @@ class CommonWidgets {
       child: child,
     );
   }
+
+  static Future<List<String>?> showRadioListInfoDialog(
+      {required final BuildContext context,
+        required final String title,
+        required final String msg,
+        required final String button1Text,
+        required final Function button1Function,
+        final String? button2Text,
+        final Function? button2Function,
+        required String groupValue,
+        required final List<String> options}) async {
+    return showDialog<List<String>?>(
+      context: context,
+      barrierDismissible: false, // user must tap button!
+      builder: (BuildContext context) {
+        return StatefulBuilder(builder: (context, setState) {
+          return AlertDialog(
+            title: Text(title),
+            content: Container(
+              width: double.minPositive,
+              child: getRadioButtonTiles(context, options, groupValue, setState),
+            ),
+            actions: composeDialogButtons(
+                button1Text: button1Text,
+                button1Function: button1Function,
+                button2Text: button2Text,
+                button2Function: button2Function),
+          );
+        });
+      },
+    );
+  }
+
+  static Widget getRadioButtonTiles(BuildContext context,
+      List<String> radioListItems, String groupValue, StateSetter setState) {
+    return ListView.separated(
+        shrinkWrap: true,
+        itemCount: radioListItems.length,
+        itemBuilder: (BuildContext context, int index) {
+          return RadioListTile<String>(
+            title: Text(radioListItems[index]),
+            value: radioListItems[index],
+            onChanged: (value) {
+              setState(() {
+                groupValue = value!;
+              });
+            }, groupValue: groupValue,
+          );
+        },
+        separatorBuilder: (context, index) {
+          return Divider();
+        });
+  }
 }
 
 class CheckboxItem {
@@ -319,3 +372,5 @@ class CheckboxItem {
 
   CheckboxItem(this.checkboxText, this.isChecked);
 }
+
+
