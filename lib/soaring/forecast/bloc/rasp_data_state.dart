@@ -180,7 +180,7 @@ class RegionsLoadedState extends RaspDataState {
 }
 
 class DisplayLocalForecastGraphState extends RaspDataState {
-  final ForecastInputData localForecastGraphData;
+  final LocalForecastInputData localForecastGraphData;
   DisplayLocalForecastGraphState(this.localForecastGraphData);
 }
 

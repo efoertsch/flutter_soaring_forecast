@@ -28,7 +28,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
   List<String> _modelNames = []; // gfs, nam, rap, hrr
   String? _selectedModelName; // nam
   ModelDates? _selectedModelDates; // all dates/times for the selected model
-  List<String>? _forecastDates; // array of dates like  2019-12-19
+  List<String> _forecastDates  = []; // array of dates like  2019-12-19
   String? _selectedForecastDate; // selected date  2019-12-19
   List<String>? _forecastTimes;
   int _selectedForecastTimeIndex = 4; // start at   1300 forecast
@@ -159,6 +159,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
 
   void _processSelectedModelEvent(
       SelectedRaspModelEvent event, Emitter<RaspDataState> emit) {
+    if (_modelNames.contains(event.modelName) && event.modelName != _selectedModelName){
     _selectedModelName = event.modelName;
     // print('Selected model: $_selectedModelname');
     // emits same list of models with new selected model
@@ -167,6 +168,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     _emitRaspModelDates(emit);
     _getForecastImages();
     _emitRaspForecastImageSet(emit);
+    }
   }
 
   void _processSelectedForecastEvent(
@@ -180,12 +182,14 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
 
   void _processSelectedDateEvent(
       SelectRaspForecastDateEvent event, Emitter<RaspDataState> emit) {
-    _selectedForecastDate = event.forecastDate;
-    _emitRaspModelDates(emit);
-    // update times and images for new date
-    _setForecastTimesForDate();
-    _getForecastImages();
-    _emitRaspForecastImageSet(emit);
+    if (_forecastDates.contains(event.forecastDate) && event.forecastDate != _selectedForecastDate ) {
+      _selectedForecastDate = event.forecastDate;
+      _emitRaspModelDates(emit);
+      // update times and images for new date
+      _setForecastTimesForDate();
+      _getForecastImages();
+      _emitRaspForecastImageSet(emit);
+    }
   }
 
   void _emitRaspModels(Emitter<RaspDataState> emit) {
@@ -267,8 +271,8 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     _setForecastDates();
     // stay on same date if new model has forecast for that date
     if (_selectedForecastDate == null ||
-        !_forecastDates!.contains(_selectedForecastDate)) {
-      _selectedForecastDate = _forecastDates!.first;
+        !_forecastDates.contains(_selectedForecastDate)) {
+      _selectedForecastDate = _forecastDates.first;
     }
     _updateForecastTimesList();
   }
@@ -289,9 +293,10 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
   void _setForecastDates() {
     List<ModelDateDetails> modelDateDetails =
         _selectedModelDates!.getModelDateDetailList();
-    _forecastDates = modelDateDetails
+    _forecastDates.clear();
+    _forecastDates.addAll(modelDateDetails
         .map((modelDateDetails) => modelDateDetails.date!)
-        .toList();
+        .toList());
   }
 
   void _updateForecastTimesList() {
@@ -502,7 +507,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
 
   void _displayLocalForecast(
       DisplayLocalForecastEvent event, Emitter<RaspDataState> emit) async {
-    final localForecastGraphData = ForecastInputData(
+    final localForecastGraphData = LocalForecastInputData(
         region: _region!,
         date: _selectedForecastDate!,
         model: _selectedModelName!,

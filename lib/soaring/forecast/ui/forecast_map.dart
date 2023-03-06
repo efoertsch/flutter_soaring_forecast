@@ -376,13 +376,17 @@ class ForecastMapState extends State<ForecastMap>
     );
   }
 
-  void _displayLocalForecastGraph(
-      BuildContext context, ForecastInputData inputParms) {
-    Navigator.pushNamed(
+  void _displayLocalForecastGraph (
+      BuildContext context, LocalForecastInputData inputParms) async{
+    var result = await Navigator.pushNamed(
       context,
       LocalForecastGraphRouteBuilder.routeName,
       arguments: inputParms,
     );
+    if (result is LocalForecastOutputData) {
+      _sendEvent(SelectedRaspModelEvent(result.model));
+      _sendEvent(SelectRaspForecastDateEvent(result.date));
+    }
   }
 
   void _updateTaskTurnpoints(List<TaskTurnpoint> taskTurnpoints) {
