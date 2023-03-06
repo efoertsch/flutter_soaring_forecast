@@ -9,6 +9,7 @@ class ForecastInputData {
   final double lat;
   final double lng;
   final String? turnpointName;
+  final String? turnpointCode;
 
   ForecastInputData(
       {required this.region,
@@ -17,7 +18,9 @@ class ForecastInputData {
       required this.times,
       required this.lat,
       required this.lng,
-      this.turnpointName = null});
+      this.turnpointName = null,
+      this.turnpointCode = null}
+      );
 }
 
 class ForecastData {
@@ -35,6 +38,7 @@ class ForecastGraphData {
   final String model;
   final String date;
   final String? turnpointTitle;
+  final String? turnpointCode;
   final double? lat;
   final double? lng;
   final List<Map<String, Object>> altitudeData;
@@ -47,6 +51,7 @@ class ForecastGraphData {
       {required this.model,
       required this.date,
       this.turnpointTitle = null,
+      this.turnpointCode = null,
       required this.altitudeData,
       required this.thermalData,
       required this.hours,

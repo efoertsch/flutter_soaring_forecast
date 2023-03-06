@@ -6,6 +6,7 @@ import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
 import 'package:flutter_soaring_forecast/soaring/graphics/bloc/graphic_event.dart';
 import 'package:flutter_soaring_forecast/soaring/graphics/bloc/graphic_state.dart';
 import 'package:flutter_soaring_forecast/soaring/graphics/data/forecast_graph_data.dart';
+import 'package:flutter_soaring_forecast/soaring/graphics/data/local_forecast_favorite.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/regions.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
@@ -58,9 +59,10 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
   ModelDates? _selectedModelDates;
   List<String>? _forecastDates;
   List<String>? _forecastTimes;
-  double? _lat;
-  double? _lng;
+  late double _lat;
+  late double _lng;
   String? _turnpointName;
+  String? _turnpointCode;
   ModelDateDetails? _beginnerModeModelDataDetails;
 
   static final _options = <Forecast>[];
@@ -73,6 +75,7 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
     on<SelectedForecastDateEvent>(_processSelectedDateEvent);
     on<ForecastDateSwitchEvent>(_processBeginnerDateSwitch);
     on<BeginnerModeEvent>(_processBeginnerModeEvent);
+    on<SetLocationAsFavoriteEvent>(_setLocationAsFavorite);
   }
 
   FutureOr<void> _getLocalForecastData(
@@ -105,6 +108,7 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
     _lat = inputData.lat;
     _lng = inputData.lng;
     _turnpointName = inputData.turnpointName;
+    _turnpointCode = inputData.turnpointCode;
   }
 
   Future<void> _generateGraphDataAndEmit(Emitter<GraphState> emit) async {
@@ -141,6 +145,7 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
         date: _selectedForecastDate!,
         model: _selectedModelName!,
         turnpointTitle: _turnpointName,
+        turnpointCode: _turnpointCode,
         lat: _lat,
         lng: _lng,
         altitudeData: altitudeForecastData,
@@ -567,5 +572,11 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
 
   void _emitRaspModelDates(Emitter<GraphState> emit) {
     emit(GraphModelDatesState(_forecastDates!, _selectedForecastDate!));
+  }
+
+  FutureOr<void> _setLocationAsFavorite(SetLocationAsFavoriteEvent event, Emitter<GraphState> emit) {
+    var localForecastFavorite = LocalForecastFavorite(turnpointName: _turnpointName,
+        turnpointCode: _turnpointCode, lat: _lat, lng: _lng);
+    repository.storeLocalForecastFavorite(localForecastFavorite);
   }
 }

@@ -38,3 +38,7 @@ class BeginnerModeEvent extends GraphicEvent{
   BeginnerModeEvent(this.beginnerMode);
 }
 
+class SetLocationAsFavoriteEvent extends GraphicEvent{
+
+}
+

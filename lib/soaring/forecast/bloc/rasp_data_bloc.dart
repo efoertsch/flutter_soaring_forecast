@@ -509,7 +509,8 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
         times: _forecastTimes!,
         lat: event.latLng.latitude,
         lng: event.latLng.longitude,
-        turnpointName: event.turnpointName);
+        turnpointName: event.turnpointName,
+        turnpointCode: event.turnpointCode);
     emit(DisplayLocalForecastGraphState(localForecastGraphData));
   }
 
