@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:io';
 
+import 'package:cupertino_will_pop_scope/cupertino_will_pop_scope.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
@@ -71,7 +73,28 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
 
   @override
   Widget build(BuildContext context) {
-    _screenWidth = MediaQuery.of(context).size.width;
+    if (Platform.isAndroid) {
+      return ConditionalWillPopScope(
+        onWillPop: _onWillPop,
+        shouldAddCallback: true,
+        child: _buildSafeArea(context),
+      );
+    } else {
+      //iOS
+      return GestureDetector(
+        onHorizontalDragUpdate: (details) {
+          if (details.delta.direction >= 0) {
+            _onWillPop();
+          }
+        },
+        child: _buildSafeArea(context),
+      );
+    }
+  }
+
+
+  SafeArea _buildSafeArea(BuildContext context) {
+     _screenWidth = MediaQuery.of(context).size.width;
     return SafeArea(
       child: Scaffold(
         appBar: getAppBar(context),
@@ -665,4 +688,10 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
           descriptions: descriptions),
     );
   }
+
+  Future<bool> _onWillPop() async {
+    Navigator.pop(context,LocalForecastOutputData(model:_selectedModelName, date:_selectedForecastDate)) ;
+    return true;
+  }
+
 }

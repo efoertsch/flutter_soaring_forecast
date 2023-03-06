@@ -14,8 +14,8 @@ import 'package:flutter_soaring_forecast/soaring/graphics/data/local_forecast_fa
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 import 'package:latlong2/latlong.dart';
 
-import '../forecast/bloc/rasp_bloc.dart';
-import 'web_launcher.dart';
+import '../bloc/rasp_bloc.dart';
+import '../../app/web_launcher.dart';
 
 class AppDrawerWidget extends StatefulWidget {
   final Function? refreshTaskDisplayFunction;

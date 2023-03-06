@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/main.dart';
-import 'package:flutter_soaring_forecast/soaring/app/app_drawer.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast/ui/app_drawer.dart';
 import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
@@ -420,6 +420,10 @@ class _RaspScreenState extends State<RaspScreen>
         }
         if (state is SelectedRegionNameState) {
           _selectedRegionName = state.selectedRegionName;
+          return;
+        }
+        if (state is DisplayLocalForecastGraphState){
+          stopAnimation();
           return;
         }
       },

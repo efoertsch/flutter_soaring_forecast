@@ -1,7 +1,7 @@
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/regions.dart';
 
-class ForecastInputData {
+class LocalForecastInputData {
   final Region region;
   final String date;
   final String model;
@@ -11,7 +11,7 @@ class ForecastInputData {
   final String? turnpointName;
   final String? turnpointCode;
 
-  ForecastInputData(
+  LocalForecastInputData(
       {required this.region,
       required this.date,
       required this.model,
@@ -19,8 +19,7 @@ class ForecastInputData {
       required this.lat,
       required this.lng,
       this.turnpointName = null,
-      this.turnpointCode = null}
-      );
+      this.turnpointCode = null});
 }
 
 class ForecastData {
@@ -59,4 +58,13 @@ class ForecastGraphData {
       required this.gridData,
       this.lat,
       this.lng});
+}
+
+class LocalForecastOutputData {
+  final String model;
+  final String date;
+  LocalForecastOutputData({
+    required this.model,
+    required this.date,
+  });
 }

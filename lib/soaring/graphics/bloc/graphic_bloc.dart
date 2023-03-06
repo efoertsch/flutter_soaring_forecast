@@ -100,7 +100,7 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
     emit(GraphWorkingState(working: false));
   }
 
-  void _assignInitialForecastFields(ForecastInputData inputData) {
+  void _assignInitialForecastFields(LocalForecastInputData inputData) {
     _region = inputData.region;
     _selectedModelName = inputData.model;
     _selectedForecastDate = inputData.date;

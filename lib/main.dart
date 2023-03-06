@@ -313,7 +313,7 @@ class SoaringForecastApp extends StatelessWidget {
           }
 
           if (settings.name == LocalForecastGraphRouteBuilder.routeName) {
-            final graphData = settings.arguments as ForecastInputData;
+            final graphData = settings.arguments as LocalForecastInputData;
             return CustomMaterialPageRoute(
               builder: (context) {
                 return LocalForecastGraphRouteBuilder(
@@ -630,7 +630,7 @@ class PdfViewRouteBuilder extends StatelessWidget {
 
 class LocalForecastGraphRouteBuilder extends StatelessWidget {
   static const routeName = '/ForecastGraph';
-  final ForecastInputData graphData;
+  final LocalForecastInputData graphData;
 
   LocalForecastGraphRouteBuilder({required this.graphData});
 

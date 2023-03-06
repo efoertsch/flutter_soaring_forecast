@@ -19,7 +19,7 @@ class SelectedForecastDateEvent extends GraphicEvent {
 }
 
 class LocalForecastDataEvent extends GraphicEvent {
-  final ForecastInputData localForecastGraphData;
+  final LocalForecastInputData localForecastGraphData;
 
   LocalForecastDataEvent({
     required this.localForecastGraphData,
