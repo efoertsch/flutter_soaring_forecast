@@ -48,6 +48,7 @@ class ForecastMapState extends State<ForecastMap>
   bool _firstLayoutComplete = false;
   LatLng? _mapCenter;
   SoaringForecastImageSet? soaringForecastImageSet;
+  final List<Turnpoint> _turnpoints =[];
   final List<Polyline> _taskTurnpointCourse = <Polyline>[];
   final List<Marker> _mapMarkers = <Marker>[];
   final List<Marker> _soundingMarkers = <Marker>[];
@@ -71,7 +72,8 @@ class ForecastMapState extends State<ForecastMap>
   var _forecastOverlaySliderIsVisible = false;
   Timer? _hideOpacityTimer = null;
   double _mapZoom = 7;
-  bool _mapIsReady = false;
+  double _previousZoom = 7;
+
   final suaColors = SUAColor.values;
 
   late GeoJSONVT geoJsonIndex = GeoJSONVT({}, GeoJSONVTOptions(buffer: 32));
@@ -83,6 +85,8 @@ class ForecastMapState extends State<ForecastMap>
   GeoJSON geoJSON = GeoJSON();
   VectorTileIndex vectorTileIndex = VectorTileIndex();
   String? suaSelected;
+
+
 
   @override
   void initState() {
@@ -101,6 +105,15 @@ class ForecastMapState extends State<ForecastMap>
     // _printMapBounds("MapEvent  ${mapEvent} : bounds from _mapController",
     //     _mapController.bounds!);
     _mapZoom = mapEvent.zoom;
+    debugPrint("MapEvent: ${mapEvent.source.name}  Zoom : ${_mapZoom}");
+    if ((_mapZoom - _previousZoom).abs() > .25){
+      _previousZoom = _mapZoom;
+      setState(() {
+        _updateTurnpointMarkers(_turnpoints);
+        _rebuildMarkerArray();
+      });
+    }
+
   }
 
   void _printMapBounds(String msg, LatLngBounds latLngBounds) {
@@ -186,6 +199,10 @@ class ForecastMapState extends State<ForecastMap>
       if (state is TurnpointsInBoundsState) {
         //print('Received TurnpointsInBoundsState in ForecastMap');
         _updateTurnpointMarkers(state.turnpoints);
+        // save for when zooming map and want to resize icons;
+        _turnpoints.clear();
+        _turnpoints.addAll( state.turnpoints);
+        _updateTurnpointMarkers(state.turnpoints);
         return;
       }
       if (state is SuaDetailsState) {
@@ -218,7 +235,6 @@ class ForecastMapState extends State<ForecastMap>
           options: MapOptions(
             onMapReady: (() {
               _sendEvent(MapReadyEvent());
-              _mapIsReady = true;
             }),
             center: _mapCenter,
             interactiveFlags: InteractiveFlag.drag |
@@ -415,7 +431,8 @@ class ForecastMapState extends State<ForecastMap>
         _getLocalForecast(
             latLng:
                 LatLng(taskTurnpoint.latitudeDeg, taskTurnpoint.longitudeDeg),
-            turnpointName: ("${taskTurnpoint.title} (${taskTurnpoint.code})"));
+            turnpointName: taskTurnpoint.title ,
+            turnpointCode: taskTurnpoint.code );
       },
       child: Container(
           color: Colors.white,
@@ -447,19 +464,23 @@ class ForecastMapState extends State<ForecastMap>
   void _updateTurnpointMarkers(final List<Turnpoint> turnpoints) {
     print('number of turnpoints ${turnpoints.length.toString()} ');
     _turnpointMarkers.clear();
+    double markerSize = getMarkerSize();
     for (var turnpoint in turnpoints) {
       // print('adding turnpoint: ${turnpoint.title}');
       var turnpointLatLng =
           LatLng(turnpoint.latitudeDeg, turnpoint.longitudeDeg);
-
       _turnpointMarkers.add(Marker(
-          width: _mapZoom < 9.5 ? 24 : 48,
-          height: _mapZoom < 9.5 ? 24 : 48,
+          width: markerSize,
+          height: markerSize,
           point: turnpointLatLng,
           builder: (context) => _getTurnpointMarker(turnpoint),
           anchorPos: AnchorPos.align(AnchorAlign.top)));
     }
     _rebuildMarkerArray();
+  }
+
+  double getMarkerSize(){
+    return (_mapZoom < 8.0) ? 12 :(_mapZoom < 9.0) ? 24 : 48 ;
   }
 
   Widget _getTurnpointMarker(final Turnpoint turnpoint) {
@@ -470,7 +491,8 @@ class ForecastMapState extends State<ForecastMap>
       onLongPress: () {
         _getLocalForecast(
             latLng: LatLng(turnpoint.latitudeDeg, turnpoint.longitudeDeg),
-            turnpointName: ("${turnpoint.title} (${turnpoint.code})"));
+            turnpointName:  turnpoint.title,
+            turnpointCode: turnpoint.code);
       },
       child: ClipOval(
         child: Container(
@@ -497,6 +519,11 @@ class ForecastMapState extends State<ForecastMap>
             )),
       ),
     );
+  }
+
+  TextStyle getMarkerTextStyle(){
+    return (_mapZoom < 9.5) ? textStyleBlackFontSize12 :
+      textStyleBlackFontSize18 ;
   }
 
   void _placeSoundingMarkers(final List<Soundings> soundings) {
@@ -647,11 +674,11 @@ class ForecastMapState extends State<ForecastMap>
     }
   }
 
-  _getLocalForecast({required LatLng latLng, String? turnpointName = null}) {
+  _getLocalForecast({required LatLng latLng, String? turnpointName = null, String? turnpointCode}) {
     widget.stopAnimation();
-    print('Local forecast requested at : ${latLng.latitude.toString()}  :'
-        '  ${latLng.longitude.toString()}');
-    _sendEvent(DisplayLocalForecastEvent(latLng, turnpointName));
+    // debugPrint('Local forecast requested at : ${latLng.latitude.toString()}  :'
+    //     '  ${latLng.longitude.toString()}');
+    _sendEvent(DisplayLocalForecastEvent(latLng, turnpointName, turnpointCode));
   }
 
   void _sendEvent(RaspDataEvent event) {

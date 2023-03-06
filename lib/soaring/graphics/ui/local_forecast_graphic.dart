@@ -104,6 +104,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
       return {
         _beginnerMode ? StandardLiterals.expertMode : StandardLiterals
             .beginnerMode,
+        GraphLiterals.SET_AS_FAVORITE
       }.map((String choice) {
         return PopupMenuItem<String>(
           value: choice,
@@ -125,6 +126,8 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
           _sendEvent(BeginnerModeEvent(_beginnerMode));
         });
         break;
+      case GraphLiterals.SET_AS_FAVORITE:
+        _sendEvent(SetLocationAsFavoriteEvent());
     }
   }
 
@@ -160,7 +163,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
       if (state is GraphDataState) {
         var text;
         if (state.forecastData.turnpointTitle != null) {
-          text = state.forecastData.turnpointTitle!;
+          text = ("${state.forecastData.turnpointTitle} (${state.forecastData.turnpointCode}) ");
         } else if (state.forecastData.lat != null &&
             state.forecastData.lng != null) {
           text = state.forecastData.lat!.toStringAsFixed(5) +

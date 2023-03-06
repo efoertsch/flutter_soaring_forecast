@@ -10,8 +10,11 @@ import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
         FEEDBACK_EMAIL_ADDRESS,
         Feedback,
         WxBriefBriefingRequest;
+import 'package:flutter_soaring_forecast/soaring/graphics/data/local_forecast_favorite.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
+import 'package:latlong2/latlong.dart';
 
+import '../forecast/bloc/rasp_bloc.dart';
 import 'web_launcher.dart';
 
 class AppDrawerWidget extends StatefulWidget {
@@ -33,12 +36,14 @@ class _AppDrawerWidgetState extends State<AppDrawerWidget> {
   late final Future<bool> _getWindyVisibilitySetting =
       RepositoryProvider.of<Repository>(widget.context)
           .getGenericBool(key: "DISPLAY_WINDY", defaultValue: true);
-  late final Future<bool> _geSkySightVisibilitySetting =
+  late final Future<bool> _getSkySightVisibilitySetting =
       RepositoryProvider.of<Repository>(context)
           .getGenericBool(key: "DISPLAY_SKYSIGHT", defaultValue: true);
   late final Future<bool> _getDrJacksVisibilitySetting =
       RepositoryProvider.of<Repository>(context)
           .getGenericBool(key: "DISPLAY_DRJACKS", defaultValue: true);
+  late final Future<LocalForecastFavorite?>  _getLocalForecastFavorite =
+        RepositoryProvider.of<Repository>(widget.context).getLocateForecastFavorite();
 
   @override
   Widget build(BuildContext context) {
@@ -70,9 +75,10 @@ class _AppDrawerWidgetState extends State<AppDrawerWidget> {
               color: Colors.black54,
             ),
           )),
+          _getOptionalWidget(_getLocalForecastFavorite, _getLocalForecastFavoriteWidget),
           _getOptionalWidget(_getWindyVisibilitySetting, _getWindyMenuWidget),
           _getOptionalWidget(
-              _geSkySightVisibilitySetting, _getSkySightMenuWidget),
+              _getSkySightVisibilitySetting, _getSkySightMenuWidget),
           _getOptionalWidget(
               _getDrJacksVisibilitySetting, _getDrJacksMenuWidget),
           _getDivider(),
@@ -166,7 +172,28 @@ class _AppDrawerWidgetState extends State<AppDrawerWidget> {
     );
   }
 
-  Widget _getWindyMenuWidget() {
+  Widget _getLocalForecastFavoriteWidget(LocalForecastFavorite? localForecastFavorite) {
+    if (localForecastFavorite != null) {
+      return BlocBuilder<RaspDataBloc, RaspDataState>(
+          builder: (context, state) {
+            return ListTile(
+                title: Text("${localForecastFavorite
+                    .turnpointName} (${localForecastFavorite
+                    .turnpointCode}) Forecast"),
+                onTap: () async {
+                  Navigator.pop(context);
+                 _sendEvent( DisplayLocalForecastEvent(LatLng(localForecastFavorite.lat,
+                 localForecastFavorite.lng),
+                 localForecastFavorite.turnpointName, localForecastFavorite.turnpointCode) );
+                }
+            );
+          });
+    }
+    return SizedBox.shrink();
+  }
+
+  Widget _getWindyMenuWidget(bool? visible) {
+    if (visible != null && visible) {
     return ListTile(
       title: Text(DrawerLiterals.WINDY),
       onTap: () async {
@@ -180,18 +207,24 @@ class _AppDrawerWidgetState extends State<AppDrawerWidget> {
       },
     );
   }
-
-  Widget _getSkySightMenuWidget() {
-    return ListTile(
-      title: Text(DrawerLiterals.SKYSIGHT),
-      onTap: () async {
-        await launchWebBrowser("skysight.io", "");
-        Navigator.pop(context);
-      },
-    );
+  return SizedBox.shrink();
   }
 
-  Widget _getDrJacksMenuWidget() {
+  Widget _getSkySightMenuWidget(bool? visible) {
+    if (visible != null && visible) {
+      return ListTile(
+        title: Text(DrawerLiterals.SKYSIGHT),
+        onTap: () async {
+          await launchWebBrowser("skysight.io", "");
+          Navigator.pop(context);
+        },
+      );
+    }
+    return SizedBox.shrink();
+  }
+
+  Widget _getDrJacksMenuWidget(bool? visible) {
+    if (visible != null && visible) {
     return ListTile(
       title: Text(DrawerLiterals.DR_JACKS),
       onTap: () async {
@@ -201,18 +234,20 @@ class _AppDrawerWidgetState extends State<AppDrawerWidget> {
         // _launchWebBrowser("http://www.drjack.info/BLIP/univiewer.html");
       },
     );
+    }
+    return SizedBox.shrink();
   }
 
-  FutureBuilder<bool> _getOptionalWidget(
-    Future<bool> futureFunction,
+  FutureBuilder<dynamic> _getOptionalWidget(
+    Future<dynamic> futureFunction,
     Function menuWidget,
   ) {
-    return FutureBuilder<bool>(
+    return FutureBuilder<dynamic>(
       future: futureFunction, // a previously-obtained Future<String> or null
-      builder: (BuildContext context, AsyncSnapshot<bool> snapshot) {
+      builder: (BuildContext context, AsyncSnapshot<dynamic> snapshot) {
         List<Widget> children = <Widget>[];
         if (snapshot.hasData) {
-          children.add(snapshot.data! ? menuWidget() : SizedBox.shrink());
+          children.add( menuWidget(snapshot.data)  );
         } else if (snapshot.hasError) {
           children = <Widget>[
             const Icon(
@@ -247,4 +282,10 @@ class _AppDrawerWidgetState extends State<AppDrawerWidget> {
       },
     );
   }
+
+  void _sendEvent(RaspDataEvent event) {
+    BlocProvider.of<RaspDataBloc>(context).add(event);
+  }
+
+
 }

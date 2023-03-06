@@ -19,6 +19,8 @@ const textStyleBlackFontSize20 = TextStyle(color: Colors.black, fontSize: 20);
 
 const textStyleBlackFontSize18 = TextStyle(color: Colors.black, fontSize: 18);
 
+const textStyleBlackFontSize24 = TextStyle(color: Colors.black, fontSize: 24);
+
 const textStyleBoldBlackFontSize18 =
     TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 18);
 

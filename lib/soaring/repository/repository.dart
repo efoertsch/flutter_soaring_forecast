@@ -23,6 +23,7 @@ import 'package:flutter_soaring_forecast/soaring/floor/task/task.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/taskturnpoint/task_turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image.dart';
+import 'package:flutter_soaring_forecast/soaring/graphics/data/local_forecast_favorite.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/ImageCacheManager.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/one800wxbrief/metar_taf_response.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/one800wxbrief/one800wxbrief.dart';
@@ -78,6 +79,7 @@ class Repository {
   static const String WXBRIEF_AIRPORT_ID = "WXBRIEF_AIRPORT_ID";
   static const String VIEW_MAP_BOUNDS = "VIEW_MAP_BOUNDS";
   static const String BEGINNER_FORECAST_MODE = "BEGINNER_FORECAST_MODE";
+  static const String LOCAL_FORECAST_FAVORITE = "LOCAL_FORECAST_FAVORITE";
 
 
   late final String satelliteRegionUS;
@@ -1221,6 +1223,20 @@ class Repository {
       _settingsList.addAll(settings);
     }
     return _settingsList;
+  }
+
+  void storeLocalForecastFavorite(LocalForecastFavorite localForecastFavorite) async {
+    await saveGenericString(key: LOCAL_FORECAST_FAVORITE, value: jsonEncode(localForecastFavorite.toJson()));
+  }
+
+  Future<LocalForecastFavorite?> getLocateForecastFavorite() async {
+    String favoriteString =  await getGenericString(key: LOCAL_FORECAST_FAVORITE, defaultValue: "");
+    if (favoriteString.isEmpty){
+      return null;
+    } else {
+      return LocalForecastFavorite.fromJson(jsonDecode(favoriteString));
+    }
+
   }
 
 }
