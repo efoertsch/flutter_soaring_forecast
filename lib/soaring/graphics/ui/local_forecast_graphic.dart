@@ -57,6 +57,8 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
   List<String> _shortDOWs = [];
   String _selectedForecastDOW = '';
 
+  late Object _graphKey;
+
   @override
   void initState() {
     super.initState();
@@ -106,7 +108,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
   AppBar getAppBar(BuildContext context) {
     return AppBar(
       title: Text(GraphLiterals.LOCAL_FORECAST),
-      leading: BackButton(onPressed: () => Navigator.pop(context)),
+      leading: BackButton(onPressed: () => _onWillPop()),
       actions: _getGraphMenu(),
       //  actions: _getAppBarMenu(),
     );
@@ -311,9 +313,11 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
     );
   }
 
+  // Hmmm, graph doesn't redraw on first previous or next click
   Widget _getCloudbaseWidget() {
     return BlocConsumer<GraphicBloc, GraphState>(listener: (context, state) {
       if (state is GraphDataState) {
+        _graphKey = Object();
         // Very Important! Determine what forecasts are present in data
         // Used to determine shapes, colors, legends, etc.
         forecastGraphData = state.forecastData;
@@ -333,7 +337,9 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
       return current is GraphDataState;
     }, builder: (context, state) {
       if (state is GraphDataState) {
+      //  debugPrint("Plotting GraphDataState: ${state.forecastData.model} / ${state.forecastData.date}");
         return Container(
+          key: ValueKey<Object>(_graphKey),
           margin: const EdgeInsets.only(top: 8),
           width: _screenWidth - _chartWidthMargin,
           height: 300,
@@ -415,6 +421,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
     }, builder: (context, state) {
       if (state is GraphDataState) {
         return Container(
+          key: ValueKey<Object>(_graphKey),
           margin: const EdgeInsets.only(top: 0),
           width: _screenWidth - _chartWidthMargin,
           height: 140,

@@ -7,7 +7,7 @@ abstract class SettingsState {}
 class SettingsInitialState extends SettingsState {}
 
 class SettingOptionsState extends SettingsState {
-  final List<Settings>? settings;
+  final List<Group>? settings;
 
   SettingOptionsState(this.settings);
 }

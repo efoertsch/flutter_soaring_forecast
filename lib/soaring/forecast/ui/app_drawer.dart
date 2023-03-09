@@ -246,6 +246,9 @@ class _AppDrawerWidgetState extends State<AppDrawerWidget> {
       future: futureFunction, // a previously-obtained Future<String> or null
       builder: (BuildContext context, AsyncSnapshot<dynamic> snapshot) {
         List<Widget> children = <Widget>[];
+        if (snapshot.connectionState == ConnectionState.done && !snapshot.hasData){
+          return SizedBox.shrink();
+        }
         if (snapshot.hasData) {
           children.add( menuWidget(snapshot.data)  );
         } else if (snapshot.hasError) {

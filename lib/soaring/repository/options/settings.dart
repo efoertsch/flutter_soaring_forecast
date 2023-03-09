@@ -5,14 +5,14 @@ import 'dart:convert';
 //
 //     final settings = settingsFromJson(jsonString);
 
-List<Settings> settingsFromJson(String str) =>
-    List<Settings>.from(json.decode(str).map((x) => Settings.fromJson(x)));
+List<Group> settingsFromJson(String str) =>
+    List<Group>.from(json.decode(str).map((x) => Group.fromJson(x)));
 
-String settingsToJson(List<Settings> data) =>
+String settingsToJson(List<Group> data) =>
     json.encode(List<dynamic>.from(data.map((x) => x.toJson())));
 
-class Settings {
-  Settings({
+class Group {
+  Group({
     required this.title,
     this.options,
   });
@@ -20,7 +20,7 @@ class Settings {
   final String title;
   final List<Option>? options;
 
-  factory Settings.fromJson(Map<String, dynamic> json) => Settings(
+  factory Group.fromJson(Map<String, dynamic> json) => Group(
         title: json["title"] == null ? null : json["title"],
         options: json["options"] == null
             ? null
