@@ -73,7 +73,7 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
     on<LocalForecastDataEvent>(_getLocalForecastData);
     on<SelectedModelEvent>(_processSelectedModelEvent);
     on<SelectedForecastDateEvent>(_processSelectedDateEvent);
-    on<ForecastDateSwitchEvent>(_processBeginnerDateSwitch);
+    on<ForecastDateSwitchEvent>(_processForecastDateSwitchEvent);
     on<BeginnerModeEvent>(_processBeginnerModeEvent);
     on<SetLocationAsFavoriteEvent>(_setLocationAsFavorite);
   }
@@ -135,6 +135,7 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
       altitudeForecastData.addAll(_getAltitudeForecasts(allData));
       thermalForecastData.addAll(_getThermalForecast(allData));
     }).onError((error, stackTrace) {
+      debugPrint(stackTrace.toString());
       emit(GraphErrorState(error.toString()));
     });
     // Wheew! Now we have maps that contain the data for all forecast times
@@ -160,6 +161,7 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
     //   });
     // });
     emit(GraphDataState(forecastData: forecastGraphData));
+    debugPrint("Emitted GraphDataState: ${forecastGraphData.model} / ${forecastGraphData.date}");
   }
 
   // Compose space separated list of forecast parameters for sending to RASP api
@@ -191,9 +193,10 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
       var col = hours.indexOf(element["time"] as String);
       var row = descriptions.indexWhere(
           (forecast) => forecast.forecastName == element["code"] as String);
-      var value = element["value"];
-      // debugPrint(" row: $row  col: $col");
-      dataGrid[row][col] = (value as double).toStringAsFixed(0);
+      var value =  element["value"] ?? 0.0 ;
+       debugPrint(" row: $row  col: $col   value ${value.toString()}" );
+      // if value = 0, then get int not double so need to cast
+      dataGrid[row][col] = (value is int ) ? value.toString() : (value as double).toStringAsFixed(0);
     });
     return dataGrid;
   }
@@ -337,7 +340,7 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
     // If CuPotential > 0 then take the Cu value
     if (allCuPotential.length == allCu.length) {
       for (int i = 0; i < allCuPotential.length; ++i) {
-        if ((allCuPotential[i]["value"] as double) > 0) {
+        if ((allCuPotential[i]["value"] as num) > 0) {
           prunedMap.add(allCu[i]);
         }
       }
@@ -346,7 +349,7 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
     // If OD Potential > 0 then take the OD value
     if (allOdPotential.length == allOd.length) {
       for (int i = 0; i < allOdPotential.length; ++i) {
-        if ((allOdPotential[i]["value"] as double) > 0) {
+        if ((allOdPotential[i]["value"] as num) > 0) {
           prunedMap.add(allOd[i]);
         }
       }
@@ -505,7 +508,7 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
   }
 
   // Go to either previous or next date for beginner mode
-  FutureOr<void> _processBeginnerDateSwitch(
+  FutureOr<void> _processForecastDateSwitchEvent(
       ForecastDateSwitchEvent event, Emitter<GraphState> emit) async {
     emit(GraphWorkingState(working: true));
     int? dateIndex = _region?.dates?.indexOf(_selectedForecastDate!);
@@ -523,13 +526,14 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
     _getBeginnerModeDateDetails();
     _selectedModelName =
         _beginnerModeModelDataDetails?.model?.name ?? "Unknown";
+
+    // we need to keep values in sync for 'expert' mode if user switches to that mode
+    _getDatesForSelectedModel();
+    await _generateGraphDataAndEmit(emit);
     if (_beginnerModeModelDataDetails != null) {
       emit(BeginnerForecastDateModelState(
           _selectedForecastDate!, _selectedModelName!));
     }
-    // we need to keep values in sync for 'expert' mode if user switches to that mode
-    _getDatesForSelectedModel();
-    await _generateGraphDataAndEmit(emit);
     emit(GraphWorkingState(working: false));
   }
 

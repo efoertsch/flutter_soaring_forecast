@@ -103,7 +103,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
         // on startup default mode is first on list
         _selectedModelName = _selectedModelDates!.modelName!;
         // get default time to start displaying forecast
-        _setDefaultForecastTime();
+        await _getDefaultForecastTime();
         _beginnerModeSelected = await repository.isBeginnerForecastMode();
         emit(BeginnerModeState(_beginnerModeSelected));
         // A 'beginner' forecast is one where the app selected the 'best' forecast for the date
@@ -254,8 +254,9 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     _updateForecastDates();
   }
 
-// A new model (e.g. nam) has been selected so get new dates and times
-// for selected model
+// A new model (e.g. nam) has been selected OR switched from beginner to expert
+// and need to update list of dates for the model
+// so get new dates and times for selected model
   void _getDatesForSelectedModel() {
     // first get the set of dates available for the model
     _selectedModelDates = _region!
@@ -747,7 +748,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
 
   // Switch display from beginner to expert or visa-versa
   // if switching from expert to simple may switch modes (to get most 'accurate' for day)
-  // if switched from simple to expert stay on current model
+  // if switched from simple to expert stay on current model but resend dates
   void _processBeginnerModeEvent(BeginnerModeEvent event, Emitter<RaspDataState> emit) async {
     _beginnerModeSelected = event.beginnerMode;
     await repository.setBeginnerForecastMode(event.beginnerMode);
@@ -761,6 +762,8 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
       } else {
       //  switched from beginner to expert
       // stay on same model and date so just send info to update ui
+      // Still need to update available dates/times for the model that you are on
+      _getDatesForSelectedModel();
       _emitRaspModels(emit);
       _emitRaspModelDates(emit);
 
@@ -768,8 +771,8 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
 
   }
 
-  void _setDefaultForecastTime() async {
+  Future<void> _getDefaultForecastTime() async {
     String defaultTime = await repository.getDefaultForecastTime();
-    _selectedForecastTimeIndex = _forecastTimes != null? _forecastTimes!.indexOf(defaultTime) : 0;
+    _selectedForecastTimeIndex = _forecastTimes != null ?  (_forecastTimes!.contains(defaultTime) ? _forecastTimes!.indexOf(defaultTime): 0) : 0;
   }
 }

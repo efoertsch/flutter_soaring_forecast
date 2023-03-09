@@ -79,8 +79,7 @@ class Repository {
   static const String WXBRIEF_AIRPORT_ID = "WXBRIEF_AIRPORT_ID";
   static const String VIEW_MAP_BOUNDS = "VIEW_MAP_BOUNDS";
   static const String BEGINNER_FORECAST_MODE = "BEGINNER_FORECAST_MODE";
-  static const String LOCAL_FORECAST_FAVORITE = "LOCAL_FORECAST_FAVORITE";
-
+  static const String LOCAL_FORECAST_FAVORITE = "INITIAL_FORECAST_HOUR";
 
   late final String satelliteRegionUS;
   late final String satelliteTypeVis;
@@ -94,7 +93,7 @@ class Repository {
 
   static final _fullForecastList = <Forecast>[];
   static final _displayableForecastList = <Forecast>[];
-  static final List<Settings> _settingsList = <Settings>[];
+  static final List<Group> _settingGroups = <Group>[];
 
   Repository._();
 
@@ -137,12 +136,15 @@ class Repository {
     return _raspClient.getRegions();
   }
 
-  Future<bool> isBeginnerForecastMode() async{
-    return await getGenericBool(key: BEGINNER_FORECAST_MODE, defaultValue: true);
+  Future<bool> isBeginnerForecastMode() async {
+    return await getGenericBool(
+        key: BEGINNER_FORECAST_MODE, defaultValue: true);
   }
+
   // true is to display 'simple' forecast select, false to display 'expert' forecast select
   Future<void> setBeginnerForecastMode(bool isBeginnerForecastMode) async {
-    await saveGenericBool(key: BEGINNER_FORECAST_MODE, value: isBeginnerForecastMode);
+    await saveGenericBool(
+        key: BEGINNER_FORECAST_MODE, value: isBeginnerForecastMode);
   }
 
   Future<String> getSelectedRegionName() async {
@@ -282,7 +284,6 @@ class Repository {
         contentType, region, date, model, time, lat, lon, forecasts);
   }
 
-
   /*
   * @param region - "NewEngland"
   * @param date - "2018-03-31"
@@ -364,12 +365,11 @@ class Repository {
     return Future<Image>.value(image);
   }
 
-
   // TODO Got to be a better way for doing this
-  Future<String>  getDefaultForecastTime()  async{
-    getSettingOptionsFromAssets();
-    return getGenericString(key:'INITIAL_FORECAST_HOUR', defaultValue: '0900');
-
+  // Need to make default value match to that in settings.json
+  Future<String> getDefaultForecastTime() async {
+    await getSettingOptionsFromAssets();
+    return getGenericString(key: 'INITIAL_FORECAST_HOUR', defaultValue: '1100');
   }
 
   //--------  Floor -----------------------------------------------------------------------
@@ -380,12 +380,11 @@ class Repository {
       // Oops. Added this so as not to lose existing Android users info
       if (Platform.isAndroid) {
         _appDatabase =
-        await $FloorAppDatabase.databaseBuilder('app_database').build();
+            await $FloorAppDatabase.databaseBuilder('app_database').build();
       } else if (Platform.isIOS) {
         _appDatabase =
-        await $FloorAppDatabase.databaseBuilder('app_database.db').build();
+            await $FloorAppDatabase.databaseBuilder('app_database.db').build();
       }
-
     }
     return _appDatabase!;
   }
@@ -1198,45 +1197,46 @@ class Repository {
     return directory;
   }
 
-  Future<List<Settings>> getSettingOptionsFromAssets() async {
-    final jsonString = await DefaultAssetBundle.of(_context!)
-        .loadString('assets/json/settings.json');
-    if (_settingsList.isEmpty) {
+  Future<List<Group>> getSettingOptionsFromAssets() async {
+    if (_settingGroups.isEmpty) {
+      final jsonString = await DefaultAssetBundle.of(_context!)
+          .loadString('assets/json/settings.json');
       final settings = settingsFromJson(jsonString);
       // loop through the settings to assign the saved value (or default)
-      settings.forEach((element) {
-        Future.forEach(element.options!, (option) async {
+      Future.forEach(settings, (group) async {
+        Future.forEach((group as Group)!.options!, (option) async {
           if ((option as Option).dataType == "bool") {
-            bool saveValue = await getGenericBool(
+            bool savedValue = await getGenericBool(
                 key: option.key, defaultValue: option.optionDefault);
-            option.savedValue = saveValue;
+            option.savedValue = savedValue;
           }
           if (option.dataType == "String") {
-            String saveValue = await getGenericString(
-                key: (option as Option).key,
+            String savedValue = await getGenericString(
+                key: option.key,
                 defaultValue: option.optionDefault);
-            option.savedValue = saveValue;
+            option.savedValue = savedValue;
           }
-        }
-        );
+        });
       });
-      _settingsList.addAll(settings);
+      _settingGroups.addAll(settings);
     }
-    return _settingsList;
+    return _settingGroups;
   }
 
-  void storeLocalForecastFavorite(LocalForecastFavorite localForecastFavorite) async {
-    await saveGenericString(key: LOCAL_FORECAST_FAVORITE, value: jsonEncode(localForecastFavorite.toJson()));
+  void storeLocalForecastFavorite(
+      LocalForecastFavorite localForecastFavorite) async {
+    await saveGenericString(
+        key: LOCAL_FORECAST_FAVORITE,
+        value: jsonEncode(localForecastFavorite.toJson()));
   }
 
   Future<LocalForecastFavorite?> getLocateForecastFavorite() async {
-    String favoriteString =  await getGenericString(key: LOCAL_FORECAST_FAVORITE, defaultValue: "");
-    if (favoriteString.isEmpty){
+    String favoriteString =
+        await getGenericString(key: LOCAL_FORECAST_FAVORITE, defaultValue: "");
+    if (favoriteString.isEmpty) {
       return null;
     } else {
       return LocalForecastFavorite.fromJson(jsonDecode(favoriteString));
     }
-
   }
-
 }

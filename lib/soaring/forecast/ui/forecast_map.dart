@@ -466,7 +466,7 @@ class ForecastMapState extends State<ForecastMap>
   }
 
   void _updateTurnpointMarkers(final List<Turnpoint> turnpoints) {
-    print('number of turnpoints ${turnpoints.length.toString()} ');
+    debugPrint('number of turnpoints ${turnpoints.length.toString()} ');
     _turnpointMarkers.clear();
     double markerSize = getMarkerSize();
     for (var turnpoint in turnpoints) {
