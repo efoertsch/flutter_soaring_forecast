@@ -171,7 +171,11 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
         _thermalParmList.join("@") +
         "@" +
         _windParmList.join("@");
-
+    if (_forecastTimes!.first.contains("old ")){
+      List<String> strippedTimes = [];
+      _forecastTimes!.forEach((element) {strippedTimes.add(element.replaceFirst('old ', ''));});
+      _forecastTimes = strippedTimes;
+    }
     _forecastTimesParams = _forecastTimes!.join("@");
   }
 

@@ -120,9 +120,9 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
       }
     } catch (e) {
       print("Error: ${e.toString()}");
-      emit(RaspWorkingState(working: true));
+      emit(RaspWorkingState(working: false));
       emit(
-          RaspErrorState("Unexpected error occurred gathering forecast data."));
+          RaspErrorState("Unexpected error occurred gathering forecast data:\n${e.toString()}"));
     }
   }
 
@@ -144,9 +144,9 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
       _emitRaspForecastImageSet(emit);
     } catch (e) {
       print("Error: ${e.toString()}");
-      emit(RaspWorkingState(working: true));
+      emit(RaspWorkingState(working: false));
       emit(
-          RaspErrorState("Unexpected error occurred gathering forecast data."));
+          RaspErrorState("Unexpected error occurred gathering forecast data: \n${e.toString()}"));
     }
   }
 
@@ -502,6 +502,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     if (turnpoint != null) {
       emit(TurnpointFoundState(turnpoint));
     } else {
+      emit(RaspWorkingState(working: false));
       emit(RaspErrorState("Oops. Turnpoint not found based on TaskTurnpoint"));
     }
   }
@@ -713,7 +714,8 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
 
   void _emitBeginnerModelDateState(Emitter<RaspDataState> emit) {
     if (_beginnerModeModelDataDetails == null) {
-      emit(RaspErrorState("Oops. No forecast models available!"));
+      emit(RaspWorkingState(working: false));
+      emit(RaspErrorState("Hmmm. No forecast models available! Please check main RASP site to see if issue there also"));
     }
     emit(BeginnerForecastDateModelState(_selectedForecastDate! ,_beginnerModeModelDataDetails!.model!.name,));
   }
