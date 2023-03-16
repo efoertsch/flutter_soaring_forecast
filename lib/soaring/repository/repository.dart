@@ -701,7 +701,7 @@ class Repository {
     List<PreferenceOption> displayOptions = [];
     for (var option in RaspDisplayOptions) {
       final isSelected =
-          await getGenericBool(key: option.key, defaultValue: false);
+          await getGenericBool(key: option.key, defaultValue: option.selected);
       displayOptions.add(PreferenceOption(
           key: option.key,
           displayText: option.displayText,

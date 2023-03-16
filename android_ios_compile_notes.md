@@ -14,7 +14,7 @@ Options to execute/build the different flavors
    1. Start an emulator if needed 
    2. Execute from terminal (can't click on run/debug icons)
       flutter run --flavor dev (or prod)
-   3. Note this ties up terminal and you need to cntrl-c to step
+   3. Note this ties up terminal and you need to cntrl-c to stop 
    
 
 

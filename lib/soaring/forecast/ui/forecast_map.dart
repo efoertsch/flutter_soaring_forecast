@@ -17,7 +17,6 @@ import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/LatLngFo
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image_set.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/util/animated_map_controller.dart';
 import 'package:flutter_soaring_forecast/soaring/graphics/data/forecast_graph_data.dart';
-import 'package:flutter_soaring_forecast/soaring/repository/options/special_use_airspace.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/regions.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoint_utils.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_overhead_view.dart';
@@ -48,7 +47,7 @@ class ForecastMapState extends State<ForecastMap>
   bool _firstLayoutComplete = false;
   LatLng? _mapCenter;
   SoaringForecastImageSet? soaringForecastImageSet;
-  final List<Turnpoint> _turnpoints =[];
+  final List<Turnpoint> _turnpoints = [];
   final List<Polyline> _taskTurnpointCourse = <Polyline>[];
   final List<Marker> _mapMarkers = <Marker>[];
   final List<Marker> _soundingMarkers = <Marker>[];
@@ -86,8 +85,6 @@ class ForecastMapState extends State<ForecastMap>
   VectorTileIndex vectorTileIndex = VectorTileIndex();
   String? suaSelected;
 
-
-
   @override
   void initState() {
     super.initState();
@@ -105,15 +102,14 @@ class ForecastMapState extends State<ForecastMap>
     // _printMapBounds("MapEvent  ${mapEvent} : bounds from _mapController",
     //     _mapController.bounds!);
     _mapZoom = mapEvent.zoom;
-    debugPrint("MapEvent: ${mapEvent.source.name}  Zoom : ${_mapZoom}");
-    if ((_mapZoom - _previousZoom).abs() > .25){
+    //debugPrint("MapEvent: ${mapEvent.source.name}  Zoom : ${_mapZoom}");
+    if ((_mapZoom - _previousZoom).abs() > .25) {
       _previousZoom = _mapZoom;
       setState(() {
         _updateTurnpointMarkers(_turnpoints);
         _rebuildMarkerArray();
       });
     }
-
   }
 
   void _printMapBounds(String msg, LatLngBounds latLngBounds) {
@@ -201,7 +197,7 @@ class ForecastMapState extends State<ForecastMap>
         _updateTurnpointMarkers(state.turnpoints);
         // save for when zooming map and want to resize icons;
         _turnpoints.clear();
-        _turnpoints.addAll( state.turnpoints);
+        _turnpoints.addAll(state.turnpoints);
         _updateTurnpointMarkers(state.turnpoints);
         return;
       }
@@ -257,14 +253,15 @@ class ForecastMapState extends State<ForecastMap>
               key: null,
               overlayImages: _overlayImages,
             ),
-            PolygonLayer(polygons: _suaPolygons),
+
+            //PolygonLayer(polygons: _suaPolygons),
+            _getGeoJsonWidget(),
             PolylineLayer(
               polylines: _taskTurnpointCourse,
             ),
             MarkerLayer(
               markers: _mapMarkers,
             ),
-            _getGeoJsonWidget(),
           ]);
     });
   }
@@ -376,8 +373,8 @@ class ForecastMapState extends State<ForecastMap>
     );
   }
 
-  void _displayLocalForecastGraph (
-      BuildContext context, LocalForecastInputData inputParms) async{
+  void _displayLocalForecastGraph(
+      BuildContext context, LocalForecastInputData inputParms) async {
     var result = await Navigator.pushNamed(
       context,
       LocalForecastGraphRouteBuilder.routeName,
@@ -435,8 +432,8 @@ class ForecastMapState extends State<ForecastMap>
         _getLocalForecast(
             latLng:
                 LatLng(taskTurnpoint.latitudeDeg, taskTurnpoint.longitudeDeg),
-            turnpointName: taskTurnpoint.title ,
-            turnpointCode: taskTurnpoint.code );
+            turnpointName: taskTurnpoint.title,
+            turnpointCode: taskTurnpoint.code);
       },
       child: Container(
           color: Colors.white,
@@ -483,8 +480,12 @@ class ForecastMapState extends State<ForecastMap>
     _rebuildMarkerArray();
   }
 
-  double getMarkerSize(){
-    return (_mapZoom < 8.0) ? 12 :(_mapZoom < 9.0) ? 24 : 48 ;
+  double getMarkerSize() {
+    return (_mapZoom < 8.0)
+        ? 12
+        : (_mapZoom < 9.0)
+            ? 24
+            : 48;
   }
 
   Widget _getTurnpointMarker(final Turnpoint turnpoint) {
@@ -495,7 +496,7 @@ class ForecastMapState extends State<ForecastMap>
       onLongPress: () {
         _getLocalForecast(
             latLng: LatLng(turnpoint.latitudeDeg, turnpoint.longitudeDeg),
-            turnpointName:  turnpoint.title,
+            turnpointName: turnpoint.title,
             turnpointCode: turnpoint.code);
       },
       child: ClipOval(
@@ -525,9 +526,10 @@ class ForecastMapState extends State<ForecastMap>
     );
   }
 
-  TextStyle getMarkerTextStyle(){
-    return (_mapZoom < 9.5) ? textStyleBlackFontSize12 :
-      textStyleBlackFontSize18 ;
+  TextStyle getMarkerTextStyle() {
+    return (_mapZoom < 9.5)
+        ? textStyleBlackFontSize12
+        : textStyleBlackFontSize18;
   }
 
   void _placeSoundingMarkers(final List<Soundings> soundings) {
@@ -678,7 +680,10 @@ class ForecastMapState extends State<ForecastMap>
     }
   }
 
-  _getLocalForecast({required LatLng latLng, String? turnpointName = null, String? turnpointCode}) {
+  _getLocalForecast(
+      {required LatLng latLng,
+      String? turnpointName = null,
+      String? turnpointCode}) {
     widget.stopAnimation();
     // debugPrint('Local forecast requested at : ${latLng.latitude.toString()}  :'
     //     '  ${latLng.longitude.toString()}');
@@ -734,12 +739,12 @@ class ForecastMapState extends State<ForecastMap>
 
   void _updateGeoJsonSuaDetails(String suaDetails) async {
     _suaPolygons.clear();
-      final suaColors = SUAColor.values;
-      geoJsonIndex = await geoJSON.createIndex(suaDetails,
-          tileSize: tileSize,
-          keepSource: true,
-          buffer: 32,
-          sourceIsGeoJson: true);
+    final suaColors = SUAColor.values;
+    geoJsonIndex = await geoJSON.createIndex(suaDetails,
+        tileSize: tileSize,
+        keepSource: true,
+        buffer: 32,
+        sourceIsGeoJson: true);
   }
 
   Widget _getGeoJsonWidget() {
