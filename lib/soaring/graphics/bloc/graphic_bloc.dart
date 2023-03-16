@@ -161,7 +161,8 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
     //   });
     // });
     emit(GraphDataState(forecastData: forecastGraphData));
-    debugPrint("Emitted GraphDataState: ${forecastGraphData.model} / ${forecastGraphData.date}");
+    debugPrint(
+        "Emitted GraphDataState: ${forecastGraphData.model} / ${forecastGraphData.date}");
   }
 
   // Compose space separated list of forecast parameters for sending to RASP api
@@ -171,9 +172,11 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
         _thermalParmList.join("@") +
         "@" +
         _windParmList.join("@");
-    if (_forecastTimes!.first.contains("old ")){
+    if (_forecastTimes!.first.contains("old ")) {
       List<String> strippedTimes = [];
-      _forecastTimes!.forEach((element) {strippedTimes.add(element.replaceFirst('old ', ''));});
+      _forecastTimes!.forEach((element) {
+        strippedTimes.add(element.replaceFirst('old ', ''));
+      });
       _forecastTimes = strippedTimes;
     }
     _forecastTimesParams = _forecastTimes!.join("@");
@@ -197,10 +200,12 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
       var col = hours.indexOf(element["time"] as String);
       var row = descriptions.indexWhere(
           (forecast) => forecast.forecastName == element["code"] as String);
-      var value =  element["value"] ?? 0.0 ;
-       debugPrint(" row: $row  col: $col   value ${value.toString()}" );
+      var value = element["value"] ?? 0.0;
+      // debugPrint(" row: $row  col: $col   value ${value.toString()}" );
       // if value = 0, then get int not double so need to cast
-      dataGrid[row][col] = (value is int ) ? value.toString() : (value as double).toStringAsFixed(0);
+      dataGrid[row][col] = (value is int)
+          ? value.toString()
+          : (value as double).toStringAsFixed(0);
     });
     return dataGrid;
   }
@@ -582,9 +587,13 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
     emit(GraphModelDatesState(_forecastDates!, _selectedForecastDate!));
   }
 
-  FutureOr<void> _setLocationAsFavorite(SetLocationAsFavoriteEvent event, Emitter<GraphState> emit) {
-    var localForecastFavorite = LocalForecastFavorite(turnpointName: _turnpointName,
-        turnpointCode: _turnpointCode, lat: _lat, lng: _lng);
+  FutureOr<void> _setLocationAsFavorite(
+      SetLocationAsFavoriteEvent event, Emitter<GraphState> emit) {
+    var localForecastFavorite = LocalForecastFavorite(
+        turnpointName: _turnpointName,
+        turnpointCode: _turnpointCode,
+        lat: _lat,
+        lng: _lng);
     repository.storeLocalForecastFavorite(localForecastFavorite);
   }
 }

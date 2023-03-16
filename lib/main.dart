@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -44,6 +46,8 @@ import 'package:flutter_soaring_forecast/soaring/wxbrief/ui/wxbrief_auth_screen.
 import 'package:flutter_soaring_forecast/soaring/wxbrief/ui/wxbrief_request_screen.dart';
 import 'package:workmanager/workmanager.dart';
 
+import 'firebase_options.dart';
+
 // https://github.com/fluttercommunity/flutter_workmanager#customisation-android-only
 @pragma(
     'vm:entry-point') // Mandatory if the App is obfuscated or using Flutter 3.1+
@@ -71,6 +75,20 @@ void main() async {
   if (kReleaseMode) {
     debugPrint = (String? message, {int? wrapWidth}) {};
   }
+
+  //https://firebase.google.com/docs/crashlytics/get-started?platform=flutter
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  FlutterError.onError = (errorDetails) {
+    FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
+  };
+  // Pass all uncaught asynchronous errors that aren't handled by the Flutter framework to Crashlytics
+  PlatformDispatcher.instance.onError = (error, stack) {
+    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    return true;
+  };
 
   // Since iOS less definitive on when background task will run, just have user kick it off when requested.
   if (Platform.isAndroid) {
@@ -261,7 +279,7 @@ class SoaringForecastApp extends StatelessWidget {
 
           if (settings.name == AirportsSearchRouteBuilder.routeName) {
             String? option = null;
-            if (settings.arguments != null){
+            if (settings.arguments != null) {
               option = settings.arguments as String;
             }
             return CustomMaterialPageRoute(

@@ -81,9 +81,11 @@ const String turnpointsDisplayOption = "TurnpointsDisplayOption";
 final List<PreferenceOption> RaspDisplayOptions = [
   PreferenceOption(
       key: soundingsDisplayOption,
-      displayText: RaspDisplayOptionsMenu.soundings),
+      displayText: RaspDisplayOptionsMenu.soundings ,
+      selected: true),
   PreferenceOption(
-      key: suaDisplayOption, displayText: RaspDisplayOptionsMenu.sua),
+      key: suaDisplayOption, displayText: RaspDisplayOptionsMenu.sua,
+      selected:true),
   PreferenceOption(
       key: turnpointsDisplayOption,
       displayText: RaspDisplayOptionsMenu.turnpoints)
