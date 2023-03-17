@@ -89,9 +89,10 @@ class _SettingsScreenState extends State<SettingsScreen>
         return SwitchListTile(
             title: Text(option.title),
             value: currentValue,
-            onChanged: (value) {
+            onChanged: (bool value) {
               setState(() {
                 currentValue = value;
+                option.savedValue = value;
                 _sendEvent(SettingsSetBoolEvent(option.key, value));
               });
             },

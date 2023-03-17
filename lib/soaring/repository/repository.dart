@@ -79,7 +79,7 @@ class Repository {
   static const String WXBRIEF_AIRPORT_ID = "WXBRIEF_AIRPORT_ID";
   static const String VIEW_MAP_BOUNDS = "VIEW_MAP_BOUNDS";
   static const String BEGINNER_FORECAST_MODE = "BEGINNER_FORECAST_MODE";
-  static const String LOCAL_FORECAST_FAVORITE = "INITIAL_FORECAST_HOUR";
+  static const String LOCAL_FORECAST_FAVORITE = "LOCAL_FORECAST_FAVORITE";
 
   late final String satelliteRegionUS;
   late final String satelliteTypeVis;
@@ -1212,8 +1212,7 @@ class Repository {
           }
           if (option.dataType == "String") {
             String savedValue = await getGenericString(
-                key: option.key,
-                defaultValue: option.optionDefault);
+                key: option.key, defaultValue: option.optionDefault);
             option.savedValue = savedValue;
           }
         });
