@@ -23,7 +23,7 @@ class Group {
   factory Group.fromJson(Map<String, dynamic> json) => Group(
         title: json["title"] == null ? null : json["title"],
         options: json["options"] == null
-            ? null
+            ? <Option>[]
             : List<Option>.from(json["options"].map((x) => Option.fromJson(x))),
       );
 
@@ -59,7 +59,8 @@ class Option {
         description: json["description"] == null ? null : json["description"],
         optionDefault: json["default"] == null ? null : json["default"],
         dataType: json["data_type"] == null ? "bool" : json["data_type"],
-        possibleValues: json["possible_values"] == null ? null: json["possible_values"],
+        possibleValues:
+            json["possible_values"] == null ? [] : json["possible_values"],
       );
 
   Map<String, dynamic> toJson() => {
