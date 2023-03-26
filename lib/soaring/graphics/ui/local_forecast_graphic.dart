@@ -94,9 +94,8 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
     }
   }
 
-
   SafeArea _buildSafeArea(BuildContext context) {
-     _screenWidth = MediaQuery.of(context).size.width;
+    _screenWidth = MediaQuery.of(context).size.width;
     return SafeArea(
       child: Scaffold(
         appBar: getAppBar(context),
@@ -122,22 +121,23 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
           onPressed: () {
             _showGraphDataTable();
           }),
-    PopupMenuButton<String>(
-    onSelected: handleClick,
-    icon: Icon(Icons.more_vert),
-    itemBuilder: (BuildContext context) {
-      return {
-        _beginnerMode ? StandardLiterals.expertMode : StandardLiterals
-            .beginnerMode,
-        GraphLiterals.SET_AS_FAVORITE
-      }.map((String choice) {
-        return PopupMenuItem<String>(
-          value: choice,
-          child: Text(choice),
-        );
-      }).toList();
-    },
-    )
+      PopupMenuButton<String>(
+        onSelected: handleClick,
+        icon: Icon(Icons.more_vert),
+        itemBuilder: (BuildContext context) {
+          return {
+            _beginnerMode
+                ? StandardLiterals.expertMode
+                : StandardLiterals.beginnerMode,
+            GraphLiterals.SET_AS_FAVORITE
+          }.map((String choice) {
+            return PopupMenuItem<String>(
+              value: choice,
+              child: Text(choice),
+            );
+          }).toList();
+        },
+      )
     ];
   }
 
@@ -145,7 +145,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
     switch (value) {
       case StandardLiterals.expertMode:
       case StandardLiterals.beginnerMode:
-      // toggle flag
+        // toggle flag
         setState(() {
           _beginnerMode = !_beginnerMode;
           _sendEvent(BeginnerModeEvent(_beginnerMode));
@@ -188,7 +188,8 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
       if (state is GraphDataState) {
         var text;
         if (state.forecastData.turnpointTitle != null) {
-          text = ("${state.forecastData.turnpointTitle} (${state.forecastData.turnpointCode}) ");
+          text =
+              ("${state.forecastData.turnpointTitle} (${state.forecastData.turnpointCode}) ");
         } else if (state.forecastData.lat != null &&
             state.forecastData.lng != null) {
           text = state.forecastData.lat!.toStringAsFixed(5) +
@@ -223,7 +224,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
         }
         if (state is BeginnerForecastDateModelState) {
           _selectedForecastDate = state.date;
-          _selectedForecastDOW =  reformatDateToDOW(_selectedForecastDate)?? '';
+          _selectedForecastDOW = reformatDateToDOW(_selectedForecastDate) ?? '';
           _selectedModelName = state.model;
         }
         if (state is GraphModelsState) {
@@ -234,9 +235,9 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
         if (state is GraphModelDatesState) {
           _forecastDates = state.forecastDates;
           _selectedForecastDate = state.selectedForecastDate;
-           _shortDOWs = reformatDatesToDOW(state.forecastDates);
-           _selectedForecastDOW =
-          _shortDOWs[state.forecastDates.indexOf(state.selectedForecastDate)];
+          _shortDOWs = reformatDatesToDOW(state.forecastDates);
+          _selectedForecastDOW = _shortDOWs[
+              state.forecastDates.indexOf(state.selectedForecastDate)];
         }
       },
       buildWhen: (previous, current) {
@@ -255,7 +256,6 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
     );
   }
 
-
   Widget _getBeginnerForecast() {
     return BeginnerForecast(
         context: context,
@@ -267,8 +267,8 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
           _sendEvent(ForecastDateSwitchEvent(ForecastDateChange.next));
           setState(() {});
         }),
-        displayText: "(${_selectedModelName.toUpperCase()}) $_selectedForecastDOW "
-    );
+        displayText:
+            "(${_selectedModelName.toUpperCase()}) $_selectedForecastDOW ");
   }
 
   Widget _getForecastModelsAndDates() {
@@ -281,7 +281,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
           child: ModelDropDownList(
             selectedModelName: _selectedModelName,
             modelNames: _modelNames,
-            onModelChange: (String value){
+            onModelChange: (String value) {
               _sendEvent(SelectedModelEvent(value));
             },
           ),
@@ -293,9 +293,9 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
               child: ForecastDatesDropDown(
                 selectedForecastDate: _selectedForecastDOW,
                 forecastDates: _shortDOWs,
-                onForecastDateChange: (String value){
+                onForecastDateChange: (String value) {
                   final selectedForecastDate =
-                  _forecastDates[_shortDOWs.indexOf(value)];
+                      _forecastDates[_shortDOWs.indexOf(value)];
                   _sendEvent(SelectedForecastDateEvent(selectedForecastDate));
                 },
               ),
@@ -304,6 +304,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
     );
   }
 
+  //TODO - Expanded should be under Column, Row, or Flex.
   Widget _getGraphWidgets() {
     return Expanded(
       child: SingleChildScrollView(
@@ -337,7 +338,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
       return current is GraphDataState;
     }, builder: (context, state) {
       if (state is GraphDataState) {
-      //  debugPrint("Plotting GraphDataState: ${state.forecastData.model} / ${state.forecastData.date}");
+        //  debugPrint("Plotting GraphDataState: ${state.forecastData.model} / ${state.forecastData.date}");
         return Container(
           key: ValueKey<Object>(_graphKey),
           margin: const EdgeInsets.only(top: 8),
@@ -697,8 +698,10 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
   }
 
   Future<bool> _onWillPop() async {
-    Navigator.pop(context,LocalForecastOutputData(model:_selectedModelName, date:_selectedForecastDate)) ;
+    Navigator.pop(
+        context,
+        LocalForecastOutputData(
+            model: _selectedModelName, date: _selectedForecastDate));
     return true;
   }
-
 }
