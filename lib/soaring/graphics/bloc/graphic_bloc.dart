@@ -22,6 +22,8 @@ import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
   final Repository repository;
 
+  static const UNKNOWN = "Unknown";
+
   // Note there is special logic to prune off some of the forecast values as
   // they don't get used in graph
   static const _altitudeParmList = [
@@ -172,13 +174,6 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
         _thermalParmList.join("@") +
         "@" +
         _windParmList.join("@");
-    if (_forecastTimes!.first.contains("old ")) {
-      List<String> strippedTimes = [];
-      _forecastTimes!.forEach((element) {
-        strippedTimes.add(element.replaceFirst('old ', ''));
-      });
-      _forecastTimes = strippedTimes;
-    }
     _forecastTimesParams = _forecastTimes!.join("@");
   }
 
@@ -203,9 +198,15 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
       var value = element["value"] ?? 0.0;
       // debugPrint(" row: $row  col: $col   value ${value.toString()}" );
       // if value = 0, then get int not double so need to cast
-      dataGrid[row][col] = (value is int)
-          ? value.toString()
-          : (value as double).toStringAsFixed(0);
+      try {
+        dataGrid[row][col] = (value is int)
+            ? value.toString()
+            : (value as double).toStringAsFixed(0);
+      } catch (e, strackTrace) {
+        print(' element: $element row: $row   col: $col  value: $value');
+        print(e.toString());
+        print(strackTrace.toString());
+      }
     });
     return dataGrid;
   }
@@ -443,7 +444,17 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
         .firstWhere((modelDateDetails) =>
             modelDateDetails.date == _selectedForecastDate)
         .model;
-    _forecastTimes = modelDateDetail!.times;
+    _forecastTimes = stripOldFromTimes(modelDateDetail!.times);
+  }
+
+  // If RASP in midst of updating forecasts, the times may have 'old ' prepended to them
+  // but need to strip off before making api call.
+  List<String> stripOldFromTimes(List<String> times) {
+    var strippedTimes = <String>[];
+    times.forEach((time) {
+      strippedTimes.add(time.replaceFirst('old ', ''));
+    });
+    return strippedTimes;
   }
 
 // A new date has been selected, so get the times for that date
@@ -452,7 +463,7 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
         .getModelDateDetailList()
         .firstWhere((modelDateDetails) =>
             modelDateDetails.date == _selectedForecastDate);
-    _forecastTimes = modelDateDetail.model!.times;
+    _forecastTimes = stripOldFromTimes(modelDateDetail.model!.times);
   }
 
   //
@@ -495,7 +506,7 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
       if (modelDateDetails != null) {
         // okay the 'best' model for that date has been found
         // get the times available for that model
-        _forecastTimes = modelDateDetails.model!.times;
+        _forecastTimes = stripOldFromTimes(modelDateDetails.model!.times);
         break;
       }
     }
@@ -533,8 +544,13 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
       }
     }
     _getBeginnerModeDateDetails();
-    _selectedModelName =
-        _beginnerModeModelDataDetails?.model?.name ?? "Unknown";
+    _selectedModelName = _beginnerModeModelDataDetails?.model?.name ?? UNKNOWN;
+    if (_selectedModelName == UNKNOWN) {
+      emit(GraphErrorState(
+          "Hmmm. It seems like RASP is missing forecast models names (GFS, NAM, etc.). Please check RASP website"));
+      emit(GraphWorkingState(working: false));
+      return;
+    }
 
     // we need to keep values in sync for 'expert' mode if user switches to that mode
     _getDatesForSelectedModel();
