@@ -14,6 +14,7 @@ enum SeeYouFormat {
   WITH_WIDTH_AND_DESCRIPTION,
   NO_WIDTH_OR_DESCRIPTION,
   NO_WIDTH_WITH_DESCRIPTION,
+  WITH_USERDATA_AND_PICS,
   NOT_DEFINED
 }
 
@@ -89,6 +90,23 @@ class TurnpointUtils {
     "Description"
   ];
 
+  static const WITH_USERDATA_AND_PICS = [
+    "name",
+    "code",
+    "country",
+    "lat",
+    "lon",
+    "elev",
+    "style",
+    "rwdir",
+    "rwlen",
+    "rwwidth",
+    "freq",
+    "desc",
+    "userdata",
+    "pics"
+  ];
+
   static String getAllColumnHeaders() {
     StringBuffer sb = StringBuffer();
     WITH_WIDTH_AND_DESCRIPTION_LABELS.forEach((element) {
@@ -117,9 +135,12 @@ class TurnpointUtils {
       ///Following depends on file format
       switch (seeYouFormat) {
         case SeeYouFormat.WITH_WIDTH_AND_DESCRIPTION:
+          // this case we ignore userdata and pics
+        case SeeYouFormat.WITH_USERDATA_AND_PICS:
+          turnpoint.runwayWidth = turnpointDetail[9].toString();
           turnpoint.frequency = turnpointDetail[10].toString();
           turnpoint.description = turnpointDetail[11].toString();
-          turnpoint.runwayWidth = turnpointDetail[9].toString();
+
           break;
         case SeeYouFormat.NO_WIDTH_OR_DESCRIPTION:
           turnpoint.frequency = turnpointDetail[9].toString();
@@ -250,6 +271,9 @@ class TurnpointUtils {
     }
     if (eq(firstLineOfTurnpoints, NO_WIDTH_WITH_DESCRIPTION_LABELS)) {
       return SeeYouFormat.NO_WIDTH_WITH_DESCRIPTION;
+    }
+    if (eq(firstLineOfTurnpoints, WITH_USERDATA_AND_PICS)) {
+      return SeeYouFormat.WITH_USERDATA_AND_PICS;
     }
     return SeeYouFormat.NOT_DEFINED;
   }

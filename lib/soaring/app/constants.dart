@@ -245,6 +245,8 @@ class TurnpointMenu {
   static const String clearTurnpointDatabase = 'Clear Turnpoint Database';
   static const String customImport = 'Custom Import';
   static const String turnpoints = "Turnpoints";
+  static const String turnpoint = "Turnpoint";
+  static const String turnpointImport = "Turnpoint Import";
 }
 
 class TurnpointEditMenu {
@@ -259,7 +261,7 @@ class TurnpointEditMenu {
 
 class TurnpointEditText {
   static const String viewTurnpoint = "View Turnpoint";
-  static const String editTurnpoint = "Edit Turnppint";
+  static const String editTurnpoint = "Edit Turnpoint";
   static const String waypointName = 'Waypoint Name';
   static const String waypointCode = 'Waypoint Code';
   static const String countryCode = 'Country Code';

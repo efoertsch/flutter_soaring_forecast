@@ -12,8 +12,7 @@ import 'package:path/path.dart' hide context;
 
 import '../../app/constants.dart';
 
-//TODO implement once you can get to Downloads directory and/or implement equivalent logic
-// (current libraries don't support read/write access to download directory
+
 class CustomSeeYouImportScreen extends StatefulWidget {
   CustomSeeYouImportScreen({Key? key}) : super(key: key);
 
@@ -36,7 +35,7 @@ class _CustomSeeYouImportScreenState extends State<CustomSeeYouImportScreen>
       return ConditionalWillPopScope(
         onWillPop: _onWillPop,
         shouldAddCallback: true,
-        child: _buildScaffold(context),
+        child: _buildSafeArea(),
       );
     } else {
       //iOS
@@ -46,27 +45,37 @@ class _CustomSeeYouImportScreenState extends State<CustomSeeYouImportScreen>
             _onWillPop();
           }
         },
-        child: _buildScaffold(context),
+        child: _buildSafeArea(),
       );
     }
   }
 
-  Widget _buildScaffold(BuildContext context) {
-    return Scaffold(
-        appBar: AppBar(
-            leading: CommonWidgets.backArrowToHomeScreen(),
-            title: Text('Turnpoint Import'),
-            actions: getTurnpointMenu()),
-        body: BlocConsumer<TurnpointBloc, TurnpointState>(
+  Widget _buildSafeArea() {
+    return SafeArea(
+      child: Scaffold(
+          appBar: _getAppBar(),
+          body: _getBody()),
+    );
+  }
+
+  AppBar _getAppBar() {
+    return AppBar(
+        leading: BackButton(onPressed: _onWillPop,),
+        title: Text(TurnpointMenu.turnpointImport),
+        actions: getTurnpointMenu());
+  }
+
+  BlocConsumer<TurnpointBloc, TurnpointState> _getBody() {
+    return BlocConsumer<TurnpointBloc, TurnpointState>(
           listener: (context, state) {
             //TODO handle error msg
             if (state is TurnpointShortMessageState) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  backgroundColor: Colors.green,
-                  content: Text(state.shortMsg),
-                ),
-              );
+              CommonWidgets.showInfoDialog(
+                  context: context,
+                  title: TurnpointMenu.turnpoints,
+                  msg: state.shortMsg,
+                  button1Text: StandardLiterals.OK,
+                  button1Function: (() => Navigator.pop(context)));
             }
           },
           buildWhen: (previous, current) {
@@ -101,10 +110,6 @@ class _CustomSeeYouImportScreenState extends State<CustomSeeYouImportScreen>
                           final fileName =
                               basename(state.customTurnpointFiles[index].path);
                           return ListTile(
-                            onTap: () {
-                              _sendEvent(LoadCustomTurnpointFileEvent(
-                                  state.customTurnpointFiles[index]));
-                            },
                             dense: true,
                             contentPadding:
                                 EdgeInsets.symmetric(horizontal: 8.0),
@@ -152,7 +157,7 @@ class _CustomSeeYouImportScreenState extends State<CustomSeeYouImportScreen>
               child: Text('Hmmm. Undefined state.'),
             );
           },
-        ));
+        );
   }
 
   List<Widget> getTurnpointMenu() {
@@ -198,7 +203,7 @@ class _CustomSeeYouImportScreenState extends State<CustomSeeYouImportScreen>
   // as it get immediately executed.
   _sendDeleteTurnpointsEvent() {
     Navigator.of(context, rootNavigator: true).pop();
-    _sendEvent(DeleteAllTurnpointsEvent());
+    _sendEvent(DeleteAllTurnpointsEvent(refreshList: false));
   }
 
   void _sendEvent(TurnpointEvent event) {
@@ -206,7 +211,7 @@ class _CustomSeeYouImportScreenState extends State<CustomSeeYouImportScreen>
   }
 
   Future<bool> _onWillPop() async {
-    Navigator.of(context).pop();
+    Navigator.pop(context);
     return true;
   }
 }

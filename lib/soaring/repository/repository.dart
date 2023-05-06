@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:csv/csv.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:floor/floor.dart';
 import 'package:flutter/foundation.dart';
@@ -369,7 +370,7 @@ class Repository {
   // Need to make default value match to that in settings.json
   Future<String> getDefaultForecastTime() async {
     await getSettingOptionsFromAssets();
-    return getGenericString(key: 'INITIAL_FORECAST_HOUR', defaultValue: '1100');
+    return getGenericString(key: 'INITIAL_FORECAST_HOUR', defaultValue: '1300');
   }
 
   //--------  Floor -----------------------------------------------------------------------
@@ -1183,9 +1184,18 @@ class Repository {
   Future<Directory?> getDownloadDirectory() async {
     Directory? directory = null;
     if (Platform.isAndroid) {
-      directory = Directory('/storage/emulated/0/Download');
-      if (!await directory.exists()) {
-        directory = await getExternalStorageDirectory();
+      final DeviceInfoPlugin deviceInfoPlugin = DeviceInfoPlugin();
+      final AndroidDeviceInfo info = await deviceInfoPlugin.androidInfo;
+      if ((info.version.sdkInt) >= 30) {
+        directory = await getExternalStorageDirectory() ;
+        debugPrint("ExternalStorageDirectory: ${directory?.absolute}");
+      }
+      else {
+        directory = Directory('/storage/emulated/0/Download');
+        if (!await directory.exists()) {
+          directory = await getExternalStorageDirectory();
+        }
+
       }
     } else {
       //iOS

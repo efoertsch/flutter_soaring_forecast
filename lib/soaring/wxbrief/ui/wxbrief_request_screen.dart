@@ -19,6 +19,7 @@ import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
         WxBriefTypeOfBrief;
 import 'package:flutter_soaring_forecast/soaring/app/custom_styles.dart';
 import 'package:flutter_soaring_forecast/soaring/app/upper_case_text_formatter.dart';
+import 'package:flutter_soaring_forecast/soaring/fileutils/file_utils.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/airport/airport.dart';
 import 'package:flutter_soaring_forecast/soaring/wxbrief/bloc/wxbrief_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/wxbrief/bloc/wxbrief_event.dart';
@@ -889,24 +890,17 @@ class _WxBriefRequestScreenState extends State<WxBriefRequestScreen>
   }
 
   void _checkStoragePermission() async {
-    var status = await Permission.storage.status;
-    if (status.isDenied) {
-      // We didn't ask for permission yet or the permission has been denied before but not permanently.
-      if (await Permission.storage.request().isGranted) {
-        // Fire event to export turnpoints
-        _submit();
-      }
-    }
-    if (status.isPermanentlyDenied) {
-      // display msg to user they need to go to settings to re-enable
-      openAppSettings();
-    }
-    if (status.isGranted) {
-      _submit();
-    }
+    checkFileAccess(
+        permissionGrantedFunction: _submit,
+        requestPermissionFunction: _openAppSettingsFunction,
+        permissionDeniedFunction: _openAppSettingsFunction);
   }
 
-  void _submit() async {
+  Future<void> _openAppSettingsFunction() async {
+    await openAppSettings();
+  }
+
+  void _submit()  {
     _sendEvent(WxBriefSubmitEvent());
   }
 

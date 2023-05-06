@@ -1,6 +1,9 @@
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
-import 'package:pdfx/pdfx.dart';
+import 'package:syncfusion_flutter_pdf/pdf.dart';
+import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 
 // https://pub.dev/packages/native_pdf_view/example
 class PdfViewScreen extends StatefulWidget {
@@ -13,81 +16,147 @@ class PdfViewScreen extends StatefulWidget {
 }
 
 class _PdfViewScreenState extends State<PdfViewScreen> {
-  static const int _initialPage = 1;
-  int _actualPageNumber = _initialPage, _allPagesCount = 0;
-  late PdfControllerPinch _pdfController;
+  late PdfViewerController _pdfViewerController;
+  late PdfTextSearchResult _searchResult;
+
+  bool _searchBoolean = false;
 
   @override
   void initState() {
-    _pdfController = PdfControllerPinch(
-      document: PdfDocument.openFile(widget.fileName),
-      initialPage: _initialPage,
-    );
+    _pdfViewerController = PdfViewerController();
+    _searchResult = PdfTextSearchResult();
     super.initState();
   }
 
   @override
   void dispose() {
-    _pdfController.dispose();
+    //_pdfController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: _getAppBar(),
-      body: _getBody(),
+    return SafeArea(
+      child: Scaffold(
+        appBar: _getAppBar(),
+        body: _getBody(),
+      ),
     );
   }
 
+  // using exmaple from https://enoiu.com/en/app-develop/flutter-search-function/#
+  // for search
   AppBar _getAppBar() {
     return AppBar(
-      title: const Text(WxBriefLiterals.ONE800WXBRIEF),
-      actions: <Widget>[
+      title: !_searchBoolean ? const Text('1800WxBrief') : _searchTextField(),
+       actions: !_searchBoolean ? <Widget>[
         IconButton(
-          icon: const Icon(Icons.navigate_before),
+          icon: const Icon(
+            Icons.search,
+            color: Colors.white,
+          ),
           onPressed: () {
-            _pdfController.previousPage(
-              curve: Curves.ease,
-              duration: const Duration(milliseconds: 100),
-            );
+            setState(() {
+              _searchBoolean = true;
+            });
           },
-        ),
-        Container(
-          alignment: Alignment.center,
-          child: Text(
-            '$_actualPageNumber/$_allPagesCount',
-            style: const TextStyle(fontSize: 22),
+
+        ) ] :[
+        Visibility(
+          visible: _searchResult.hasResult,
+          child: IconButton(
+            icon: const Icon(
+              Icons.clear,
+              color: Colors.white,
+            ),
+            onPressed: () {
+              setState(() {
+                _searchBoolean = false;
+                _searchResult.clear();
+              });
+            },
           ),
         ),
-        IconButton(
-          icon: const Icon(Icons.navigate_next),
-          onPressed: () {
-            _pdfController.nextPage(
-              curve: Curves.ease,
-              duration: const Duration(milliseconds: 100),
-            );
-          },
+        Visibility(
+          visible: _searchResult.hasResult,
+          child: IconButton(
+            icon: const Icon(
+              Icons.keyboard_arrow_up,
+              color: Colors.white,
+            ),
+            onPressed: () {
+              _searchResult.previousInstance();
+            },
+          ),
         ),
-      ],
+        Visibility(
+          visible: _searchResult.hasResult,
+          child: IconButton(
+            icon: const Icon(
+              Icons.keyboard_arrow_down,
+              color: Colors.white,
+            ),
+            onPressed: () {
+              _searchResult.nextInstance();
+            },
+          ),
+        ),
+      ]
     );
   }
 
-  _getBody() {
-    return PdfViewPinch(
-      documentLoader: const Center(child: CircularProgressIndicator()),
-      pageLoader: const Center(child: CircularProgressIndicator()),
-      controller: _pdfController,
-      onDocumentLoaded: (document) {
+  Widget _searchTextField() {
+    //add
+    return TextField(
+      onChanged: (String searchString) {
+        //add
         setState(() {
-          _allPagesCount = document.pagesCount;
+          _searchResult = _pdfViewerController.searchText(searchString,
+              searchOption: TextSearchOption.caseSensitive);
+          if (kIsWeb) {
+            setState(() {});
+          } else {
+            _searchResult.addListener(() {
+              if (_searchResult.hasResult) {
+                setState(() {});
+              }
+            });
+          }
         });
       },
-      onPageChanged: (page) {
-        setState(() {
-          _actualPageNumber = page;
-        });
-      },
+      autofocus: true,
+      //Display the keyboard when TextField is displayed
+      cursorColor: Colors.white,
+      style: TextStyle(
+        color: Colors.white,
+        fontSize: 20,
+      ),
+      textInputAction: TextInputAction.search,
+      //Specify the action button on the keyboard
+      decoration: InputDecoration(
+        //Style of TextField
+        enabledBorder: UnderlineInputBorder(
+            //Default TextField border
+            borderSide: BorderSide(color: Colors.white)),
+        focusedBorder: UnderlineInputBorder(
+            //Borders when a TextField is in focus
+            borderSide: BorderSide(color: Colors.white)),
+        hintText: 'Search', //Text that is displayed when nothing is entered.
+        hintStyle: TextStyle(
+          //Style of hintText
+          color: Colors.white60,
+          fontSize: 20,
+        ),
+      ),
+    );
+  }
+
+  Widget _getBody() {
+    return SfPdfViewer.file(
+      File(widget.fileName),
+      controller: _pdfViewerController,
+      currentSearchTextHighlightColor: Colors.yellow.withOpacity(0.6),
+      otherSearchTextHighlightColor: Colors.yellow.withOpacity(0.3),
     );
   }
 }

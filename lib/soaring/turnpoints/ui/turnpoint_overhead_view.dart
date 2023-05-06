@@ -6,12 +6,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
-    as Constants;
+as Constants;
 import 'package:flutter_soaring_forecast/soaring/app/web_launcher.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoint_utils.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:google_maps_flutter_platform_interface/src/types/marker_updates.dart';
 
 import '../bloc/turnpoint_bloc.dart';
 import '../bloc/turnpoint_event.dart';
@@ -22,10 +23,9 @@ class TurnpointOverHeadArgs {
   bool isReadOnly;
   bool isDecimalDegreesFormat;
 
-  TurnpointOverHeadArgs(
-      {required this.turnpoint,
-      this.isReadOnly = true,
-      this.isDecimalDegreesFormat = true});
+  TurnpointOverHeadArgs({required this.turnpoint,
+    this.isReadOnly = true,
+    this.isDecimalDegreesFormat = true});
 }
 
 class TurnpointOverheadView extends StatefulWidget {
@@ -45,22 +45,21 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
   bool _isDecimalDegreesFormat = true;
   bool _isReadOnly = false;
   bool _draggable = false;
-  late Marker _marker;
+  Set<Marker> _mapMarkers = Set();
   bool _displaySaveResetButtons = false;
   bool _displaySaveButton = false;
   bool _gotLocation = false;
   late final Turnpoint turnpoint;
   late final Turnpoint originalTurnpoint;
-  Key? _mapKey;
-
+  Key? _turnpointInfoKey;
   var _displayCloseButton = false;
+
 
   @override
   initState() {
-    originalTurnpoint = widget.turnpointOverHeadArgs.turnpoint;
+    originalTurnpoint = widget.turnpointOverHeadArgs.turnpoint.clone();
     _isReadOnly = widget.turnpointOverHeadArgs.isReadOnly;
     turnpoint = originalTurnpoint.clone();
-    _mapKey = ObjectKey("");
     _displayCloseButton =
         (Platform.isIOS && _isReadOnly) || turnpoint.latitudeDeg != 0;
     super.initState();
@@ -80,6 +79,8 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
         checkForLocationPermission();
       });
       setState(() {});
+    } else {
+      _updateTurnpointMarker();
     }
   }
 
@@ -124,13 +125,14 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
           _getTurnpointInfoTextWidget(),
           _googleMap(),
           _getButtons(),
+          _getLocationListener(),
         ],
       ),
     );
   }
 
   void _animateCameraToNewPosition() {
-    Future.delayed(Duration(milliseconds: 60), () {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       var newPosition = CameraPosition(
           target: LatLng(
             turnpoint.latitudeDeg,
@@ -146,67 +148,78 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
     return BlocBuilder<TurnpointBloc, TurnpointState>(
       buildWhen: (previous, current) {
         return current is TurnpointsInitialState ||
-            current is TurnpointCupStylesState;
+            current is TurnpointCupStylesState ||
+            current is LatLongElevationState;
       },
       builder: (context, state) {
-        if (state is TurnpointCupStylesState) {
-          return Text(
-              TurnpointUtils.getFormattedTurnpointDetails(
-                  turnpoint, _isDecimalDegreesFormat),
-              key: _mapKey,
-              textAlign: TextAlign.start);
-        } else
-          return SizedBox.shrink();
-      },
-    );
-  }
-
-  Widget _googleMap() {
-    return BlocListener<TurnpointBloc, TurnpointState>(
-      listener: (context, state) {
-        if (state is TurnpointsInitialState) {}
-        if (state is CurrentLocationState) {
-          turnpoint.latitudeDeg = state.latitude;
-          turnpoint.longitudeDeg = state.longitude;
-          if (originalTurnpoint.latitudeDeg == 0) {
-            originalTurnpoint.latitudeDeg = state.latitude;
-            originalTurnpoint.longitudeDeg = state.longitude;
-            originalTurnpoint.elevation =
-                TurnpointUtils.convertMetersToFeet(state.altitude)
-                        .toStringAsFixed(1) +
-                    Constants.ft;
-            _gotLocation = true;
-            _displayCloseButton = false;
-            _displaySaveButton = true;
-          }
-          print("lat/long ${turnpoint.latitudeDeg} ${turnpoint.longitudeDeg}");
-          if (state.altitude == 0) {
-            findElevationAtLatLong();
-          }
-        }
         if (state is LatLongElevationState) {
           turnpoint.elevation = state.elevation.toStringAsFixed(1) + "ft";
           print("elevation is: ${turnpoint.elevation}");
         }
-        _mapKey = ObjectKey(state);
-        _getTurnpointMarker();
-        // _animateCameraToNewPosition();
-        // delaySetState(200);
+
+          return Text(
+              TurnpointUtils.getFormattedTurnpointDetails(
+                  turnpoint, _isDecimalDegreesFormat),
+              key: _turnpointInfoKey,
+              textAlign: TextAlign.start);
       },
-      child: Flexible(
-        child: GoogleMap(
-          myLocationButtonEnabled: !_isReadOnly,
-          onMapCreated: _onMapCreated,
-          mapType: MapType.satellite,
-          initialCameraPosition: CameraPosition(
-            target: LatLng(turnpoint.latitudeDeg, turnpoint.longitudeDeg),
-            zoom: 14.0,
-          ),
-          markers: Set<Marker>.of({_getTurnpointMarker()}),
-        ),
-      ),
     );
-    ;
+  }
+
+  Widget _getLocationListener() {
+    return BlocListener<TurnpointBloc, TurnpointState>(
+      listenWhen: (previous, current){
+        return current is CurrentLocationState ;
+      },
+        listener: (context, state) {
+          if (state is CurrentLocationState) {
+            turnpoint.latitudeDeg = state.latitude;
+            turnpoint.longitudeDeg = state.longitude;
+            turnpoint.elevation =
+                TurnpointUtils.convertMetersToFeet(state.altitude)
+                    .toStringAsFixed(1) +
+                    Constants.ft;
+            if (originalTurnpoint.latitudeDeg == 0) {
+              originalTurnpoint.latitudeDeg = turnpoint.latitudeDeg;
+              originalTurnpoint.longitudeDeg = turnpoint.longitudeDeg;
+              originalTurnpoint.elevation = turnpoint.elevation;
+              _gotLocation = true;
+              _displayCloseButton = false;
+              _displaySaveButton = true;
+            }
+            print(
+                "lat/long ${turnpoint.latitudeDeg} ${turnpoint.longitudeDeg}");
+            if (state.altitude == 0) {
+              findElevationAtLatLong();
+            }
+          }
+          _updateTurnpointMarker();
+          _turnpointInfoKey = ObjectKey(Object());
+          _animateCameraToNewPosition();
+        }, child: SizedBox.shrink(),
+    );
+  }
+
+  Widget _googleMap() {
+    return BlocBuilder<TurnpointBloc, TurnpointState>(
+      buildWhen: (previous, current) {
+        return current is TurnpointsInitialState;
+      },
+      builder: (context, state) {
+        return Flexible(
+          child: GoogleMap(
+            myLocationButtonEnabled: !_isReadOnly,
+            onMapCreated: _onMapCreated,
+            mapType: MapType.satellite,
+            initialCameraPosition: CameraPosition(
+              target: LatLng(turnpoint.latitudeDeg, turnpoint.longitudeDeg),
+              zoom: 14.0,
+            ),
+            markers: _mapMarkers,
+          ),
+        );
+      },
+    );
   }
 
   Widget _getButtons() {
@@ -225,7 +238,10 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
           minimumSize: Size(double.infinity,
               40), // double.infinity is the width and 30 is the height
           foregroundColor: Colors.white,
-          backgroundColor: Theme.of(context).colorScheme.primary,
+          backgroundColor: Theme
+              .of(context)
+              .colorScheme
+              .primary,
         ),
         onPressed: () {
           Navigator.pop(context);
@@ -245,7 +261,10 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
           minimumSize: Size(double.infinity,
               40), // double.infinity is the width and 30 is the height
           foregroundColor: Colors.white,
-          backgroundColor: Theme.of(context).colorScheme.primary,
+          backgroundColor: Theme
+              .of(context)
+              .colorScheme
+              .primary,
         ),
         onPressed: () {
           if (_isReadOnly) {
@@ -288,7 +307,10 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
         minimumSize: Size(double.infinity,
             40), // double.infinity is the width and 30 is the height
         foregroundColor: Colors.white,
-        backgroundColor: Theme.of(context).colorScheme.primary,
+        backgroundColor: Theme
+            .of(context)
+            .colorScheme
+            .primary,
       ),
       onPressed: () {
         Navigator.pop(context, turnpoint);
@@ -305,7 +327,10 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
         minimumSize: Size(double.infinity,
             40), // double.infinity is the width and 30 is the height
         foregroundColor: Colors.white,
-        backgroundColor: Theme.of(context).colorScheme.primary,
+        backgroundColor: Theme
+            .of(context)
+            .colorScheme
+            .primary,
       ),
       onPressed: () {
         setState(() {
@@ -313,14 +338,12 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
           _displayCloseButton =
               (Platform.isIOS && _isReadOnly) || !_gotLocation;
           _displaySaveButton = _gotLocation;
-
           turnpoint.latitudeDeg = originalTurnpoint.latitudeDeg;
           turnpoint.longitudeDeg = originalTurnpoint.longitudeDeg;
           turnpoint.elevation = originalTurnpoint.elevation;
         });
-        _getTurnpointMarker();
+        _updateTurnpointMarker();
         _animateCameraToNewPosition();
-        delaySetState(200);
       },
       child: Text(
         TurnpointEditText.reset,
@@ -328,17 +351,24 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
     );
   }
 
-  Marker _getTurnpointMarker() {
+  void _updateTurnpointMarker() {
     print(
-        "creating marker location: ${turnpoint.latitudeDeg} ${turnpoint.longitudeDeg} ");
-    _marker = Marker(
+        "creating marker location: ${turnpoint.latitudeDeg} ${turnpoint
+            .longitudeDeg} ");
+    final marker = Marker(
       draggable: _draggable,
       //onDrag: _draggable ? _dragListener : null,
       onDragEnd: _draggable ? _markerDragListener : null,
       markerId: MarkerId(turnpoint.code),
       position: LatLng(turnpoint.latitudeDeg, turnpoint.longitudeDeg),
     );
-    return _marker;
+    //
+    _mapMarkers.clear();
+    _mapMarkers.add(marker);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      setState(() {});
+    });
+
   }
 
   List<Widget> _getMenu() {
@@ -371,7 +401,7 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
   //   print("Dragging current lat: ${latLng.latitude} long: ${latLng.longitude}");
   // }
 
-  _markerDragListener(LatLng latLng) {
+ void  _markerDragListener(LatLng latLng) {
     turnpoint.latitudeDeg = latLng.latitude;
     turnpoint.longitudeDeg = latLng.longitude;
     findElevationAtLatLong();
@@ -405,10 +435,10 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
         });
         break;
       case TurnpointEditMenu.dragMarker:
-        //TODO drag marker logic
         setState(() {
           _draggable = !_draggable;
           print("draggable marker: ${_draggable}");
+          _updateTurnpointMarker();
         });
         break;
     }
@@ -419,7 +449,9 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
     var status = await Permission.location.status;
     if (status.isDenied) {
       // We didn't ask for permission yet or the permission has been denied before but not permanently.
-      if (await Permission.location.request().isGranted) {
+      if (await Permission.location
+          .request()
+          .isGranted) {
         // Fire event to get the current location
         getLocation();
       }
@@ -442,14 +474,8 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
         GetElevationAtLatLong(turnpoint.latitudeDeg, turnpoint.longitudeDeg));
   }
 
-  void delaySetState(int delay) {
-    Future.delayed(Duration(milliseconds: delay), () {
-      setState(() {});
-    });
-  }
 
   Future<bool> _onWillPop() async {
-    // TODO check for changes
     if (_displaySaveButton || _displaySaveResetButtons) {
       CommonWidgets.showInfoDialog(
           context: context,

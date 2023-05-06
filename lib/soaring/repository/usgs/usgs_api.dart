@@ -1,5 +1,5 @@
-import 'package:dio/dio.dart';
 import 'package:retrofit/retrofit.dart';
+import 'package:dio/dio.dart' hide Headers;
 
 import 'national_map.dart';
 
@@ -11,7 +11,8 @@ part 'usgs_api.g.dart';
 abstract class UsgsClient {
   factory UsgsClient(Dio dio) = _UsgsClient;
 
-  @GET("https://nationalmap.gov/epqs/pqs.php?output=json")
+  @GET("https://epqs.nationalmap.gov/v1/json?wkid=4326&includeDate=false")
+  @Headers(<String, dynamic>{"accept": "application/json"})
   Future<NationalMap> getElevation(@Query("y") String latitude,
       @Query("x") String longitude, @Query("units") String units);
 }

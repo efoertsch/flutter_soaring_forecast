@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     as Constants;
@@ -131,7 +133,9 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
       DeleteAllTurnpointsEvent event, Emitter<TurnpointState> emit) async {
     try {
       await repository.deleteAllTurnpoints();
-      await _loadAllTurnpoints(emit);
+      if (event.refreshList) {
+        await _loadAllTurnpoints(emit);
+      }
     } catch (e) {
       print(e.toString());
       emit(TurnpointErrorState(e.toString()));
@@ -210,11 +214,13 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
       if (currentLocation.altitude != null && currentLocation.altitude == 0) {
         elevation = await getUSGSElevationAtLocation(
             currentLocation.latitude ?? 0, currentLocation.longitude ?? 0);
+      } else {
+        elevation = currentLocation.altitude;
       }
       print(
           "location: ${currentLocation.latitude} ${currentLocation.longitude}, elevation(m): ${currentLocation.altitude} ");
       emit(CurrentLocationState(currentLocation.latitude ?? 0,
-          currentLocation.longitude ?? 0, elevation));
+          currentLocation.longitude ?? 0, elevation!));
     } catch (e) {
       emit(TurnpointErrorState("Oops. Can't find your location!"));
     }
@@ -238,7 +244,7 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
     final nationalMap =
         await repository.getElevationAtLatLongPoint(latitude, longitude);
     elevation =
-        nationalMap.uSGSElevationPointQueryService!.elevationQuery!.elevation ??
+        nationalMap.value ??
             0.0;
     return elevation;
   }
@@ -298,8 +304,7 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
           TurnpointUtils.getCupFormattedRecord(turnpoint) + Constants.NEW_LINE);
       // Close the IOSink to free system resources.
       sink.close();
-    }
-    ;
+    };
     return turnpointFileName;
   }
 
@@ -311,38 +316,24 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
   Future<File?> _createTurnpointFile(String filename) async {
     File? file = null;
     try {
-      Directory? directory = await _getDownloadDirectory();
+      Directory? directory = await repository.getDownloadDirectory();
       if (directory != null) {
         file = File(directory.absolute.path + '/' + filename);
       }
     } catch (e) {
       print("Exception creating download file: " + e.toString());
+      throw (e);
     }
     return file;
   }
 
-  Future<Directory?> _getDownloadDirectory() async {
-    Directory? directory = null;
-    if (Platform.isAndroid) {
-      directory = Directory('/storage/emulated/0/Download');
-      if (!await directory.exists()) {
-        directory = await getExternalStorageDirectory();
-      }
-    } else {
-      //iOS
-      directory = await getApplicationDocumentsDirectory();
-      if (!directory.existsSync()) {
-        directory.createSync(recursive: true);
-      }
-    }
-    return directory;
-  }
+
 
   FutureOr<List<File>> _getCustomImportFileNames(
       GetCustomImportFileNamesEvent event, Emitter<TurnpointState> emit) async {
     List<File> cupfiles = [];
     try {
-      Directory? directory = await _getDownloadDirectory();
+      Directory? directory = await repository.getDownloadDirectory();
       if (directory != null) {
         directory
             .listSync()
@@ -359,6 +350,7 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
     return cupfiles;
   }
 
+  // import turnpoints from file in Download directory
   FutureOr<void> _importTurnpointsFromFile(
       ImportTurnpointsFromFileEvent event, Emitter<TurnpointState> emit) async {
     try {
@@ -372,4 +364,5 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
       emit(TurnpointErrorState(e.toString()));
     }
   }
+
 }

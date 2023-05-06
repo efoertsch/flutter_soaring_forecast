@@ -34,7 +34,7 @@ class _SeeYouImportScreenState extends State<SeeYouImportScreen>
       return ConditionalWillPopScope(
         onWillPop: _onWillPop,
         shouldAddCallback: true,
-        child: _buildSafeArea(context),
+        child: _buildSafeArea(),
       );
     } else {
       //iOS
@@ -44,12 +44,12 @@ class _SeeYouImportScreenState extends State<SeeYouImportScreen>
             _onWillPop();
           }
         },
-        child: _buildSafeArea(context),
+        child: _buildSafeArea(),
       );
     }
   }
 
-  Widget _buildSafeArea(BuildContext context) {
+  Widget _buildSafeArea() {
     return SafeArea(
       child: Scaffold(appBar: _getAppBar(), body: _getBody()),
     );
@@ -60,7 +60,7 @@ class _SeeYouImportScreenState extends State<SeeYouImportScreen>
         leading: BackButton(
           onPressed: _onWillPop,
         ),
-        title: Text('Turnpoint Import'),
+        title: Text(TurnpointMenu.turnpointImport),
         actions: _getTurnpointMenu());
   }
 
@@ -218,6 +218,7 @@ class _SeeYouImportScreenState extends State<SeeYouImportScreen>
   void _goToCustomSeeYouImport() async {
     await Navigator.pushNamed(
         context, CustomTurnpointFileImportRouteBuilder.routeName);
+    debugPrint("returned from CustomTurnpointFileImport");
   }
 
   _cancel() {
@@ -228,7 +229,7 @@ class _SeeYouImportScreenState extends State<SeeYouImportScreen>
   // as it get immediately executed.
   _sendDeleteTurnpointsEvent() {
     Navigator.of(context, rootNavigator: true).pop();
-    _sendEvent(DeleteAllTurnpointsEvent());
+    _sendEvent(DeleteAllTurnpointsEvent(refreshList: false));
   }
 
   void _sendEvent(TurnpointEvent event) {

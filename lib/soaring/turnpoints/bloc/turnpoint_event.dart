@@ -62,17 +62,9 @@ class LoadTurnpointFileEvent extends TurnpointEvent {
   List<Object?> get props => [turnpointFile];
 }
 
-// For getting list of files from soargbsc.com/soaringforecast/turnpoint_regions.json
-class LoadCustomTurnpointFileEvent extends TurnpointEvent {
-  final File turnpointFile;
-
-  LoadCustomTurnpointFileEvent(this.turnpointFile);
-
-  @override
-  List<Object?> get props => [turnpointFile];
-}
-
 class DeleteAllTurnpointsEvent extends TurnpointEvent {
+  final bool refreshList;
+  DeleteAllTurnpointsEvent({this.refreshList = true});
   @override
   List<Object?> get props => [];
 }
