@@ -8,74 +8,85 @@ part 'national_map.g.dart';
 
 @JsonSerializable()
 class NationalMap {
-  USGSElevationPointQueryService? uSGSElevationPointQueryService;
+  Location? location;
+  int? locationId;
+  double? value;
+  int? rasterId;
+  int? resolution;
 
-  NationalMap({this.uSGSElevationPointQueryService});
+  NationalMap(
+      {this.location,
+        this.locationId,
+        this.value,
+        this.rasterId,
+        this.resolution});
 
   NationalMap.fromJson(Map<String, dynamic> json) {
-    uSGSElevationPointQueryService =
-        json['USGS_Elevation_Point_Query_Service'] != null
-            ? new USGSElevationPointQueryService.fromJson(
-                json['USGS_Elevation_Point_Query_Service'])
-            : null;
-  }
-
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    if (this.uSGSElevationPointQueryService != null) {
-      data['USGS_Elevation_Point_Query_Service'] =
-          this.uSGSElevationPointQueryService!.toJson();
-    }
-    return data;
-  }
-}
-
-@JsonSerializable()
-class USGSElevationPointQueryService {
-  ElevationQuery? elevationQuery;
-
-  USGSElevationPointQueryService({this.elevationQuery});
-
-  USGSElevationPointQueryService.fromJson(Map<String, dynamic> json) {
-    elevationQuery = json['Elevation_Query'] != null
-        ? new ElevationQuery.fromJson(json['Elevation_Query'])
+    location = json['location'] != null
+        ? new Location.fromJson(json['location'])
         : null;
+    locationId = json['locationId'];
+    value = json['value'];
+    rasterId = json['rasterId'];
+    resolution = json['resolution'];
   }
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = new Map<String, dynamic>();
-    if (this.elevationQuery != null) {
-      data['Elevation_Query'] = this.elevationQuery!.toJson();
+    if (this.location != null) {
+      data['location'] = this.location!.toJson();
     }
+    data['locationId'] = this.locationId;
+    data['value'] = this.value;
+    data['rasterId'] = this.rasterId;
+    data['resolution'] = this.resolution;
     return data;
   }
 }
 
 @JsonSerializable()
-class ElevationQuery {
+class Location {
   double? x;
   double? y;
-  String? dataSource;
-  double? elevation;
-  String? units;
+  SpatialReference? spatialReference;
 
-  ElevationQuery({this.x, this.y, this.dataSource, this.elevation, this.units});
+  Location({this.x, this.y, this.spatialReference});
 
-  ElevationQuery.fromJson(Map<String, dynamic> json) {
+  Location.fromJson(Map<String, dynamic> json) {
     x = json['x'];
     y = json['y'];
-    dataSource = json['Data_Source'];
-    elevation = json['Elevation'];
-    units = json['Units'];
+    spatialReference = json['spatialReference'] != null
+        ? new SpatialReference.fromJson(json['spatialReference'])
+        : null;
   }
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = new Map<String, dynamic>();
     data['x'] = this.x;
     data['y'] = this.y;
-    data['Data_Source'] = this.dataSource;
-    data['Elevation'] = this.elevation;
-    data['Units'] = this.units;
+    if (this.spatialReference != null) {
+      data['spatialReference'] = this.spatialReference!.toJson();
+    }
+    return data;
+  }
+}
+
+@JsonSerializable()
+class SpatialReference {
+  int? wkid;
+  int? latestWkid;
+
+  SpatialReference({this.wkid, this.latestWkid});
+
+  SpatialReference.fromJson(Map<String, dynamic> json) {
+    wkid = json['wkid'];
+    latestWkid = json['latestWkid'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['wkid'] = this.wkid;
+    data['latestWkid'] = this.latestWkid;
     return data;
   }
 }

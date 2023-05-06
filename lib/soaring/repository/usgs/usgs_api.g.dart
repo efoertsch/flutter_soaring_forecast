@@ -30,7 +30,8 @@ class _UsgsClient implements UsgsClient {
       r'x': longitude,
       r'units': units,
     };
-    final _headers = <String, dynamic>{};
+    final _headers = <String, dynamic>{r'accept': 'application/json'};
+    _headers.removeWhere((k, v) => v == null);
     final _data = <String, dynamic>{};
     final _result = await _dio
         .fetch<Map<String, dynamic>>(_setStreamType<NationalMap>(Options(
@@ -40,7 +41,7 @@ class _UsgsClient implements UsgsClient {
     )
             .compose(
               _dio.options,
-              'https://nationalmap.gov/epqs/pqs.php?output=json',
+              'https://epqs.nationalmap.gov/v1/json?wkid=4326&includeDate=false',
               queryParameters: queryParameters,
               data: _data,
             )

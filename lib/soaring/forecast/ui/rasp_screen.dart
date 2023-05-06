@@ -17,10 +17,9 @@ import 'package:flutter_soaring_forecast/soaring/forecast/util/rasp_utils.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/widgets/model_date_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast_types/ui/common_forecast_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast_types/ui/forecast_list.dart';
-import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
 import 'package:flutter_soaring_forecast/soaring/tasks/ui/task_list.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_overhead_view.dart';
-
+import '../../repository/rasp/forecast_types.dart' show Forecast;
 import '../bloc/rasp_data_bloc.dart';
 import '../bloc/rasp_data_event.dart';
 
@@ -44,6 +43,9 @@ class _RaspScreenState extends State<RaspScreen>
   List<String> _shortDOWs = [];
   String _selectedForecastDOW = '';
   List<String> _forecastDates = [];
+  List<Forecast> _forecasts = [];
+  Forecast? _selectedForecast;
+  int _index = 0;
 
 // TODO internationalize literals
   String _pauseAnimationLabel = "Pause";
@@ -53,15 +55,16 @@ class _RaspScreenState extends State<RaspScreen>
   bool _startImageAnimation = false;
   int _currentImageIndex = 0;
   int _lastImageIndex = 0;
-
   DisplayTimer? _displayTimer;
 
   Stream<int>? _overlayPositionCounter;
   StreamSubscription<int>? _tickerSubscription;
 
   bool taskSelected = false;
-
   bool _beginnerMode = true;
+
+  FixedExtentScrollController forecastScrollController =
+      new FixedExtentScrollController();
 
   // Executed only when class created
   @override
@@ -131,6 +134,7 @@ class _RaspScreenState extends State<RaspScreen>
             children: [
               _getBeginnerExpertWidget(),
               _getForecastTypes(),
+              _getDividerWidget(),
               _displayForecastTime(),
               _getForecastWindow(),
               _widgetForSnackBarMessages(),
@@ -141,6 +145,15 @@ class _RaspScreenState extends State<RaspScreen>
         ],
       ),
     );
+  }
+
+  Divider _getDividerWidget() {
+    return const Divider(
+        height: 1,
+        thickness: 1,
+        indent: 0,
+        endIndent: 0,
+        color: Colors.black12);
   }
 
   Widget _getBeginnerExpertWidget() {
@@ -193,8 +206,8 @@ class _RaspScreenState extends State<RaspScreen>
           _sendEvent(ForecastDateSwitchEvent(ForecastDateChange.next));
           setState(() {});
         }),
-        displayText: "(${_selectedModelName.toUpperCase()}) $_selectedForecastDOW"
-    );
+        displayText:
+            "(${_selectedModelName.toUpperCase()}) $_selectedForecastDOW");
   }
 
   Widget _getForecastModelsAndDates() {
@@ -207,7 +220,7 @@ class _RaspScreenState extends State<RaspScreen>
           child: ModelDropDownList(
             selectedModelName: _selectedModelName,
             modelNames: _modelNames,
-            onModelChange: (String value){
+            onModelChange: (String value) {
               _sendEvent(SelectedRaspModelEvent(value));
             },
           ),
@@ -219,9 +232,9 @@ class _RaspScreenState extends State<RaspScreen>
               child: ForecastDatesDropDown(
                 selectedForecastDate: _selectedForecastDOW,
                 forecastDates: _shortDOWs,
-                onForecastDateChange: (String value){
-                   final selectedForecastDate =
-                    _forecastDates[_shortDOWs.indexOf(value)];
+                onForecastDateChange: (String value) {
+                  final selectedForecastDate =
+                      _forecastDates[_shortDOWs.indexOf(value)];
                   _sendEvent(SelectRaspForecastDateEvent(selectedForecastDate));
                 },
               ),
@@ -230,16 +243,21 @@ class _RaspScreenState extends State<RaspScreen>
     );
   }
 
-
 // Display description of forecast types (eq. 'Thermal Updraft Velocity (W*)' for wstar)
   Widget _getForecastTypes() {
-    return BlocBuilder<RaspDataBloc, RaspDataState>(
-        buildWhen: (previous, current) {
+    return BlocConsumer<RaspDataBloc, RaspDataState>(
+        listener: (context, state) {
+      if (state is RaspForecasts) {
+        _selectedForecast = state.selectedForecast;
+        _forecasts = state.forecasts;
+        _index = _forecasts.indexOf(_selectedForecast!);
+      }
+    }, buildWhen: (previous, current) {
       return current is RaspInitialState || current is RaspForecasts;
     }, builder: (context, state) {
       //debugPrint('creating/updating ForecastTypes');
       if (state is RaspForecasts) {
-        return _getSelectedForecastDisplay(context, state.selectedForecast);
+        return _getSelectedForecastDisplay(context);
         //_getForecastDropDown(context, state);
       } else {
         return Text("Getting Forecasts");
@@ -247,53 +265,74 @@ class _RaspScreenState extends State<RaspScreen>
     });
   }
 
-  Widget _getSelectedForecastDisplay(BuildContext context, Forecast forecast) {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(top: 4.0, bottom: 4.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(left: 8.0, right: 8.0),
-                child: InkWell(
-                    onTap: () {
-                      CommonForecastWidgets.showForecastDescriptionBottomSheet(
-                          context, forecast);
-                    },
-                    child: Constants.getForecastIcon(
-                        forecast.forecastCategory.toString())),
-              ),
-              Flexible(
-                  fit: FlexFit.tight,
-                  child: InkWell(
-                    onTap: () {
-                      _displayForecastList(forecast: forecast);
-                    },
-                    child: Text(
-                      forecast.forecastNameDisplay,
-                      style: CustomStyle.bold18(context),
-                    ),
-                  )),
-              InkWell(
-                onTap: () {
-                  _displayForecastList(forecast: forecast);
-                },
-                child: Padding(
-                    padding: const EdgeInsets.only(right: 8.0),
-                    child: Icon(Icons.arrow_drop_down_outlined)),
-              )
-            ],
+  Widget _getSelectedForecastDisplay(BuildContext context) {
+    return SizedBox(
+      height: 50,
+      child: PageView.builder(
+        key:ObjectKey(Object()),
+        scrollDirection: Axis.horizontal,
+        controller: PageController(viewportFraction: 1.0, initialPage: _index, keepPage: false),
+        itemCount: _forecasts.length,
+        onPageChanged: ((int index) {
+          setState(() {
+            _index = index;
+            _sendEvent(SelectedRaspForecastEvent(_forecasts[index]));
+          });
+        }),
+        itemBuilder: (context, index) {
+          return Padding(
+            padding: const EdgeInsets.only(top: 4.0, bottom: 4.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _getSelectedForecastIcon(context, _forecasts[index]),
+                _getForecastTextWidget(context, _forecasts[index]),
+                _getForecastDropDownIconWidget(_forecasts[index])
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Padding _getSelectedForecastIcon(BuildContext context, Forecast forecast) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 8.0, right: 8.0),
+      child: InkWell(
+          onTap: () {
+            CommonForecastWidgets.showForecastDescriptionBottomSheet(
+                context, forecast!);
+          },
+          child:
+              Constants.getForecastIcon(forecast.forecastCategory.toString())),
+    );
+  }
+
+  Widget _getForecastTextWidget(BuildContext context, Forecast forecast) {
+    return Expanded(
+        child: InkWell(
+          onTap: () {
+            _displayForecastList(forecast: forecast);
+          },
+          child: Text(
+            forecast.forecastNameDisplay,
+            style: CustomStyle.bold18(context),
+            maxLines: 2,
+            overflow: TextOverflow.fade,
           ),
-        ),
-        const Divider(
-            height: 1,
-            thickness: 1,
-            indent: 0,
-            endIndent: 0,
-            color: Colors.black12),
-      ],
+        ));
+  }
+
+  InkWell _getForecastDropDownIconWidget(Forecast forecast) {
+    return InkWell(
+      onTap: () {
+        _displayForecastList(forecast: forecast);
+      },
+      child: Padding(
+          padding: const EdgeInsets.only(right: 8.0),
+          child: Icon(Icons.arrow_drop_down_outlined)),
     );
   }
 
@@ -422,7 +461,7 @@ class _RaspScreenState extends State<RaspScreen>
           _selectedRegionName = state.selectedRegionName;
           return;
         }
-        if (state is DisplayLocalForecastGraphState){
+        if (state is DisplayLocalForecastGraphState) {
           stopAnimation();
           return;
         }
@@ -483,7 +522,9 @@ class _RaspScreenState extends State<RaspScreen>
             RaspMenu.reorderForecasts,
             RaspMenu.opacity,
             RaspMenu.selectRegion,
-            _beginnerMode ? StandardLiterals.expertMode :StandardLiterals.beginnerMode
+            _beginnerMode
+                ? StandardLiterals.expertMode
+                : StandardLiterals.beginnerMode
           }.map((String choice) {
             if (choice == RaspMenu.clearTask) {
               return PopupMenuItem<String>(

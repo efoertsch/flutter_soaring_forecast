@@ -7,47 +7,47 @@ part of 'national_map.dart';
 // **************************************************************************
 
 NationalMap _$NationalMapFromJson(Map<String, dynamic> json) => NationalMap(
-      uSGSElevationPointQueryService: json['uSGSElevationPointQueryService'] ==
-              null
+      location: json['location'] == null
           ? null
-          : USGSElevationPointQueryService.fromJson(
-              json['uSGSElevationPointQueryService'] as Map<String, dynamic>),
+          : Location.fromJson(json['location'] as Map<String, dynamic>),
+      locationId: json['locationId'] as int?,
+      value: (json['value'] as num?)?.toDouble(),
+      rasterId: json['rasterId'] as int?,
+      resolution: json['resolution'] as int?,
     );
 
 Map<String, dynamic> _$NationalMapToJson(NationalMap instance) =>
     <String, dynamic>{
-      'uSGSElevationPointQueryService': instance.uSGSElevationPointQueryService,
+      'location': instance.location,
+      'locationId': instance.locationId,
+      'value': instance.value,
+      'rasterId': instance.rasterId,
+      'resolution': instance.resolution,
     };
 
-USGSElevationPointQueryService _$USGSElevationPointQueryServiceFromJson(
-        Map<String, dynamic> json) =>
-    USGSElevationPointQueryService(
-      elevationQuery: json['elevationQuery'] == null
-          ? null
-          : ElevationQuery.fromJson(
-              json['elevationQuery'] as Map<String, dynamic>),
-    );
-
-Map<String, dynamic> _$USGSElevationPointQueryServiceToJson(
-        USGSElevationPointQueryService instance) =>
-    <String, dynamic>{
-      'elevationQuery': instance.elevationQuery,
-    };
-
-ElevationQuery _$ElevationQueryFromJson(Map<String, dynamic> json) =>
-    ElevationQuery(
+Location _$LocationFromJson(Map<String, dynamic> json) => Location(
       x: (json['x'] as num?)?.toDouble(),
       y: (json['y'] as num?)?.toDouble(),
-      dataSource: json['dataSource'] as String?,
-      elevation: (json['elevation'] as num?)?.toDouble(),
-      units: json['units'] as String?,
+      spatialReference: json['spatialReference'] == null
+          ? null
+          : SpatialReference.fromJson(
+              json['spatialReference'] as Map<String, dynamic>),
     );
 
-Map<String, dynamic> _$ElevationQueryToJson(ElevationQuery instance) =>
-    <String, dynamic>{
+Map<String, dynamic> _$LocationToJson(Location instance) => <String, dynamic>{
       'x': instance.x,
       'y': instance.y,
-      'dataSource': instance.dataSource,
-      'elevation': instance.elevation,
-      'units': instance.units,
+      'spatialReference': instance.spatialReference,
+    };
+
+SpatialReference _$SpatialReferenceFromJson(Map<String, dynamic> json) =>
+    SpatialReference(
+      wkid: json['wkid'] as int?,
+      latestWkid: json['latestWkid'] as int?,
+    );
+
+Map<String, dynamic> _$SpatialReferenceToJson(SpatialReference instance) =>
+    <String, dynamic>{
+      'wkid': instance.wkid,
+      'latestWkid': instance.latestWkid,
     };

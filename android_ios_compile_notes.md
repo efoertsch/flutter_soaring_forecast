@@ -2,7 +2,7 @@ TODO: implement flutter_flavorizr - https://pub.dev/packages/flutter_flavorizr
 
 Development:
 
-For Android
+For Android:
 
 Two flavors have been created - dev and prod. 
 Options to execute/build the different flavors
@@ -16,6 +16,9 @@ Options to execute/build the different flavors
       flutter run --flavor dev (or prod)
    3. Note this ties up terminal and you need to cntrl-c to stop 
    
+For iOS:
+1. Currently just the one flavor. If need be  Remove the Android flavor from Run/Edit
+   1. Under Flutter/main.dart and 'Additional run args' remove '--flavor dev'
 
 
 Production:

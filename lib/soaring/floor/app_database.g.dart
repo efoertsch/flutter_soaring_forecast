@@ -242,7 +242,8 @@ class _$AirportDao extends AirportDao {
 
   @override
   Future<int?> deleteAll() async {
-    await _queryAdapter.queryNoReturn('Delete from airport');
+    return _queryAdapter.query('Delete from airport',
+        mapper: (Map<String, Object?> row) => row.values.first as int);
   }
 
   @override
@@ -322,8 +323,9 @@ class _$TaskDao extends TaskDao {
 
   @override
   Future<int?> deleteTask(int taskId) async {
-    await _queryAdapter
-        .queryNoReturn('Delete from task where id = ?1', arguments: [taskId]);
+    return _queryAdapter.query('Delete from task where id = ?1',
+        mapper: (Map<String, Object?> row) => row.values.first as int,
+        arguments: [taskId]);
   }
 
   @override
@@ -414,21 +416,23 @@ class _$TaskTurnpointDao extends TaskTurnpointDao {
 
   @override
   Future<int?> getMaxTaskOrderForTask(int taskId) async {
-    await _queryAdapter.queryNoReturn(
+    return _queryAdapter.query(
         'Select max(taskOrder) from taskturnpoint where taskId = ?1',
+        mapper: (Map<String, Object?> row) => row.values.first as int,
         arguments: [taskId]);
   }
 
   @override
   Future<int?> deleteTaskTurnpoints(int taskId) async {
-    await _queryAdapter.queryNoReturn(
-        'Delete from taskturnpoint where taskId = ?1',
+    return _queryAdapter.query('Delete from taskturnpoint where taskId = ?1',
+        mapper: (Map<String, Object?> row) => row.values.first as int,
         arguments: [taskId]);
   }
 
   @override
   Future<int?> deleteTaskTurnpoint(int id) async {
-    await _queryAdapter.queryNoReturn('Delete from taskturnpoint where id = ?1',
+    return _queryAdapter.query('Delete from taskturnpoint where id = ?1',
+        mapper: (Map<String, Object?> row) => row.values.first as int,
         arguments: [id]);
   }
 
@@ -525,13 +529,15 @@ class _$TurnpointDao extends TurnpointDao {
 
   @override
   Future<int?> deleteAllTurnpoints() async {
-    await _queryAdapter.queryNoReturn('Delete from turnpoint');
+    return _queryAdapter.query('Delete from turnpoint',
+        mapper: (Map<String, Object?> row) => row.values.first as int);
   }
 
   @override
   Future<int?> deleteTurnpoint(int id) async {
-    await _queryAdapter
-        .queryNoReturn('Delete from turnpoint where id = ?1', arguments: [id]);
+    return _queryAdapter.query('Delete from turnpoint where id = ?1',
+        mapper: (Map<String, Object?> row) => row.values.first as int,
+        arguments: [id]);
   }
 
   @override

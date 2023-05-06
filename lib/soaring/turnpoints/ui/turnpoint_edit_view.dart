@@ -9,6 +9,7 @@ import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
 import 'package:flutter_soaring_forecast/soaring/app/custom_styles.dart';
 import 'package:flutter_soaring_forecast/soaring/app/web_launcher.dart';
+import 'package:flutter_soaring_forecast/soaring/fileutils/file_utils.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/bloc/turnpoint_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/bloc/turnpoint_event.dart';
@@ -120,12 +121,12 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
     return BlocConsumer<TurnpointBloc, TurnpointState>(
         listener: (context, state) {
       if (state is TurnpointShortMessageState) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: Colors.green,
-            content: Text(state.shortMsg),
-          ),
-        );
+        CommonWidgets.showInfoDialog(
+            context: context,
+            title: TurnpointMenu.turnpoint,
+            msg: state.shortMsg,
+            button1Text: StandardLiterals.OK,
+            button1Function: Navigator.of(context).pop);
       }
       if (state is TurnpointErrorState) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -382,6 +383,7 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
       modifiableTurnpoint!.longitudeDeg = updatedTurnpoint.longitudeDeg;
       modifiableTurnpoint!.elevation = updatedTurnpoint.elevation;
       _updateLatLongDisplayText();
+      _needToSaveUpdates = true;
       // this.setState(() {
       //   // force redraw
       // });
@@ -825,21 +827,17 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
   }
 
   void _exportTurnpoint() async {
-    var status = await Permission.storage.status;
-    if (status.isDenied) {
-      // We didn't ask for permission yet or the permission has been denied before but not permanently.
-      if (await Permission.storage.request().isGranted) {
-        // Fire event to export turnpoints
-        _sendEvent(DownloadTurnpointToFile(modifiableTurnpoint!));
-      }
-    }
-    if (status.isPermanentlyDenied) {
-      // display msg to user they need to go to settings to re-enable
-      openAppSettings();
-    }
-    if (status.isGranted) {
-      _sendEvent(DownloadTurnpointToFile(modifiableTurnpoint!));
-      ;
-    }
+    await checkFileAccess(
+        permissionGrantedFunction: sendDownloadTurnpointToFileEvent,
+        requestPermissionFunction: openAppSettingsFunction,
+        permissionDeniedFunction: openAppSettingsFunction);
+  }
+
+  void sendDownloadTurnpointToFileEvent() {
+    _sendEvent(DownloadTurnpointToFile(modifiableTurnpoint!));
+  }
+
+  Future<void> openAppSettingsFunction() async {
+    await openAppSettings();
   }
 }

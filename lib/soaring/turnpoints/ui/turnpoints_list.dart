@@ -8,6 +8,7 @@ import 'package:flutter_soaring_forecast/main.dart';
 import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
 import 'package:flutter_soaring_forecast/soaring/app/custom_styles.dart';
+import 'package:flutter_soaring_forecast/soaring/fileutils/file_utils.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/bloc/turnpoint_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/bloc/turnpoint_event.dart';
@@ -81,12 +82,6 @@ class _TurnpointsListState extends State<TurnpointsList>
             msg: state.shortMsg,
             button1Text: StandardLiterals.OK,
             button1Function: Navigator.of(context).pop);
-        // ScaffoldMessenger.of(context).showSnackBar(
-        //   SnackBar(
-        //     backgroundColor: Colors.green,
-        //     content: Text(state.shortMsg),
-        //   ),
-        // );
       }
     }, buildWhen: (previous, current) {
       return current is TurnpointsInitialState ||
@@ -110,7 +105,7 @@ class _TurnpointsListState extends State<TurnpointsList>
                     button1Text: "No",
                     button1Function: _cancel,
                     button2Text: "Yes",
-                    button2Function: _goToSeeYouImport,
+                    button2Function: _goToSeeYouImportFromDialog,
                   ));
           return Center(
             child: Text('No turnpoints found.'),
@@ -360,10 +355,16 @@ class _TurnpointsListState extends State<TurnpointsList>
     return true;
   }
 
-  _goToSeeYouImport() async {
+  void _goToSeeYouImportFromDialog() async {
+    // Remove dialog
     Navigator.of(context).pop();
+    _goToSeeYouImport();
+  }
+
+  void _goToSeeYouImport() async {
     var object = await Navigator.pushNamed(
         context, TurnpointFileImportRouteBuilder.routeName);
+      BlocProvider.of<TurnpointBloc>(context).add(TurnpointListEvent());
     if (object is bool && object) {
       BlocProvider.of<TurnpointBloc>(context).add(TurnpointListEvent());
     }
@@ -385,21 +386,18 @@ class _TurnpointsListState extends State<TurnpointsList>
   }
 
   void _exportTurnpoints() async {
-    var status = await Permission.storage.status;
-    if (status.isDenied) {
-      // We didn't ask for permission yet or the permission has been denied before but not permanently.
-      if (await Permission.storage.request().isGranted) {
-        // Fire event to export turnpoints
-        _sendEvent(DownloadTurnpointsToFile());
-      }
-    }
-    if (status.isPermanentlyDenied) {
-      // display msg to user they need to go to settings to re-enable
-      openAppSettings();
-    }
-    if (status.isGranted) {
-      _sendEvent(DownloadTurnpointsToFile());
-      ;
-    }
+    checkFileAccess(
+        permissionGrantedFunction: _sendDownloadTurnpointsToFileEvent,
+        requestPermissionFunction: _openAppSettingsFunction,
+        permissionDeniedFunction: _openAppSettingsFunction);
   }
+  void _sendDownloadTurnpointsToFileEvent() {
+    _sendEvent(DownloadTurnpointsToFile());
+  }
+
+  Future<void> _openAppSettingsFunction() async {
+    await openAppSettings();
+  }
+
+
 }
