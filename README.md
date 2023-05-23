@@ -8,12 +8,16 @@ Display soaring forecast and weather information of interest to glider pilots.
 
 1. Soaring forecasts displayed from Greater Boston Soaring Club RASP (https://www.soargbsc.net/rasp/  courtesy of Steve Paavola). Currently NewEngland forecasts are always generated. Mifflin forecasts are also being generated but they may be dropped post Mifflin encampment in May. (A short diversion - Steve Paavola's RASP generating code posted in github at https://github.com/s-paavola/multi-rasp )
 2. Turnpoints can be downloaded from Worldwide Turnpoint Exchange (http://soaringweb.org/TP/) or you can import your own (in SeeYou .cup format)
-3. Google map view of turnpoints display with onTap on turnpoint
-4. Forecast graphs and data table generated on longPress on turnpoint, sounding or any location on map
-5. Tasks can be defined using the imported turnpoints and overlaid on the RASP forecast.
-6. Skew-t soundings can be displayed from selected NE locations (soundings from soarbgsc.net/rasp/ also)
-7. METAR and TAF from 1800WxBrief
-8. Generate local or route(task) 1800WxBrief briefing
-9. GEOS East current and animated (GIF) images.
-10. Customized version of Windy with task overlay.
+3. SUAs can be displayed. (The GeoJson SUA files were created based on SUA files in Tim Newport-Peace format from the Worldwide Turnpoint Exchange and run through a converter at  https://mygeodata.cloud/converter/ to produce the GeoJson files)
+4. Google map view of turnpoints display with onTap on turnpoint
+5. Forecast graphs and data table generated on longPress on turnpoint, sounding or any location on map
+6. Tasks can be defined using the imported turnpoints and overlaid on the RASP forecast.
+7. Skew-t soundings can be displayed from selected NE locations (soundings from soarbgsc.net/rasp/ also)
+8. METAR and TAF from 1800WxBrief
+9. Generate local or route(task) 1800WxBrief briefing
+10. GEOS East current and animated (GIF) images.
+11. Customized version of Windy with task overlay.
+
+Airport information to supplement TAF/METARS downloaded from http://ourairports.com/data/. Note that on weekends, the file may be empty (being updated?) for a period of time, but the app should check for that and schedule downloads until what appears to be a full file is available.
+
 
