@@ -154,15 +154,17 @@ class CommonWidgets {
     buttonWidgets.add(TextButton(
         child: Text(button1Text),
         onPressed: () {
-          print("button1 pressed");
+          debugPrint("button1 pressed");
           button1Function();
         }));
     if (button2Text != null) {
       buttonWidgets.add(TextButton(
           child: Text(button2Text),
           onPressed: () {
-            print("button2 pressed");
-            button2Function!();
+            if (button2Function!= null) {
+              debugPrint("button2 pressed");
+              button2Function!();
+            }
           }));
     }
     return buttonWidgets;

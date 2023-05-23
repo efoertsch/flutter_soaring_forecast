@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:syncfusion_flutter_pdf/pdf.dart';
+import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 
 // https://pub.dev/packages/native_pdf_view/example
@@ -48,71 +48,82 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
   // for search
   AppBar _getAppBar() {
     return AppBar(
-      title: !_searchBoolean ? const Text('1800WxBrief') : _searchTextField(),
-       actions: !_searchBoolean ? <Widget>[
-        IconButton(
-          icon: const Icon(
-            Icons.search,
-            color: Colors.white,
-          ),
-          onPressed: () {
-            setState(() {
-              _searchBoolean = true;
-            });
-          },
-
-        ) ] :[
-        Visibility(
-          visible: _searchResult.hasResult,
-          child: IconButton(
-            icon: const Icon(
-              Icons.clear,
-              color: Colors.white,
-            ),
-            onPressed: () {
-              setState(() {
-                _searchBoolean = false;
-                _searchResult.clear();
-              });
-            },
-          ),
-        ),
-        Visibility(
-          visible: _searchResult.hasResult,
-          child: IconButton(
-            icon: const Icon(
-              Icons.keyboard_arrow_up,
-              color: Colors.white,
-            ),
-            onPressed: () {
-              _searchResult.previousInstance();
-            },
-          ),
-        ),
-        Visibility(
-          visible: _searchResult.hasResult,
-          child: IconButton(
-            icon: const Icon(
-              Icons.keyboard_arrow_down,
-              color: Colors.white,
-            ),
-            onPressed: () {
-              _searchResult.nextInstance();
-            },
-          ),
-        ),
-      ]
-    );
+        title: !_searchBoolean ? const Text('1800WxBrief') : _searchTextField(),
+        actions: !_searchBoolean
+            ? <Widget>[
+                IconButton(
+                  icon: const Icon(
+                    Icons.search,
+                    color: Colors.white,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _searchBoolean = true;
+                    });
+                  },
+                )
+              ]
+            : [
+                Visibility(
+                  visible: _searchResult.hasResult,
+                  child: IconButton(
+                    icon: const Icon(
+                      Icons.clear,
+                      color: Colors.white,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _searchBoolean = false;
+                        _searchResult.clear();
+                      });
+                    },
+                  ),
+                ),
+                Visibility(
+                  visible: _searchResult.hasResult,
+                  child: IconButton(
+                    icon: const Icon(
+                      Icons.keyboard_arrow_up,
+                      color: Colors.white,
+                    ),
+                    onPressed: () {
+                      _searchResult.previousInstance();
+                    },
+                  ),
+                ),
+                Visibility(
+                  visible: _searchResult.hasResult,
+                  child: IconButton(
+                    icon: const Icon(
+                      Icons.keyboard_arrow_down,
+                      color: Colors.white,
+                    ),
+                    onPressed: () {
+                      if ((_searchResult.currentInstanceIndex ==
+                                  _searchResult.totalInstanceCount &&
+                              kIsWeb) ||
+                          (_searchResult.currentInstanceIndex ==
+                                  _searchResult.totalInstanceCount &&
+                              _searchResult.isSearchCompleted)) {
+                        _showNoMoreOccurancesDialog(context);
+                      } else {
+                        _searchResult.nextInstance();
+                      }
+                    },
+                  ),
+                ),
+              ]);
   }
 
   Widget _searchTextField() {
     //add
     return TextField(
-      onChanged: (String searchString) {
+      onSubmitted: (String searchString) {
         //add
         setState(() {
-          _searchResult = _pdfViewerController.searchText(searchString,
-              searchOption: TextSearchOption.caseSensitive);
+          _searchResult = _pdfViewerController.searchText(
+            searchString,
+          );
           if (kIsWeb) {
             setState(() {});
           } else {
@@ -158,5 +169,22 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
       currentSearchTextHighlightColor: Colors.yellow.withOpacity(0.6),
       otherSearchTextHighlightColor: Colors.yellow.withOpacity(0.3),
     );
+  }
+
+  void _showNoMoreOccurancesDialog(BuildContext context) {
+    CommonWidgets.showInfoDialog(
+        context: context,
+        title: 'Search Result',
+        msg:
+            'No more occurrences found. Would you like to continue to search from the beginning?',
+        button1Text: 'YES',
+        button1Function: (() {
+          _searchResult.nextInstance();
+          Navigator.of(context).pop();
+        }),
+        button2Text: 'NO',
+        button2Function:  (() {
+          Navigator.of(context).pop();
+        }),);
   }
 }

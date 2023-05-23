@@ -51,6 +51,9 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
   bool _beginnerModeSelected = true;
   ModelDateDetails? _beginnerModeModelDataDetails;
 
+  // index into list of soundings
+  int _soundingPosition = 0;
+
   RaspDataBloc({required this.repository}) : super(RaspInitialState()) {
     on<InitialRaspRegionEvent>(_processInitialRaspRegionEvent);
     on<MapReadyEvent>(_processMapReadyEvent);
@@ -166,8 +169,13 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
       _emitRaspModels(emit);
       _getDatesForSelectedModel();
       _emitRaspModelDates(emit);
-      _getForecastImages();
-      _emitRaspForecastImageSet(emit);
+      if (_displayType == _DisplayType.forecast) {
+        _getForecastImages();
+        _emitRaspForecastImageSet(emit);
+      } else {
+        _getSoundingImages(_soundingPosition);
+        _emitSoundingImageSet(emit);
+      }
     }
   }
 
@@ -188,8 +196,13 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
       _emitRaspModelDates(emit);
       // update times and images for new date
       _setForecastTimesForDate();
-      _getForecastImages();
-      _emitRaspForecastImageSet(emit);
+      if (_displayType == _DisplayType.forecast) {
+        _getForecastImages();
+        _emitRaspForecastImageSet(emit);
+      } else {
+        _getSoundingImages(_soundingPosition);
+        _emitSoundingImageSet(emit);
+      }
     }
   }
 
@@ -199,7 +212,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
   }
 
   void _emitRaspModelDates(Emitter<RaspDataState> emit) {
-    emit(RaspModelDates(_forecastDates!, _selectedForecastDate!));
+    emit(RaspModelDates(_forecastDates, _selectedForecastDate!));
     // print('emitted RaspForecastDates');
   }
 
@@ -361,16 +374,15 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     }
   }
 
-  void _getSoundingImages(final int soundingIndex) {
+  void _getSoundingImages(final int soundingPosition) {
     String imageUrl;
     SoaringForecastImage soaringForecastBodyImage;
-
     _soundingsImageSets.clear();
     var soundingImages = [];
     for (var time in _forecastTimes!) {
       // Get forecast overlay
       imageUrl = _createSoundingImageUrl(_region!.name!, _selectedForecastDate!,
-          _selectedModelName!, soundingIndex.toString(), time);
+          _selectedModelName!, soundingPosition.toString(), time);
       soaringForecastBodyImage = SoaringForecastImage(imageUrl, time);
       soundingImages.add(soaringForecastBodyImage);
 
@@ -621,7 +633,8 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
   FutureOr<void> _processSoundingsEvent(
       DisplaySoundingsEvent event, Emitter<RaspDataState> emit) {
     _displayType = _DisplayType.sounding;
-    _getSoundingImages(event.sounding.position!);
+    _soundingPosition = event.sounding.position!;
+    _getSoundingImages(_soundingPosition);
     _emitSoundingImageSet(emit);
   }
 
@@ -637,6 +650,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
   FutureOr<void> _processDisplayCurrentForecast(
       DisplayCurrentForecastEvent event, Emitter<RaspDataState> emit) {
     _displayType = _DisplayType.forecast;
+    _getForecastImages();
     _emitRaspForecastImageSet(emit);
   }
 
@@ -748,8 +762,13 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     }
     // we need to keep values in sync for 'expert' mode if user switches to that mode
     _getDatesForSelectedModel();
-    _getForecastImages();
-    _emitRaspForecastImageSet(emit);
+    if (_displayType == _DisplayType.forecast) {
+      _getForecastImages();
+      _emitRaspForecastImageSet(emit);
+    } else {
+      _getSoundingImages(_soundingPosition);
+      _emitSoundingImageSet(emit);
+    }
   }
 
   // Switch display from beginner to expert or visa-versa
