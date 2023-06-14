@@ -4,6 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/about/about_screen.dart';
 import 'package:flutter_soaring_forecast/soaring/airport/bloc/airport_bloc.dart';
@@ -100,6 +101,15 @@ void main() async {
     Workmanager()
         .registerOneOffTask("oneTimeDownload", "workmanager.background.task");
   }
+
+  // needed to fix CERTIFICATE_VERIFY_FAILED error on startup due to
+  // Android 7 and earlier versions referencing expired Lets Encrypt cert when accessing
+  // website using Lets Encrypt SSL certificate
+  // https://stackoverflow.com/questions/54285172/how-to-solve-flutter-certificate-verify-failed-error-while-performing-a-post-req
+  // https://flutter-developer.medium.com/flutter-android-7-certificate-verify-failed-with-letsencrypt-ssl-cert-after-sept-30-2021-9cb5f672c090
+  ByteData data = await PlatformAssetBundle().load('assets/ca/lets-encrypt-r3.pem');
+  SecurityContext.defaultContext.setTrustedCertificatesBytes(data.buffer.asUint8List());
+  // End of Lets Encrypt SSL stuff
 
   runApp(RepositorySetup());
 }

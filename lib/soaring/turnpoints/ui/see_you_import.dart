@@ -6,9 +6,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/main.dart';
 import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
+import 'package:flutter_soaring_forecast/soaring/fileutils/file_utils.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/bloc/turnpoint_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/bloc/turnpoint_event.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/bloc/turnpoint_state.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../../app/constants.dart';
 
@@ -204,7 +206,7 @@ class _SeeYouImportScreenState extends State<SeeYouImportScreen>
             button2Function: _sendDeleteTurnpointsEvent);
         break;
       case TurnpointMenu.customImport:
-        _goToCustomSeeYouImport();
+        _checkForCustomImportPermission();
         break;
     }
   }
@@ -215,11 +217,25 @@ class _SeeYouImportScreenState extends State<SeeYouImportScreen>
     return true;
   }
 
+  void _checkForCustomImportPermission() async {
+    checkFileAccess(
+        permissionGrantedFunction: _goToCustomSeeYouImport,
+        requestPermissionFunction: _openAppSettingsFunction,
+        permissionDeniedFunction: _openAppSettingsFunction);
+  }
+
   void _goToCustomSeeYouImport() async {
     await Navigator.pushNamed(
         context, CustomTurnpointFileImportRouteBuilder.routeName);
     debugPrint("returned from CustomTurnpointFileImport");
   }
+
+
+  Future<void> _openAppSettingsFunction() async {
+    await openAppSettings();
+  }
+
+
 
   _cancel() {
     Navigator.of(context, rootNavigator: true).pop();
