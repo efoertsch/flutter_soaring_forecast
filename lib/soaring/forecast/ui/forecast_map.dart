@@ -739,7 +739,6 @@ class ForecastMapState extends State<ForecastMap>
 
   void _updateGeoJsonSuaDetails(String suaDetails) async {
     _suaPolygons.clear();
-    final suaColors = SUAColor.values;
     geoJsonIndex = await geoJSON.createIndex(suaDetails,
         tileSize: tileSize,
         keepSource: true,

@@ -12,7 +12,6 @@ import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart'
 import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoint_utils.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:google_maps_flutter_platform_interface/src/types/marker_updates.dart';
 
 import '../bloc/turnpoint_bloc.dart';
 import '../bloc/turnpoint_event.dart';

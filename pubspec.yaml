@@ -55,11 +55,11 @@ dependencies:
   scrollable_positioned_list: ^0.3.2
   flutter_html: ^3.0.0-alpha.3
   email_launcher: ^1.1.1
-  package_info_plus: ^1.0.6  # for getting version name and build number
+  package_info_plus: ^4.0.2  # for getting version name and build number
   email_validator: '^2.1.16'
   syncfusion_flutter_pdfviewer:
     path: ../syncfusion_flutter_pdfviewer-21.2.3
-  graphic: ^1.0.0
+  graphic:  2.2.0
 
   mockito: ^5.3.0   # needed for Android dev - not sure why
   http: ^0.13.5

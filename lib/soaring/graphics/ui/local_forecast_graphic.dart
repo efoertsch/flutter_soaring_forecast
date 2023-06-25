@@ -27,7 +27,7 @@ class LocalForecastGraphic extends StatefulWidget {
 
 class _LocalForecastGraphicState extends State<LocalForecastGraphic>
     with TickerProviderStateMixin {
-  final forecastChannel = StreamController<GestureSignal>.broadcast();
+  final forecastChannel = StreamController<GestureEvent>.broadcast();
   late final AnimationController bottomSheetController;
 
   double _screenWidth = 0;
@@ -44,8 +44,8 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
   final shapesOfPoints = <PointShape>[];
   final annotationsOfPoints = <Annotation>[];
   final crossHairGuide = [
-    StrokeStyle(color: Colors.black38),
-    StrokeStyle(color: Colors.black38)
+    PaintStyle(strokeColor: Colors.black38),
+    PaintStyle(strokeColor: Colors.black38)
   ];
   ForecastGraphData? forecastGraphData;
 
@@ -365,10 +365,10 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
             coord: RectCoord(
                 horizontalRange: [0.01, 0.99], color: altitudeGraphBackground),
             //coord: RectCoord(color: const Color(0xffdddddd)),
-            elements: [
-              PointElement(
-                size: SizeAttr(variable: "name", values: sizeOfPoints),
-                color: ColorAttr(
+            marks: [
+              PointMark(
+                size: SizeEncode(variable: "name", values: sizeOfPoints),
+                color: ColorEncode(
                   variable: 'name',
                   values: colorsOfPoints,
                   updaters: {
@@ -376,14 +376,14 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
                     'groupTouch': {false: (color) => color.withAlpha(100)},
                   },
                 ),
-                shape: ShapeAttr(variable: 'name', values: shapesOfPoints),
+                shape: ShapeEncode(variable: 'name', values: shapesOfPoints),
               ),
             ],
             axes: [
               Defaults.horizontalAxis..label = null,
               Defaults.verticalAxis
                 ..label = (LabelStyle(
-                    style: TextStyle(
+                    textStyle: TextStyle(
                         color: Colors.black,
                         fontSize: 12,
                         fontWeight: FontWeight.bold))),
@@ -391,7 +391,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
             selections: {'tap': PointSelection(dim: Dim.x)},
             //tooltip: TooltipGuide(),
             crosshair: CrosshairGuide(styles: crossHairGuide),
-            gestureChannel: forecastChannel,
+            gestureStream: forecastChannel,
             annotations: annotationsOfPoints,
           ),
         );
@@ -443,24 +443,24 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
                 ),
               },
               coord: RectCoord(color: const Color(0xffdddddd)),
-              elements: [
-                LineElement(
-                  color: ColorAttr(
+              marks: [
+                LineMark(
+                  color: ColorEncode(
                       variable: 'value', values: [Colors.red, Colors.red]),
-                  shape: ShapeAttr(value: BasicLineShape(smooth: true)),
-                  size: SizeAttr(value: 4.0),
+                  shape: ShapeEncode(value: BasicLineShape(smooth: true)),
+                  size: SizeEncode(value: 4.0),
                 ),
               ],
               axes: [
                 Defaults.horizontalAxis
                   ..label = (LabelStyle(
-                      style: TextStyle(
+                      textStyle: TextStyle(
                           color: Colors.black,
                           fontSize: 12,
                           fontWeight: FontWeight.bold))),
                 Defaults.verticalAxis
                   ..label = (LabelStyle(
-                      style: TextStyle(
+                      textStyle: TextStyle(
                           color: Colors.black,
                           fontSize: 12,
                           fontWeight: FontWeight.bold))),
@@ -468,7 +468,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
               selections: {'tap': PointSelection(dim: Dim.x)},
               //tooltip: TooltipGuide(),
               crosshair: CrosshairGuide(styles: crossHairGuide),
-              gestureChannel: forecastChannel,
+              gestureStream: forecastChannel,
               annotations: _getGraphLegend(
                   label: "Thermal Updraft ft/min",
                   initialOffset: graphLegendOffset,
@@ -560,7 +560,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
       required double yPosIndex,
       required double yOffset}) {
     var annotations = <Annotation>[
-      _getMarkAnnotation(
+      _getCustomAnnotation(
         initialOffset: initialOffset,
         colorIndex: colorIndex,
         xPosIndex: xPosIndex,
@@ -577,21 +577,33 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
     return annotations;
   }
 
-  MarkAnnotation _getMarkAnnotation(
+  CustomAnnotation _getCustomAnnotation(
       {required double initialOffset,
       required int colorIndex,
       required int xPosIndex,
       required double yOffset,
       required double yPosIndex}) {
-    return MarkAnnotation(
-      relativePath: Path()
-        ..addRect(Rect.fromCircle(center: const Offset(0, 0), radius: 5)),
-      style: Paint()..color = colorsOfPoints[colorIndex],
+    return CustomAnnotation(
+    renderer:(offset, size) => [
+      RectElement(
+        rect: Rect.fromLTWH(offset.dx -3  ,offset.dy -5,10,10),
+        style: PaintStyle(fillColor: colorsOfPoints[colorIndex]),
+      )
+    ],
       anchor: (size) => Offset(
           initialOffset + (xPosIndex == 0 ? 0 : (size.width / 2) * xPosIndex),
-          yOffset + 12 * yPosIndex),
-    );
+           yOffset + 12 * yPosIndex),);
   }
+
+    // return MarkAnnotation(
+    //   relativePath: Path()
+    //     ..addRect(Rect.fromCircle(center: const Offset(0, 0), radius: 5)),
+    //   style: Paint()..color = colorsOfPoints[colorIndex],
+    //   anchor: (size) => Offset(
+    //       initialOffset + (xPosIndex == 0 ? 0 : (size.width / 2) * xPosIndex),
+    //       yOffset + 12 * yPosIndex),
+    // );
+
 
   TagAnnotation _getTagAnnotation(
       {required double initialOffset,
@@ -603,7 +615,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
       label: Label(
         label,
         LabelStyle(
-            style: textStyleBlackFontSize13, align: Alignment.centerRight),
+            textStyle: textStyleBlackFontSize13, align: Alignment.centerRight),
       ),
       anchor: (size) => Offset(
           initialOffset + (xPosIndex == 0 ? 0 : (size.width / 2) * xPosIndex),

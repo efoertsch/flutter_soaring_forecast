@@ -72,14 +72,14 @@ class Model {
   }
 
   LatLng get southWestLatLng {
-    if (corners != null && corners.length > 0 && corners[0].length > 1) {
+    if ( corners.length > 0 && corners[0].length > 1) {
       return new LatLng(corners[0][0], corners[0][1]);
     }
     return LatLng(0.0, 0.0);
   }
 
   LatLng get northEastLatLng {
-    if (corners != null && corners.length > 1 && corners[1].length > 1) {
+    if ( corners.length > 1 && corners[1].length > 1) {
       return new LatLng(corners[1][0], corners[1][1]);
     }
     return LatLng(0.0, 0.0);
