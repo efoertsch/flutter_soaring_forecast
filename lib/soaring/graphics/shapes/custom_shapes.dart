@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:flutter/foundation.dart';
 import 'package:graphic/graphic.dart';
 import 'dart:math';
 
@@ -16,8 +17,10 @@ class ThermalShape extends PointShape {
 
   @override
   MarkElement drawPoint(Attributes item, CoordConv coord) {
-    final point = coord.convert(item.position.last);
+    final initialPoint = coord.convert(item.position.last);
     final size = item.size ?? defaultSize;
+    // move top of thermal bubble up to approx match appropriate altitude
+    final point = Offset(initialPoint.dx, initialPoint.dy - (size/2.2)   );
     return ThermalElement(
       point: point,
       size: size,
@@ -122,8 +125,11 @@ class CumulusShape extends PointShape {
 
   @override
   MarkElement drawPoint(Attributes item, CoordConv coord) {
-    final point = coord.convert(item.position.last);
+    final initialPoint = coord.convert(item.position.last);
     final size = item.size ?? defaultSize;
+    // need to move the bottom of cloud 'up' to proper altitude
+   // debugPrint("Cloud point: ${initialPoint.dx}  ${initialPoint.dy}");
+    final point  = Offset(initialPoint.dx, initialPoint.dy - size);
     return CloudElement(
       point: point,
       size: size,
