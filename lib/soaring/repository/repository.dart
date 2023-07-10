@@ -103,19 +103,9 @@ class Repository {
     if (_repository == null) {
       _repository = Repository._();
       _context = context;
-      // _dio.interceptors.add(LogInterceptor(
-      //     responseBody: true,
-      //     request: true,
-      //     requestBody: true,
-      //     requestHeader: true));
-      _dio.options.receiveTimeout = 300000;
+      _dio.options.receiveTimeout = Duration(seconds: 30);
       _dio.options.followRedirects = true;
-      // _dio.interceptors.add(
-      //   DioLoggingInterceptor(
-      //     level: Level.body,
-      //     compact: false,
-      //   ),
-      // );
+      // See https://www.flutterdecode.com/dio-interceptors-in-flutter-example/ for dio logging interceptor
       _raspClient = RaspClient(_dio);
       _raspOptionsClient = RaspOptionsClient(_dio);
     }
