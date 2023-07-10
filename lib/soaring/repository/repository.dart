@@ -103,19 +103,9 @@ class Repository {
     if (_repository == null) {
       _repository = Repository._();
       _context = context;
-      // _dio.interceptors.add(LogInterceptor(
-      //     responseBody: true,
-      //     request: true,
-      //     requestBody: true,
-      //     requestHeader: true));
-      _dio.options.receiveTimeout = 300000;
+      _dio.options.receiveTimeout = Duration(seconds: 30);
       _dio.options.followRedirects = true;
-      // _dio.interceptors.add(
-      //   DioLoggingInterceptor(
-      //     level: Level.body,
-      //     compact: false,
-      //   ),
-      // );
+      // See https://www.flutterdecode.com/dio-interceptors-in-flutter-example/ for dio logging interceptor
       _raspClient = RaspClient(_dio);
       _raspOptionsClient = RaspOptionsClient(_dio);
     }
@@ -801,8 +791,8 @@ class Repository {
       } else {
         debugPrint("No SUA found");
       }
-      return sua;
     }
+    return sua;
   }
 
   Future<String?> getGeoJsonSUAForRegion(String region) async {
@@ -854,8 +844,8 @@ class Repository {
       } else {
         debugPrint("No SUA found");
       }
-      return sua;
     }
+    return sua;
   }
 
   bool equalsIgnoreCase(String string1, String string2) {
@@ -1214,7 +1204,7 @@ class Repository {
       final settings = settingsFromJson(jsonString);
       // loop through the settings to assign the saved value (or default)
       Future.forEach(settings, (group) async {
-        Future.forEach((group as Group)!.options!, (option) async {
+        Future.forEach((group as Group).options!, (option) async {
           if ((option as Option).dataType == "bool") {
             bool savedValue = await getGenericBool(
                 key: option.key, defaultValue: option.optionDefault);

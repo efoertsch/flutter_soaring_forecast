@@ -28,7 +28,7 @@ class Group {
       );
 
   Map<String, dynamic> toJson() => {
-        "title": title == null ? null : title,
+        "title":  title,
         "options": options == null
             ? null
             : List<dynamic>.from(options!.map((x) => x.toJson())),

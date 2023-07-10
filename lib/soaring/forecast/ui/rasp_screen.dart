@@ -303,7 +303,7 @@ class _RaspScreenState extends State<RaspScreen>
       child: InkWell(
           onTap: () {
             CommonForecastWidgets.showForecastDescriptionBottomSheet(
-                context, forecast!);
+                context, forecast);
           },
           child:
               Constants.getForecastIcon(forecast.forecastCategory.toString())),

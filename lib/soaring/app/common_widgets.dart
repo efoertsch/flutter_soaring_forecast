@@ -163,7 +163,7 @@ class CommonWidgets {
           onPressed: () {
             if (button2Function!= null) {
               debugPrint("button2 pressed");
-              button2Function!();
+              button2Function();
             }
           }));
     }

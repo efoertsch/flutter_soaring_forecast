@@ -1,8 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:device_info_plus/device_info_plus.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     as Constants;
@@ -15,7 +13,6 @@ import 'package:flutter_soaring_forecast/soaring/turnpoints/cup/cup_styles.dart'
 import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoint_utils.dart';
 import 'package:intl/intl.dart';
 import 'package:location/location.dart';
-import 'package:path_provider/path_provider.dart';
 
 class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
   final Repository repository;

@@ -12,7 +12,6 @@ import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart'
 import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoint_utils.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:google_maps_flutter_platform_interface/src/types/marker_updates.dart';
 
 import '../bloc/turnpoint_bloc.dart';
 import '../bloc/turnpoint_event.dart';
@@ -446,21 +445,21 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
 
   /// Only needed for adding new turnpoint (lat/long are 0)
   void checkForLocationPermission() async {
-    var status = await Permission.location.status;
-    if (status.isDenied) {
+    var permission = await Permission.location.request();
+    if (permission.isDenied) {
       // We didn't ask for permission yet or the permission has been denied before but not permanently.
-      if (await Permission.location
-          .request()
-          .isGranted) {
+        permission = await Permission.locationWhenInUse
+          .request();
+      if (permission == permission.isGranted) {
         // Fire event to get the current location
         getLocation();
       }
     }
-    if (status.isPermanentlyDenied) {
+    if (permission.isPermanentlyDenied) {
       // display msg to user they need to go to settings to re-enable
       openAppSettings();
     }
-    if (status.isGranted) {
+    if (permission.isGranted) {
       getLocation();
     }
   }
