@@ -144,7 +144,12 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
   }
 
   Widget _getTurnpointInfoTextWidget() {
-    return BlocBuilder<TurnpointBloc, TurnpointState>(
+    return BlocConsumer<TurnpointBloc, TurnpointState>(
+      listener: (context,state){
+        if (state is TurnpointErrorState){
+          CommonWidgets.showErrorDialog(context, "Oh-oh", state.errorMsg);
+        }
+      },
       buildWhen: (previous, current) {
         return current is TurnpointsInitialState ||
             current is TurnpointCupStylesState ||
@@ -152,7 +157,9 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
       },
       builder: (context, state) {
         if (state is LatLongElevationState) {
-          turnpoint.elevation = state.elevation.toStringAsFixed(1) + "ft";
+          turnpoint.elevation = TurnpointUtils.convertMetersToFeet(state.elevation)
+              .toStringAsFixed(1) +
+              Constants.ft;
           print("elevation is: ${turnpoint.elevation}");
         }
 

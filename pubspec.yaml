@@ -59,6 +59,7 @@ dependencies:
   syncfusion_flutter_pdfviewer:
     path: ../syncfusion_flutter_pdfviewer-21.2.3
   graphic:  2.2.0
+  colorize: any    # used by dio interceptor
 
   mockito: ^5.3.0   # needed for Android dev - not sure why
   http: ^0.13.5

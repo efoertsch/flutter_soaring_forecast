@@ -3,14 +3,15 @@ import 'package:json_annotation/json_annotation.dart';
 part 'national_map.g.dart';
 
 ///  Generated via https://javiercbk.github.io/json_to_dart/ using output from call
-///  https://nationalmap.gov/epqs/pqs.php?y=42.464&x=-71.454&output=json&units=Feet
-///    flutter packages pub run build_runner build
+///  https://epqs.nationalmap.gov/v1/json?wkid=4326&includeDate=false&y=42.465762&x=-71.454383&units=Meters
+///  Remember to run generator with any changes !!!
+///   flutter pub run build_runner build  --delete-conflicting-outputs
 
 @JsonSerializable()
 class NationalMap {
   Location? location;
   int? locationId;
-  double? value;
+  String? value;
   int? rasterId;
   int? resolution;
 
@@ -90,3 +91,4 @@ class SpatialReference {
     return data;
   }
 }
+

@@ -131,7 +131,7 @@ class _TurnpointEditViewState extends State<TurnpointEditView>
       if (state is TurnpointErrorState) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            backgroundColor: Colors.green,
+            backgroundColor: Colors.red.shade400,
             content: Text(state.errorMsg),
           ),
         );
