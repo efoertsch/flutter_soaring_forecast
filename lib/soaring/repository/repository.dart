@@ -106,18 +106,20 @@ class Repository {
       _context = context;
       _dio.options.receiveTimeout = Duration(seconds: 30);
       _dio.options.followRedirects = true;
-      _dio.interceptors.add(
-        // https://flutterawesome.com/a-simple-dio-log-interceptor-which-has-coloring-features-and-json-formatting/
-        DioInterceptor(
-          // Disabling headers and timeout would minimize the logging output.
-          // Optional, defaults to true
-          logRequestTimeout: false,
-          logRequestHeaders: true,
-          logResponseHeaders: true,
-          // Optional, defaults to the 'log' function in the 'dart:developer' package.
-          logger: debugPrint,
-        ),
-      );
+      if (kDebugMode) {
+        _dio.interceptors.add(
+          // https://flutterawesome.com/a-simple-dio-log-interceptor-which-has-coloring-features-and-json-formatting/
+          DioInterceptor(
+            // Disabling headers and timeout would minimize the logging output.
+            // Optional, defaults to true
+            logRequestTimeout: false,
+            logRequestHeaders: true,
+            logResponseHeaders: true,
+            // Optional, defaults to the 'log' function in the 'dart:developer' package.
+            logger: debugPrint,
+          ),
+        );
+      }
       // See https://www.flutterdecode.com/dio-interceptors-in-flutter-example/ for dio logging interceptor
       _raspClient = RaspClient(_dio);
       _raspOptionsClient = RaspOptionsClient(_dio);
