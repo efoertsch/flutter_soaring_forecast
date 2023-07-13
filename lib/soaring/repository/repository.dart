@@ -50,6 +50,7 @@ import 'package:retrofit/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
 
+import 'dio_interceptor.dart';
 import 'rasp/forecast_models.dart';
 import 'rasp/forecast_types.dart';
 import 'rasp/rasp_api.dart';
@@ -105,6 +106,20 @@ class Repository {
       _context = context;
       _dio.options.receiveTimeout = Duration(seconds: 30);
       _dio.options.followRedirects = true;
+      if (kDebugMode) {
+        _dio.interceptors.add(
+          // https://flutterawesome.com/a-simple-dio-log-interceptor-which-has-coloring-features-and-json-formatting/
+          DioInterceptor(
+            // Disabling headers and timeout would minimize the logging output.
+            // Optional, defaults to true
+            logRequestTimeout: false,
+            logRequestHeaders: true,
+            logResponseHeaders: true,
+            // Optional, defaults to the 'log' function in the 'dart:developer' package.
+            logger: debugPrint,
+          ),
+        );
+      }
       // See https://www.flutterdecode.com/dio-interceptors-in-flutter-example/ for dio logging interceptor
       _raspClient = RaspClient(_dio);
       _raspOptionsClient = RaspOptionsClient(_dio);
@@ -720,7 +735,7 @@ class Repository {
       _usgsClient = UsgsClient(_dio);
     }
     return _usgsClient!.getElevation(
-        latitude.toStringAsFixed(6), longitude.toStringAsFixed(6), "Feet");
+        latitude.toStringAsFixed(6), longitude.toStringAsFixed(6), "Meters");
   }
 
   // ------- Special Use Airspace ----------------------

@@ -25,7 +25,7 @@ class _RaspClient implements RaspClient {
     const _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
-    final _data = <String, dynamic>{};
+    final Map<String, dynamic>? _data = null;
     final _result =
         await _dio.fetch<Map<String, dynamic>>(_setStreamType<Regions>(Options(
       method: 'GET',
@@ -38,20 +38,24 @@ class _RaspClient implements RaspClient {
               queryParameters: queryParameters,
               data: _data,
             )
-            .copyWith(baseUrl: baseUrl ?? _dio.options.baseUrl)));
+            .copyWith(
+                baseUrl: _combineBaseUrls(
+              _dio.options.baseUrl,
+              baseUrl,
+            ))));
     final value = Regions.fromJson(_result.data!);
     return value;
   }
 
   @override
   Future<ForecastModels> getForecastModels(
-    region,
-    date,
+    String region,
+    String date,
   ) async {
     const _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
-    final _data = <String, dynamic>{};
+    final Map<String, dynamic>? _data = null;
     final _result = await _dio
         .fetch<Map<String, dynamic>>(_setStreamType<ForecastModels>(Options(
       method: 'GET',
@@ -64,21 +68,25 @@ class _RaspClient implements RaspClient {
               queryParameters: queryParameters,
               data: _data,
             )
-            .copyWith(baseUrl: baseUrl ?? _dio.options.baseUrl)));
+            .copyWith(
+                baseUrl: _combineBaseUrls(
+              _dio.options.baseUrl,
+              baseUrl,
+            ))));
     final value = ForecastModels.fromJson(_result.data!);
     return value;
   }
 
   @override
   Future<HttpResponse<dynamic>> getLatLongPointForecast(
-    contentType,
-    region,
-    date,
-    model,
-    time,
-    lat,
-    lon,
-    forecasts,
+    String contentType,
+    String region,
+    String date,
+    String model,
+    String time,
+    String lat,
+    String lon,
+    String forecasts,
   ) async {
     const _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
@@ -106,7 +114,11 @@ class _RaspClient implements RaspClient {
               queryParameters: queryParameters,
               data: _data,
             )
-            .copyWith(baseUrl: baseUrl ?? _dio.options.baseUrl)));
+            .copyWith(
+                baseUrl: _combineBaseUrls(
+              _dio.options.baseUrl,
+              baseUrl,
+            ))));
     final value = _result.data;
     final httpResponse = HttpResponse(value, _result);
     return httpResponse;
@@ -114,14 +126,14 @@ class _RaspClient implements RaspClient {
 
   @override
   Future<HttpResponse<String>> getDaysForecastForLatLong(
-    contentType,
-    region,
-    date,
-    model,
-    time,
-    lat,
-    lon,
-    forecasts,
+    String contentType,
+    String region,
+    String date,
+    String model,
+    String time,
+    String lat,
+    String lon,
+    String forecasts,
   ) async {
     const _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{
@@ -135,7 +147,7 @@ class _RaspClient implements RaspClient {
     };
     final _headers = <String, dynamic>{r'Content-Type': contentType};
     _headers.removeWhere((k, v) => v == null);
-    final _data = <String, dynamic>{};
+    final Map<String, dynamic>? _data = null;
     final _result =
         await _dio.fetch<String>(_setStreamType<HttpResponse<String>>(Options(
       method: 'GET',
@@ -149,7 +161,11 @@ class _RaspClient implements RaspClient {
               queryParameters: queryParameters,
               data: _data,
             )
-            .copyWith(baseUrl: baseUrl ?? _dio.options.baseUrl)));
+            .copyWith(
+                baseUrl: _combineBaseUrls(
+              _dio.options.baseUrl,
+              baseUrl,
+            ))));
     final value = _result.data!;
     final httpResponse = HttpResponse(value, _result);
     return httpResponse;
@@ -166,5 +182,22 @@ class _RaspClient implements RaspClient {
       }
     }
     return requestOptions;
+  }
+
+  String _combineBaseUrls(
+    String dioBaseUrl,
+    String? baseUrl,
+  ) {
+    if (baseUrl == null || baseUrl.trim().isEmpty) {
+      return dioBaseUrl;
+    }
+
+    final url = Uri.parse(baseUrl);
+
+    if (url.isAbsolute) {
+      return url.toString();
+    }
+
+    return Uri.parse(dioBaseUrl).resolveUri(url).toString();
   }
 }

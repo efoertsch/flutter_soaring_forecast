@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     as Constants;
@@ -205,44 +206,46 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
   FutureOr<void> _getCurrentLocation(
       GetCurrentLocation event, Emitter<TurnpointState> emit) async {
     Location location = Location();
+    double elevation = 0;
+    var currentLocation;
     try {
-      double? elevation = 0;
-      final currentLocation = await location.getLocation();
-      if (currentLocation.altitude != null && currentLocation.altitude == 0) {
-        elevation = await getUSGSElevationAtLocation(
-            currentLocation.latitude ?? 0, currentLocation.longitude ?? 0);
-      } else {
-        elevation = currentLocation.altitude;
-      }
-      print(
-          "location: ${currentLocation.latitude} ${currentLocation.longitude}, elevation(m): ${currentLocation.altitude} ");
-      emit(CurrentLocationState(currentLocation.latitude ?? 0,
-          currentLocation.longitude ?? 0, elevation!));
+      currentLocation = await location.getLocation();
     } catch (e) {
       emit(TurnpointErrorState("Oops. Can't find your location!"));
+      return;
     }
+
+    if (currentLocation.altitude != null && currentLocation.altitude == 0) {
+      elevation = await _getUSGSElevationAtLocation(
+          currentLocation.latitude ?? 0, currentLocation.longitude ?? 0);
+    } else {
+      elevation = currentLocation.altitude;
+    }
+    // print("location: ${currentLocation.latitude} ${currentLocation.longitude}, elevation(m): ${currentLocation.altitude} ");
+    emit(CurrentLocationState(currentLocation.latitude ?? 0,
+        currentLocation.longitude ?? 0, elevation));
   }
 
   FutureOr<void> _getElevationAtLatLong(
       GetElevationAtLatLong event, Emitter<TurnpointState> emit) async {
     double elevation;
-    try {
-      elevation =
-          await getUSGSElevationAtLocation(event.latitude, event.longitude);
-      emit(LatLongElevationState(event.latitude, event.longitude, elevation));
-    } catch (e) {
-      emit(TurnpointErrorState("Ooops. Could not get elevation at that point"));
-    }
+    elevation =
+        await _getUSGSElevationAtLocation(event.latitude, event.longitude);
+    emit(LatLongElevationState(event.latitude, event.longitude, elevation));
   }
 
-  Future<double> getUSGSElevationAtLocation(
+  Future<double> _getUSGSElevationAtLocation(
       double latitude, double longitude) async {
-    double elevation;
-    final nationalMap =
-        await repository.getElevationAtLatLongPoint(latitude, longitude);
-    elevation =
-        nationalMap.value ??
-            0.0;
+    double elevation = 0;
+    try {
+      final nationalMap =
+          await repository.getElevationAtLatLongPoint(latitude, longitude);
+      elevation = (double.parse(nationalMap.value ?? "0.0"));
+    } catch (e) {
+      debugPrint("_getElevationAtLatLong exception: ${e.toString()}");
+      emit(TurnpointErrorState(
+          "Hmmm. An error occurred when getting elevation. Assuming elevation = 0"));
+    }
     return elevation;
   }
 
@@ -324,8 +327,6 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
     return file;
   }
 
-
-
   FutureOr<List<File>> _getCustomImportFileNames(
       GetCustomImportFileNamesEvent event, Emitter<TurnpointState> emit) async {
     List<File> cupfiles = [];
@@ -361,5 +362,4 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
       emit(TurnpointErrorState(e.toString()));
     }
   }
-
 }

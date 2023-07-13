@@ -22,8 +22,8 @@ class _One800WxBriefClient implements One800WxBriefClient {
 
   @override
   Future<MetarTafResponse> getMETAR(
-    basicBase64,
-    airport,
+    String basicBase64,
+    String airport,
   ) async {
     const _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{r'location': airport};
@@ -33,7 +33,7 @@ class _One800WxBriefClient implements One800WxBriefClient {
       r'Authorization': basicBase64,
     };
     _headers.removeWhere((k, v) => v == null);
-    final _data = <String, dynamic>{};
+    final Map<String, dynamic>? _data = null;
     final _result = await _dio
         .fetch<Map<String, dynamic>>(_setStreamType<MetarTafResponse>(Options(
       method: 'GET',
@@ -47,15 +47,19 @@ class _One800WxBriefClient implements One800WxBriefClient {
               queryParameters: queryParameters,
               data: _data,
             )
-            .copyWith(baseUrl: baseUrl ?? _dio.options.baseUrl)));
+            .copyWith(
+                baseUrl: _combineBaseUrls(
+              _dio.options.baseUrl,
+              baseUrl,
+            ))));
     final value = MetarTafResponse.fromJson(_result.data!);
     return value;
   }
 
   @override
   Future<MetarTafResponse> getTAF(
-    basicBase64,
-    airport,
+    String basicBase64,
+    String airport,
   ) async {
     const _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{r'location': airport};
@@ -65,7 +69,7 @@ class _One800WxBriefClient implements One800WxBriefClient {
       r'Authorization': basicBase64,
     };
     _headers.removeWhere((k, v) => v == null);
-    final _data = <String, dynamic>{};
+    final Map<String, dynamic>? _data = null;
     final _result = await _dio
         .fetch<Map<String, dynamic>>(_setStreamType<MetarTafResponse>(Options(
       method: 'GET',
@@ -79,15 +83,19 @@ class _One800WxBriefClient implements One800WxBriefClient {
               queryParameters: queryParameters,
               data: _data,
             )
-            .copyWith(baseUrl: baseUrl ?? _dio.options.baseUrl)));
+            .copyWith(
+                baseUrl: _combineBaseUrls(
+              _dio.options.baseUrl,
+              baseUrl,
+            ))));
     final value = MetarTafResponse.fromJson(_result.data!);
     return value;
   }
 
   @override
   Future<One800WxBrief> getRouteBriefing(
-    basicBase64,
-    completeQueryString,
+    String basicBase64,
+    String completeQueryString,
   ) async {
     const _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
@@ -111,15 +119,19 @@ class _One800WxBriefClient implements One800WxBriefClient {
               queryParameters: queryParameters,
               data: _data,
             )
-            .copyWith(baseUrl: baseUrl ?? _dio.options.baseUrl)));
+            .copyWith(
+                baseUrl: _combineBaseUrls(
+              _dio.options.baseUrl,
+              baseUrl,
+            ))));
     final value = One800WxBrief.fromJson(_result.data!);
     return value;
   }
 
   @override
   Future<One800WxBrief> getAreaBriefing(
-    basicBase64,
-    completeQueryString,
+    String basicBase64,
+    String completeQueryString,
   ) async {
     const _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
@@ -143,7 +155,11 @@ class _One800WxBriefClient implements One800WxBriefClient {
               queryParameters: queryParameters,
               data: _data,
             )
-            .copyWith(baseUrl: baseUrl ?? _dio.options.baseUrl)));
+            .copyWith(
+                baseUrl: _combineBaseUrls(
+              _dio.options.baseUrl,
+              baseUrl,
+            ))));
     final value = One800WxBrief.fromJson(_result.data!);
     return value;
   }
@@ -159,5 +175,22 @@ class _One800WxBriefClient implements One800WxBriefClient {
       }
     }
     return requestOptions;
+  }
+
+  String _combineBaseUrls(
+    String dioBaseUrl,
+    String? baseUrl,
+  ) {
+    if (baseUrl == null || baseUrl.trim().isEmpty) {
+      return dioBaseUrl;
+    }
+
+    final url = Uri.parse(baseUrl);
+
+    if (url.isAbsolute) {
+      return url.toString();
+    }
+
+    return Uri.parse(dioBaseUrl).resolveUri(url).toString();
   }
 }

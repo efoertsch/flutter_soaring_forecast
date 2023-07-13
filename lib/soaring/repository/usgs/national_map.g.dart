@@ -11,7 +11,7 @@ NationalMap _$NationalMapFromJson(Map<String, dynamic> json) => NationalMap(
           ? null
           : Location.fromJson(json['location'] as Map<String, dynamic>),
       locationId: json['locationId'] as int?,
-      value: (json['value'] as num?)?.toDouble(),
+      value: json['value'] as String?,
       rasterId: json['rasterId'] as int?,
       resolution: json['resolution'] as int?,
     );
