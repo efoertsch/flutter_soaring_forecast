@@ -82,6 +82,7 @@ class Repository {
   static const String VIEW_MAP_BOUNDS = "VIEW_MAP_BOUNDS";
   static const String BEGINNER_FORECAST_MODE = "BEGINNER_FORECAST_MODE";
   static const String LOCAL_FORECAST_FAVORITE = "LOCAL_FORECAST_FAVORITE";
+  static const String LAST_FORECAST_TIME = "LAST_FORECAST_TIME";
 
   late final String satelliteRegionUS;
   late final String satelliteTypeVis;
@@ -341,6 +342,14 @@ class Repository {
     }
     var mapBoundsAndZoom = ViewBounds.fromJson(jsonDecode(stringBounds));
     return mapBoundsAndZoom;
+  }
+
+  Future<void> saveLastForecastTime(int timeInMillSecs) async{
+    saveGenericInt(key: LAST_FORECAST_TIME, value: timeInMillSecs);
+  }
+
+  Future<int> getLastForecastTime() async {
+    return await getGenericInt(key: LAST_FORECAST_TIME, defaultValue: 0);
   }
 
   // ----------- Get RASP forecast images -----------------------

@@ -77,6 +77,8 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     on<RefreshTaskEvent>(_refreshTask);
     on<ForecastDateSwitchEvent>(_processBeginnerDateSwitch);
     on<BeginnerModeEvent>(_processBeginnerModeEvent);
+    on<RefreshForecastEvent>(_refreshForecast);
+    on<CheckIfForecastRefreshNeededEvent>(_checkIfForecastRefreshNeeded);
   }
 
   void _processInitialRaspRegionEvent(
@@ -86,6 +88,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
 
   Future<void> _emitForecastRegionInfo(Emitter<RaspDataState> emit) async {
     emit(RaspWorkingState(working: true));
+
     try {
       await _loadForecastTypes();
       _emitForecasts(emit);
@@ -119,6 +122,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
         }
         _emitCenterOfMap(emit);
         emit(RaspWorkingState(working: false));
+        repository.saveLastForecastTime(DateTime.now().millisecondsSinceEpoch);
       }
     } catch (e, stackTrace) {
       print("Error:  ${e.toString()} \n${stackTrace.toString()}");
@@ -152,9 +156,13 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     }
   }
 
-  void _processSwitchedRegion(
+  Future<void> _processSwitchedRegion(
       SwitchedRegionEvent event, Emitter<RaspDataState> emit) async {
     repository.setCurrentTaskId(-1);
+    await _refreshForecast(event, emit);
+  }
+
+  Future<void> _refreshForecast( _, Emitter<RaspDataState> emit) async {
     await _emitForecastRegionInfo(emit);
     await _emitForecastMapInfo(emit);
   }
@@ -803,5 +811,15 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
             ? _forecastTimes!.indexOf(defaultTime)
             : 0)
         : 0;
+  }
+
+  FutureOr<void> _checkIfForecastRefreshNeeded(CheckIfForecastRefreshNeededEvent event, Emitter<RaspDataState> emit) async {
+    var lastForecast = await repository.getLastForecastTime();
+    // 1800000 millisecs equals 30 minutes
+    if (lastForecast == 0 || (DateTime.now().millisecondsSinceEpoch - lastForecast) > 1800000){
+      // Last time forecast model date/times obtained from server was over 30 minutes ago, so refresh
+      // (there might be newer model forecasts available)
+      await  _refreshForecast(event, emit);
+    }
   }
 }

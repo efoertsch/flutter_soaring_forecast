@@ -86,6 +86,7 @@ class _RaspScreenState extends State<RaspScreen>
     switch (state) {
       case AppLifecycleState.resumed:
         debugPrint("app in resumed");
+        _sendEvent(CheckIfForecastRefreshNeededEvent());
         break;
       case AppLifecycleState.inactive:
         debugPrint("app in inactive");
@@ -524,7 +525,8 @@ class _RaspScreenState extends State<RaspScreen>
             RaspMenu.selectRegion,
             _beginnerMode
                 ? StandardLiterals.expertMode
-                : StandardLiterals.beginnerMode
+                : StandardLiterals.beginnerMode,
+            RaspMenu.refreshForecast
           }.map((String choice) {
             if (choice == RaspMenu.clearTask) {
               return PopupMenuItem<String>(
@@ -621,6 +623,9 @@ class _RaspScreenState extends State<RaspScreen>
           _beginnerMode = !_beginnerMode;
           _sendEvent(BeginnerModeEvent(_beginnerMode));
         });
+        break;
+      case RaspMenu.refreshForecast:
+        _refreshForecast();
         break;
     }
   }
@@ -723,6 +728,10 @@ class _RaspScreenState extends State<RaspScreen>
   void _displayWxBriefRequest(WxBriefBriefingRequest request) async {
     await Navigator.pushNamed(context, WxBriefRequestBuilder.routeName,
         arguments: request);
+  }
+
+  void _refreshForecast(){
+    _sendEvent(RefreshForecastEvent());
   }
 
   // TODO create common ProgressIndicator<Bloc,State>  widget and
