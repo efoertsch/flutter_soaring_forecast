@@ -167,6 +167,13 @@ class BeginnerModeEvent extends RaspDataEvent{
   BeginnerModeEvent(this.beginnerMode);
 }
 
+class RefreshForecastEvent extends RaspDataEvent {
+  RefreshForecastEvent();
+}
+
+class CheckIfForecastRefreshNeededEvent extends RaspDataEvent {
+  CheckIfForecastRefreshNeededEvent();
+}
 
 
 

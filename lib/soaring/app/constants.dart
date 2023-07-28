@@ -187,6 +187,7 @@ class StandardLiterals {
   static const CHANGES_WILL_BE_LOST = "Changes will be lost. Continue?";
   static const String beginnerMode = "Beginner Mode";
   static const String expertMode = "Expert Mode";
+
 }
 
 class RaspMenu {
@@ -200,7 +201,7 @@ class RaspMenu {
   static const String one800WxBrief = '1800WxBrief';
   static const String notamsBrief = "NOTAMS";
   static const String routeBrief = "Route Brief";
-
+  static const String refreshForecast = "Refresh Forecast";
 }
 
 class RaspDisplayOptionsMenu {
