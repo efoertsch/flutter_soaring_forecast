@@ -9,9 +9,7 @@ import 'package:http/http.dart' as http;
 
 class TurnpointsImporter {
   late Repository repository;
-  static const TURNPOINTS_URL = "https://soaringweb.org/TP/";
-  static const TURNPOINT_EXCHANGE_LIST =
-      TURNPOINTS_URL + "/soaringforecast/turnpoint_regions.json";
+  static const TURNPOINTS_URL = "http://serkowski.com/soaring/TP/";  //"https://soaringweb.org/TP/";
 
   TurnpointsImporter({required this.repository});
 
