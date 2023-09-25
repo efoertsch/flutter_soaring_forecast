@@ -79,6 +79,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     on<BeginnerModeEvent>(_processBeginnerModeEvent);
     on<RefreshForecastEvent>(_refreshForecast);
     on<CheckIfForecastRefreshNeededEvent>(_checkIfForecastRefreshNeeded);
+    on<GetOptimizedTaskRouteEvent>(_getGetOptimizedTaskRoute);
   }
 
   void _processInitialRaspRegionEvent(
@@ -492,14 +493,44 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     await _emitTaskTurnpoints(emit, event.taskId);
   }
 
+
+  void _getGetOptimizedTaskRoute(GetOptimizedTaskRouteEvent event, Emitter<RaspDataState> emit) async {
+    List<TaskTurnpoint> taskTurnpoints = await _getTaskTurnpoints(event.taskId);
+    StringBuffer turnpointLatLons = StringBuffer();
+    String latLonString = "";
+    for(var taskTurnpoints in taskTurnpoints){
+      turnpointLatLons.write(taskTurnpoints.latitudeDeg.toString());
+      turnpointLatLons.write(",");
+      turnpointLatLons.write(taskTurnpoints.longitudeDeg.toString());
+      turnpointLatLons.write(",");
+    }
+    if (turnpointLatLons.length > 0){
+      latLonString = turnpointLatLons.toString().substring(0, turnpointLatLons.length - 1);
+    }
+    var optimizedTaskRoute = await repository.getOptimizedTaskRoute(_region!.name!, _selectedForecastDate!,
+        _selectedModelName!, 'd2', _forecastTimes![_selectedForecastTimeIndex],
+        "LS-4" , 1, 1, 1, latLonString);
+    if (optimizedTaskRoute?.error != null){
+      emit (RaspErrorState(optimizedTaskRoute!.error!));
+    } else {
+      emit (OptimizedTaskRouteState(optimizedTaskRoute!));
+    }
+
+  }
+
   FutureOr<void> _emitTaskTurnpoints(
       Emitter<RaspDataState> emit, int taskId) async {
+    List<TaskTurnpoint> taskTurnpoints = await _getTaskTurnpoints(taskId);
+    emit(RaspTaskTurnpoints(taskTurnpoints));
+  }
+
+  Future<List<TaskTurnpoint>> _getTaskTurnpoints(int taskId) async {
     final List<TaskTurnpoint> taskTurnpoints = <TaskTurnpoint>[];
     if (taskId > -1) {
       taskTurnpoints.addAll(await _addTaskTurnpointDetails(taskId));
       // print('emitting taskturnpoints');
     }
-    emit(RaspTaskTurnpoints(taskTurnpoints));
+    return taskTurnpoints;
   }
 
   // _emitRaspDisplayOptions(Emitter<RaspDataState> emit) async {
@@ -822,4 +853,5 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
       await  _refreshForecast(event, emit);
     }
   }
+
 }

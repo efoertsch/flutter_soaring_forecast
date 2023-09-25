@@ -17,6 +17,7 @@ import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/LatLngFo
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image_set.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/util/animated_map_controller.dart';
 import 'package:flutter_soaring_forecast/soaring/graphics/data/forecast_graph_data.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/rasp/optimized_task_route.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/regions.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoint_utils.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_overhead_view.dart';
@@ -49,6 +50,8 @@ class ForecastMapState extends State<ForecastMap>
   SoaringForecastImageSet? soaringForecastImageSet;
   final List<Turnpoint> _turnpoints = [];
   final List<Polyline> _taskTurnpointCourse = <Polyline>[];
+  final List<Polyline> _optimizedTaskRoute = <Polyline>[];
+  final List<Polyline> _combinedTaskLines = <Polyline>[];
   final List<Marker> _mapMarkers = <Marker>[];
   final List<Marker> _soundingMarkers = <Marker>[];
   final List<Marker> _turnpointMarkers = <Marker>[];
@@ -183,6 +186,9 @@ class ForecastMapState extends State<ForecastMap>
         _updateTaskTurnpoints(state.taskTurnpoints);
         return;
       }
+      if (state is OptimizedTaskRouteState){
+        _plotOptimizedRoute(state.optimizedTaskRoute);
+      }
       if (state is LocalForecastState) {
         _placeLocalForecastMarker(state.latLngForecast);
         return;
@@ -221,7 +227,8 @@ class ForecastMapState extends State<ForecastMap>
           current is RedisplayMarkersState ||
           current is SuaDetailsState ||
           current is ForecastOverlayOpacityState ||
-          current is ForecastBoundsState;
+          current is ForecastBoundsState ||
+          current is OptimizedTaskRouteState;
     }, builder: (context, state) {
       if (state is RaspInitialState) {
         return SizedBox.shrink();
@@ -257,7 +264,7 @@ class ForecastMapState extends State<ForecastMap>
             //PolygonLayer(polygons: _suaPolygons),
             _getGeoJsonWidget(),
             PolylineLayer(
-              polylines: _taskTurnpointCourse,
+              polylines: _combinedTaskLines,
             ),
             MarkerLayer(
               markers: _mapMarkers,
@@ -413,6 +420,7 @@ class ForecastMapState extends State<ForecastMap>
         strokeWidth: 2.0,
         color: Colors.red,
       ));
+      _rebuildTaskLinesArray();
       // Only do this if view
       LatLng southwest = new LatLng(_swLat, _swLong);
       LatLng northeast = new LatLng(_neLat, _neLong);
@@ -421,6 +429,39 @@ class ForecastMapState extends State<ForecastMap>
       // _printMapBounds("_updateTaskTurnpoints ", latLngBounds);
       _mapController.animatedFitBounds(latLngBounds);
     }
+  }
+
+  void   _plotOptimizedRoute(OptimizedTaskRoute optimizedTaskRoute) {
+    _optimizedTaskRoute.clear();
+    var routePoints = <LatLng>[];
+    int numberRoutePoints = optimizedTaskRoute.routePoints?.length ?? 0;
+    print('number of route points ${numberRoutePoints} ');
+    if (numberRoutePoints == 0) {
+      //  _printMapBounds("TaskTurnpoints.length = 0 ", _forecastLatLngBounds);
+      _rebuildTaskLinesArray();
+      _mapController.animatedFitBounds(_forecastLatLngBounds);
+    } else {
+      for (var routePoint in optimizedTaskRoute.routePoints!) {
+        // print('adding taskturnpoint: ${taskTurnpoint.title}');
+        var latLngPoint = LatLng(double.parse(routePoint.lat!), double.parse(routePoint.lon!));
+        routePoints.add(latLngPoint);
+        updateMapLatLngCorner(latLngPoint);
+      }
+      _optimizedTaskRoute.add(Polyline(
+        points: routePoints,
+        strokeWidth: 5.0,
+        color: Colors.black,
+      ));
+      _rebuildTaskLinesArray();
+      // Only do this if view
+      LatLng southwest = new LatLng(_swLat, _swLong);
+      LatLng northeast = new LatLng(_neLat, _neLong);
+      final latLngBounds = LatLngBounds(southwest, northeast);
+      latLngBounds.pad(.2);
+      // _printMapBounds("_updateTaskTurnpoints ", latLngBounds);
+      _mapController.animatedFitBounds(latLngBounds);
+    }
+
   }
 
   Widget _getTaskTurnpointMarker(TaskTurnpoint taskTurnpoint) {
@@ -645,6 +686,7 @@ class ForecastMapState extends State<ForecastMap>
 
   void clearTaskFromMap(bool taskDefined) {
     _taskTurnpointCourse.clear();
+    _optimizedTaskRoute.clear();
     _taskMarkers.clear();
     _rebuildMarkerArray();
     if (taskDefined) {
@@ -723,6 +765,13 @@ class ForecastMapState extends State<ForecastMap>
     _mapMarkers.addAll(_soundingMarkers);
     _mapMarkers.addAll(_taskMarkers);
     _mapMarkers.addAll(_latLngMarkers);
+  }
+
+  void _rebuildTaskLinesArray() {
+    _combinedTaskLines.clear();
+    _combinedTaskLines.addAll(_taskTurnpointCourse);
+    _combinedTaskLines.addAll(_optimizedTaskRoute);
+
   }
 
   // Currently only display max of 1, so if changes in future need to revisit logic
@@ -893,4 +942,6 @@ class ForecastMapState extends State<ForecastMap>
       });
     });
   }
+
+
 }

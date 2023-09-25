@@ -34,6 +34,7 @@ import 'package:flutter_soaring_forecast/soaring/repository/options/settings.dar
 import 'package:flutter_soaring_forecast/soaring/repository/options/special_use_airspace.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/sua_region_files.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/turnpoint_regions.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/rasp/optimized_task_route.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/view_bounds.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/usgs/national_map.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/cup/cup_styles.dart';
@@ -318,6 +319,27 @@ class Repository {
     return responseBody;
   }
 
+  Future<OptimizedTaskRoute?> getOptimizedTaskRoute(
+      String region,
+      String date,
+      String model,
+      String grid,
+      String times,
+      String polar,
+      double wgt,
+      double tsink,
+      double tmult,
+      String latlons) async {
+    final String contentType = "application/x-www-form-urlencoded";
+    final httpResponse = await _raspClient.getOptimizedTaskRoute(contentType,
+        region, date, model, grid, times, polar, wgt, tsink, tmult, latlons);
+    if (httpResponse.response.statusCode! >= 200 &&
+        httpResponse.response.statusCode! < 300) {
+      return OptimizedTaskRoute.fromJson(jsonDecode(httpResponse.data));
+    } else
+      return null;
+  }
+
   Future<double> getForecastOverlayOpacity() async {
     return await getGenericDouble(
         key: FORECAST_OVERLAY_OPACITY, defaultValue: 50);
@@ -344,7 +366,7 @@ class Repository {
     return mapBoundsAndZoom;
   }
 
-  Future<void> saveLastForecastTime(int timeInMillSecs) async{
+  Future<void> saveLastForecastTime(int timeInMillSecs) async {
     saveGenericInt(key: LAST_FORECAST_TIME, value: timeInMillSecs);
   }
 
@@ -1201,10 +1223,9 @@ class Repository {
       final DeviceInfoPlugin deviceInfoPlugin = DeviceInfoPlugin();
       final AndroidDeviceInfo info = await deviceInfoPlugin.androidInfo;
       if ((info.version.sdkInt) >= 30) {
-        directory = await getExternalStorageDirectory() ;
+        directory = await getExternalStorageDirectory();
         debugPrint("ExternalStorageDirectory: ${directory?.absolute}");
-      }
-      else {
+      } else {
         directory = Directory('/storage/emulated/0/Download');
         if (!await directory.exists()) {
           directory = await getExternalStorageDirectory();

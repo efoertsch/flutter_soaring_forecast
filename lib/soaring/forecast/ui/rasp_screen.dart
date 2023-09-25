@@ -586,6 +586,7 @@ class _RaspScreenState extends State<RaspScreen>
     if (result != null && result is int && result > -1) {
       //debugPrint('Draw task for ' + result.toString());
       _sendEvent(GetTaskTurnpointsEvent(result));
+      _sendEvent(GetOptimizedTaskRouteEvent(result));
     }
   }
 
