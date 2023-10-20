@@ -96,6 +96,9 @@ class _RaspScreenState extends State<RaspScreen>
         debugPrint("app in paused");
         stopAnimation();
         break;
+      case AppLifecycleState.hidden:
+        debugPrint("app in detached");
+        break;
       case AppLifecycleState.detached:
         debugPrint("app in detached");
         break;

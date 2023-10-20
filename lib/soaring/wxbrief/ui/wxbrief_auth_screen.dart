@@ -90,8 +90,8 @@ class _WxBriefAuthScreenState extends State<WxBriefAuthScreen> {
             return SingleChildScrollView(
               child: Html(
                 data: snapshot.data,
-                onLinkTap: (reference, _, __, ___) async {
-                  launchWebBrowser(reference!, "", launchAsExternal: true);
+                onLinkTap: (url, _, __, ) async {
+                  launchWebBrowser(url!, "", launchAsExternal: true);
                 },
               ),
             );

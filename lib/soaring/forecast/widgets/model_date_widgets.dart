@@ -50,6 +50,7 @@ Widget BeginnerForecast(
 }
 
 // Display GFS, NAM, ....
+//ignore: must_be_immutable
 class ModelDropDownList extends StatefulWidget {
   String selectedModelName;
   late final List<String> modelNames;
@@ -91,6 +92,7 @@ class _ModelDropDownListState extends State<ModelDropDownList> {
 }
 
 // Display forecast dates for selected model (eg. GFS)
+//ignore: must_be_immutable
 class ForecastDatesDropDown extends StatefulWidget {
   late String selectedForecastDate;
   late final List<String> forecastDates;

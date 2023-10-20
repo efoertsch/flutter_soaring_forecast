@@ -6,6 +6,8 @@ import 'package:floor/floor.dart';
   Index(value: ['code'], unique: false),
   Index(value: ['title', 'code'], unique: true)
 ])
+
+//ignore: must_be_immutable
 class Turnpoint extends Equatable {
   @PrimaryKey(autoGenerate: true)
   late int? id;
