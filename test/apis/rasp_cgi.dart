@@ -3,12 +3,49 @@ import 'dart:io';
 
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
-import 'package:flutter_test/flutter_test.dart';
 
 Future<void> main() async {
-  final forecastForDay = ForecastsForDay();
-  await forecastForDay.getAllForecastsForDay();
+  //final forecastForDay = ForecastsForDay();
+  //await forecastForDay.getAllForecastsForDay();
+  final optimizedTaskRoute = OptimizedTaskRoute();
+  final optimizedRoute = await optimizedTaskRoute.getOptimizedTaskRoute();
+
 }
+
+class OptimizedTaskRoute {
+  static const region = "NewEngland";
+  static const date = "2023-08-11";
+  static const String model = "gfs";
+  static const String grid = "d2";
+  static const String time = "1100x";
+  static const String polar = "LS-4a";
+  static const double wgt = 1;
+  static const double tsink = 1;
+  static const double tmult = 1;
+  static const String latlons =
+      "42.42617,-71.79383,42.805,-72.003,42.90133,-72.26983,42.42617,-71.79383";
+  final repository = Repository(null);
+
+  FutureOr<void> getOptimizedTaskRoute() async {
+    OptimizedTaskRoute? optimizedTaskRoute = await repository.getOptimizedTaskRoute(
+        region,
+        date,
+        model,
+        grid,
+        time,
+        polar,
+        wgt,
+        tsink,
+        tmult,
+        latlons)
+        .then((optimizedTaskRoute) {
+           print(optimizedTaskRoute.toString());
+      }
+    );
+  }
+}
+
+
 
 class ForecastsForDay {
   static const forecastParmList = ["hwcrit", "zsfclclmask", "zblclmask"];
@@ -20,15 +57,15 @@ class ForecastsForDay {
   final options = <Forecast>[]; //json['forecasts'];
   final repository = Repository(null);
   var times = {
-    "0900",
-    "1000",
-    "1100",
-    "1200",
-    "1300",
-    "1400",
-    "1500",
-    "1600",
-    "1700",
+  "0900",
+  "1000",
+  "1100",
+  "1200",
+  "1300",
+  "1400",
+  "1500",
+  "1600",
+  "1700",
   };
 
   var date = "2022-11-19";

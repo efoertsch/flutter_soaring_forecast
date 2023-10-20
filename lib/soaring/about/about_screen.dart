@@ -115,7 +115,7 @@ class _AboutScreenState extends State<AboutScreen> {
             return SingleChildScrollView(
               child: Html(
                 data: snapshot.data,
-                onLinkTap: (reference, _, __, ___) async {
+                onLinkTap: (url, _, __, )  async {
                   Email email = Email(
                     //to: ['flightservice@soaringforecast.org'],
                     to: [FEEDBACK_EMAIL_ADDRESS],

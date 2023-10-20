@@ -16,6 +16,7 @@ import 'package:flutter_soaring_forecast/soaring/tasks/bloc/task_state.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_overhead_view.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoints_list.dart';
 
+//ignore: must_be_immutable
 class TaskDetailScreen extends StatefulWidget {
   final int taskId;
   bool displaySaveButton = false;

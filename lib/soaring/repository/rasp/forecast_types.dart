@@ -43,6 +43,7 @@ class ForecastTypes {
 }
 
 @JsonSerializable()
+//ignore: must_be_immutable
 class Forecast extends Equatable {
   String forecastName;
   ForecastType? forecastType;

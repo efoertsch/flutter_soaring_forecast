@@ -96,6 +96,9 @@ class _RaspScreenState extends State<RaspScreen>
         debugPrint("app in paused");
         stopAnimation();
         break;
+      case AppLifecycleState.hidden:
+        debugPrint("app in detached");
+        break;
       case AppLifecycleState.detached:
         debugPrint("app in detached");
         break;
@@ -586,6 +589,7 @@ class _RaspScreenState extends State<RaspScreen>
     if (result != null && result is int && result > -1) {
       //debugPrint('Draw task for ' + result.toString());
       _sendEvent(GetTaskTurnpointsEvent(result));
+      _sendEvent(GetOptimizedTaskRouteEvent(result));
     }
   }
 

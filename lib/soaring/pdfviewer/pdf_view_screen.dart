@@ -6,6 +6,7 @@ import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 
 // https://pub.dev/packages/native_pdf_view/example
+//ignore: must_be_immutable
 class PdfViewScreen extends StatefulWidget {
   String fileName;
 
