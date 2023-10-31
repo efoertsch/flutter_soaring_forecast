@@ -3,7 +3,7 @@ import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
 import 'package:flutter_soaring_forecast/soaring/app/custom_styles.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
 
-class CommonForecastWidgets {
+class BottomSheetWidgets {
   static void showForecastDescriptionBottomSheet(
       BuildContext context, Forecast forecast) {
     showModalBottomSheet(
@@ -56,4 +56,31 @@ class CommonForecastWidgets {
       ],
     );
   }
+
+  static void showTextBottomSheet(
+      BuildContext context, String title, String text) {
+    showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(20),
+          ),
+        ),
+        builder: (context) => SafeArea(
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Text(title, style: TextStyle(fontFamily: "Inconsolata")),
+            Padding(
+              padding: const EdgeInsets.only(
+                  top: 16, left: 8.0, right: 8.0, bottom: 8.0),
+              child: Text(text,
+                  maxLines: 40,
+                  style: TextStyle(fontFamily: "Inconsolata", fontSize: 14),),
+            ),
+
+          ]),
+        ));
+  }
+
+
 }

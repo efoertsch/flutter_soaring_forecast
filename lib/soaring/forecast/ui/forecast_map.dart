@@ -31,6 +31,7 @@ import 'package:geojson_vector_slicer/vector_tile/vector_tile.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../app/label.dart';
+import '../../forecast_types/ui/common_forecast_widgets.dart';
 
 class ForecastMap extends StatefulWidget {
   final Function stopAnimation;
@@ -69,9 +70,11 @@ class ForecastMapState extends State<ForecastMap>
   double _neLat = 0;
   double _neLong = 0;
 
-  bool _soundingsVisibility = false;
+  bool _soundingsAreVisible = false;
+  bool _routeIconIsVisible = false;
+  bool _routeSummaryIsVisible = false;
   double _forecastOverlayOpacity = 50;
-  var _forecastOverlaySliderIsVisible = false;
+  bool _forecastOverlaySliderIsVisible = false;
   Timer? _hideOpacityTimer = null;
   double _mapZoom = 7;
   double _previousZoom = 7;
@@ -144,6 +147,7 @@ class ForecastMapState extends State<ForecastMap>
         child: _forecastLegend(),
       ),
       _getOpacitySlider(),
+      _getOptimizedRouteIcon(),
     ]);
   }
 
@@ -170,6 +174,66 @@ class ForecastMapState extends State<ForecastMap>
         });
   }
 
+  Widget _getOptimizedRouteIcon() {
+    return _routeIconIsVisible
+        ? Positioned(
+            bottom: 0,
+            left: 0,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                ElevatedButton(
+                  style: const ButtonStyle(
+                    backgroundColor:
+                        MaterialStatePropertyAll<Color>(Colors.white),
+                  ),
+                  onPressed: () {
+                    _sendEvent(GetOptimizedTaskRouteEvent());
+                  },
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      SvgPicture.asset(
+                        'assets/svg/task_route.svg',
+                        height: 40,
+                        width: 40,
+                      ),
+                      Text(
+                        "Optimize\nRoute",
+                        style: textStyleBoldBlackFontSize14,
+                      ),
+                    ],
+                  ),
+                ),
+                _getRouteSummaryTextButton(),
+              ],
+            ),
+          )
+        : SizedBox.shrink();
+  }
+
+  Widget _getRouteSummaryTextButton() {
+    return BlocBuilder<RaspDataBloc, RaspDataState>(
+     buildWhen: (previous, current) {
+      return current is OptimizedTaskRouteState ;
+    }, builder: (context, state) {
+      if (state is OptimizedTaskRouteState && state.optimizedTaskRoute != null) {
+        return ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            foregroundColor: Colors.white,
+            backgroundColor: Theme.of(context).colorScheme.primary,
+          ),
+          child: Text("Summary"),
+          onPressed: () {
+            BottomSheetWidgets.showTextBottomSheet(context,
+                "Optimized Route Summary", state.optimizedTaskRoute!.summary!);
+          },
+        );
+      }
+      return SizedBox.shrink();
+    });
+  }
+
   Widget _forecastMap() {
     return BlocConsumer<RaspDataBloc, RaspDataState>(
         listener: (context, state) {
@@ -186,8 +250,8 @@ class ForecastMapState extends State<ForecastMap>
         _updateTaskTurnpoints(state.taskTurnpoints);
         return;
       }
-      if (state is OptimizedTaskRouteState){
-        _plotOptimizedRoute(state.optimizedTaskRoute);
+      if (state is OptimizedTaskRouteState && state.optimizedTaskRoute != null) {
+        _plotOptimizedRoute(state.optimizedTaskRoute!);
       }
       if (state is LocalForecastState) {
         _placeLocalForecastMarker(state.latLngForecast);
@@ -326,7 +390,7 @@ class ForecastMapState extends State<ForecastMap>
           if (state is SoundingForecastImageSet) {
             final imageUrl = state.soaringForecastImageSet.bodyImage!.imageUrl;
             return Visibility(
-              visible: _soundingsVisibility,
+              visible: _soundingsAreVisible,
               child: Container(
                 color: Colors.white,
                 child: Stack(
@@ -348,7 +412,7 @@ class ForecastMapState extends State<ForecastMap>
                             icon: const Icon(Icons.close),
                             onPressed: () {
                               setState(() {
-                                _soundingsVisibility = false;
+                                _soundingsAreVisible = false;
                                 _sendEvent(DisplayCurrentForecastEvent());
                               });
                             }))
@@ -367,6 +431,10 @@ class ForecastMapState extends State<ForecastMap>
       listener: (context, state) {
         if (state is DisplayLocalForecastGraphState) {
           _displayLocalForecastGraph(context, state.localForecastGraphData);
+        }
+        if (state is RaspTaskTurnpoints) {
+          _routeIconIsVisible = state.taskTurnpoints.length > 0;
+          _routeSummaryIsVisible = false;
         }
         if (state is ForecastBoundsState) {
           _forecastLatLngBounds = state.latLngBounds;
@@ -431,7 +499,7 @@ class ForecastMapState extends State<ForecastMap>
     }
   }
 
-  void   _plotOptimizedRoute(OptimizedTaskRoute optimizedTaskRoute) {
+  void _plotOptimizedRoute(OptimizedTaskRoute optimizedTaskRoute) {
     _optimizedTaskRoute.clear();
     var routePoints = <LatLng>[];
     int numberRoutePoints = optimizedTaskRoute.routePoints?.length ?? 0;
@@ -443,13 +511,14 @@ class ForecastMapState extends State<ForecastMap>
     } else {
       for (var routePoint in optimizedTaskRoute.routePoints!) {
         // print('adding taskturnpoint: ${taskTurnpoint.title}');
-        var latLngPoint = LatLng(double.parse(routePoint.lat!), double.parse(routePoint.lon!));
+        var latLngPoint = LatLng(
+            double.parse(routePoint.lat!), double.parse(routePoint.lon!));
         routePoints.add(latLngPoint);
         updateMapLatLngCorner(latLngPoint);
       }
       _optimizedTaskRoute.add(Polyline(
         points: routePoints,
-        strokeWidth: 5.0,
+        strokeWidth: 2.0,
         color: Colors.black,
       ));
       _rebuildTaskLinesArray();
@@ -461,7 +530,6 @@ class ForecastMapState extends State<ForecastMap>
       // _printMapBounds("_updateTaskTurnpoints ", latLngBounds);
       _mapController.animatedFitBounds(latLngBounds);
     }
-
   }
 
   Widget _getTaskTurnpointMarker(TaskTurnpoint taskTurnpoint) {
@@ -642,7 +710,7 @@ class ForecastMapState extends State<ForecastMap>
   void _displaySoundingsView(Soundings sounding) {
     _sendEvent(DisplaySoundingsEvent(sounding));
     setState(() {
-      _soundingsVisibility = true;
+      _soundingsAreVisible = true;
     });
   }
 
@@ -689,6 +757,7 @@ class ForecastMapState extends State<ForecastMap>
     _optimizedTaskRoute.clear();
     _taskMarkers.clear();
     _rebuildMarkerArray();
+    _rebuildTaskLinesArray();
     if (taskDefined) {
       _southwest = null;
     }
@@ -771,7 +840,6 @@ class ForecastMapState extends State<ForecastMap>
     _combinedTaskLines.clear();
     _combinedTaskLines.addAll(_taskTurnpointCourse);
     _combinedTaskLines.addAll(_optimizedTaskRoute);
-
   }
 
   // Currently only display max of 1, so if changes in future need to revisit logic
@@ -942,6 +1010,4 @@ class ForecastMapState extends State<ForecastMap>
       });
     });
   }
-
-
 }

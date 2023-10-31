@@ -202,6 +202,6 @@ class BeginnerForecastDateModelState extends RaspDataState {
 }
 
 class OptimizedTaskRouteState extends RaspDataState {
-  final  OptimizedTaskRoute optimizedTaskRoute;
+  final  OptimizedTaskRoute? optimizedTaskRoute;
   OptimizedTaskRouteState (this.optimizedTaskRoute);
 }

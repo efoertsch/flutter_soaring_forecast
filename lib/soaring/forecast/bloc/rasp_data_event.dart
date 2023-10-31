@@ -88,9 +88,8 @@ class GetTaskTurnpointsEvent extends RaspDataEvent {
 }
 
 class GetOptimizedTaskRouteEvent extends RaspDataEvent {
-  final int taskId;
 
-  GetOptimizedTaskRouteEvent(this.taskId);
+  GetOptimizedTaskRouteEvent();
 }
 
 // clear task/turnpoints from map

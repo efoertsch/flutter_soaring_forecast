@@ -112,6 +112,11 @@ dev_dependencies:
 # The following section is specific to Flutter.
 flutter:
 
+  fonts:
+    - family: Inconsolata
+      fonts:
+        - asset: assets/fonts/Inconsolata.ttf
+
   assets:
     - assets/json/
     - assets/svg/
@@ -120,6 +125,8 @@ flutter:
     - assets/txt/
     - assets/csv/
     - assets/ca/
+    - assets/fonts/
+
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

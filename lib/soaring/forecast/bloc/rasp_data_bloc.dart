@@ -54,6 +54,8 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
   // index into list of soundings
   int _soundingPosition = 0;
 
+  int _taskId = -1;
+
   RaspDataBloc({required this.repository}) : super(RaspInitialState()) {
     on<InitialRaspRegionEvent>(_processInitialRaspRegionEvent);
     on<MapReadyEvent>(_processMapReadyEvent);
@@ -186,6 +188,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
         _emitSoundingImageSet(emit);
       }
     }
+    emit(OptimizedTaskRouteState(null));
   }
 
   void _processSelectedForecastEvent(
@@ -212,6 +215,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
         _getSoundingImages(_soundingPosition);
         _emitSoundingImageSet(emit);
       }
+      emit(OptimizedTaskRouteState(null));
     }
   }
 
@@ -436,10 +440,12 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
   }
 
   void _processNextTimeEventAndEmitImage(_, Emitter<RaspDataState> emit) {
+    emit(OptimizedTaskRouteState(null));
     _updateTimeIndex(1, emit);
   }
 
   void _processPreviousTimeEventAndEmitImage(_, Emitter<RaspDataState> emit) {
+    emit(OptimizedTaskRouteState(null));
     _updateTimeIndex(-1, emit);
   }
 
@@ -470,9 +476,11 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
 
   void _clearTask(ClearTaskEvent event, Emitter<RaspDataState> emit) async {
     repository.setCurrentTaskId(-1);
+    _taskId = -1;
     _viewMapBoundsAndZoom = ViewBounds(_regionLatLngBounds!);
     repository.saveViewBounds(_viewMapBoundsAndZoom!); // 7 default zoom
     emit(RaspTaskTurnpoints(<TaskTurnpoint>[]));
+    emit(OptimizedTaskRouteState(null));
     //emit(ViewBoundsState(_viewMapBoundsAndZoom!));
   }
 
@@ -483,19 +491,21 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
   // }
 
   Future<void> _emitCurrentTask(Emitter<RaspDataState> emit) async {
-    var taskId = await repository.getCurrentTaskId();
-    await _emitTaskTurnpoints(emit, taskId);
+   _taskId = await repository.getCurrentTaskId();
+    await _emitTaskTurnpoints(emit, _taskId);
   }
 
   void _getTurnpointsForTaskId(
       GetTaskTurnpointsEvent event, Emitter<RaspDataState> emit) async {
-    repository.setCurrentTaskId(event.taskId);
-    await _emitTaskTurnpoints(emit, event.taskId);
+    emit(OptimizedTaskRouteState(null));
+    _taskId = event.taskId;
+    repository.setCurrentTaskId(_taskId);
+    await _emitTaskTurnpoints(emit, _taskId);
   }
 
 
   void _getGetOptimizedTaskRoute(GetOptimizedTaskRouteEvent event, Emitter<RaspDataState> emit) async {
-    List<TaskTurnpoint> taskTurnpoints = await _getTaskTurnpoints(event.taskId);
+    List<TaskTurnpoint> taskTurnpoints = await _getTaskTurnpoints(_taskId);
     StringBuffer turnpointLatLons = StringBuffer();
     String latLonString = "";
     for(var taskTurnpoints in taskTurnpoints){
@@ -509,7 +519,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     }
     var optimizedTaskRoute = await repository.getOptimizedTaskRoute(_region!.name!, _selectedForecastDate!,
         _selectedModelName!, 'd2', _forecastTimes![_selectedForecastTimeIndex],
-        "LS-4" , 1, 1, 1, latLonString);
+        "LS-4a" , 1, 1, 1, latLonString);
     if (optimizedTaskRoute?.error != null){
       emit (RaspErrorState(optimizedTaskRoute!.error!));
     } else {
@@ -808,6 +818,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
       _getSoundingImages(_soundingPosition);
       _emitSoundingImageSet(emit);
     }
+    emit(OptimizedTaskRouteState(null));
   }
 
   // Switch display from beginner to expert or visa-versa
@@ -825,6 +836,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
           _selectedForecastDate ?? '', _selectedModelName!));
       _getForecastImages();
       _emitRaspForecastImageSet(emit);
+      emit(OptimizedTaskRouteState(null));
     } else {
       //  switched from beginner to expert
       // stay on same model and date so just send info to update ui

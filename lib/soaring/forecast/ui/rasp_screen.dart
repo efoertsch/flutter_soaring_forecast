@@ -306,7 +306,7 @@ class _RaspScreenState extends State<RaspScreen>
       padding: const EdgeInsets.only(left: 8.0, right: 8.0),
       child: InkWell(
           onTap: () {
-            CommonForecastWidgets.showForecastDescriptionBottomSheet(
+            BottomSheetWidgets.showForecastDescriptionBottomSheet(
                 context, forecast);
           },
           child:
@@ -589,7 +589,6 @@ class _RaspScreenState extends State<RaspScreen>
     if (result != null && result is int && result > -1) {
       //debugPrint('Draw task for ' + result.toString());
       _sendEvent(GetTaskTurnpointsEvent(result));
-      _sendEvent(GetOptimizedTaskRouteEvent(result));
     }
   }
 
