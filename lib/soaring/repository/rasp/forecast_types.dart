@@ -1,23 +1,22 @@
-// To parse this JSON data, do
-//
-//     final forecastTypes = forecastTypesFromJson(jsonString);
-/// Steps to create class and ...g.dart file
-/// 1. Used assets/json/forecast_options as input to https://app.quicktype.io/
-/// 2. Modified code for generator:
-///    a. Added @JsonSerializable() for each class (except enums) below
-///    b. Add getters as needed for convenience
-import 'dart:convert';
 
+import 'dart:convert';
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'forecast_types.g.dart';
 
-/// 1. Gen'ed Dart code from JSON string via using https://app.quicktype.io/
-/// 2. Dart code modified for generator
-/// 3. Added part'forecast_types.g.dart' above
+/// Steps to create class and ...g.dart file
+/// 1. Gen'ed Dart code from assets/json/forecast_options via using https://app.quicktype.io/
+/// 2. Modified code for generator:
+///    a. Added @JsonSerializable() for each class (except enums) below
+///    b. Add getters as needed for convenience
+/// 3. Added part 'forecast_types.g.dart' above
 /// 4. Generated ...g.dart file running following command in terminal
 ///    flutter packages pub run build_runner build
+
+// To parse this JSON data, do
+//
+//     final forecastTypes = forecastTypesFromJson(jsonString);
 
 ForecastTypes forecastTypesFromJson(String str) =>
     ForecastTypes.fromJson(json.decode(str));

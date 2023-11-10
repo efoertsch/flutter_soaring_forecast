@@ -65,21 +65,17 @@ abstract class RaspClient {
       @Query("lon") String lon,
       @Query("param") String forecasts);
 
-
   @GET("/cgi/get_optimized_route.cgi")
   Future<HttpResponse<String>> getOptimizedTaskRoute(
       @Header("Content-Type") String contentType,
-      @Query("region")  String region,
-      @Query("date")    String date,
-      @Query("model")   String model,
-      @Query("grid")    String grid,
-      @Query("time")    String times,
-      @Query("polar")   String polar,
-      @Query("wgt")     double wgt,
-      @Query("tsink")   double tsink,
-      @Query("tmult")   double tmult,
-      @Query("latlons") String latlons);
+      @Query("region") String region,
+      @Query("date") String date,
+      @Query("model") String model,
+      @Query("grid") String grid,
+      @Query("time") String times,
+      @Query("polar") String polar,
+      @Query("wgt") double wgt,
+      @Query("tsink") double tsink,
+      @Query("tmult") double tmult,
+      @Query("turnpts") String latlons);
 }
-
-
-

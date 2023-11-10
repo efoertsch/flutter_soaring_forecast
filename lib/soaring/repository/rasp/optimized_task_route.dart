@@ -1,4 +1,4 @@
-import 'package:collection/collection.dart';
+
 import 'package:json_annotation/json_annotation.dart';
 
 part 'optimized_task_route.g.dart';

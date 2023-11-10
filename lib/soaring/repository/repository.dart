@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:collection/collection.dart';
 import 'package:csv/csv.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:dio/dio.dart';
@@ -35,6 +36,7 @@ import 'package:flutter_soaring_forecast/soaring/repository/options/special_use_
 import 'package:flutter_soaring_forecast/soaring/repository/options/sua_region_files.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/turnpoint_regions.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/optimized_task_route.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/rasp/polars.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/view_bounds.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/usgs/national_map.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/cup/cup_styles.dart';
@@ -84,6 +86,7 @@ class Repository {
   static const String BEGINNER_FORECAST_MODE = "BEGINNER_FORECAST_MODE";
   static const String LOCAL_FORECAST_FAVORITE = "LOCAL_FORECAST_FAVORITE";
   static const String LAST_FORECAST_TIME = "LAST_FORECAST_TIME";
+  static const String MY_GLIDER_POLARS = "MY_GLIDER_POLARS";
 
   late final String satelliteRegionUS;
   late final String satelliteTypeVis;
@@ -329,12 +332,14 @@ class Repository {
       double wgt,
       double tsink,
       double tmult,
-      String latlons) async {
+      String type,
+      String turnpoints) async {
     final String contentType = "application/x-www-form-urlencoded";
     final httpResponse = await _raspClient.getOptimizedTaskRoute(contentType,
-        region, date, model, grid, times, polar, wgt, tsink, tmult, latlons);
+        region, date, model, grid, times, polar, wgt, tsink, tmult, type, turnpoints);
     if (httpResponse.response.statusCode! >= 200 &&
         httpResponse.response.statusCode! < 300) {
+      debugPrint( " httpResponse: " + httpResponse.data);
       return OptimizedTaskRoute.fromJson(jsonDecode(httpResponse.data));
     } else
       return null;
@@ -1283,4 +1288,53 @@ class Repository {
       return LocalForecastFavorite.fromJson(jsonDecode(favoriteString));
     }
   }
+
+  Future<List<Polar>?> getDefaultListOfGliderPolars() async {
+    final json = await DefaultAssetBundle.of(_context!)
+        .loadString('assets/json/polars.json');
+    Polars polars = Polars.polarsFromJson(json);
+    return polars?.polars;
+
+  }
+
+  Future<Polar?> getGliderPolar(String gliderName) async {
+    // See if in repository first, if not get from full list
+      String jsonString =
+      await getGenericString(key: MY_GLIDER_POLARS, defaultValue: "");
+      if (jsonString.isNotEmpty) {
+        final polars = Polars.polarsFromJson(jsonString);
+        var gliderPolar = polars.polars?.firstWhereOrNull((glider) => glider.glider == gliderName);
+        if (gliderPolar != null) return gliderPolar;
+        }
+
+    jsonString = await DefaultAssetBundle.of(_context!)
+        .loadString('assets/json/polars.json');
+    return  Polars.polarsFromJson(jsonString).polars?.firstWhereOrNull((polar) => polar.glider == gliderName );
+  }
+
+
+  /// Polars saved by user, likely customized
+  Future<Polars?> getSavedPolarList() async {
+    // See if in repository first, if not get from full list
+    String jsonString =
+    await getGenericString(key: MY_GLIDER_POLARS, defaultValue: "");
+    if (jsonString.isNotEmpty) {
+      final polars = Polars.polarsFromJson(jsonString);
+      return polars;
+    }
+    return Polars();
+  }
+
+
+  Future<bool> storeGliderPolar(Polar glider) async {
+    // See if in repository first, if not get from full list
+
+    var gliderJson = jsonEncode(glider);
+    return await saveGenericString(key: MY_GLIDER_POLARS, value:gliderJson);
+
+  }
+
+
+
+
 }

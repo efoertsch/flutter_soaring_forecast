@@ -508,18 +508,24 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     List<TaskTurnpoint> taskTurnpoints = await _getTaskTurnpoints(_taskId);
     StringBuffer turnpointLatLons = StringBuffer();
     String latLonString = "";
+    int index = 1;
     for(var taskTurnpoints in taskTurnpoints){
+      turnpointLatLons.write (index.toString());
+      turnpointLatLons.write(",");
       turnpointLatLons.write(taskTurnpoints.latitudeDeg.toString());
       turnpointLatLons.write(",");
       turnpointLatLons.write(taskTurnpoints.longitudeDeg.toString());
       turnpointLatLons.write(",");
+      turnpointLatLons.write(taskTurnpoints.title.substring(0,taskTurnpoints.title.length > 4 ? 4 : taskTurnpoints.title.length ));
+      turnpointLatLons.write(",");
+      index++;
     }
     if (turnpointLatLons.length > 0){
       latLonString = turnpointLatLons.toString().substring(0, turnpointLatLons.length - 1);
     }
     var optimizedTaskRoute = await repository.getOptimizedTaskRoute(_region!.name!, _selectedForecastDate!,
         _selectedModelName!, 'd2', _forecastTimes![_selectedForecastTimeIndex],
-        "LS-4a" , 1, 1, 1, latLonString);
+        "LS-4" , 1, 1, 1,  latLonString);
     if (optimizedTaskRoute?.error != null){
       emit (RaspErrorState(optimizedTaskRoute!.error!));
     } else {

@@ -18,6 +18,7 @@ import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_
 import 'package:flutter_soaring_forecast/soaring/forecast/util/animated_map_controller.dart';
 import 'package:flutter_soaring_forecast/soaring/graphics/data/forecast_graph_data.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/optimized_task_route.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/rasp/polars.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/regions.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoint_utils.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_overhead_view.dart';
@@ -187,8 +188,14 @@ class ForecastMapState extends State<ForecastMap>
                     backgroundColor:
                         MaterialStatePropertyAll<Color>(Colors.white),
                   ),
-                  onPressed: () {
-                    _sendEvent(GetOptimizedTaskRouteEvent());
+                  onPressed: () async {
+                    //_sendEvent(GetOptimizedTaskRouteEvent());
+                    var maybePolar = await Navigator.pushNamed(
+                        context, GliderPolarListBuilder.routeName);
+                    if (maybePolar != null && maybePolar is Polar){
+                      _sendEvent(GetOptimizedTaskRouteEvent(maybePolar));
+
+                    }
                   },
                   child: Stack(
                     alignment: Alignment.center,
