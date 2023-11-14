@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:json_annotation/json_annotation.dart';
 import 'dart:convert';
 import 'package:equatable/equatable.dart';
@@ -15,28 +17,20 @@ part 'polars.g.dart';
 /// 4. Generated ...g.dart file running following command in terminal
 ///    dart run build_runner build --delete-conflicting-outputs
 
-
 @JsonSerializable()
 class Polars {
   List<Polar>? polars;
 
   Polars({
-      this.polars,
+    this.polars,
   });
 
-  factory Polars.fromJson(Map<String, dynamic> json) =>
-      Polars(
-        polars: List<Polar>.from(
-            json["polars"].map((x) => Polar.fromJson(x))),
-      );
+  factory Polars.fromJson(Map<String, dynamic> json) => _$PolarsFromJson(json);
 
-  Map<String, dynamic> toJson() =>
-      {
-        "polars": polars != null ? List<dynamic>.from(polars!.map((x) => x.toJson())) : "",
-      };
+  Map<String, dynamic> toJson() => _$PolarsToJson(this);
 
-  static Polars polarsFromJson(String str) =>
-      Polars.fromJson(json.decode(str));
+
+  static Polars polarsFromJson(String str) => Polars.fromJson(json.decode(str));
 
   static String polarsToJson(Polar data) => json.encode(data.toJson());
 }
@@ -44,69 +38,52 @@ class Polars {
 @JsonSerializable()
 class Polar extends Equatable {
   late final String glider;
+  @JsonKey(name: 'glider_and_max_pilot_wgt')
   late final double gliderAndMaxPilotWgt;
+  @JsonKey(name: 'max_ballast')
   late final double maxBallast;
+  @JsonKey(name: 'V1')
   late final double v1;
+  @JsonKey(name: 'W1')
   late final double w1;
+  @JsonKey(name: 'V2')
   late final double v2;
+  @JsonKey(name: 'W2')
   late final double w2;
+  @JsonKey(name: 'V3')
   late final double v3;
+  @JsonKey(name: 'W3')
   late final double w3;
-  late final double wingArea;
+  @JsonKey(name: 'wing_area')
+  late final double  wingArea;
+  @JsonKey(name: 'ballast_dump_time')
   late final double ballastDumpTime;
   late final double handicap;
+  @JsonKey(name: 'glider_empty_mass')
   late final double gliderEmptyMass;
 
-  Polar({required this.glider,
-    required this.gliderAndMaxPilotWgt,
-    required this.maxBallast,
-    required this.v1,
-    required this.w1,
-    required this.v2,
-    required this.w2,
-    required this.v3,
-    required this.w3,
-    required this.wingArea,
-    required this.ballastDumpTime,
-    required this.handicap,
-    required this.gliderEmptyMass});
+  Polar(
+      {required this.glider,
+      required this.gliderAndMaxPilotWgt,
+      required this.maxBallast,
+      required this.v1,
+      required this.w1,
+      required this.v2,
+      required this.w2,
+      required this.v3,
+      required this.w3,
+      required this.wingArea,
+      required this.ballastDumpTime,
+      required this.handicap,
+      required this.gliderEmptyMass});
 
-  Polar.fromJson(Map<String, dynamic> json) {
-    glider = json['glider'];
-    gliderAndMaxPilotWgt = json['glider_and_max_pilot_wgt'].toDouble();
-    maxBallast = json['max_ballast'].toDouble();
-    v1 = json['V1'].toDouble();
-    w1 = json['W1'].toDouble();
-    v2 = json['V2'].toDouble();
-    w2 = json['W2'].toDouble();
-    v3 = json['V3'].toDouble();
-    w3 = json['W3'].toDouble();
-    wingArea = json['wing_area'].toDouble();
-    ballastDumpTime = json['ballast_dump_time'].toDouble();
-    handicap = json['handicap'].toDouble();
-    gliderEmptyMass = json['glider_empty_mass'].toDouble();
-  }
+  factory Polar.fromJson(Map<String, dynamic> json) => _$PolarFromJson(json);
 
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['glider'] = this.glider;
-    data['glider_and_max_pilot_wgt'] = this.gliderAndMaxPilotWgt;
-    data['max_ballast'] = this.maxBallast;
-    data['V1'] = this.v1;
-    data['W1'] = this.w1;
-    data['V2'] = this.v2;
-    data['W2'] = this.w2;
-    data['V3'] = this.v3;
-    data['W3'] = this.w3;
-    data['wing_area'] = this.wingArea;
-    data['ballast_dump_time'] = this.ballastDumpTime;
-    data['handicap'] = this.handicap;
-    data['glider_empty_mass'] = this.gliderEmptyMass;
-    return data;
-  }
+  Map<String, dynamic> toJson() => _$PolarToJson(this);
+
 
   Polar copyWith({
-    required String glider ,
+    required String glider,
     required double gliderAndMaxPilotWgt,
     required double maxBallast,
     required double v1,
@@ -136,15 +113,12 @@ class Polar extends Equatable {
         gliderEmptyMass: gliderEmptyMass ?? this.gliderEmptyMass,
       );
 
-
-  static Polar polarFromJson(String str) =>
-      Polar.fromJson(json.decode(str));
+  static Polar polarFromJson(String str) => Polar.fromJson(json.decode(str));
 
   static String polarToJson(Polar data) => json.encode(data.toJson());
 
   @override
-  List<Object?> get props =>
-      [
+  List<Object?> get props => [
         glider,
         gliderAndMaxPilotWgt,
         maxBallast,
@@ -159,4 +133,34 @@ class Polar extends Equatable {
         handicap,
         gliderEmptyMass,
       ];
+
+  // Get polar coefficients as string a,b,c
+  String getPolarCoefficients() {
+    double a = getA();
+    double b = getB(a);
+    return a.toStringAsFixed(4) +
+        ',' +
+        getB(a).toStringAsFixed(4) +
+        ',' +
+        getC(a, b).toStringAsFixed(4);
+  }
+
+  // a,b,c calculated per Reichman  Cross country soaring pg 122.
+  double getA() {
+    double a = ((v2 - v3) * (w1 - w3) + (v3 - v1) * (w2 - w3)) /
+        (pow(v1, 2) * (v2 - v3) +
+            pow(v2, 2) * (v3 - v1) +
+            pow(v3, 2) * (v1 - v2));
+    return a;
+  }
+
+  double getB(double a) {
+    double b = ((w2 - w3) - a * (pow(v2, 2) - pow(v3, 2))) / (v2 - v3);
+    return b;
+  }
+
+  double getC(double a, double b) {
+    double c = w3 - a * pow(v3, 2) - b * v3;
+    return c;
+  }
 }

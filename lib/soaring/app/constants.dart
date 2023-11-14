@@ -9,9 +9,11 @@ import 'package:latlong2/latlong.dart';
 //-------- Non translatable values --------------------------------------------
 /// Hold any system wide constants
 // if you leave off www. below, the POST to get point forecast returns a 301
+// If you modify the URLS you need to re-gen the API calls via:
+//      dart  run build_runner build  --delete-conflicting-outputs
 const String BASE_URL = 'https://www.soargbsc.net/';
-const String RASP_BASE_URL = BASE_URL + 'rasp/';
-//const String RASP_BASE_URL ='http://192.168.1.6/';
+//const String RASP_BASE_URL = BASE_URL + 'rasp/';
+const String RASP_BASE_URL ='http://192.168.1.6/';
 const String RASP_OPTIONS_BASE_URL = 'https://soargbsc.com/soaringforecast/';
 const String AIRPORT_URL = 'http://ourairports.com/data/airports.csv';
 const String GEOS_GIF =
@@ -372,6 +374,9 @@ class WxBriefMenu {
   static const String HELP = "Help";
 }
 
+class PolarLiterals {
+  static const String POLAR = "Polar";
+}
 class WxBriefLiterals {
   static const String DO_NOT_SHOW_THIS_AGAIN = "Do not show this again";
   static const String WXBRIEF_AUTHORIZATION = "1800Brief Authorization";

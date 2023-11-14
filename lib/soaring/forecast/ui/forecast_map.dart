@@ -232,8 +232,8 @@ class ForecastMapState extends State<ForecastMap>
           ),
           child: Text("Summary"),
           onPressed: () {
-            BottomSheetWidgets.showTextBottomSheet(context,
-                "Optimized Route Summary", state.optimizedTaskRoute!.summary!);
+            // BottomSheetWidgets.showTextBottomSheet(context,
+            //     "Optimized Route Summary", state.optimizedTaskRoute!.summary!);
           },
         );
       }
@@ -506,17 +506,17 @@ class ForecastMapState extends State<ForecastMap>
     }
   }
 
-  void _plotOptimizedRoute(OptimizedTaskRoute optimizedTaskRoute) {
+  void _plotOptimizedRoute(OptimalTaskSummary optimizedTaskRoute) {
     _optimizedTaskRoute.clear();
     var routePoints = <LatLng>[];
-    int numberRoutePoints = optimizedTaskRoute.routePoints?.length ?? 0;
+    int numberRoutePoints = optimizedTaskRoute.summary?.routePoints?.length ?? 0;
     print('number of route points ${numberRoutePoints} ');
     if (numberRoutePoints == 0) {
       //  _printMapBounds("TaskTurnpoints.length = 0 ", _forecastLatLngBounds);
       _rebuildTaskLinesArray();
       _mapController.animatedFitBounds(_forecastLatLngBounds);
     } else {
-      for (var routePoint in optimizedTaskRoute.routePoints!) {
+      for (var routePoint in optimizedTaskRoute.summary!.routePoints!) {
         // print('adding taskturnpoint: ${taskTurnpoint.title}');
         var latLngPoint = LatLng(
             double.parse(routePoint.lat!), double.parse(routePoint.lon!));

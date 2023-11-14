@@ -7,43 +7,43 @@ import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 Future<void> main() async {
   //final forecastForDay = ForecastsForDay();
   //await forecastForDay.getAllForecastsForDay();
-  final optimizedTaskRoute = OptimizedTaskRoute();
-  final optimizedRoute = await optimizedTaskRoute.getOptimizedTaskRoute();
+//  final optimizedTaskRoute = OptimizedTaskRoute();
+//  final optimizedRoute = await optimizedTaskRoute.getOptimizedTaskRoute();
 
 }
 
-class OptimizedTaskRoute {
-  static const region = "NewEngland";
-  static const date = "2023-08-11";
-  static const String model = "gfs";
-  static const String grid = "d2";
-  static const String time = "1100x";
-  static const String polar = "LS-4a";
-  static const double wgt = 1;
-  static const double tsink = 1;
-  static const double tmult = 1;
-  static const String latlons =
-      "42.42617,-71.79383,42.805,-72.003,42.90133,-72.26983,42.42617,-71.79383";
-  final repository = Repository(null);
-
-  FutureOr<void> getOptimizedTaskRoute() async {
-    OptimizedTaskRoute? optimizedTaskRoute = await repository.getOptimizedTaskRoute(
-        region,
-        date,
-        model,
-        grid,
-        time,
-        polar,
-        wgt,
-        tsink,
-        tmult,
-        latlons)
-        .then((optimizedTaskRoute) {
-           print(optimizedTaskRoute.toString());
-      }
-    );
-  }
-}
+// class OptimizedTaskRoute {
+//   static const region = "NewEngland";
+//   static const date = "2023-08-11";
+//   static const String model = "gfs";
+//   static const String grid = "d2";
+//   static const String time = "1100x";
+//   static const String polar = "LS-4a";
+//   static const double wgt = 1;
+//   static const double tsink = 1;
+//   static const double tmult = 1;
+//   static const String latlons =
+//       "42.42617,-71.79383,42.805,-72.003,42.90133,-72.26983,42.42617,-71.79383";
+//   final repository = Repository(null);
+//
+//   FutureOr<void> getOptimizedTaskRoute() async {
+//     OptimizedTaskRoute? optimizedTaskRoute = await repository.getOptimizedTaskRoute(
+//         region,
+//         date,
+//         model,
+//         grid,
+//         time,
+//         polar,
+//         wgt,
+//         tsink,
+//         tmult,
+//         latlons)
+//         .then((optimizedTaskRoute) {
+//            print(optimizedTaskRoute.toString());
+//       }
+//     );
+//   }
+// }
 
 
 

@@ -523,11 +523,13 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     if (turnpointLatLons.length > 0){
       latLonString = turnpointLatLons.toString().substring(0, turnpointLatLons.length - 1);
     }
+    //TODO calc real polar weight adjust (sq rt(real weight/polar ref weight))
+    //
     var optimizedTaskRoute = await repository.getOptimizedTaskRoute(_region!.name!, _selectedForecastDate!,
-        _selectedModelName!, 'd2', _forecastTimes![_selectedForecastTimeIndex],
-        "LS-4" , 1, 1, 1,  latLonString);
-    if (optimizedTaskRoute?.error != null){
-      emit (RaspErrorState(optimizedTaskRoute!.error!));
+        _selectedModelName!, 'd2', _forecastTimes![_selectedForecastTimeIndex] + 'x',
+        event.polar.glider ,1.0, event.polar.getPolarCoefficients(), 1, 1,  latLonString);
+    if (optimizedTaskRoute?.summary?.error != null){
+      emit (RaspErrorState(optimizedTaskRoute!.summary!.error!));
     } else {
       emit (OptimizedTaskRouteState(optimizedTaskRoute!));
     }

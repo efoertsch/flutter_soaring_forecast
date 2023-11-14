@@ -19,33 +19,33 @@ Map<String, dynamic> _$ForecastTypesToJson(ForecastTypes instance) =>
     };
 
 Forecast _$ForecastFromJson(Map<String, dynamic> json) => Forecast(
-      forecastName: json['forecastName'] as String,
+      forecastName: json['forecast_name'] as String,
       forecastType:
-          $enumDecodeNullable(_$ForecastTypeEnumMap, json['forecastType']),
-      forecastNameDisplay: json['forecastNameDisplay'] as String,
-      forecastDescription: json['forecastDescription'] as String,
+          $enumDecodeNullable(_$ForecastTypeEnumMap, json['forecast_type']),
+      forecastNameDisplay: json['forecast_name_display'] as String,
+      forecastDescription: json['forecast_description'] as String,
       forecastCategory: $enumDecodeNullable(
-          _$ForecastCategoryEnumMap, json['forecastCategory']),
+          _$ForecastCategoryEnumMap, json['forecast_category']),
       selectable: json['selectable'] as bool?,
     );
 
 Map<String, dynamic> _$ForecastToJson(Forecast instance) => <String, dynamic>{
-      'forecastName': instance.forecastName,
-      'forecastType': _$ForecastTypeEnumMap[instance.forecastType],
-      'forecastNameDisplay': instance.forecastNameDisplay,
-      'forecastDescription': instance.forecastDescription,
-      'forecastCategory': _$ForecastCategoryEnumMap[instance.forecastCategory],
+      'forecast_name': instance.forecastName,
+      'forecast_type': _$ForecastTypeEnumMap[instance.forecastType],
+      'forecast_name_display': instance.forecastNameDisplay,
+      'forecast_description': instance.forecastDescription,
+      'forecast_category': _$ForecastCategoryEnumMap[instance.forecastCategory],
       'selectable': instance.selectable,
     };
 
 const _$ForecastTypeEnumMap = {
-  ForecastType.EMPTY: 'EMPTY',
-  ForecastType.FULL: 'FULL',
+  ForecastType.EMPTY: '',
+  ForecastType.FULL: 'full',
 };
 
 const _$ForecastCategoryEnumMap = {
-  ForecastCategory.THERMAL: 'THERMAL',
-  ForecastCategory.WIND: 'WIND',
-  ForecastCategory.CLOUD: 'CLOUD',
-  ForecastCategory.WAVE: 'WAVE',
+  ForecastCategory.CLOUD: 'cloud',
+  ForecastCategory.THERMAL: 'thermal',
+  ForecastCategory.WAVE: 'wave',
+  ForecastCategory.WIND: 'wind',
 };

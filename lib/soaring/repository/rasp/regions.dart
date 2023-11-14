@@ -34,30 +34,10 @@ class Regions {
 
   set airspace(Airspace? airspace) => _airspace = airspace;
 
-  Regions.fromJson(Map<String, dynamic> json) {
-    _initialRegion = json['initialRegion'];
-    if (json['regions'] != null) {
-      _regions = <Region>[];
-      json['regions'].forEach((v) {
-        _regions!.add(new Region.fromJson(v));
-      });
-    }
-    _airspace = json['airspace'] != null
-        ? new Airspace.fromJson(json['airspace'])
-        : null;
-  }
+  factory Regions.fromJson(Map<String, dynamic> json) => _$RegionsFromJson(json);
 
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['initialRegion'] = this._initialRegion;
-    if (this._regions != null) {
-      data['regions'] = this._regions!.map((v) => v.toJson()).toList();
-    }
-    if (this._airspace != null) {
-      data['airspace'] = this._airspace!.toJson();
-    }
-    return data;
-  }
+  Map<String, dynamic> toJson() => _$RegionsToJson(this);
+
 }
 
 @JsonSerializable()
@@ -105,28 +85,9 @@ class Region {
 
   set name(String? name) => _name = name;
 
-  Region.fromJson(Map<String, dynamic> json) {
-    _printDates = json['printDates'].cast<String>();
-    if (json['soundings'] != null) {
-      _soundings = <Soundings>[];
-      json['soundings'].forEach((v) {
-        _soundings!.add(new Soundings.fromJson(v));
-      });
-    }
-    _dates = json['dates'].cast<String>();
-    _name = json['name'];
-  }
+  factory Region.fromJson(Map<String, dynamic> json) => _$RegionFromJson(json);
 
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['printDates'] = this._printDates;
-    if (this._soundings != null) {
-      data['soundings'] = this._soundings!.map((v) => v.toJson()).toList();
-    }
-    data['dates'] = this._dates;
-    data['name'] = this._name;
-    return data;
-  }
+  Map<String, dynamic> toJson() => _$RegionToJson(this);
 
 //---------- Custom Code -----------------------
   @JsonKey(ignore: true)
@@ -205,19 +166,10 @@ class Soundings {
   String? get latitude => _latitude;
   set latitude(String? latitude) => _latitude = latitude;
 
-  Soundings.fromJson(Map<String, dynamic> json) {
-    _location = json['location'];
-    _longitude = json['longitude'];
-    _latitude = json['latitude'];
-  }
+  factory Soundings.fromJson(Map<String, dynamic> json) => _$SoundingsFromJson(json);
 
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['location'] = this._location;
-    data['longitude'] = this._longitude;
-    data['latitude'] = this._latitude;
-    return data;
-  }
+  Map<String, dynamic> toJson() => _$SoundingsToJson(this);
+
 }
 
 @JsonSerializable()
@@ -235,17 +187,9 @@ class Airspace {
   List<String>? get files => _files;
   set files(List<String>? files) => _files = files;
 
-  Airspace.fromJson(Map<String, dynamic> json) {
-    _baseUrl = json['baseUrl'];
-    _files = json['files'].cast<String>();
-  }
+  factory Airspace.fromJson(Map<String, dynamic> json) => _$AirspaceFromJson(json);
 
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['baseUrl'] = this._baseUrl;
-    data['files'] = this._files;
-    return data;
-  }
+  Map<String, dynamic> toJson() => _$AirspaceToJson(this);
 }
 
 //------------- Custom code --------------------------

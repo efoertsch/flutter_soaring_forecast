@@ -73,9 +73,11 @@ abstract class RaspClient {
       @Query("model") String model,
       @Query("grid") String grid,
       @Query("time") String times,
-      @Query("polar") String polar,
-      @Query("wgt") double wgt,
-      @Query("tsink") double tsink,
-      @Query("tmult") double tmult,
+      @Query("glider") String glider,
+      @Query("polarFactor") double polarFactor,
+      @Query("polarCoefficients") String polarCoefficients , // a, b, c
+      @Query("tsink") double thermalSinkRate,
+      @Query("tmult") double thermalMultipler,
       @Query("turnpts") String latlons);
+
 }

@@ -322,25 +322,28 @@ class Repository {
     return responseBody;
   }
 
-  Future<OptimizedTaskRoute?> getOptimizedTaskRoute(
+  Future<OptimalTaskSummary?> getOptimizedTaskRoute(
       String region,
       String date,
       String model,
       String grid,
       String times,
-      String polar,
-      double wgt,
-      double tsink,
-      double tmult,
-      String type,
-      String turnpoints) async {
+      String glider,
+      double polarFactor,
+      String polarCoefficients,
+      double thermalSinkRate,
+      double thermalMultipler,
+      String turnpoints,
+
+  ) async {
     final String contentType = "application/x-www-form-urlencoded";
     final httpResponse = await _raspClient.getOptimizedTaskRoute(contentType,
-        region, date, model, grid, times, polar, wgt, tsink, tmult, type, turnpoints);
+        region, date, model, grid, times, glider, polarFactor, polarCoefficients, thermalSinkRate,
+          thermalMultipler, turnpoints);
     if (httpResponse.response.statusCode! >= 200 &&
         httpResponse.response.statusCode! < 300) {
       debugPrint( " httpResponse: " + httpResponse.data);
-      return OptimizedTaskRoute.fromJson(jsonDecode(httpResponse.data));
+      return OptimalTaskSummary.fromJson(jsonDecode(httpResponse.data));
     } else
       return null;
   }
