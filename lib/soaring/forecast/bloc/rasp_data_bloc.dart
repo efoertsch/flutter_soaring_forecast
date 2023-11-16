@@ -188,7 +188,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
         _emitSoundingImageSet(emit);
       }
     }
-    emit(OptimizedTaskRouteState(null));
+    emit(OptimalFlightSummaryState(null));
   }
 
   void _processSelectedForecastEvent(
@@ -215,7 +215,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
         _getSoundingImages(_soundingPosition);
         _emitSoundingImageSet(emit);
       }
-      emit(OptimizedTaskRouteState(null));
+      emit(OptimalFlightSummaryState(null));
     }
   }
 
@@ -440,12 +440,12 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
   }
 
   void _processNextTimeEventAndEmitImage(_, Emitter<RaspDataState> emit) {
-    emit(OptimizedTaskRouteState(null));
+    emit(OptimalFlightSummaryState(null));
     _updateTimeIndex(1, emit);
   }
 
   void _processPreviousTimeEventAndEmitImage(_, Emitter<RaspDataState> emit) {
-    emit(OptimizedTaskRouteState(null));
+    emit(OptimalFlightSummaryState(null));
     _updateTimeIndex(-1, emit);
   }
 
@@ -480,7 +480,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     _viewMapBoundsAndZoom = ViewBounds(_regionLatLngBounds!);
     repository.saveViewBounds(_viewMapBoundsAndZoom!); // 7 default zoom
     emit(RaspTaskTurnpoints(<TaskTurnpoint>[]));
-    emit(OptimizedTaskRouteState(null));
+    emit(OptimalFlightSummaryState(null));
     //emit(ViewBoundsState(_viewMapBoundsAndZoom!));
   }
 
@@ -497,7 +497,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
 
   void _getTurnpointsForTaskId(
       GetTaskTurnpointsEvent event, Emitter<RaspDataState> emit) async {
-    emit(OptimizedTaskRouteState(null));
+    emit(OptimalFlightSummaryState(null));
     _taskId = event.taskId;
     repository.setCurrentTaskId(_taskId);
     await _emitTaskTurnpoints(emit, _taskId);
@@ -525,13 +525,13 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     }
     //TODO calc real polar weight adjust (sq rt(real weight/polar ref weight))
     //
-    var optimizedTaskRoute = await repository.getOptimizedTaskRoute(_region!.name!, _selectedForecastDate!,
+    var optimizedTaskRoute = await repository.getOptimalFlightSummary(_region!.name!, _selectedForecastDate!,
         _selectedModelName!, 'd2', _forecastTimes![_selectedForecastTimeIndex] + 'x',
         event.polar.glider ,1.0, event.polar.getPolarCoefficients(), 1, 1,  latLonString);
-    if (optimizedTaskRoute?.summary?.error != null){
-      emit (RaspErrorState(optimizedTaskRoute!.summary!.error!));
+    if (optimizedTaskRoute?.routeSummary?.error != null){
+      emit (RaspErrorState(optimizedTaskRoute!.routeSummary!.error!));
     } else {
-      emit (OptimizedTaskRouteState(optimizedTaskRoute!));
+      emit (OptimalFlightSummaryState(optimizedTaskRoute!));
     }
 
   }
@@ -826,7 +826,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
       _getSoundingImages(_soundingPosition);
       _emitSoundingImageSet(emit);
     }
-    emit(OptimizedTaskRouteState(null));
+    emit(OptimalFlightSummaryState(null));
   }
 
   // Switch display from beginner to expert or visa-versa
@@ -844,7 +844,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
           _selectedForecastDate ?? '', _selectedModelName!));
       _getForecastImages();
       _emitRaspForecastImageSet(emit);
-      emit(OptimizedTaskRouteState(null));
+      emit(OptimalFlightSummaryState(null));
     } else {
       //  switched from beginner to expert
       // stay on same model and date so just send info to update ui

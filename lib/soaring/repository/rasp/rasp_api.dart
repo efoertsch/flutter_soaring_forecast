@@ -9,7 +9,7 @@ import 'regions.dart';
 part 'rasp_api.g.dart';
 
 //!!! Remember to run generator with any changes !!!
-//!!!  flutter pub run build_runner build  --delete-conflicting-outputs     !!!
+//!!!  dart run build_runner build  --delete-conflicting-outputs     !!!
 @RestApi(baseUrl: Constants.RASP_BASE_URL)
 abstract class RaspClient {
   factory RaspClient(Dio dio) = _RaspClient;
@@ -65,8 +65,8 @@ abstract class RaspClient {
       @Query("lon") String lon,
       @Query("param") String forecasts);
 
-  @GET("/cgi/get_optimized_route.cgi")
-  Future<HttpResponse<String>> getOptimizedTaskRoute(
+  @GET("/cgi/get_optimal_flight_avg.cgi")
+  Future<HttpResponse<String>> getOptimizedFlightAverages(
       @Header("Content-Type") String contentType,
       @Query("region") String region,
       @Query("date") String date,

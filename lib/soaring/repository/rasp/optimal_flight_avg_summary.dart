@@ -1,67 +1,68 @@
 
 import 'package:json_annotation/json_annotation.dart';
 
-part 'optimized_task_route.g.dart';
+part 'optimal_flight_avg_summary.g.dart';
 
 ///  Generated via https://javiercbk.github.io/json_to_dart/ fron soargbsc.com/rasp/current.json
 // If modified execute from terminal
 //  dart run build_runner build --delete-conflicting-outputs
 @JsonSerializable()
-class OptimalTaskSummary {
-  final Summary? summary;
+class OptimalFlightAvgSummary {
+  @JsonKey(name:"summary")
+  final RouteSummary? routeSummary;
 
-  OptimalTaskSummary({
-    this.summary,
+  OptimalFlightAvgSummary({
+    this.routeSummary,
   });
 
-  factory OptimalTaskSummary.fromJson(Map<String, dynamic> json) => _$OptimalTaskSummaryFromJson(json);
+  factory OptimalFlightAvgSummary.fromJson(Map<String, dynamic> json) => _$OptimalFlightAvgSummaryFromJson(json);
 
-  Map<String, dynamic> toJson() => _$OptimalTaskSummaryToJson(this);
+  Map<String, dynamic> toJson() => _$OptimalFlightAvgSummaryToJson(this);
 
 }
 
 @JsonSerializable()
-class Summary {
+class RouteSummary {
   final String? error;
   final List<Warning>? warnings;
   final Header? header;
   final List<Footer>? footers;
   final List<RouteTurnpoint>? routeTurnpoints;
-  final List<Detail>? details;
+  final List<LegDetail>? legDetails;
   final List<RoutePoint>? routePoints;
 
-  Summary({
+  RouteSummary({
     this.error,
     this.warnings,
     this.header,
     this.footers,
     this.routeTurnpoints,
-    this.details,
+    this.legDetails,
     this.routePoints,
   });
 
-  Summary copyWith({
+  RouteSummary copyWith({
     String? error,
     List<Warning>? warnings,
     Header? header,
     List<Footer>? footers,
     List<RouteTurnpoint>? routeTurnpoints,
-    List<Detail>? details,
+    List<LegDetail>? details,
     List<RoutePoint>? routePoints,
   }) =>
-      Summary(
+      RouteSummary(
         error: error ?? this.error,
         warnings: warnings ?? this.warnings,
         header: header ?? this.header,
         footers: footers ?? this.footers,
         routeTurnpoints: routeTurnpoints ?? this.routeTurnpoints,
-        details: details ?? this.details,
+        legDetails: details ?? this.legDetails,
         routePoints: routePoints ?? this.routePoints,
       );
 
-  factory Summary.fromJson(Map<String, dynamic> json) => _$SummaryFromJson(json);
+  factory RouteSummary.fromJson(Map<String, dynamic> json) => _$RouteSummaryFromJson(json);
 
-  Map<String, dynamic> toJson() => _$SummaryToJson(this);
+  Map<String, dynamic> toJson() => _$RouteSummaryToJson(this);
 }
 
 
@@ -86,7 +87,7 @@ class Warning {
 }
 
 @JsonSerializable()
-class Detail {
+class LegDetail {
   final String? leg;
   final String? clockTime;
   final String? sptlAvgDistKm;
@@ -100,7 +101,7 @@ class Detail {
   final String? optFlightAirSpeedKt;
   final String? optFlightThermalPct;
 
-  Detail({
+  LegDetail({
     this.leg,
     this.clockTime,
     this.sptlAvgDistKm,
@@ -115,7 +116,7 @@ class Detail {
     this.optFlightThermalPct,
   });
 
-  Detail copyWith({
+  LegDetail copyWith({
     String? leg,
     String? clockTime,
     String? sptlAvgDistKm,
@@ -129,7 +130,7 @@ class Detail {
     String? optFlightAirSpeedKt,
     String? optFlightThermalPct,
   }) =>
-      Detail(
+      LegDetail(
         leg: leg ?? this.leg,
         clockTime: clockTime ?? this.clockTime,
         sptlAvgDistKm: sptlAvgDistKm ?? this.sptlAvgDistKm,
@@ -144,9 +145,9 @@ class Detail {
         optFlightThermalPct: optFlightThermalPct ?? this.optFlightThermalPct,
       );
 
-  factory Detail.fromJson(Map<String, dynamic> json) => _$DetailFromJson(json);
+  factory LegDetail.fromJson(Map<String, dynamic> json) => _$LegDetailFromJson(json);
 
-  Map<String, dynamic> toJson() => _$DetailToJson(this);
+  Map<String, dynamic> toJson() => _$LegDetailToJson(this);
 }
 
 @JsonSerializable()

@@ -7,7 +7,7 @@ import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/LatLngFo
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image_set.dart';
 import 'package:flutter_soaring_forecast/soaring/graphics/data/forecast_graph_data.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
-import 'package:flutter_soaring_forecast/soaring/repository/rasp/optimized_task_route.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/rasp/optimal_flight_avg_summary.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/regions.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/view_bounds.dart';
 import 'package:latlong2/latlong.dart';
@@ -201,7 +201,7 @@ class BeginnerForecastDateModelState extends RaspDataState {
   BeginnerForecastDateModelState (this.date, this.model);
 }
 
-class OptimizedTaskRouteState extends RaspDataState {
-  final  OptimalTaskSummary? optimizedTaskRoute;
-  OptimizedTaskRouteState (this.optimizedTaskRoute);
+class OptimalFlightSummaryState extends RaspDataState {
+  final  OptimalFlightAvgSummary? optimalFlightSummary;
+  OptimalFlightSummaryState (this.optimalFlightSummary);
 }

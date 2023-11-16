@@ -35,7 +35,7 @@ import 'package:flutter_soaring_forecast/soaring/repository/options/settings.dar
 import 'package:flutter_soaring_forecast/soaring/repository/options/special_use_airspace.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/sua_region_files.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/turnpoint_regions.dart';
-import 'package:flutter_soaring_forecast/soaring/repository/rasp/optimized_task_route.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/rasp/optimal_flight_avg_summary.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/polars.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/view_bounds.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/usgs/national_map.dart';
@@ -322,30 +322,54 @@ class Repository {
     return responseBody;
   }
 
-  Future<OptimalTaskSummary?> getOptimizedTaskRoute(
-      String region,
-      String date,
-      String model,
-      String grid,
-      String times,
-      String glider,
-      double polarFactor,
-      String polarCoefficients,
-      double thermalSinkRate,
-      double thermalMultipler,
-      String turnpoints,
-
+  Future<OptimalFlightAvgSummary?> getOptimalFlightSummary(
+    String region,
+    String date,
+    String model,
+    String grid,
+    String times,
+    String glider,
+    double polarFactor,
+    String polarCoefficients,
+    double thermalSinkRate,
+    double thermalMultipler,
+    String turnpoints,
   ) async {
+    OptimalFlightAvgSummary? optimalFlightSummary;
     final String contentType = "application/x-www-form-urlencoded";
-    final httpResponse = await _raspClient.getOptimizedTaskRoute(contentType,
-        region, date, model, grid, times, glider, polarFactor, polarCoefficients, thermalSinkRate,
-          thermalMultipler, turnpoints);
-    if (httpResponse.response.statusCode! >= 200 &&
-        httpResponse.response.statusCode! < 300) {
-      debugPrint( " httpResponse: " + httpResponse.data);
-      return OptimalTaskSummary.fromJson(jsonDecode(httpResponse.data));
-    } else
-      return null;
+   await  _raspClient
+        .getOptimizedFlightAverages(
+            contentType,
+            region,
+            date,
+            model,
+            grid,
+            times,
+            glider,
+            polarFactor,
+            polarCoefficients,
+            thermalSinkRate,
+            thermalMultipler,
+            turnpoints)
+        .then((httpResponse) {
+      if (httpResponse.response.statusCode! >= 200 &&
+          httpResponse.response.statusCode! < 300 &&
+          httpResponse.data.length > 0 &&
+          httpResponse.data.substring(0, 1) == "{") {
+        debugPrint(" httpResponse: " + httpResponse.data);
+        optimalFlightSummary =
+            OptimalFlightAvgSummary.fromJson(jsonDecode(httpResponse.data));
+      } else {
+        if (httpResponse.data.length > 0) {
+          var summary = RouteSummary(error: httpResponse.data);
+          optimalFlightSummary = OptimalFlightAvgSummary(routeSummary: summary);
+        }
+      }
+    }).catchError((onError) {
+      var summary = RouteSummary(error: onError.response.toString());
+      optimalFlightSummary = OptimalFlightAvgSummary(routeSummary: summary);
+    });
+    return optimalFlightSummary;
   }
 
   Future<double> getForecastOverlayOpacity() async {
@@ -1238,7 +1262,6 @@ class Repository {
         if (!await directory.exists()) {
           directory = await getExternalStorageDirectory();
         }
-
       }
     } else {
       //iOS
@@ -1297,30 +1320,31 @@ class Repository {
         .loadString('assets/json/polars.json');
     Polars polars = Polars.polarsFromJson(json);
     return polars?.polars;
-
   }
 
   Future<Polar?> getGliderPolar(String gliderName) async {
     // See if in repository first, if not get from full list
-      String jsonString =
-      await getGenericString(key: MY_GLIDER_POLARS, defaultValue: "");
-      if (jsonString.isNotEmpty) {
-        final polars = Polars.polarsFromJson(jsonString);
-        var gliderPolar = polars.polars?.firstWhereOrNull((glider) => glider.glider == gliderName);
-        if (gliderPolar != null) return gliderPolar;
-        }
+    String jsonString =
+        await getGenericString(key: MY_GLIDER_POLARS, defaultValue: "");
+    if (jsonString.isNotEmpty) {
+      final polars = Polars.polarsFromJson(jsonString);
+      var gliderPolar = polars.polars
+          ?.firstWhereOrNull((glider) => glider.glider == gliderName);
+      if (gliderPolar != null) return gliderPolar;
+    }
 
     jsonString = await DefaultAssetBundle.of(_context!)
         .loadString('assets/json/polars.json');
-    return  Polars.polarsFromJson(jsonString).polars?.firstWhereOrNull((polar) => polar.glider == gliderName );
+    return Polars.polarsFromJson(jsonString)
+        .polars
+        ?.firstWhereOrNull((polar) => polar.glider == gliderName);
   }
-
 
   /// Polars saved by user, likely customized
   Future<Polars?> getSavedPolarList() async {
     // See if in repository first, if not get from full list
     String jsonString =
-    await getGenericString(key: MY_GLIDER_POLARS, defaultValue: "");
+        await getGenericString(key: MY_GLIDER_POLARS, defaultValue: "");
     if (jsonString.isNotEmpty) {
       final polars = Polars.polarsFromJson(jsonString);
       return polars;
@@ -1328,16 +1352,10 @@ class Repository {
     return Polars();
   }
 
-
   Future<bool> storeGliderPolar(Polar glider) async {
     // See if in repository first, if not get from full list
 
     var gliderJson = jsonEncode(glider);
-    return await saveGenericString(key: MY_GLIDER_POLARS, value:gliderJson);
-
+    return await saveGenericString(key: MY_GLIDER_POLARS, value: gliderJson);
   }
-
-
-
-
 }
