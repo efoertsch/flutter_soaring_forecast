@@ -82,20 +82,39 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
         body: _getBody(),
         bottomNavigationBar: SafeArea(
           child: BottomAppBar(
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  minimumSize: Size(double.infinity,
-                      40), // double.infinity is the width and 30 is the height
-                  foregroundColor: Colors.white,
-                  backgroundColor: Theme.of(context).colorScheme.primary,
+            child: Row(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: Size(double.infinity,
+                          40), // double.infinity is the width and 30 is the height
+                      foregroundColor: Colors.white,
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                    ),
+                    child: Text(StandardLiterals.OK),
+                    onPressed: () {
+                      _getGliderCubit().calcOptimalTaskTime();
+                    },
+                  ),
                 ),
-                child: Text("Calc Optimal Task Time"),
-                onPressed: () {
-                  _getGliderCubit().calcOptimalTaskTime();
-                },
-              ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: Size(double.infinity,
+                          40), // double.infinity is the width and 30 is the height
+                      foregroundColor: Colors.white,
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                    ),
+                    child: Text(StandardLiterals.CANCEL),
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                  ),
+                ),
+              ],
             ),
           ),
         ),
