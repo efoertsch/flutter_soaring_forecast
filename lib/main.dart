@@ -134,6 +134,7 @@ class SoaringForecastApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+        theme : ThemeData(useMaterial3: false,),
         debugShowCheckedModeBanner: false,
         // theme: ThemeData(
         //   // force iOS behaviour on Android (for testing)
@@ -702,8 +703,8 @@ class GliderPolarListBuilder extends StatelessWidget {
   static const routeName = '/GliderPolarList';
 
   Widget build(BuildContext context) {
-    return BlocProvider<GliderPolarCubit>(
-      create: (BuildContext context) => GliderPolarCubit(
+    return BlocProvider<GliderCubit>(
+      create: (BuildContext context) => GliderCubit(
           repository: RepositoryProvider.of<Repository>(context)),
       child: GliderPolarListScreen(),
     );

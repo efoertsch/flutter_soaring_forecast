@@ -505,6 +505,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
 
 
   void _getGetOptimizedTaskRoute(GetOptimizedTaskRouteEvent event, Emitter<RaspDataState> emit) async {
+    emit(RaspWorkingState(working: true));
     List<TaskTurnpoint> taskTurnpoints = await _getTaskTurnpoints(_taskId);
     StringBuffer turnpointLatLons = StringBuffer();
     String latLonString = "";
@@ -523,14 +524,16 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     if (turnpointLatLons.length > 0){
       latLonString = turnpointLatLons.toString().substring(0, turnpointLatLons.length - 1);
     }
-    //TODO calc real polar weight adjust (sq rt(real weight/polar ref weight))
-    //
+    //Note Per Dr Jack. thermalMultiplier was a fudge factor that could be added if you want to bump up or down
+    // wstar value used in sink rate calc. For now just use 1
     var optimizedTaskRoute = await repository.getOptimalFlightSummary(_region!.name!, _selectedForecastDate!,
         _selectedModelName!, 'd2', _forecastTimes![_selectedForecastTimeIndex] + 'x',
-        event.polar.glider ,1.0, event.polar.getPolarCoefficients(), 1, 1,  latLonString);
+        event.glider.glider ,event.glider.polarWeightAdjustment, event.glider.getPolarCoefficients()
+        , event.glider.thermallingSinkRate, 1,  latLonString);
     if (optimizedTaskRoute?.routeSummary?.error != null){
       emit (RaspErrorState(optimizedTaskRoute!.routeSummary!.error!));
     } else {
+      emit(RaspWorkingState(working: false));
       emit (OptimalFlightSummaryState(optimizedTaskRoute!));
     }
 

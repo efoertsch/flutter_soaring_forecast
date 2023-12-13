@@ -100,6 +100,8 @@ class LegDetail {
   final String? optFlightGrndSpeedKmh;
   final String? optFlightAirSpeedKt;
   final String? optFlightThermalPct;
+  final String? message;
+
 
   LegDetail({
     this.leg,
@@ -114,6 +116,7 @@ class LegDetail {
     this.optFlightGrndSpeedKmh,
     this.optFlightAirSpeedKt,
     this.optFlightThermalPct,
+    this.message,
   });
 
   LegDetail copyWith({
@@ -129,6 +132,7 @@ class LegDetail {
     String? optFlightGrndSpeedKmh,
     String? optFlightAirSpeedKt,
     String? optFlightThermalPct,
+    String? message,
   }) =>
       LegDetail(
         leg: leg ?? this.leg,
@@ -143,6 +147,7 @@ class LegDetail {
         optFlightGrndSpeedKmh: optFlightGrndSpeedKmh ?? this.optFlightGrndSpeedKmh,
         optFlightAirSpeedKt: optFlightAirSpeedKt ?? this.optFlightAirSpeedKt,
         optFlightThermalPct: optFlightThermalPct ?? this.optFlightThermalPct,
+        message: message ?? this.message,
       );
 
   factory LegDetail.fromJson(Map<String, dynamic> json) => _$LegDetailFromJson(json);

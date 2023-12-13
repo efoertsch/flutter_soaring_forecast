@@ -1,34 +1,42 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter_soaring_forecast/soaring/repository/rasp/polars.dart';
+import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/rasp/gliders.dart';
 
-abstract class PolarDataState {
-  const PolarDataState();
+abstract class GliderState {
+  const GliderState();
 }
 
-class GliderPolarInitialState extends PolarDataState {
+class GliderPolarInitialState extends GliderState {
   const GliderPolarInitialState();
 }
 
-class GliderListState extends PolarDataState {
+class GliderListState extends GliderState {
   final List<String> gliderList;
+  final String selectedGlider;
 
-  GliderListState(this.gliderList);
+  GliderListState(this.gliderList, this.selectedGlider);
 }
 
-class GliderPolarState extends PolarDataState {
-  final Polar? polar;
+class GliderPolarState extends GliderState {
+  final Glider? defaultPolar;
+  final Glider? customPolar;
+  final DisplayUnits displayUnits;
+  final String sinkRateUnits;
+  final String velocityUnits;
+  final String massUnits;
 
-  GliderPolarState(this.polar);
+  GliderPolarState(this.defaultPolar, this.customPolar,this.displayUnits, this.sinkRateUnits,this.velocityUnits,this.massUnits);
 }
 
-class GliderPolarIsWorkingState extends PolarDataState {
+class GliderPolarIsWorkingState extends GliderState {
   final bool isWorking;
 
   GliderPolarIsWorkingState(this.isWorking);
 }
 
-class GliderPolarErrorState extends PolarDataState {
+class GliderPolarErrorState extends GliderState {
   final String errorMsg;
 
   GliderPolarErrorState(this.errorMsg);
 }
+

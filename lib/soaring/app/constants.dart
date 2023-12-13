@@ -28,6 +28,10 @@ const String FEEDBACK_EMAIL_ADDRESS = 'ericfoertsch@gmail.com';
 const double metersToFeet = 3.28084;
 const String ft = "ft";
 const String NEW_LINE = '\n';
+enum DisplayUnits  {Metric, American}
+const String nauticalMiles = "nm";
+const String statueMiles = "sm";
+const String kilometers = "km";
 
 final LatLng NewEnglandMapCenter = LatLng(43.1394043, -72.0759888);
 final LatLngBounds NewEnglandMapLatLngBounds = LatLngBounds(
@@ -448,6 +452,13 @@ class DrawerLiterals {
   static const String SETTINGS = "Settings";
   static const String FEEDBACK = "Feedback";
   static const String ABOUT = "About";
+}
+
+class PolarMenu {
+  static const String UNITS = "Units";
+  static const String METRIC = "Metric";
+  static const String AMERICAN = "American";
+
 }
 
 // Turnpoint icon colors for type of runway

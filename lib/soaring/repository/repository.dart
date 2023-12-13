@@ -14,11 +14,12 @@ import 'package:flutter_map/src/geo/latlng_bounds.dart';
 import 'package:flutter_soaring_forecast/auth/secrets.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     show
-        RASP_BASE_URL,
+        DisplayUnits,
         PreferenceOption,
+        RASP_BASE_URL,
+        RaspDisplayOptions,
         WxBriefBriefingRequest,
-        WxBriefTypeOfBrief,
-        RaspDisplayOptions;
+        WxBriefTypeOfBrief;
 import 'package:flutter_soaring_forecast/soaring/floor/airport/airport.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/app_database.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/task/task.dart';
@@ -36,7 +37,7 @@ import 'package:flutter_soaring_forecast/soaring/repository/options/special_use_
 import 'package:flutter_soaring_forecast/soaring/repository/options/sua_region_files.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/turnpoint_regions.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/optimal_flight_avg_summary.dart';
-import 'package:flutter_soaring_forecast/soaring/repository/rasp/polars.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/rasp/gliders.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/view_bounds.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/usgs/national_map.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/cup/cup_styles.dart';
@@ -86,7 +87,9 @@ class Repository {
   static const String BEGINNER_FORECAST_MODE = "BEGINNER_FORECAST_MODE";
   static const String LOCAL_FORECAST_FAVORITE = "LOCAL_FORECAST_FAVORITE";
   static const String LAST_FORECAST_TIME = "LAST_FORECAST_TIME";
-  static const String MY_GLIDER_POLARS = "MY_GLIDER_POLARS";
+  static const String MY_GLIDERS = "MY_GLIDER_POLARS";
+  static const String SELECTED_GLIDER = "SELECTED_GLIDER";
+  static const String DISPLAY_UNITS = "DISPLAY_UNITS";
 
   late final String satelliteRegionUS;
   late final String satelliteTypeVis;
@@ -101,6 +104,9 @@ class Repository {
   static final _fullForecastList = <Forecast>[];
   static final _displayableForecastList = <Forecast>[];
   static final List<Group> _settingGroups = <Group>[];
+
+  static Gliders? _defaultGliders = null;
+  static Gliders? _customGliders = null;
 
   Repository._();
 
@@ -337,7 +343,7 @@ class Repository {
   ) async {
     OptimalFlightAvgSummary? optimalFlightSummary;
     final String contentType = "application/x-www-form-urlencoded";
-   await  _raspClient
+    await _raspClient
         .getOptimizedFlightAverages(
             contentType,
             region,
@@ -1315,47 +1321,109 @@ class Repository {
     }
   }
 
-  Future<List<Polar>?> getDefaultListOfGliderPolars() async {
-    final json = await DefaultAssetBundle.of(_context!)
-        .loadString('assets/json/polars.json');
-    Polars polars = Polars.polarsFromJson(json);
-    return polars?.polars;
+  Future<void> _loadDefaultGliders() async {
+    if (_defaultGliders == null || _defaultGliders!.gliders == null) {
+      final json = await DefaultAssetBundle.of(_context!)
+          .loadString('assets/json/gliders.json');
+      _defaultGliders = Gliders.glidersFromJsonString(json);
+    }
   }
 
-  Future<Polar?> getGliderPolar(String gliderName) async {
-    // See if in repository first, if not get from full list
-    String jsonString =
-        await getGenericString(key: MY_GLIDER_POLARS, defaultValue: "");
-    if (jsonString.isNotEmpty) {
-      final polars = Polars.polarsFromJson(jsonString);
-      var gliderPolar = polars.polars
-          ?.firstWhereOrNull((glider) => glider.glider == gliderName);
-      if (gliderPolar != null) return gliderPolar;
-    }
+  Future<List<Glider>?> getDefaultListOfGliders() async {
+    await _loadDefaultGliders();
+    return _defaultGliders?.gliders;
+  }
 
-    jsonString = await DefaultAssetBundle.of(_context!)
-        .loadString('assets/json/polars.json');
-    return Polars.polarsFromJson(jsonString)
-        .polars
+  Future<void> _loadCustomGliders() async {
+    if (_customGliders == null) {
+      final json = await getGenericString(key: MY_GLIDERS, defaultValue: "");
+      if (json.isNotEmpty) {
+        //Gliders gliders = Gliders.glidersFromJson(json);
+        _customGliders = Gliders.glidersFromJsonString(json);
+      } else {
+        _customGliders = Gliders();
+      }
+    }
+  }
+
+  Future<Gliders> getCustomGliders() async {
+    await _loadCustomGliders();
+    return _customGliders!;
+  }
+
+  Future<void> saveLastSelectedGliderName(String gliderName) async {
+    await saveGenericString(key: SELECTED_GLIDER, value: gliderName);
+  }
+
+  Future<String> getLastSelectedGliderName() async {
+    return await getGenericString(key: SELECTED_GLIDER, defaultValue: "");
+  }
+
+  Future<void> saveCustomPolar(Glider customPolar) async {
+    Glider? gliderPolar;
+    await getCustomGliders();
+    if (_customGliders!.gliders != null) {
+      gliderPolar = _customGliders!.gliders?.firstWhereOrNull(
+          (savedGlider) => savedGlider.glider == customPolar.glider);
+      if (gliderPolar == null) {
+        // customPolar not in list so add it
+        _customGliders!.gliders!.add(customPolar);
+      } else {
+        // customPolar already in list so update it with new info
+        gliderPolar.updatePolar(customPolar);
+      }
+    } else {
+      // no custom polars at all so add it
+      _customGliders!.gliders = <Glider>[customPolar];
+    }
+    await saveGenericString(
+        key: MY_GLIDERS, value: Gliders.glidersToJsonString(_customGliders!));
+  }
+
+  Future<({Glider? defaultGlider, Glider? customGlider})> getDefaultAndCustomGliderDetails(
+      String gliderName) async {
+    // if master list not loaded yet load it
+    await _loadDefaultGliders();
+    await _loadCustomGliders();
+    Glider? defaultGlider = _defaultGliders!.gliders
         ?.firstWhereOrNull((polar) => polar.glider == gliderName);
+    Glider? customGlider = _customGliders!.gliders
+        ?.firstWhereOrNull((polar) => polar.glider == gliderName);
+    return (
+      defaultGlider: defaultGlider,
+      customGlider: customGlider ?? defaultGlider?.copyWith()
+    );
   }
 
   /// Polars saved by user, likely customized
-  Future<Polars?> getSavedPolarList() async {
+  Future<Gliders?> getSavedPolarList() async {
     // See if in repository first, if not get from full list
     String jsonString =
-        await getGenericString(key: MY_GLIDER_POLARS, defaultValue: "");
+        await getGenericString(key: MY_GLIDERS, defaultValue: "");
     if (jsonString.isNotEmpty) {
-      final polars = Polars.polarsFromJson(jsonString);
+      final polars = Gliders.glidersFromJsonString(jsonString);
       return polars;
     }
-    return Polars();
+    return Gliders();
   }
 
-  Future<bool> storeGliderPolar(Polar glider) async {
-    // See if in repository first, if not get from full list
+  Future<DisplayUnits> getDisplayUnits() async {
+    String displayUnit =
+        await getGenericString(key: DISPLAY_UNITS, defaultValue: "");
+    if (displayUnit.isEmpty) {
+      return DisplayUnits.Metric;
+    }
+    return _convertDisplayUnitsStringToEnum(displayUnit);
+  }
 
-    var gliderJson = jsonEncode(glider);
-    return await saveGenericString(key: MY_GLIDER_POLARS, value: gliderJson);
+  DisplayUnits _convertDisplayUnitsStringToEnum(String displayUnits) {
+    return DisplayUnits.values.firstWhereOrNull(
+            (e) => e.toString() ==  displayUnits) ??
+        DisplayUnits.Metric;
+  }
+
+  Future<DisplayUnits> saveDisplayUnits(DisplayUnits displayUnits) async {
+    await saveGenericString(key: DISPLAY_UNITS, value: displayUnits.toString());
+    return _convertDisplayUnitsStringToEnum(displayUnits.toString());
   }
 }

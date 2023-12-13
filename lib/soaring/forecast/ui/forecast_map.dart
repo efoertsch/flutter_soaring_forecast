@@ -18,7 +18,7 @@ import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_
 import 'package:flutter_soaring_forecast/soaring/forecast/util/animated_map_controller.dart';
 import 'package:flutter_soaring_forecast/soaring/graphics/data/forecast_graph_data.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/optimal_flight_avg_summary.dart';
-import 'package:flutter_soaring_forecast/soaring/repository/rasp/polars.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/rasp/gliders.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/regions.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoint_utils.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_overhead_view.dart';
@@ -79,6 +79,8 @@ class ForecastMapState extends State<ForecastMap>
   Timer? _hideOpacityTimer = null;
   double _mapZoom = 7;
   double _previousZoom = 7;
+  bool _displayOptTaskAvg = false;
+  OptimalFlightAvgSummary? _optimalTaskSummary;
 
   final suaColors = SUAColor.values;
 
@@ -149,6 +151,7 @@ class ForecastMapState extends State<ForecastMap>
       ),
       _getOpacitySlider(),
       _getOptimalFlightIcon(),
+      _showOptimalFlightAvgTable()
     ]);
   }
 
@@ -233,7 +236,6 @@ class ForecastMapState extends State<ForecastMap>
           current is SuaDetailsState ||
           current is ForecastOverlayOpacityState ||
           current is ForecastBoundsState;
-
     }, builder: (context, state) {
       if (state is RaspInitialState) {
         return SizedBox.shrink();
@@ -384,9 +386,6 @@ class ForecastMapState extends State<ForecastMap>
           _mapController.animatedFitBounds(_forecastLatLngBounds);
           return;
         }
-        if (state is  OptimalFlightSummaryState){
-          showOptimalFlightSummaryBottomSheet(context, "Flight Avg", state.optimalFlightSummary!);
-        }
       },
       child: SizedBox.shrink(),
     );
@@ -454,7 +453,8 @@ class ForecastMapState extends State<ForecastMap>
       _rebuildTaskLinesArray();
       _mapController.animatedFitBounds(_forecastLatLngBounds);
     } else {
-      for (var routePoint in optimizedTaskRoute.routeSummary!.routeTurnpoints!) {
+      for (var routePoint
+          in optimizedTaskRoute.routeSummary!.routeTurnpoints!) {
         // print('adding taskturnpoint: ${taskTurnpoint.title}');
         var latLngPoint = LatLng(
             double.parse(routePoint.lat!), double.parse(routePoint.lon!));
@@ -962,81 +962,100 @@ class ForecastMapState extends State<ForecastMap>
             bottom: 0,
             left: 0,
             child: ElevatedButton(
-                  style: const ButtonStyle(
-                    backgroundColor:
-                        MaterialStatePropertyAll<Color>(Colors.white),
+              style: const ButtonStyle(
+                backgroundColor: MaterialStatePropertyAll<Color>(Colors.white),
+              ),
+              onPressed: () async {
+                //_sendEvent(GetOptimizedTaskRouteEvent());
+                var maybePolar = await Navigator.pushNamed(
+                    context, GliderPolarListBuilder.routeName);
+                if (maybePolar != null && maybePolar is Glider) {
+                  _sendEvent(GetOptimizedTaskRouteEvent(maybePolar));
+                }
+              },
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  SvgPicture.asset(
+                    'assets/svg/task_route.svg',
+                    height: 40,
+                    width: 40,
                   ),
-                  onPressed: () async {
-                    //_sendEvent(GetOptimizedTaskRouteEvent());
-                    var maybePolar = await Navigator.pushNamed(
-                        context, GliderPolarListBuilder.routeName);
-                    if (maybePolar != null && maybePolar is Polar) {
-                      _sendEvent(GetOptimizedTaskRouteEvent(maybePolar));
-                    }
-                  },
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      SvgPicture.asset(
-                        'assets/svg/task_route.svg',
-                        height: 40,
-                        width: 40,
-                      ),
-                      Text(
-                        "Optimal\nFlight",
-                        style: textStyleBoldBlackFontSize14,
-                      ),
-                    ],
+                  Text(
+                    "Optimal\nFlight",
+                    style: textStyleBoldBlackFontSize14,
                   ),
-                ),
-
+                ],
+              ),
+            ),
           )
         : SizedBox.shrink();
   }
 
-  void showOptimalFlightSummaryBottomSheet(BuildContext context, String title,
-      OptimalFlightAvgSummary optimalTaskSummary) {
-    showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(
-            top: Radius.circular(20),
-          ),
-        ),
-        builder: (context) => SafeArea(
-              child: _getOptimalFlightSummary(optimalTaskSummary),
-            ));
+  Widget _showOptimalFlightAvgTable() {
+    return BlocConsumer<RaspDataBloc, RaspDataState>(
+      listener: (context, state) {
+        if (state is OptimalFlightSummaryState) {
+          _optimalTaskSummary = state.optimalFlightSummary;
+        }
+      },
+      buildWhen: (previous, current) {
+        return current is OptimalFlightSummaryState;
+      },
+      builder: (context, state) {
+        return _getOptimalTaskInfoDisplay();
+      },
+    );
+  }
+
+  Widget _getOptimalTaskInfoDisplay() {
+    if (_optimalTaskSummary != null) {
+      return _getOptimalFlightSummary(_optimalTaskSummary!);
+    }
+    return SizedBox.shrink();
   }
 
   Widget _getOptimalFlightSummary(OptimalFlightAvgSummary optimalTaskSummary) {
-    return Column(
-      children: [
-        _getOptimalFlightParms(optimalTaskSummary),
-        _getTaskTurnpointsTable(optimalTaskSummary),
-        _getLegDetailsTable(optimalTaskSummary)
-      ],
+    const String title = "Flight Avg";
+    return Container(
+      color: Colors.white,
+      padding: EdgeInsets.only(right: 8),
+      child: ListView(
+        //crossAxisAlignment: CrossAxisAlignment.start,
+        scrollDirection: Axis.vertical,
+        children: [
+          _getOptimalFlightParms(optimalTaskSummary),
+          _getTurnpointsTableHeader(),
+          _getTaskTurnpointsTable(optimalTaskSummary),
+          _getLegTableHeader(),
+          _getLegDetailsTable(optimalTaskSummary),
+          _getWarningMsgDisplay(optimalTaskSummary),
+          _getOptimalFlightCloseButton(),
+        ],
+      ),
     );
-
   }
 
-  RenderObjectWidget _getOptimalFlightParms(OptimalFlightAvgSummary optimalTaskSummary) {
-     if (optimalTaskSummary.routeSummary?.header != null) {
+  RenderObjectWidget _getOptimalFlightParms(
+      OptimalFlightAvgSummary optimalTaskSummary) {
+    if (optimalTaskSummary.routeSummary?.header != null) {
       var header = optimalTaskSummary.routeSummary?.header;
       var headerTable = Table(
+        columnWidths: {0: IntrinsicColumnWidth(), 1: IntrinsicColumnWidth()},
         border: TableBorder.all(),
         defaultVerticalAlignment: TableCellVerticalAlignment.middle,
         children: <TableRow>[
           TableRow(
             children: [
-              _formattedTextCell("Valid :" + (header!.valid ?? "")),
-              _formattedTextCell("  Region :" + (header!.region ?? "")),
+              _formattedTextCell(header!.valid ?? ""),
+              _formattedTextCell(header!.region ?? ""),
             ],
           ),
           TableRow(
             children: [
               _formattedTextCell("Glider " + (header!.glider ?? "")),
-              _formattedTextCell("L/D= " + double.parse(header!.maxLd ?? "0").toStringAsFixed(1)),
+              _formattedTextCell("L/D= " +
+                  double.parse(header!.maxLd ?? "0").toStringAsFixed(1)),
             ],
           ),
           TableRow(
@@ -1047,21 +1066,26 @@ class ForecastMapState extends State<ForecastMap>
           ),
           TableRow(
             children: [
-              _formattedTextCell("Thermaling Sink Rate"),
+              _formattedTextCell("Thermaling Sink Rate (kts)"),
               _formattedTextCell(header!.thermalingSinkRate ?? ""),
             ],
           ),
         ],
       );
-      return headerTable;
+      return Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: headerTable,
+      );
     }
     return SizedBox.shrink();
   }
 
-
   Widget _formattedTextCell(String text) {
-    return Text(text,
-        style: textStyleBoldBlackFontSize18, textAlign: TextAlign.center);
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Text(text,
+          style: textStyleBoldBlackFontSize18, textAlign: TextAlign.center),
+    );
   }
 
   Widget _getTaskTurnpointsTable(OptimalFlightAvgSummary optimalTaskSummary) {
@@ -1069,9 +1093,15 @@ class ForecastMapState extends State<ForecastMap>
       var routeTurnPoints = optimalTaskSummary.routeSummary!.routeTurnpoints;
       var turnpointRows = _getTaskTurnpointTableRows(routeTurnPoints!);
       var headerTable = Table(
+        columnWidths: {
+          0: IntrinsicColumnWidth(),
+          1: IntrinsicColumnWidth(),
+          2: IntrinsicColumnWidth(),
+          3: IntrinsicColumnWidth(),
+        },
         border: TableBorder.all(),
         defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-        children:  turnpointRows,
+        children: turnpointRows,
       );
       return headerTable;
     }
@@ -1079,55 +1109,90 @@ class ForecastMapState extends State<ForecastMap>
   }
 
   List<TableRow> _getTaskTurnpointTableRows(List<RouteTurnpoint> turnpoints) {
-   var routePointTableRows = <TableRow>[];
-   for (var routePoint in turnpoints){
-     var tableRow = TableRow(
-       children: [
-         _formattedTextCell(routePoint.number ?? " "),
-         _formattedTextCell(routePoint.name ?? " "),
-         _formattedTextCell(double.parse(routePoint.lat ?? "0").toStringAsFixed(5)),
-         _formattedTextCell(double.parse(routePoint.lon ?? "0").toStringAsFixed(5)),
-       ],
-     );
-     routePointTableRows.add(tableRow);
-   }
-   return routePointTableRows;
+    var routePointTableRows = <TableRow>[];
+    for (var routePoint in turnpoints) {
+      var tableRow = TableRow(
+        children: [
+          _formattedTextCell(routePoint.number ?? " "),
+          _formattedTextCell(routePoint.name ?? " "),
+          _formattedTextCell(
+              double.parse(routePoint.lat ?? "0").toStringAsFixed(5)),
+          _formattedTextCell(
+              double.parse(routePoint.lon ?? "0").toStringAsFixed(5)),
+        ],
+      );
+      routePointTableRows.add(tableRow);
+    }
+    return routePointTableRows;
   }
 
   Widget _getLegDetailsTable(OptimalFlightAvgSummary optimalTaskSummary) {
-    if (optimalTaskSummary.routeSummary?.legDetails!= null) {
+    if (optimalTaskSummary.routeSummary?.legDetails != null) {
       var legData = optimalTaskSummary.routeSummary!.legDetails;
       var legDetailRows = _getLegTableRows(legData!);
       var legDetailTable = Table(
+        columnWidths: {
+          0: IntrinsicColumnWidth(),
+          1: IntrinsicColumnWidth(),
+          2: IntrinsicColumnWidth(),
+          3: IntrinsicColumnWidth(),
+          4: IntrinsicColumnWidth(),
+          5: IntrinsicColumnWidth(),
+          6: IntrinsicColumnWidth(),
+          7: IntrinsicColumnWidth(),
+          8: IntrinsicColumnWidth(),
+          9: IntrinsicColumnWidth(),
+          10: IntrinsicColumnWidth(),
+          11: IntrinsicColumnWidth(),
+        },
         border: TableBorder.all(),
         defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-        children:  legDetailRows,
+        children: legDetailRows,
       );
-      return legDetailTable;
+      return SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child:
+            Container(margin: EdgeInsets.only(right: 8), child: legDetailTable),
+      );
     }
     return SizedBox.shrink();
   }
 
-
-
   List<TableRow> _getLegTableRows(List<LegDetail> legDetails) {
     var legDetailTableRows = <TableRow>[];
     legDetailTableRows.add(_getLegDetailLabels());
-    for (var legDetail in legDetails){
+    for (var legDetail in legDetails) {
       var tableRow = TableRow(
         children: [
-          _formattedTextCell(legDetail.leg ?? " "),
+          _formattedTextCell((legDetail.leg ??
+              " ") +
+                  (legDetail.message != null ? "\n" + legDetail.message! : "")),
           _formattedTextCell(legDetail.clockTime ?? " "),
-          _formattedTextCell(double.parse(legDetail.sptlAvgDistKm ?? "0").toStringAsFixed(1)),
-          _formattedTextCell(double.parse(legDetail.sptlAvgTailWind ?? "0").toStringAsFixed(0)),
-          _formattedTextCell(double.parse(legDetail.sptlAvgClimbRate ?? "0").toStringAsFixed(0)),
-          _formattedTextCell(double.parse(legDetail.optAvgTailWind ?? "0").toStringAsFixed(0)),
-          _formattedTextCell(double.parse(legDetail.optAvgClimbRate ?? "0").toStringAsFixed(0)),
-          _formattedTextCell(double.parse(legDetail.optFlightTimeMin ?? "0").toStringAsFixed(0)),
-          _formattedTextCell(double.parse(legDetail.optFlightGrndSpeedKt ?? "0").toStringAsFixed(0)),
-          _formattedTextCell(double.parse(legDetail.optFlightGrndSpeedKmh ?? "0").toStringAsFixed(0)),
-          _formattedTextCell(double.parse(legDetail.optFlightAirSpeedKt?? "0").toStringAsFixed(0)),
-          _formattedTextCell(double.parse(legDetail.optFlightThermalPct?? "0").toStringAsFixed(0)),
+          _formattedTextCell(
+              double.parse(legDetail.sptlAvgDistKm ?? "0").toStringAsFixed(1)),
+          //  convert tailwind to headwind
+          _formattedTextCell(
+              (double.parse(legDetail.sptlAvgTailWind ?? "0") * -1)
+                  .toStringAsFixed(0)),
+          _formattedTextCell(double.parse(legDetail.sptlAvgClimbRate ?? "0")
+              .toStringAsFixed(0)),
+          //  convert tailwind to headwind
+          _formattedTextCell(
+              (double.parse(legDetail.optAvgTailWind ?? "0") * -1)
+                  .toStringAsFixed(0)),
+          _formattedTextCell(double.parse(legDetail.optAvgClimbRate ?? "0")
+              .toStringAsFixed(0)),
+          _formattedTextCell(double.parse(legDetail.optFlightTimeMin ?? "0")
+              .toStringAsFixed(0)),
+          _formattedTextCell(double.parse(legDetail.optFlightGrndSpeedKt ?? "0")
+              .toStringAsFixed(0)),
+          _formattedTextCell(
+              double.parse(legDetail.optFlightGrndSpeedKmh ?? "0")
+                  .toStringAsFixed(0)),
+          _formattedTextCell(double.parse(legDetail.optFlightAirSpeedKt ?? "0")
+              .toStringAsFixed(0)),
+          _formattedTextCell(double.parse(legDetail.optFlightThermalPct ?? "0")
+              .toStringAsFixed(0)),
         ],
       );
       legDetailTableRows.add(tableRow);
@@ -1135,23 +1200,74 @@ class ForecastMapState extends State<ForecastMap>
     return legDetailTableRows;
   }
 
-  TableRow _getLegDetailLabels(){
-    var legDetailLabels= <TableRow>[];
+  TableRow _getLegDetailLabels() {
+    var legDetailLabels = <TableRow>[];
     return TableRow(
       children: [
-        _formattedTextCell( "L\nE\nG"),
+        _formattedTextCell("L\nE\nG"),
         _formattedTextCell("ClockTime"),
         _formattedTextCell("Dist\nkm"),
-        _formattedTextCell("Tail\nWind\nkt"),
+        _formattedTextCell("Head\nWind\nkt"),
+        _formattedTextCell("Climb\nRate\nkt"),
+        _formattedTextCell("Head\nWind\nkt"),
         _formattedTextCell("Clmb\nRate\nkt"),
-        _formattedTextCell("Tail\nWind\nkt"),
-        _formattedTextCell("Clmb\nRate\kt"),
         _formattedTextCell("Time\nMin"),
         _formattedTextCell("Gnd\nSpd\nkt"),
         _formattedTextCell("Gnd\nSpd\nkm/h"),
         _formattedTextCell("Air\nSpd\nkt"),
-        _formattedTextCell("Thm\nPct\n%"),
-      ],);
+        _formattedTextCell("Thermaling\nPct\n%"),
+      ],
+    );
+  }
 
+  Widget _getTurnpointsTableHeader() {
+    return Center(
+      child: Padding(
+          padding: const EdgeInsets.only(top: 16),
+          child: Text("Task Turnpoints", style: textStyleBoldBlackFontSize18)),
+    );
+  }
+
+  Widget _getLegTableHeader() {
+    return Center(
+      child: Padding(
+          padding: const EdgeInsets.only(top: 16),
+          child: Text(
+            "Leg Details\nUsing wind-adjusted speed-to-fly",
+            style: textStyleBoldBlackFontSize18,
+            textAlign: TextAlign.center,
+          )),
+    );
+  }
+
+  Widget _getWarningMsgDisplay(OptimalFlightAvgSummary optimalTaskSummary) {
+    List<Footer> footers =
+        optimalTaskSummary.routeSummary?.footers ?? <Footer>[];
+    List<Widget> warnings = [];
+
+    footers.forEach((footer) {
+      warnings.add(_formattedTextCell(footer.message ?? ""));
+    });
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.start,
+      children: warnings,
+    );
+  }
+
+  Widget _getOptimalFlightCloseButton() {
+    return ElevatedButton(
+      style: ElevatedButton.styleFrom(
+        minimumSize: Size(double.infinity,
+            40), // double.infinity is the width and 30 is the height
+        foregroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.primary,
+      ),
+      child: Text("Close"),
+      onPressed: () {
+        setState(() {
+          _optimalTaskSummary = null;
+        });
+      },
+    );
   }
 }

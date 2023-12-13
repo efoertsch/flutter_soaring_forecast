@@ -515,7 +515,7 @@ class _RaspScreenState extends State<RaspScreen>
         },
       ),
       PopupMenuButton<String>(
-        onSelected: handleClick,
+        onSelected: _handleClick,
         icon: Icon(Icons.more_vert),
         itemBuilder: (BuildContext context) {
           return {
@@ -567,7 +567,7 @@ class _RaspScreenState extends State<RaspScreen>
           Icon(Icons.arrow_right, size: 20.0, color: Colors.black),
         ],
       ),
-      onSelected: handleClick,
+      onSelected: _handleClick,
       itemBuilder: (BuildContext context) {
         return {
           RaspMenu.notamsBrief,
@@ -592,7 +592,7 @@ class _RaspScreenState extends State<RaspScreen>
     }
   }
 
-  void handleClick(String value) async {
+  void _handleClick(String value) async {
     switch (value) {
       case RaspMenu.clearTask:
         _sendEvent(ClearTaskEvent());
