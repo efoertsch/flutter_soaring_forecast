@@ -966,11 +966,10 @@ class ForecastMapState extends State<ForecastMap>
                 backgroundColor: MaterialStatePropertyAll<Color>(Colors.white),
               ),
               onPressed: () async {
-                //_sendEvent(GetOptimizedTaskRouteEvent());
-                var maybePolar = await Navigator.pushNamed(
+                var maybeGlider = await Navigator.pushNamed(
                     context, GliderPolarListBuilder.routeName);
-                if (maybePolar != null && maybePolar is Glider) {
-                  _sendEvent(GetOptimizedTaskRouteEvent(maybePolar));
+                if (maybeGlider != null && maybeGlider is Glider) {
+                  _sendEvent(GetOptimizedTaskRouteEvent(maybeGlider));
                 }
               },
               child: Stack(
@@ -1003,17 +1002,14 @@ class ForecastMapState extends State<ForecastMap>
         return current is OptimalFlightSummaryState;
       },
       builder: (context, state) {
-        return _getOptimalTaskInfoDisplay();
+        if (_optimalTaskSummary != null) {
+          return _getOptimalFlightSummary(_optimalTaskSummary!);
+        }
+        return SizedBox.shrink();
       },
     );
   }
 
-  Widget _getOptimalTaskInfoDisplay() {
-    if (_optimalTaskSummary != null) {
-      return _getOptimalFlightSummary(_optimalTaskSummary!);
-    }
-    return SizedBox.shrink();
-  }
 
   Widget _getOptimalFlightSummary(OptimalFlightAvgSummary optimalTaskSummary) {
     const String title = "Flight Avg";
@@ -1066,7 +1062,7 @@ class ForecastMapState extends State<ForecastMap>
           ),
           TableRow(
             children: [
-              _formattedTextCell("Thermaling Sink Rate (kts)"),
+              _formattedTextCell("Thermalling Sink Rate (kts)"),
               _formattedTextCell(header!.thermalingSinkRate ?? ""),
             ],
           ),

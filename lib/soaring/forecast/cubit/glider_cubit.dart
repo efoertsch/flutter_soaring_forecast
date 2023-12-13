@@ -1,6 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
-import 'package:flutter_soaring_forecast/soaring/forecast/cubit/polar_state.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast/cubit/glider_state.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/gliders.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 
@@ -53,14 +53,14 @@ class GliderCubit extends Cubit<GliderState> {
     _displayUnits = await _repository.getDisplayUnits();
     _assignDisplayUnitLabels();
     var gliderRecord =
-        await _repository.getDefaultAndCustomGliderDetails(glider);
+    await _repository.getDefaultAndCustomGliderDetails(glider);
     // repository always have glider details in metric units
     _defaultGlider = gliderRecord.defaultGlider;
     _customGlider = gliderRecord.customGlider;
     // May need to convert to American units,
     var defaultGliderLocalUnits = _convertGliderValues(
         _defaultGlider!.copyWith(), DisplayUnits.Metric, _displayUnits!);
-   var  customGliderLocalUnits = _convertGliderValues(
+    var customGliderLocalUnits = _convertGliderValues(
         _customGlider!.copyWith(), DisplayUnits.Metric, _displayUnits!);
 
     emit(GliderPolarState(defaultGliderLocalUnits, customGliderLocalUnits,
@@ -69,7 +69,8 @@ class GliderCubit extends Cubit<GliderState> {
   }
 
 
-  Future<void> saveDisplayUnits(DisplayUnits newDisplayUnits, Glider customGlider) async {
+  Future<void> saveDisplayUnits(DisplayUnits newDisplayUnits,
+      Glider customGlider) async {
     _indicateWorking(true);
     if (_displayUnits == newDisplayUnits) return;
     _displayUnits = newDisplayUnits;
@@ -77,22 +78,22 @@ class GliderCubit extends Cubit<GliderState> {
     _assignDisplayUnitLabels();
     //TODO very similar to above logic. Consolidate?
     var defaultGliderLocalUnits;
-    var  customGliderLocalUnits;
-    if (newDisplayUnits == DisplayUnits.American){
+    var customGliderLocalUnits;
+    if (newDisplayUnits == DisplayUnits.American) {
       // previously displaying metric, now want display in american units
       defaultGliderLocalUnits = _convertGliderValues(
           _defaultGlider!.copyWith(), DisplayUnits.Metric, _displayUnits!);
       customGliderLocalUnits = _convertGliderValues(
-           customGlider.copyWith(), DisplayUnits.Metric, _displayUnits!);
+          customGlider.copyWith(), DisplayUnits.Metric, _displayUnits!);
     } else { // was american, now show in metric
       defaultGliderLocalUnits = _defaultGlider!.copyWith(); //
-      customGliderLocalUnits =  _convertGliderValues(customGlider.copyWith(),
+      customGliderLocalUnits = _convertGliderValues(customGlider.copyWith(),
           DisplayUnits.American, DisplayUnits.Metric);
     }
-      emit(GliderPolarState(defaultGliderLocalUnits, customGliderLocalUnits,
-          _displayUnits!, _sinkRateUnits, _velocityUnits, _massUnits));
+    emit(GliderPolarState(defaultGliderLocalUnits, customGliderLocalUnits,
+        _displayUnits!, _sinkRateUnits, _velocityUnits, _massUnits));
     _indicateWorking(false);
-     }
+  }
 
   //
   // // Must pass in the glider with default(XCSOAR) values
@@ -104,8 +105,8 @@ class GliderCubit extends Cubit<GliderState> {
   //   emit(GliderPolarState(glider, newGlider, displayUnits));
   // }
 
-  Glider _convertGliderValues(
-      Glider gliderPolar, DisplayUnits fromUnits, DisplayUnits toUnits) {
+  Glider _convertGliderValues(Glider gliderPolar, DisplayUnits fromUnits,
+      DisplayUnits toUnits) {
     if (fromUnits == toUnits) return gliderPolar;
     VelocityConversion? velocityConversion;
     SinkRateConversion? sinkRateConversion;
@@ -141,19 +142,20 @@ class GliderCubit extends Cubit<GliderState> {
         _convertSinkRate(gliderPolar.thermallingSinkRate, sinkRateConversion);
     gliderPolar.minSinkSpeed =
         _convertVelocity(gliderPolar.minSinkSpeed, velocityConversion);
-    gliderPolar.minSinkRate = _convertSinkRate(gliderPolar.minSinkRate, sinkRateConversion);
+    gliderPolar.minSinkRate =
+        _convertSinkRate(gliderPolar.minSinkRate, sinkRateConversion);
     return gliderPolar;
   }
 
   void _assignDisplayUnitLabels() {
     _velocityUnits = (_displayUnits == DisplayUnits.Metric) ? "km/hr" : "kts";
     _sinkRateUnits =
-        (_displayUnits == DisplayUnits.Metric) ? "m/sec" : "ft/min";
+    (_displayUnits == DisplayUnits.Metric) ? "m/sec" : "ft/min";
     _massUnits = (_displayUnits == DisplayUnits.Metric) ? "kg" : "lbs";
   }
 
-  double _convertVelocity(
-      double? velocity, VelocityConversion velocityConversion) {
+  double _convertVelocity(double? velocity,
+      VelocityConversion velocityConversion) {
     if (velocity == null) return 0;
     if (velocityConversion == VelocityConversion.kmh2kts) {
       // input in metric (km/h) so convert velocity to kts
@@ -165,8 +167,8 @@ class GliderCubit extends Cubit<GliderState> {
   }
 
 // Input value is always metric
-  double _convertSinkRate(
-      double? sinkRate, SinkRateConversion sinkRateConversion) {
+  double _convertSinkRate(double? sinkRate,
+      SinkRateConversion sinkRateConversion) {
     if (sinkRate == null) return 0;
     if (sinkRateConversion == SinkRateConversion.mpsec2ftpmin) {
       // input is m/sec so convert to ft/min
@@ -188,19 +190,22 @@ class GliderCubit extends Cubit<GliderState> {
     }
   }
 
-  void calcOptimalTaskTime() async {
+  void calcOptimalTaskTime(Glider customGlider) async {
     _indicateWorking(true);
-    _customGlider = _convertGliderValues(
-      _customGlider!,
-      DisplayUnits.American,
-      DisplayUnits.Metric,
-    );
-    await _repository.saveCustomPolar(_customGlider!);
-
+    if (_displayUnits == DisplayUnits.American) {
+      // convert to metric
+      _customGlider = _convertGliderValues(
+        customGlider,
+        DisplayUnits.American,
+        DisplayUnits.Metric);
+    } else {
+      _customGlider = customGlider.copyWith();
+    };
     _customGlider!.calculatePolarAdjustmentFactor(_defaultGlider!);
-
+    await _repository.saveCustomPolar(_customGlider!);
     //  call repository
     _indicateWorking(false);
+    emit(CalcOptimumTaskState(_customGlider!));
   }
 
 

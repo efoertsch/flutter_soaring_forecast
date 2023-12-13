@@ -17,7 +17,6 @@ Map<String, dynamic> _$GlidersToJson(Gliders instance) => <String, dynamic>{
     };
 
 Glider _$GliderFromJson(Map<String, dynamic> json) {
-      debugPrint( json.toString());
       return Glider(
             glider: json['glider'] as String,
             gliderAndMaxPilotWgt:

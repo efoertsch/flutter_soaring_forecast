@@ -532,6 +532,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
         , event.glider.thermallingSinkRate, 1,  latLonString);
     if (optimizedTaskRoute?.routeSummary?.error != null){
       emit (RaspErrorState(optimizedTaskRoute!.routeSummary!.error!));
+      emit(RaspWorkingState(working: false));
     } else {
       emit(RaspWorkingState(working: false));
       emit (OptimalFlightSummaryState(optimizedTaskRoute!));

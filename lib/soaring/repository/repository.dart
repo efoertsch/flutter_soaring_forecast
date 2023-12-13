@@ -372,7 +372,7 @@ class Repository {
         }
       }
     }).catchError((onError) {
-      var summary = RouteSummary(error: onError.response.toString());
+      var summary = RouteSummary(error: onError.toString());
       optimalFlightSummary = OptimalFlightAvgSummary(routeSummary: summary);
     });
     return optimalFlightSummary;

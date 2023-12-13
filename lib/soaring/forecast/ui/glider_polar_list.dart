@@ -8,7 +8,7 @@ import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
 import 'package:flutter_soaring_forecast/soaring/app/custom_styles.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/cubit/glider_cubit.dart';
-import 'package:flutter_soaring_forecast/soaring/forecast/cubit/polar_state.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast/cubit/glider_state.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/gliders.dart';
 
 class GliderPolarListScreen extends StatefulWidget {
@@ -83,35 +83,41 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
         bottomNavigationBar: SafeArea(
           child: BottomAppBar(
             child: Row(
+              mainAxisSize: MainAxisSize.max,
               children: [
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      minimumSize: Size(double.infinity,
-                          40), // double.infinity is the width and 30 is the height
-                      foregroundColor: Colors.white,
-                      backgroundColor: Theme.of(context).colorScheme.primary,
+                Flexible(
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: Size(double.infinity,
+                            40), // double.infinity is the width and 30 is the height
+                        foregroundColor: Colors.white,
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                      ),
+                      child: Text(StandardLiterals.OK),
+                      onPressed: () {
+                        _getGliderCubit().calcOptimalTaskTime(_customGlider!);
+                        //Navigator.pop(context, polar);
+                      },
                     ),
-                    child: Text(StandardLiterals.OK),
-                    onPressed: () {
-                      _getGliderCubit().calcOptimalTaskTime();
-                    },
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      minimumSize: Size(double.infinity,
-                          40), // double.infinity is the width and 30 is the height
-                      foregroundColor: Colors.white,
-                      backgroundColor: Theme.of(context).colorScheme.primary,
+                Flexible(
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: Size(double.infinity,
+                            40), // double.infinity is the width and 30 is the height
+                        foregroundColor: Colors.white,
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                      ),
+                      child: Text(StandardLiterals.CANCEL),
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
                     ),
-                    child: Text(StandardLiterals.CANCEL),
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
                   ),
                 ),
               ],
@@ -205,7 +211,8 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
           _getGliderList(),
           _displayGliderDetail(),
           _getIsWorkingIndicator(),
-          _getErrorMessagesWidget()
+          _getErrorMessagesWidget(),
+          _getMiscStatesHandlerWidget(),
         ],
       ),
     );
@@ -449,7 +456,7 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
               _formattedTextCell("Thermalling Sink Rate" + _sinkRateUnits),
               _formattedTextCell(
                   _customGlider!.thermallingSinkRate.toStringAsFixed(1)),
-              _formattedTextCell(""),
+              _formattedTextCell(_defaultGlider!.thermallingSinkRate.toStringAsFixed(1)),
             ],
           ),
         ]);
@@ -735,6 +742,17 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
           ],
         ),
       ],
+    );
+  }
+
+  Widget _getMiscStatesHandlerWidget() {
+    return BlocListener<GliderCubit, GliderState>(
+      listener: (context, state) {
+        if (state is CalcOptimumTaskState) {
+          Navigator.pop(context, state.glider);
+        }
+      },
+      child: SizedBox.shrink(),
     );
   }
 
