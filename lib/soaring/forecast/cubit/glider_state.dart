@@ -40,8 +40,15 @@ class GliderPolarErrorState extends GliderState {
   GliderPolarErrorState(this.errorMsg);
 }
 
-class CalcOptimumTaskState extends GliderState {
+class CalcEstimatedFlightState extends GliderState {
   final Glider glider;
-  CalcOptimumTaskState(this.glider);
+  CalcEstimatedFlightState(this.glider);
 }
+
+class DisplayEstimatedFlightText extends GliderState {}
+
+
+
+
+
 

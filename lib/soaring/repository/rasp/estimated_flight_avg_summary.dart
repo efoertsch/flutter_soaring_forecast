@@ -1,23 +1,23 @@
 
 import 'package:json_annotation/json_annotation.dart';
 
-part 'optimal_flight_avg_summary.g.dart';
+part 'estimated_flight_avg_summary.g.dart';
 
 ///  Generated via https://javiercbk.github.io/json_to_dart/ fron soargbsc.com/rasp/current.json
 // If modified execute from terminal
 //  dart run build_runner build --delete-conflicting-outputs
 @JsonSerializable()
-class OptimalFlightAvgSummary {
+class EstimatedFlightSummary {
   @JsonKey(name:"summary")
   final RouteSummary? routeSummary;
 
-  OptimalFlightAvgSummary({
+  EstimatedFlightSummary({
     this.routeSummary,
   });
 
-  factory OptimalFlightAvgSummary.fromJson(Map<String, dynamic> json) => _$OptimalFlightAvgSummaryFromJson(json);
+  factory EstimatedFlightSummary.fromJson(Map<String, dynamic> json) => _$EstimatedFlightSummaryFromJson(json);
 
-  Map<String, dynamic> toJson() => _$OptimalFlightAvgSummaryToJson(this);
+  Map<String, dynamic> toJson() => _$EstimatedFlightSummaryToJson(this);
 
 }
 

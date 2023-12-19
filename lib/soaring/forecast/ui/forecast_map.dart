@@ -17,7 +17,7 @@ import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/LatLngFo
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image_set.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/util/animated_map_controller.dart';
 import 'package:flutter_soaring_forecast/soaring/graphics/data/forecast_graph_data.dart';
-import 'package:flutter_soaring_forecast/soaring/repository/rasp/optimal_flight_avg_summary.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/rasp/estimated_flight_avg_summary.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/gliders.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/regions.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoint_utils.dart';
@@ -80,7 +80,7 @@ class ForecastMapState extends State<ForecastMap>
   double _mapZoom = 7;
   double _previousZoom = 7;
   bool _displayOptTaskAvg = false;
-  OptimalFlightAvgSummary? _optimalTaskSummary;
+  EstimatedFlightSummary? _estimatedFlightSummary;
 
   final suaColors = SUAColor.values;
 
@@ -93,6 +93,7 @@ class ForecastMapState extends State<ForecastMap>
   GeoJSON geoJSON = GeoJSON();
   VectorTileIndex vectorTileIndex = VectorTileIndex();
   String? suaSelected;
+  bool _showEstimatedFlightButton = false;
 
   @override
   void initState() {
@@ -386,6 +387,9 @@ class ForecastMapState extends State<ForecastMap>
           _mapController.animatedFitBounds(_forecastLatLngBounds);
           return;
         }
+        if (state is ShowEstimatedFlightButton){
+          _showEstimatedFlightButton = state.showEstimatedFlightButton;
+        }
       },
       child: SizedBox.shrink(),
     );
@@ -442,11 +446,11 @@ class ForecastMapState extends State<ForecastMap>
     }
   }
 
-  void _plotOptimizedRoute(OptimalFlightAvgSummary optimizedTaskRoute) {
+  void _plotOptimizedRoute(EstimatedFlightSummary estimatedFlightRoute) {
     _optimizedTaskRoute.clear();
     var routePoints = <LatLng>[];
     int numberRoutePoints =
-        optimizedTaskRoute.routeSummary?.routeTurnpoints?.length ?? 0;
+        estimatedFlightRoute.routeSummary?.routeTurnpoints?.length ?? 0;
     print('number of route points ${numberRoutePoints} ');
     if (numberRoutePoints == 0) {
       //  _printMapBounds("TaskTurnpoints.length = 0 ", _forecastLatLngBounds);
@@ -454,7 +458,7 @@ class ForecastMapState extends State<ForecastMap>
       _mapController.animatedFitBounds(_forecastLatLngBounds);
     } else {
       for (var routePoint
-          in optimizedTaskRoute.routeSummary!.routeTurnpoints!) {
+          in estimatedFlightRoute.routeSummary!.routeTurnpoints!) {
         // print('adding taskturnpoint: ${taskTurnpoint.title}');
         var latLngPoint = LatLng(
             double.parse(routePoint.lat!), double.parse(routePoint.lon!));
@@ -957,7 +961,7 @@ class ForecastMapState extends State<ForecastMap>
   }
 
   Widget _getOptimalFlightIcon() {
-    return _routeIconIsVisible
+    return (_routeIconIsVisible && _showEstimatedFlightButton)
         ? Positioned(
             bottom: 0,
             left: 0,
@@ -966,6 +970,7 @@ class ForecastMapState extends State<ForecastMap>
                 backgroundColor: MaterialStatePropertyAll<Color>(Colors.white),
               ),
               onPressed: () async {
+                widget.stopAnimation();
                 var maybeGlider = await Navigator.pushNamed(
                     context, GliderPolarListBuilder.routeName);
                 if (maybeGlider != null && maybeGlider is Glider) {
@@ -981,7 +986,7 @@ class ForecastMapState extends State<ForecastMap>
                     width: 40,
                   ),
                   Text(
-                    "Optimal\nFlight",
+                    "Estimated\nFlight",
                     style: textStyleBoldBlackFontSize14,
                   ),
                 ],
@@ -994,16 +999,16 @@ class ForecastMapState extends State<ForecastMap>
   Widget _showOptimalFlightAvgTable() {
     return BlocConsumer<RaspDataBloc, RaspDataState>(
       listener: (context, state) {
-        if (state is OptimalFlightSummaryState) {
-          _optimalTaskSummary = state.optimalFlightSummary;
+        if (state is EstimatedFlightSummaryState) {
+          _estimatedFlightSummary = state.estimatedFlightSummary;
         }
       },
       buildWhen: (previous, current) {
-        return current is OptimalFlightSummaryState;
+        return current is EstimatedFlightSummaryState;
       },
       builder: (context, state) {
-        if (_optimalTaskSummary != null) {
-          return _getOptimalFlightSummary(_optimalTaskSummary!);
+        if (_estimatedFlightSummary != null) {
+          return _getOptimalFlightSummary(_estimatedFlightSummary!);
         }
         return SizedBox.shrink();
       },
@@ -1011,7 +1016,7 @@ class ForecastMapState extends State<ForecastMap>
   }
 
 
-  Widget _getOptimalFlightSummary(OptimalFlightAvgSummary optimalTaskSummary) {
+  Widget _getOptimalFlightSummary(EstimatedFlightSummary optimalTaskSummary) {
     const String title = "Flight Avg";
     return Container(
       color: Colors.white,
@@ -1033,7 +1038,7 @@ class ForecastMapState extends State<ForecastMap>
   }
 
   RenderObjectWidget _getOptimalFlightParms(
-      OptimalFlightAvgSummary optimalTaskSummary) {
+      EstimatedFlightSummary optimalTaskSummary) {
     if (optimalTaskSummary.routeSummary?.header != null) {
       var header = optimalTaskSummary.routeSummary?.header;
       var headerTable = Table(
@@ -1084,7 +1089,7 @@ class ForecastMapState extends State<ForecastMap>
     );
   }
 
-  Widget _getTaskTurnpointsTable(OptimalFlightAvgSummary optimalTaskSummary) {
+  Widget _getTaskTurnpointsTable(EstimatedFlightSummary optimalTaskSummary) {
     if (optimalTaskSummary.routeSummary?.routeTurnpoints != null) {
       var routeTurnPoints = optimalTaskSummary.routeSummary!.routeTurnpoints;
       var turnpointRows = _getTaskTurnpointTableRows(routeTurnPoints!);
@@ -1122,7 +1127,7 @@ class ForecastMapState extends State<ForecastMap>
     return routePointTableRows;
   }
 
-  Widget _getLegDetailsTable(OptimalFlightAvgSummary optimalTaskSummary) {
+  Widget _getLegDetailsTable(EstimatedFlightSummary optimalTaskSummary) {
     if (optimalTaskSummary.routeSummary?.legDetails != null) {
       var legData = optimalTaskSummary.routeSummary!.legDetails;
       var legDetailRows = _getLegTableRows(legData!);
@@ -1165,13 +1170,13 @@ class ForecastMapState extends State<ForecastMap>
                   (legDetail.message != null ? "\n" + legDetail.message! : "")),
           _formattedTextCell(legDetail.clockTime ?? " "),
           _formattedTextCell(
-              double.parse(legDetail.sptlAvgDistKm ?? "0").toStringAsFixed(1)),
+             double.parse(legDetail.sptlAvgDistKm ?? "0").toStringAsFixed(1)),
           //  convert tailwind to headwind
-          _formattedTextCell(
-              (double.parse(legDetail.sptlAvgTailWind ?? "0") * -1)
-                  .toStringAsFixed(0)),
-          _formattedTextCell(double.parse(legDetail.sptlAvgClimbRate ?? "0")
-              .toStringAsFixed(0)),
+         // _formattedTextCell(
+          //    (double.parse(legDetail.sptlAvgTailWind ?? "0") * -1)
+          //        .toStringAsFixed(0)),
+        //  _formattedTextCell(double.parse(legDetail.sptlAvgClimbRate ?? "0")
+        //      .toStringAsFixed(0)),
           //  convert tailwind to headwind
           _formattedTextCell(
               (double.parse(legDetail.optAvgTailWind ?? "0") * -1)
@@ -1203,8 +1208,8 @@ class ForecastMapState extends State<ForecastMap>
         _formattedTextCell("L\nE\nG"),
         _formattedTextCell("ClockTime"),
         _formattedTextCell("Dist\nkm"),
-        _formattedTextCell("Head\nWind\nkt"),
-        _formattedTextCell("Climb\nRate\nkt"),
+        //_formattedTextCell("Head\nWind\nkt"),
+        //_formattedTextCell("Climb\nRate\nkt"),
         _formattedTextCell("Head\nWind\nkt"),
         _formattedTextCell("Clmb\nRate\nkt"),
         _formattedTextCell("Time\nMin"),
@@ -1236,7 +1241,7 @@ class ForecastMapState extends State<ForecastMap>
     );
   }
 
-  Widget _getWarningMsgDisplay(OptimalFlightAvgSummary optimalTaskSummary) {
+  Widget _getWarningMsgDisplay(EstimatedFlightSummary optimalTaskSummary) {
     List<Footer> footers =
         optimalTaskSummary.routeSummary?.footers ?? <Footer>[];
     List<Widget> warnings = [];
@@ -1261,7 +1266,7 @@ class ForecastMapState extends State<ForecastMap>
       child: Text("Close"),
       onPressed: () {
         setState(() {
-          _optimalTaskSummary = null;
+          _estimatedFlightSummary = null;
         });
       },
     );

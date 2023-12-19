@@ -16,38 +16,36 @@ Map<String, dynamic> _$GlidersToJson(Gliders instance) => <String, dynamic>{
       'gliders': instance.gliders,
     };
 
-Glider _$GliderFromJson(Map<String, dynamic> json) {
-      return Glider(
-            glider: json['glider'] as String,
-            gliderAndMaxPilotWgt:
-            (json['glider_and_max_pilot_wgt'] as num).toDouble(),
-            maxBallast: (json['max_ballast'] as num).toDouble(),
-            v1: (json['V1'] as num).toDouble(),
-            w1: (json['W1'] as num).toDouble(),
-            v2: (json['V2'] as num).toDouble(),
-            w2: (json['W2'] as num).toDouble(),
-            v3: (json['V3'] as num).toDouble(),
-            w3: (json['W3'] as num).toDouble(),
-            wingArea: (json['wing_area'] as num).toDouble(),
-            ballastDumpTime: (json['ballast_dump_time'] as num).toDouble(),
-            handicap: (json['handicap'] as num).toDouble(),
-            gliderEmptyMass: (json['glider_empty_mass'] as num).toDouble(),
-            pilotMass: (json['pilotMass'] as num).toDouble(),
-            a: (json['a'] as num).toDouble(),
-            b: (json['b'] as num).toDouble(),
-            c: (json['c'] as num).toDouble(),
-            minSinkSpeed: (json['minSinkSpeed'] as num).toDouble(),
-            minSinkRate: (json['minSinkRate'] as num).toDouble(),
-            loadedBallast: (json['loadedBallast'] as num?)?.toDouble() ?? 0,
-            updatedVW: json['updatedVW'] as bool? ?? false,
-            minSinkMass: (json['minSinkMass'] as num?)?.toDouble() ?? 0,
-            bankAngle: json['bankAngle'] as int? ?? 45,
-            thermallingSinkRate:
-            (json['thermallingSinkRate'] as num?)?.toDouble() ?? 0,
-            polarWeightAdjustment:
-            (json['polarWeightAdjustment'] as num?)?.toDouble() ?? 1,
-      );
-}
+Glider _$GliderFromJson(Map<String, dynamic> json) => Glider(
+      glider: json['glider'] as String,
+      gliderAndMaxPilotWgt:
+          (json['glider_and_max_pilot_wgt'] as num).toDouble(),
+      maxBallast: (json['max_ballast'] as num).toDouble(),
+      v1: (json['V1'] as num).toDouble(),
+      w1: (json['W1'] as num).toDouble(),
+      v2: (json['V2'] as num).toDouble(),
+      w2: (json['W2'] as num).toDouble(),
+      v3: (json['V3'] as num).toDouble(),
+      w3: (json['W3'] as num).toDouble(),
+      wingArea: (json['wing_area'] as num).toDouble(),
+      ballastDumpTime: (json['ballast_dump_time'] as num).toDouble(),
+      handicap: (json['handicap'] as num).toDouble(),
+      gliderEmptyMass: (json['glider_empty_mass'] as num).toDouble(),
+      pilotMass: (json['pilotMass'] as num).toDouble(),
+      a: (json['a'] as num).toDouble(),
+      b: (json['b'] as num).toDouble(),
+      c: (json['c'] as num).toDouble(),
+      minSinkSpeed: (json['minSinkSpeed'] as num).toDouble(),
+      minSinkRate: (json['minSinkRate'] as num).toDouble(),
+      loadedBallast: (json['loadedBallast'] as num?)?.toDouble() ?? 0,
+      updatedVW: json['updatedVW'] as bool? ?? false,
+      minSinkMass: (json['minSinkMass'] as num?)?.toDouble() ?? 0,
+      bankAngle: json['bankAngle'] as int? ?? 45,
+      thermallingSinkRate:
+          (json['thermallingSinkRate'] as num?)?.toDouble() ?? 0,
+      polarWeightAdjustment:
+          (json['polarWeightAdjustment'] as num?)?.toDouble() ?? 1,
+    );
 
 Map<String, dynamic> _$GliderToJson(Glider instance) => <String, dynamic>{
       'glider': instance.glider,

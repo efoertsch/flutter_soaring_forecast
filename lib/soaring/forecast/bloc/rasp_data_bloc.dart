@@ -165,7 +165,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     await _refreshForecast(event, emit);
   }
 
-  Future<void> _refreshForecast( _, Emitter<RaspDataState> emit) async {
+  Future<void> _refreshForecast(_, Emitter<RaspDataState> emit) async {
     await _emitForecastRegionInfo(emit);
     await _emitForecastMapInfo(emit);
   }
@@ -188,7 +188,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
         _emitSoundingImageSet(emit);
       }
     }
-    emit(OptimalFlightSummaryState(null));
+    emit(EstimatedFlightSummaryState(null));
   }
 
   void _processSelectedForecastEvent(
@@ -215,7 +215,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
         _getSoundingImages(_soundingPosition);
         _emitSoundingImageSet(emit);
       }
-      emit(OptimalFlightSummaryState(null));
+      emit(EstimatedFlightSummaryState(null));
     }
   }
 
@@ -440,12 +440,12 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
   }
 
   void _processNextTimeEventAndEmitImage(_, Emitter<RaspDataState> emit) {
-    emit(OptimalFlightSummaryState(null));
+    emit(EstimatedFlightSummaryState(null));
     _updateTimeIndex(1, emit);
   }
 
   void _processPreviousTimeEventAndEmitImage(_, Emitter<RaspDataState> emit) {
-    emit(OptimalFlightSummaryState(null));
+    emit(EstimatedFlightSummaryState(null));
     _updateTimeIndex(-1, emit);
   }
 
@@ -480,7 +480,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     _viewMapBoundsAndZoom = ViewBounds(_regionLatLngBounds!);
     repository.saveViewBounds(_viewMapBoundsAndZoom!); // 7 default zoom
     emit(RaspTaskTurnpoints(<TaskTurnpoint>[]));
-    emit(OptimalFlightSummaryState(null));
+    emit(EstimatedFlightSummaryState(null));
     //emit(ViewBoundsState(_viewMapBoundsAndZoom!));
   }
 
@@ -491,53 +491,65 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
   // }
 
   Future<void> _emitCurrentTask(Emitter<RaspDataState> emit) async {
-   _taskId = await repository.getCurrentTaskId();
+    _taskId = await repository.getCurrentTaskId();
     await _emitTaskTurnpoints(emit, _taskId);
+    bool showEstimatedFlightButton =
+        await repository.getDisplayEstimatedFlightButton();
+      emit(ShowEstimatedFlightButton(showEstimatedFlightButton));
   }
 
   void _getTurnpointsForTaskId(
       GetTaskTurnpointsEvent event, Emitter<RaspDataState> emit) async {
-    emit(OptimalFlightSummaryState(null));
+    emit(EstimatedFlightSummaryState(null));
     _taskId = event.taskId;
     repository.setCurrentTaskId(_taskId);
     await _emitTaskTurnpoints(emit, _taskId);
   }
 
-
-  void _getGetOptimizedTaskRoute(GetOptimizedTaskRouteEvent event, Emitter<RaspDataState> emit) async {
+  void _getGetOptimizedTaskRoute(
+      GetOptimizedTaskRouteEvent event, Emitter<RaspDataState> emit) async {
     emit(RaspWorkingState(working: true));
     List<TaskTurnpoint> taskTurnpoints = await _getTaskTurnpoints(_taskId);
     StringBuffer turnpointLatLons = StringBuffer();
     String latLonString = "";
     int index = 1;
-    for(var taskTurnpoints in taskTurnpoints){
-      turnpointLatLons.write (index.toString());
+    for (var taskTurnpoints in taskTurnpoints) {
+      turnpointLatLons.write(index.toString());
       turnpointLatLons.write(",");
       turnpointLatLons.write(taskTurnpoints.latitudeDeg.toString());
       turnpointLatLons.write(",");
       turnpointLatLons.write(taskTurnpoints.longitudeDeg.toString());
       turnpointLatLons.write(",");
-      turnpointLatLons.write(taskTurnpoints.title.substring(0,taskTurnpoints.title.length > 4 ? 4 : taskTurnpoints.title.length ));
+      turnpointLatLons.write(taskTurnpoints.title.substring(0,
+          taskTurnpoints.title.length > 4 ? 4 : taskTurnpoints.title.length));
       turnpointLatLons.write(",");
       index++;
     }
-    if (turnpointLatLons.length > 0){
-      latLonString = turnpointLatLons.toString().substring(0, turnpointLatLons.length - 1);
+    if (turnpointLatLons.length > 0) {
+      latLonString =
+          turnpointLatLons.toString().substring(0, turnpointLatLons.length - 1);
     }
-    //Note Per Dr Jack. thermalMultiplier was a fudge factor that could be added if you want to bump up or down
+    //Note per Dr Jack. thermalMultiplier was a fudge factor that could be added if you want to bump up or down
     // wstar value used in sink rate calc. For now just use 1
-    var optimizedTaskRoute = await repository.getOptimalFlightSummary(_region!.name!, _selectedForecastDate!,
-        _selectedModelName!, 'd2', _forecastTimes![_selectedForecastTimeIndex] + 'x',
-        event.glider.glider ,event.glider.polarWeightAdjustment, event.glider.getPolarCoefficients()
-        , event.glider.thermallingSinkRate, 1,  latLonString);
-    if (optimizedTaskRoute?.routeSummary?.error != null){
-      emit (RaspErrorState(optimizedTaskRoute!.routeSummary!.error!));
+    var optimizedTaskRoute = await repository.getEstimatedFlightSummary(
+        _region!.name!,
+        _selectedForecastDate!,
+        _selectedModelName!,
+        'd2',
+        _forecastTimes![_selectedForecastTimeIndex] + 'x',
+        event.glider.glider,
+        event.glider.polarWeightAdjustment,
+        event.glider.getPolarCoefficients(),
+        event.glider.thermallingSinkRate,
+        1,
+        latLonString);
+    if (optimizedTaskRoute?.routeSummary?.error != null) {
+      emit(RaspErrorState(optimizedTaskRoute!.routeSummary!.error!));
       emit(RaspWorkingState(working: false));
     } else {
       emit(RaspWorkingState(working: false));
-      emit (OptimalFlightSummaryState(optimizedTaskRoute!));
+      emit(EstimatedFlightSummaryState(optimizedTaskRoute!));
     }
-
   }
 
   FutureOr<void> _emitTaskTurnpoints(
@@ -830,7 +842,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
       _getSoundingImages(_soundingPosition);
       _emitSoundingImageSet(emit);
     }
-    emit(OptimalFlightSummaryState(null));
+    emit(EstimatedFlightSummaryState(null));
   }
 
   // Switch display from beginner to expert or visa-versa
@@ -848,7 +860,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
           _selectedForecastDate ?? '', _selectedModelName!));
       _getForecastImages();
       _emitRaspForecastImageSet(emit);
-      emit(OptimalFlightSummaryState(null));
+      emit(EstimatedFlightSummaryState(null));
     } else {
       //  switched from beginner to expert
       // stay on same model and date so just send info to update ui
@@ -868,14 +880,16 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
         : 0;
   }
 
-  FutureOr<void> _checkIfForecastRefreshNeeded(CheckIfForecastRefreshNeededEvent event, Emitter<RaspDataState> emit) async {
+  FutureOr<void> _checkIfForecastRefreshNeeded(
+      CheckIfForecastRefreshNeededEvent event,
+      Emitter<RaspDataState> emit) async {
     var lastForecast = await repository.getLastForecastTime();
     // 1800000 millisecs equals 30 minutes
-    if (lastForecast == 0 || (DateTime.now().millisecondsSinceEpoch - lastForecast) > 1800000){
+    if (lastForecast == 0 ||
+        (DateTime.now().millisecondsSinceEpoch - lastForecast) > 1800000) {
       // Last time forecast model date/times obtained from server was over 30 minutes ago, so refresh
       // (there might be newer model forecasts available)
-      await  _refreshForecast(event, emit);
+      await _refreshForecast(event, emit);
     }
   }
-
 }

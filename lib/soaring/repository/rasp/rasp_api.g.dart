@@ -172,7 +172,7 @@ class _RaspClient implements RaspClient {
   }
 
   @override
-  Future<HttpResponse<String>> getOptimizedFlightAverages(
+  Future<HttpResponse<String>> getEstimatedFlightAverages(
     String contentType,
     String region,
     String date,
@@ -212,7 +212,7 @@ class _RaspClient implements RaspClient {
     )
             .compose(
               _dio.options,
-              '/cgi/get_optimal_flight_avg.cgi',
+              '/cgi/get_estimated_flight_avg.cgi',
               queryParameters: queryParameters,
               data: _data,
             )

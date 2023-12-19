@@ -33,6 +33,13 @@ class GliderCubit extends Cubit<GliderState> {
     emit(GliderPolarIsWorkingState(isWorking));
   }
 
+  void checkToDisplayExperimentalText() async{
+    var displayText = await _repository.getShowEstimatedFlightExperimentalText();
+    if (displayText){
+     emit(DisplayEstimatedFlightText());
+    }
+  }
+
   void getListOfGliders() async {
     _indicateWorking(true);
     List<String> gliders = [];
@@ -43,6 +50,9 @@ class GliderCubit extends Cubit<GliderState> {
     String selectedGlider = await _repository.getLastSelectedGliderName();
     if (selectedGlider.isNotEmpty) {
       await getGliderPolar(selectedGlider);
+    }
+    if (await _repository.getDisplayExperimentalOptimalTaskAlertFlag()){
+      emit (DisplayEstimatedFlightText());
     }
     _indicateWorking(false);
   }
@@ -94,16 +104,6 @@ class GliderCubit extends Cubit<GliderState> {
         _displayUnits!, _sinkRateUnits, _velocityUnits, _massUnits));
     _indicateWorking(false);
   }
-
-  //
-  // // Must pass in the glider with default(XCSOAR) values
-  // // Will replace any existing customized glider polar values
-  // Future<void> resetGliderToDefault(Glider glider) async {
-  //   _customPolar = glider.copyWith();
-  //  // await _repository.saveCustomPolar(newGlider);
-  //  // Convert polar info to current units.
-  //   emit(GliderPolarState(glider, newGlider, displayUnits));
-  // }
 
   Glider _convertGliderValues(Glider gliderPolar, DisplayUnits fromUnits,
       DisplayUnits toUnits) {
@@ -174,7 +174,7 @@ class GliderCubit extends Cubit<GliderState> {
       // input is m/sec so convert to ft/min
       return sinkRate * 3.28084 * 60.0;
     } else {
-      // input is ft/min, convert to m/23
+      // input is ft/min, convert to m/sec
       return sinkRate / (3.28084 * 60.0);
     }
   }
@@ -190,7 +190,7 @@ class GliderCubit extends Cubit<GliderState> {
     }
   }
 
-  void calcOptimalTaskTime(Glider customGlider) async {
+  void calcEstimatedTaskTime(Glider customGlider) async {
     _indicateWorking(true);
     if (_displayUnits == DisplayUnits.American) {
       // convert to metric
@@ -205,7 +205,16 @@ class GliderCubit extends Cubit<GliderState> {
     await _repository.saveCustomPolar(_customGlider!);
     //  call repository
     _indicateWorking(false);
-    emit(CalcOptimumTaskState(_customGlider!));
+    emit(CalcEstimatedFlightState(_customGlider!));
+  }
+
+  Future<void> displayExperimentalText(bool value) async {
+    _repository.saveDisplayExperimentalOptimalTaskAlertFlag(value);
+  }
+
+  Future<void> resetExperimentalTextDisplay() async {
+    displayExperimentalText(true);
+    emit (DisplayEstimatedFlightText());
   }
 
 

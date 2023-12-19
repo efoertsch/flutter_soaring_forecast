@@ -65,8 +65,8 @@ abstract class RaspClient {
       @Query("lon") String lon,
       @Query("param") String forecasts);
 
-  @GET("/cgi/get_optimal_flight_avg.cgi")
-  Future<HttpResponse<String>> getOptimizedFlightAverages(
+  @GET("/cgi/get_estimated_flight_avg.cgi")
+  Future<HttpResponse<String>> getEstimatedFlightAverages(
       @Header("Content-Type") String contentType,
       @Query("region") String region,
       @Query("date") String date,

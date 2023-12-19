@@ -161,7 +161,7 @@ class CommonWidgets {
       buttonWidgets.add(TextButton(
           child: Text(button2Text),
           onPressed: () {
-            if (button2Function!= null) {
+            if (button2Function != null) {
               debugPrint("button2 pressed");
               button2Function();
             }
@@ -316,16 +316,16 @@ class CommonWidgets {
     );
   }
 
-  static Future<List<String>?> showRadioListInfoDialog(
-      {required final BuildContext context,
-        required final String title,
-        required final String msg,
-        required final String button1Text,
-        required final Function button1Function,
-        final String? button2Text,
-        final Function? button2Function,
-        required Option option,
-        }) async {
+  static Future<List<String>?> showRadioListInfoDialog({
+    required final BuildContext context,
+    required final String title,
+    required final String msg,
+    required final String button1Text,
+    required final Function button1Function,
+    final String? button2Text,
+    final Function? button2Function,
+    required Option option,
+  }) async {
     return showDialog<List<String>?>(
       context: context,
       barrierDismissible: false, // user must tap button!
@@ -338,7 +338,8 @@ class CommonWidgets {
               child: Column(
                 children: [
                   Text(msg),
-                  Expanded(child: getRadioButtonTiles(context, option,  setState)),
+                  Expanded(
+                      child: getRadioButtonTiles(context, option, setState)),
                 ],
               ),
             ),
@@ -353,8 +354,8 @@ class CommonWidgets {
     );
   }
 
-  static Widget getRadioButtonTiles(BuildContext context,
-      Option option, StateSetter setState) {
+  static Widget getRadioButtonTiles(
+      BuildContext context, Option option, StateSetter setState) {
     return ListView.separated(
         shrinkWrap: true,
         itemCount: option.possibleValues.length,
@@ -366,12 +367,38 @@ class CommonWidgets {
               setState(() {
                 option.savedValue = value!;
               });
-            }, groupValue: option.savedValue,
+            },
+            groupValue: option.savedValue,
           );
         },
         separatorBuilder: (context, index) {
           return Divider();
         });
+  }
+
+  static Future<void> showTextAndCheckboxDialogBuilder({
+    required final BuildContext context,
+    required final String title,
+    required final Widget child,
+    required final String button1Text,
+    required final Function button1Function,
+    final String? button2Text,
+    final Function? button2Function,}
+  ) {
+    return showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(title),
+          content: child,
+          actions: composeDialogButtons(
+              button1Text: button1Text,
+              button1Function: button1Function,
+              button2Text: button2Text,
+              button2Function: button2Function),
+        );
+      },
+    );
   }
 }
 
@@ -381,5 +408,3 @@ class CheckboxItem {
 
   CheckboxItem(this.checkboxText, this.isChecked);
 }
-
-
