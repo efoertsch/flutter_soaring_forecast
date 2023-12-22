@@ -88,9 +88,9 @@ class GetTaskTurnpointsEvent extends RaspDataEvent {
   GetTaskTurnpointsEvent(this.taskId);
 }
 
-class GetOptimizedTaskRouteEvent extends RaspDataEvent {
+class GetEstimatedFlightAvgEvent extends RaspDataEvent {
   Glider glider ;
-  GetOptimizedTaskRouteEvent(this.glider);
+  GetEstimatedFlightAvgEvent(this.glider);
 }
 
 // clear task/turnpoints from map

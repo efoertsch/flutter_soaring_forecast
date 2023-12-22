@@ -45,6 +45,8 @@ Glider _$GliderFromJson(Map<String, dynamic> json) => Glider(
           (json['thermallingSinkRate'] as num?)?.toDouble() ?? 0,
       polarWeightAdjustment:
           (json['polarWeightAdjustment'] as num?)?.toDouble() ?? 1,
+      ballastAdjThermallingSinkRate:
+          (json['ballastAdjThermallingSinkRate'] as num?)?.toDouble() ?? 0,
     );
 
 Map<String, dynamic> _$GliderToJson(Glider instance) => <String, dynamic>{
@@ -73,4 +75,5 @@ Map<String, dynamic> _$GliderToJson(Glider instance) => <String, dynamic>{
       'bankAngle': instance.bankAngle,
       'thermallingSinkRate': instance.thermallingSinkRate,
       'polarWeightAdjustment': instance.polarWeightAdjustment,
+      'ballastAdjThermallingSinkRate': instance.ballastAdjThermallingSinkRate,
     };

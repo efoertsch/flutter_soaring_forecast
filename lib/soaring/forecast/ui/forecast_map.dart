@@ -974,7 +974,7 @@ class ForecastMapState extends State<ForecastMap>
                 var maybeGlider = await Navigator.pushNamed(
                     context, GliderPolarListBuilder.routeName);
                 if (maybeGlider != null && maybeGlider is Glider) {
-                  _sendEvent(GetOptimizedTaskRouteEvent(maybeGlider));
+                  _sendEvent(GetEstimatedFlightAvgEvent(maybeGlider));
                 }
               },
               child: Stack(
@@ -1021,19 +1021,23 @@ class ForecastMapState extends State<ForecastMap>
     return Container(
       color: Colors.white,
       padding: EdgeInsets.only(right: 8),
-      child: ListView(
-        //crossAxisAlignment: CrossAxisAlignment.start,
-        scrollDirection: Axis.vertical,
-        children: [
-          _getOptimalFlightParms(optimalTaskSummary),
-          _getTurnpointsTableHeader(),
-          _getTaskTurnpointsTable(optimalTaskSummary),
-          _getLegTableHeader(),
-          _getLegDetailsTable(optimalTaskSummary),
-          _getWarningMsgDisplay(optimalTaskSummary),
-          _getOptimalFlightCloseButton(),
-        ],
-      ),
+      child: Column(
+        children: [Expanded(
+          child: ListView(
+            //crossAxisAlignment: CrossAxisAlignment.start,
+            scrollDirection: Axis.vertical,
+            children: [
+              _getOptimalFlightParms(optimalTaskSummary),
+              _getTurnpointsTableHeader(),
+              _getTaskTurnpointsTable(optimalTaskSummary),
+              _getLegTableHeader(),
+              _getLegDetailsTable(optimalTaskSummary),
+              _getWarningMsgDisplay(optimalTaskSummary),
+
+            ],
+          ),
+        ),_getOptimalFlightCloseButton(),
+      ]),
     );
   }
 
@@ -1062,13 +1066,13 @@ class ForecastMapState extends State<ForecastMap>
           TableRow(
             children: [
               _formattedTextCell("Polar Speed Adjustment"),
-              _formattedTextCell(header!.polarSpeedAdjustment ?? ""),
+              _formattedTextCell(double.parse(header!.polarSpeedAdjustment ?? "0").toStringAsFixed(1)),
             ],
           ),
           TableRow(
             children: [
-              _formattedTextCell("Thermalling Sink Rate (kts)"),
-              _formattedTextCell(header!.thermalingSinkRate ?? ""),
+              _formattedTextCell("Thermalling Sink \nRate (ft/min)"),
+              _formattedTextCell(double.parse(header!.thermalingSinkRate ?? "0").toStringAsFixed(1)),
             ],
           ),
         ],

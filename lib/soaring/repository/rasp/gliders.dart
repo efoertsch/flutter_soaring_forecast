@@ -64,6 +64,7 @@ class Glider extends Equatable {
   late double handicap;
   @JsonKey(name: 'glider_empty_mass')
   late double gliderEmptyMass;
+
   // fields not on XCSoar glider database but calculated in Google XCSoar
   // sheet and added to JSON
   @JsonKey(name: 'pilotMass')
@@ -78,10 +79,12 @@ class Glider extends Equatable {
   late double minSinkSpeed;
   @JsonKey(name: 'minSinkRate')
   late double minSinkRate;
+
   // fields not on XCSoar glider database nor calculated on original spreadsheet, user will input or program will set/calculate
   late double loadedBallast;
   late bool updatedVW;
 
+  // values user defined or calculated
   late double minSinkMass; // user defined,metric
   late int
       bankAngle; // Pilot estimate of bank angle they will use when flying the task.
@@ -95,6 +98,8 @@ class Glider extends Equatable {
   // 3. User defined their own Vx/Wx polar figures
   //     Similar calc as 2 but using user specified glider,pilot, ballast values
   //     sq root((glider + pilot + ballast)/(glider + pilot)
+  late double
+      ballastAdjThermallingSinkRate; // sink rate adjusted for added ballast (value used to send to server)
 
   Glider({
     required this.glider,
@@ -123,7 +128,8 @@ class Glider extends Equatable {
     this.bankAngle = 45,
     this.thermallingSinkRate = 0,
     this.polarWeightAdjustment = 1,
-  }){
+    this.ballastAdjThermallingSinkRate = 0,
+  }) {
     calcThermallingSinkRate();
   }
 
@@ -157,6 +163,7 @@ class Glider extends Equatable {
     int? bankAngle,
     double? thermallingSinkRate,
     double? polarWeightAdjustment,
+    double? ballastAdjThermallingSinkRate,
   }) =>
       Glider(
         glider: glider ?? this.glider,
@@ -185,6 +192,7 @@ class Glider extends Equatable {
         thermallingSinkRate: thermallingSinkRate ?? this.thermallingSinkRate,
         polarWeightAdjustment:
             polarWeightAdjustment ?? this.polarWeightAdjustment,
+        ballastAdjThermallingSinkRate: ballastAdjThermallingSinkRate ?? this.ballastAdjThermallingSinkRate,
       );
 
   static Glider gliderFromJson(String str) => Glider.fromJson(json.decode(str));
@@ -218,6 +226,7 @@ class Glider extends Equatable {
         bankAngle,
         thermallingSinkRate,
         polarWeightAdjustment,
+        ballastAdjThermallingSinkRate,
       ];
 
   //----------- Custom Code ----------------------------------
@@ -245,7 +254,7 @@ class Glider extends Equatable {
 
     // Good reference for finding min sink speed/ min sink based on quadratic
     // https://www.youtube.com/watch?v=jn_4oUlKGjc&t=152s
-    minSinkSpeed = b/(2 * a);
+    minSinkSpeed = b / (2 * a);
     minSinkRate = (minSinkSpeed * a * a) + (b * minSinkSpeed) + c;
   }
 
@@ -274,16 +283,19 @@ class Glider extends Equatable {
     this.bankAngle = updatedPolar.bankAngle;
     this.thermallingSinkRate = updatedPolar.thermallingSinkRate;
     this.polarWeightAdjustment = updatedPolar.polarWeightAdjustment;
+    this.ballastAdjThermallingSinkRate = updatedPolar.ballastAdjThermallingSinkRate;
   }
-
-
 
   // Calculation from https://groups.io/g/WarnerSpringsSoaring/topic/optimal_bank_angle/87513283?p=,,,20,0,0,0::recentpostdate/sticky,,,20,0,0,87513283,previd=1640661436050123677,nextid=1630163573444280014&previd=1640661436050123677&nextid=1630163573444280014
   //  and https://groups.io/g/WarnerSpringsSoaring/attachment/458/0/Bank%20angles%20Wt%20and%20balance.xlsx
-  double calcThermallingSinkRate() {
+  // adjusted for adding ballast. Note that just using the 'your glider' mass values not XCSOAR default values
+  void calcThermallingSinkRate() {
     thermallingSinkRate =
-        (1 / cos(radians(bankAngle.toDouble())) * 1.5).toDouble() * minSinkRate ;
-    return thermallingSinkRate;
+        (1 / cos(radians(bankAngle.toDouble())) * 1.5).toDouble() *
+            minSinkRate;
+    ballastAdjThermallingSinkRate = thermallingSinkRate * sqrt(
+        (pilotMass + gliderEmptyMass + loadedBallast) /
+            (pilotMass + gliderEmptyMass));
   }
 
   void calculatePolarAdjustmentFactor(Glider xcSoarGlider) {

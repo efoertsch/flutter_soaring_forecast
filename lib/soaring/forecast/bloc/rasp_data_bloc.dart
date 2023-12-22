@@ -81,7 +81,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     on<BeginnerModeEvent>(_processBeginnerModeEvent);
     on<RefreshForecastEvent>(_refreshForecast);
     on<CheckIfForecastRefreshNeededEvent>(_checkIfForecastRefreshNeeded);
-    on<GetOptimizedTaskRouteEvent>(_getGetOptimizedTaskRoute);
+    on<GetEstimatedFlightAvgEvent>(_getEstimatedFlightAvg);
   }
 
   void _processInitialRaspRegionEvent(
@@ -506,8 +506,8 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     await _emitTaskTurnpoints(emit, _taskId);
   }
 
-  void _getGetOptimizedTaskRoute(
-      GetOptimizedTaskRouteEvent event, Emitter<RaspDataState> emit) async {
+  void _getEstimatedFlightAvg(
+      GetEstimatedFlightAvgEvent event, Emitter<RaspDataState> emit) async {
     emit(RaspWorkingState(working: true));
     List<TaskTurnpoint> taskTurnpoints = await _getTaskTurnpoints(_taskId);
     StringBuffer turnpointLatLons = StringBuffer();
@@ -540,7 +540,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
         event.glider.glider,
         event.glider.polarWeightAdjustment,
         event.glider.getPolarCoefficients(),
-        event.glider.thermallingSinkRate,
+        event.glider.ballastAdjThermallingSinkRate,
         1,
         latLonString);
     if (optimizedTaskRoute?.routeSummary?.error != null) {

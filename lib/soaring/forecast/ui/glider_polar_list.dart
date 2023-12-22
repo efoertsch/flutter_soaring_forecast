@@ -56,28 +56,35 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
   static const String _ENTER_BANK_ANGLE = "Favorite Thermalling Bank Angle";
   static const String _POLAR_HELP = "HELP";
   static const String _EXPERIMENTAL_ESTIMATED_FLIGHT_TEXT =
-      " This is an experimental feature (derived from Dr. Jack logic) that based on a glider min sink and polar along"
-      " with the forecast, will show  estimated flight time "
-      "for the given task, along with some associated flight information "
+      " This is an experimental feature (from Dr. Jack logic) that based on a glider min sink and polar along"
+      " with the forecast, will show for the given task estimated flight time "
+      " and associated flight information."
+      "\nThe specific forecast values used in the calculations are:"
+      "\n1. Thermal Updraft Velocity (W*)"
+      "\n2. Wind speed (BL avg)"
+      "\n3. Wind direction (BL avg)"
       "\nThe values displayed on the next screen are based (or calculated) from XCSOAR glider data."
       "\nNote that the min sink rate is calculated based on Vx/Wx values which is not the best method to determine "
       "your glider min sink. Consult your glider POH or other sources to enter a more appropriate number."
-      "\nMost values under the 'Your Glider column can be updated. Tap on the particular cell to update.";
+      "\nMost values under the 'Your Glider column can be updated. Tap on the particular cell to update."
+      "\nFeedback is most welcome. ";
   static const String _GLIDER_POLAR_DATA =
       "The sink rate, glider mass and polar values (Vx/Wx) on this screen are "
       "used to determine your gliders estimated climb rate in a thermal and wind adjusted speed to fly. \n"
       "These values are in turn used to calculate an estimated task time for each leg of your task. \n"
       "The default values are set based on XCSOAR values. \n"
       "However your gliders min sink rate, calculated from the polar Vx/Wx values (per Reichmann) "
-      " is probably not a good value and should be updated from other sources (glider POH, Wiki,...).\n"
+      " is probably not a good value and should be updated from other sources (such as your glider's POH).\n"
       "You can modify most values under the 'Your Glider' column to provide a better calculated task time.\n"
       "Toggle between metric and American units or reset you glider values back to "
       "the XCSOAR values using the top right menu dropdown";
   static const String _SINK_RATE_INFO =
       "The min. sink rate and speed are initially derived "
-      "from the XCSOAR polar Vx/Wx values below but may not give the best estimate."
-      " Perhaps better values can be obtained from you glider POH and entered here. That would lead to a better estimate"
-      " of your gliders thermalling sink rate.\n"
+      "from the XCSOAR polar Vx/Wx values below but likely they will not give the best estimates."
+      " Perhaps better values can be obtained from you glider POH and entered here. "
+      "Enter values for your glider + pilot weight. The sink rate will be adjusted should you add ballast. "
+      "(Note the adjustment will be made when used in the flight calculations. It isn't show on this screen)"
+      " Updating the values should lead to a better estimate of your gliders thermalling sink rate.\n"
       "The thermalling sink rate (based on your bank angle) is used to estimate your actual climb rate in the forcasted thermals. ";
   static const String _GLIDER_MASS_INFO =
       "Glider mass may be used to adjust the polar based on your Vx/Wx values below. "
@@ -753,7 +760,7 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
   }
 
   Table _getGliderWeightDisplay() {
-    String massLabel = "(" + _massUnits + ")";
+    String massLabel =   _massUnits ;
     return Table(
       border: TableBorder.all(),
       defaultVerticalAlignment: TableCellVerticalAlignment.middle,
@@ -839,6 +846,7 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
                       if (doubleValue != _customGlider!.loadedBallast) {
                         setState(() {
                           _customGlider!.loadedBallast = doubleValue;
+                          _customGlider!.calcThermallingSinkRate();
                         });
                       }
                     }),
