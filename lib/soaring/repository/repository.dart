@@ -1413,17 +1413,14 @@ class Repository {
 
   Future<DisplayUnits> getDisplayUnits() async {
     String displayUnit =
-        await getGenericString(key: _DISPLAY_UNITS, defaultValue: "");
-    if (displayUnit.isEmpty) {
-      return DisplayUnits.Metric;
-    }
+        await getGenericString(key: _DISPLAY_UNITS, defaultValue: DisplayUnits.American.toString());
     return _convertDisplayUnitsStringToEnum(displayUnit);
   }
 
   DisplayUnits _convertDisplayUnitsStringToEnum(String displayUnits) {
     return DisplayUnits.values.firstWhereOrNull(
             (e) => e.toString() ==  displayUnits) ??
-        DisplayUnits.Metric;
+        DisplayUnits.American;
   }
 
   Future<DisplayUnits> saveDisplayUnits(DisplayUnits displayUnits) async {

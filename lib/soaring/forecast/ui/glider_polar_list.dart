@@ -34,7 +34,7 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
   // Menu options
   static const String _UNITS = "Units";
   static const String _RESET_TO_DEFAULT = "Reset To Default";
-  static const String _DISPLAY_EXPERIMENTAL_TEXT = "Display Experiment Info";
+  static const String _DISPLAY_EXPERIMENTAL_TEXT = "Experimental Disclaimer";
   static const String _REGEX_TO_999 = "^([0-9]{0,3})\$";
   static const String _REGEX_TO_999_9 = "^([0-9]{0,3})((\.[0-9])?)\$";
   static const String _REGEX_TO_999_99 = "^([0-9]{0,3})((\.[0-9]{1,2})?)\$";
@@ -56,18 +56,18 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
   static const String _ENTER_BANK_ANGLE = "Favorite Thermalling Bank Angle";
   static const String _POLAR_HELP = "HELP";
   static const String _EXPERIMENTAL_ESTIMATED_FLIGHT_TEXT =
-      " This is an experimental feature (from Dr. Jack logic) that based on a glider min sink and polar along"
+      " This is a feature based on Dr. Jack logic uses a glider's min sink and polar, and along"
       " with the forecast, will show for the given task estimated flight time "
       " and associated flight information."
       "\nThe specific forecast values used in the calculations are:"
       "\n1. Thermal Updraft Velocity (W*)"
-      "\n2. Wind speed (BL avg)"
-      "\n3. Wind direction (BL avg)"
-      "\nThe values displayed on the next screen are based (or calculated) from XCSOAR glider data."
+      "\n2. Wind speed (Boundary Layer average)"
+      "\n3. Wind direction (Boundary Layer average)"
+      "\nThe values displayed on the underlying screen are based or calculated from XCSOAR glider data."
       "\nNote that the min sink rate is calculated based on Vx/Wx values which is not the best method to determine "
       "your glider min sink. Consult your glider POH or other sources to enter a more appropriate number."
-      "\nMost values under the 'Your Glider column can be updated. Tap on the particular cell to update."
-      "\nFeedback is most welcome. ";
+      "\nMost values under the 'Your Glider' column can be updated. Tap on the particular cell to update."
+      "\n\nFeedback is most welcome. ";
   static const String _GLIDER_POLAR_DATA =
       "The sink rate, glider mass and polar values (Vx/Wx) on this screen are "
       "used to determine your gliders estimated climb rate in a thermal and wind adjusted speed to fly. \n"
@@ -93,8 +93,8 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
       "2) If you update your glider Vx/Wx values then it is assumed you measured your Vx/Wx values at your (glider + pilot) mass."
       " So a polar adjustment is only made if you add ballast, i.e. the polar is adjusted by sq root((glider + pilot + ballast)/(glider + pilot)).";
   static const String _GLIDER_POLAR_INFO =
-      "If your polar Vx/Wx values are modified,"
-      " your polar will be calculated based on your gliders glider + pilot mass. No change will be made to your min sink values.";
+      "If your Vx/Wx values are modified,"
+      " your polar will be calculated based on your glider's glider + pilot mass. No change will be made to your min sink values.";
 
   bool _showExperimentalDialog = false;
 
@@ -1027,28 +1027,30 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
   }
 
   Widget _getExperimentalFlightTextWidget() {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Text(_EXPERIMENTAL_ESTIMATED_FLIGHT_TEXT),
-        ),
-        StatefulBuilder(builder: (BuildContext context, StateSetter setState) {
-          return CheckboxListTile(
-            title: Text("Do not show this again"),
-            controlAffinity: ListTileControlAffinity.leading,
-            value: !_showExperimentalDialog,
-            onChanged: (newValue) async {
-              _showExperimentalDialog = newValue != null ? !newValue : true;
-              await _getGliderCubit()
-                  .displayExperimentalText(_showExperimentalDialog);
-              setState(() {
-                // if checked then DO NOT display experimental text, hence save as false
-              });
-            },
-          );
-        })
-      ],
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top:4.0, bottom:8.0),
+            child: Text(_EXPERIMENTAL_ESTIMATED_FLIGHT_TEXT),
+          ),
+          StatefulBuilder(builder: (BuildContext context, StateSetter setState) {
+            return CheckboxListTile(
+              title: Text("Do not show this again"),
+              controlAffinity: ListTileControlAffinity.leading,
+              value: !_showExperimentalDialog,
+              onChanged: (newValue) async {
+                _showExperimentalDialog = newValue != null ? !newValue : true;
+                await _getGliderCubit()
+                    .displayExperimentalText(_showExperimentalDialog);
+                setState(() {
+                  // if checked then DO NOT display experimental text, hence save as false
+                });
+              },
+            );
+          })
+        ],
+      ),
     );
   }
 }

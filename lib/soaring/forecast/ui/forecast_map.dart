@@ -1173,6 +1173,8 @@ class ForecastMapState extends State<ForecastMap>
               " ") +
                   (legDetail.message != null ? "\n" + legDetail.message! : "")),
           _formattedTextCell(legDetail.clockTime ?? " "),
+          _formattedTextCell(double.parse(legDetail.optFlightTimeMin ?? "0")
+              .toStringAsFixed(0)),
           _formattedTextCell(
              double.parse(legDetail.sptlAvgDistKm ?? "0").toStringAsFixed(1)),
           //  convert tailwind to headwind
@@ -1186,8 +1188,6 @@ class ForecastMapState extends State<ForecastMap>
               (double.parse(legDetail.optAvgTailWind ?? "0") * -1)
                   .toStringAsFixed(0)),
           _formattedTextCell(double.parse(legDetail.optAvgClimbRate ?? "0")
-              .toStringAsFixed(0)),
-          _formattedTextCell(double.parse(legDetail.optFlightTimeMin ?? "0")
               .toStringAsFixed(0)),
           _formattedTextCell(double.parse(legDetail.optFlightGrndSpeedKt ?? "0")
               .toStringAsFixed(0)),
@@ -1211,12 +1211,12 @@ class ForecastMapState extends State<ForecastMap>
       children: [
         _formattedTextCell("L\nE\nG"),
         _formattedTextCell("ClockTime"),
+        _formattedTextCell("Time\nMin"),
         _formattedTextCell("Dist\nkm"),
         //_formattedTextCell("Head\nWind\nkt"),
         //_formattedTextCell("Climb\nRate\nkt"),
         _formattedTextCell("Head\nWind\nkt"),
         _formattedTextCell("Clmb\nRate\nkt"),
-        _formattedTextCell("Time\nMin"),
         _formattedTextCell("Gnd\nSpd\nkt"),
         _formattedTextCell("Gnd\nSpd\nkm/h"),
         _formattedTextCell("Air\nSpd\nkt"),
