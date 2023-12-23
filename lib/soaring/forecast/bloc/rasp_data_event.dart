@@ -3,6 +3,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/taskturnpoint/task_turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/rasp/gliders.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/regions.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -87,10 +88,9 @@ class GetTaskTurnpointsEvent extends RaspDataEvent {
   GetTaskTurnpointsEvent(this.taskId);
 }
 
-class GetOptimizedTaskRouteEvent extends RaspDataEvent {
-  final int taskId;
-
-  GetOptimizedTaskRouteEvent(this.taskId);
+class GetEstimatedFlightAvgEvent extends RaspDataEvent {
+  Glider glider ;
+  GetEstimatedFlightAvgEvent(this.glider);
 }
 
 // clear task/turnpoints from map

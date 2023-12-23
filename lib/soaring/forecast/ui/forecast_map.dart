@@ -17,7 +17,8 @@ import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/LatLngFo
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image_set.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/util/animated_map_controller.dart';
 import 'package:flutter_soaring_forecast/soaring/graphics/data/forecast_graph_data.dart';
-import 'package:flutter_soaring_forecast/soaring/repository/rasp/optimized_task_route.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/rasp/estimated_flight_avg_summary.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/rasp/gliders.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/regions.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoint_utils.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_overhead_view.dart';
@@ -31,6 +32,7 @@ import 'package:geojson_vector_slicer/vector_tile/vector_tile.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../app/label.dart';
+import '../../forecast_types/ui/common_forecast_widgets.dart';
 
 class ForecastMap extends StatefulWidget {
   final Function stopAnimation;
@@ -69,12 +71,16 @@ class ForecastMapState extends State<ForecastMap>
   double _neLat = 0;
   double _neLong = 0;
 
-  bool _soundingsVisibility = false;
+  bool _soundingsAreVisible = false;
+  bool _routeIconIsVisible = false;
+  bool _routeSummaryIsVisible = false;
   double _forecastOverlayOpacity = 50;
-  var _forecastOverlaySliderIsVisible = false;
+  bool _forecastOverlaySliderIsVisible = false;
   Timer? _hideOpacityTimer = null;
   double _mapZoom = 7;
   double _previousZoom = 7;
+  bool _displayOptTaskAvg = false;
+  EstimatedFlightSummary? _estimatedFlightSummary;
 
   final suaColors = SUAColor.values;
 
@@ -87,6 +93,7 @@ class ForecastMapState extends State<ForecastMap>
   GeoJSON geoJSON = GeoJSON();
   VectorTileIndex vectorTileIndex = VectorTileIndex();
   String? suaSelected;
+  bool _showEstimatedFlightButton = false;
 
   @override
   void initState() {
@@ -144,6 +151,8 @@ class ForecastMapState extends State<ForecastMap>
         child: _forecastLegend(),
       ),
       _getOpacitySlider(),
+      _getOptimalFlightIcon(),
+      _showOptimalFlightAvgTable()
     ]);
   }
 
@@ -186,9 +195,9 @@ class ForecastMapState extends State<ForecastMap>
         _updateTaskTurnpoints(state.taskTurnpoints);
         return;
       }
-      if (state is OptimizedTaskRouteState){
-        _plotOptimizedRoute(state.optimizedTaskRoute);
-      }
+      // if (state is OptimizedTaskRouteState && state.optimizedTaskRoute != null) {
+      //   _plotOptimizedRoute(state.optimizedTaskRoute!);
+      // }
       if (state is LocalForecastState) {
         _placeLocalForecastMarker(state.latLngForecast);
         return;
@@ -227,8 +236,7 @@ class ForecastMapState extends State<ForecastMap>
           current is RedisplayMarkersState ||
           current is SuaDetailsState ||
           current is ForecastOverlayOpacityState ||
-          current is ForecastBoundsState ||
-          current is OptimizedTaskRouteState;
+          current is ForecastBoundsState;
     }, builder: (context, state) {
       if (state is RaspInitialState) {
         return SizedBox.shrink();
@@ -326,7 +334,7 @@ class ForecastMapState extends State<ForecastMap>
           if (state is SoundingForecastImageSet) {
             final imageUrl = state.soaringForecastImageSet.bodyImage!.imageUrl;
             return Visibility(
-              visible: _soundingsVisibility,
+              visible: _soundingsAreVisible,
               child: Container(
                 color: Colors.white,
                 child: Stack(
@@ -348,7 +356,7 @@ class ForecastMapState extends State<ForecastMap>
                             icon: const Icon(Icons.close),
                             onPressed: () {
                               setState(() {
-                                _soundingsVisibility = false;
+                                _soundingsAreVisible = false;
                                 _sendEvent(DisplayCurrentForecastEvent());
                               });
                             }))
@@ -368,12 +376,19 @@ class ForecastMapState extends State<ForecastMap>
         if (state is DisplayLocalForecastGraphState) {
           _displayLocalForecastGraph(context, state.localForecastGraphData);
         }
+        if (state is RaspTaskTurnpoints) {
+          _routeIconIsVisible = state.taskTurnpoints.length > 0;
+          _routeSummaryIsVisible = false;
+        }
         if (state is ForecastBoundsState) {
           _forecastLatLngBounds = state.latLngBounds;
           // _printMapBounds(
           //     "ForecastBoundsState  bounds ", _forecastLatLngBounds!);
           _mapController.animatedFitBounds(_forecastLatLngBounds);
           return;
+        }
+        if (state is ShowEstimatedFlightButton){
+          _showEstimatedFlightButton = state.showEstimatedFlightButton;
         }
       },
       child: SizedBox.shrink(),
@@ -431,25 +446,28 @@ class ForecastMapState extends State<ForecastMap>
     }
   }
 
-  void   _plotOptimizedRoute(OptimizedTaskRoute optimizedTaskRoute) {
+  void _plotOptimizedRoute(EstimatedFlightSummary estimatedFlightRoute) {
     _optimizedTaskRoute.clear();
     var routePoints = <LatLng>[];
-    int numberRoutePoints = optimizedTaskRoute.routePoints?.length ?? 0;
+    int numberRoutePoints =
+        estimatedFlightRoute.routeSummary?.routeTurnpoints?.length ?? 0;
     print('number of route points ${numberRoutePoints} ');
     if (numberRoutePoints == 0) {
       //  _printMapBounds("TaskTurnpoints.length = 0 ", _forecastLatLngBounds);
       _rebuildTaskLinesArray();
       _mapController.animatedFitBounds(_forecastLatLngBounds);
     } else {
-      for (var routePoint in optimizedTaskRoute.routePoints!) {
+      for (var routePoint
+          in estimatedFlightRoute.routeSummary!.routeTurnpoints!) {
         // print('adding taskturnpoint: ${taskTurnpoint.title}');
-        var latLngPoint = LatLng(double.parse(routePoint.lat!), double.parse(routePoint.lon!));
+        var latLngPoint = LatLng(
+            double.parse(routePoint.lat!), double.parse(routePoint.lon!));
         routePoints.add(latLngPoint);
         updateMapLatLngCorner(latLngPoint);
       }
       _optimizedTaskRoute.add(Polyline(
         points: routePoints,
-        strokeWidth: 5.0,
+        strokeWidth: 2.0,
         color: Colors.black,
       ));
       _rebuildTaskLinesArray();
@@ -461,7 +479,6 @@ class ForecastMapState extends State<ForecastMap>
       // _printMapBounds("_updateTaskTurnpoints ", latLngBounds);
       _mapController.animatedFitBounds(latLngBounds);
     }
-
   }
 
   Widget _getTaskTurnpointMarker(TaskTurnpoint taskTurnpoint) {
@@ -642,7 +659,7 @@ class ForecastMapState extends State<ForecastMap>
   void _displaySoundingsView(Soundings sounding) {
     _sendEvent(DisplaySoundingsEvent(sounding));
     setState(() {
-      _soundingsVisibility = true;
+      _soundingsAreVisible = true;
     });
   }
 
@@ -689,6 +706,7 @@ class ForecastMapState extends State<ForecastMap>
     _optimizedTaskRoute.clear();
     _taskMarkers.clear();
     _rebuildMarkerArray();
+    _rebuildTaskLinesArray();
     if (taskDefined) {
       _southwest = null;
     }
@@ -771,7 +789,6 @@ class ForecastMapState extends State<ForecastMap>
     _combinedTaskLines.clear();
     _combinedTaskLines.addAll(_taskTurnpointCourse);
     _combinedTaskLines.addAll(_optimizedTaskRoute);
-
   }
 
   // Currently only display max of 1, so if changes in future need to revisit logic
@@ -943,5 +960,319 @@ class ForecastMapState extends State<ForecastMap>
     });
   }
 
+  Widget _getOptimalFlightIcon() {
+    return (_routeIconIsVisible && _showEstimatedFlightButton)
+        ? Positioned(
+            bottom: 0,
+            left: 0,
+            child: ElevatedButton(
+              style: const ButtonStyle(
+                backgroundColor: MaterialStatePropertyAll<Color>(Colors.white),
+              ),
+              onPressed: () async {
+                widget.stopAnimation();
+                var maybeGlider = await Navigator.pushNamed(
+                    context, GliderPolarListBuilder.routeName);
+                if (maybeGlider != null && maybeGlider is Glider) {
+                  _sendEvent(GetEstimatedFlightAvgEvent(maybeGlider));
+                }
+              },
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  SvgPicture.asset(
+                    'assets/svg/task_route.svg',
+                    height: 40,
+                    width: 40,
+                  ),
+                  Text(
+                    "Estimated\nFlight",
+                    style: textStyleBoldBlackFontSize14,
+                  ),
+                ],
+              ),
+            ),
+          )
+        : SizedBox.shrink();
+  }
 
+  Widget _showOptimalFlightAvgTable() {
+    return BlocConsumer<RaspDataBloc, RaspDataState>(
+      listener: (context, state) {
+        if (state is EstimatedFlightSummaryState) {
+          _estimatedFlightSummary = state.estimatedFlightSummary;
+        }
+      },
+      buildWhen: (previous, current) {
+        return current is EstimatedFlightSummaryState;
+      },
+      builder: (context, state) {
+        if (_estimatedFlightSummary != null) {
+          return _getOptimalFlightSummary(_estimatedFlightSummary!);
+        }
+        return SizedBox.shrink();
+      },
+    );
+  }
+
+
+  Widget _getOptimalFlightSummary(EstimatedFlightSummary optimalTaskSummary) {
+    const String title = "Flight Avg";
+    return Container(
+      color: Colors.white,
+      padding: EdgeInsets.only(right: 8),
+      child: Column(
+        children: [Expanded(
+          child: ListView(
+            //crossAxisAlignment: CrossAxisAlignment.start,
+            scrollDirection: Axis.vertical,
+            children: [
+              _getOptimalFlightParms(optimalTaskSummary),
+              _getTurnpointsTableHeader(),
+              _getTaskTurnpointsTable(optimalTaskSummary),
+              _getLegTableHeader(),
+              _getLegDetailsTable(optimalTaskSummary),
+              _getWarningMsgDisplay(optimalTaskSummary),
+
+            ],
+          ),
+        ),_getOptimalFlightCloseButton(),
+      ]),
+    );
+  }
+
+  RenderObjectWidget _getOptimalFlightParms(
+      EstimatedFlightSummary optimalTaskSummary) {
+    if (optimalTaskSummary.routeSummary?.header != null) {
+      var header = optimalTaskSummary.routeSummary?.header;
+      var headerTable = Table(
+        columnWidths: {0: IntrinsicColumnWidth(), 1: IntrinsicColumnWidth()},
+        border: TableBorder.all(),
+        defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+        children: <TableRow>[
+          TableRow(
+            children: [
+              _formattedTextCell(header!.valid ?? ""),
+              _formattedTextCell(header!.region ?? ""),
+            ],
+          ),
+          TableRow(
+            children: [
+              _formattedTextCell("Glider " + (header!.glider ?? "")),
+              _formattedTextCell("L/D= " +
+                  double.parse(header!.maxLd ?? "0").toStringAsFixed(1)),
+            ],
+          ),
+          TableRow(
+            children: [
+              _formattedTextCell("Polar Speed Adjustment"),
+              _formattedTextCell(double.parse(header!.polarSpeedAdjustment ?? "0").toStringAsFixed(1)),
+            ],
+          ),
+          TableRow(
+            children: [
+              _formattedTextCell("Thermalling Sink \nRate (ft/min)"),
+              _formattedTextCell(double.parse(header!.thermalingSinkRate ?? "0").toStringAsFixed(1)),
+            ],
+          ),
+        ],
+      );
+      return Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: headerTable,
+      );
+    }
+    return SizedBox.shrink();
+  }
+
+  Widget _formattedTextCell(String text) {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Text(text,
+          style: textStyleBoldBlackFontSize18, textAlign: TextAlign.center),
+    );
+  }
+
+  Widget _getTaskTurnpointsTable(EstimatedFlightSummary optimalTaskSummary) {
+    if (optimalTaskSummary.routeSummary?.routeTurnpoints != null) {
+      var routeTurnPoints = optimalTaskSummary.routeSummary!.routeTurnpoints;
+      var turnpointRows = _getTaskTurnpointTableRows(routeTurnPoints!);
+      var headerTable = Table(
+        columnWidths: {
+          0: IntrinsicColumnWidth(),
+          1: IntrinsicColumnWidth(),
+          2: IntrinsicColumnWidth(),
+          3: IntrinsicColumnWidth(),
+        },
+        border: TableBorder.all(),
+        defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+        children: turnpointRows,
+      );
+      return headerTable;
+    }
+    return SizedBox.shrink();
+  }
+
+  List<TableRow> _getTaskTurnpointTableRows(List<RouteTurnpoint> turnpoints) {
+    var routePointTableRows = <TableRow>[];
+    for (var routePoint in turnpoints) {
+      var tableRow = TableRow(
+        children: [
+          _formattedTextCell(routePoint.number ?? " "),
+          _formattedTextCell(routePoint.name ?? " "),
+          _formattedTextCell(
+              double.parse(routePoint.lat ?? "0").toStringAsFixed(5)),
+          _formattedTextCell(
+              double.parse(routePoint.lon ?? "0").toStringAsFixed(5)),
+        ],
+      );
+      routePointTableRows.add(tableRow);
+    }
+    return routePointTableRows;
+  }
+
+  Widget _getLegDetailsTable(EstimatedFlightSummary optimalTaskSummary) {
+    if (optimalTaskSummary.routeSummary?.legDetails != null) {
+      var legData = optimalTaskSummary.routeSummary!.legDetails;
+      var legDetailRows = _getLegTableRows(legData!);
+      var legDetailTable = Table(
+        columnWidths: {
+          0: IntrinsicColumnWidth(),
+          1: IntrinsicColumnWidth(),
+          2: IntrinsicColumnWidth(),
+          3: IntrinsicColumnWidth(),
+          4: IntrinsicColumnWidth(),
+          5: IntrinsicColumnWidth(),
+          6: IntrinsicColumnWidth(),
+          7: IntrinsicColumnWidth(),
+          8: IntrinsicColumnWidth(),
+          9: IntrinsicColumnWidth(),
+          10: IntrinsicColumnWidth(),
+          11: IntrinsicColumnWidth(),
+        },
+        border: TableBorder.all(),
+        defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+        children: legDetailRows,
+      );
+      return SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child:
+            Container(margin: EdgeInsets.only(right: 8), child: legDetailTable),
+      );
+    }
+    return SizedBox.shrink();
+  }
+
+  List<TableRow> _getLegTableRows(List<LegDetail> legDetails) {
+    var legDetailTableRows = <TableRow>[];
+    legDetailTableRows.add(_getLegDetailLabels());
+    for (var legDetail in legDetails) {
+      var tableRow = TableRow(
+        children: [
+          _formattedTextCell((legDetail.leg ??
+              " ") +
+                  (legDetail.message != null ? "\n" + legDetail.message! : "")),
+          _formattedTextCell(legDetail.clockTime ?? " "),
+          _formattedTextCell(double.parse(legDetail.optFlightTimeMin ?? "0")
+              .toStringAsFixed(0)),
+          _formattedTextCell(
+             double.parse(legDetail.sptlAvgDistKm ?? "0").toStringAsFixed(1)),
+          //  convert tailwind to headwind
+         // _formattedTextCell(
+          //    (double.parse(legDetail.sptlAvgTailWind ?? "0") * -1)
+          //        .toStringAsFixed(0)),
+        //  _formattedTextCell(double.parse(legDetail.sptlAvgClimbRate ?? "0")
+        //      .toStringAsFixed(0)),
+          //  convert tailwind to headwind
+          _formattedTextCell(
+              (double.parse(legDetail.optAvgTailWind ?? "0") * -1)
+                  .toStringAsFixed(0)),
+          _formattedTextCell(double.parse(legDetail.optAvgClimbRate ?? "0")
+              .toStringAsFixed(0)),
+          _formattedTextCell(double.parse(legDetail.optFlightGrndSpeedKt ?? "0")
+              .toStringAsFixed(0)),
+          _formattedTextCell(
+              double.parse(legDetail.optFlightGrndSpeedKmh ?? "0")
+                  .toStringAsFixed(0)),
+          _formattedTextCell(double.parse(legDetail.optFlightAirSpeedKt ?? "0")
+              .toStringAsFixed(0)),
+          _formattedTextCell(double.parse(legDetail.optFlightThermalPct ?? "0")
+              .toStringAsFixed(0)),
+        ],
+      );
+      legDetailTableRows.add(tableRow);
+    }
+    return legDetailTableRows;
+  }
+
+  TableRow _getLegDetailLabels() {
+    var legDetailLabels = <TableRow>[];
+    return TableRow(
+      children: [
+        _formattedTextCell("L\nE\nG"),
+        _formattedTextCell("ClockTime"),
+        _formattedTextCell("Time\nMin"),
+        _formattedTextCell("Dist\nkm"),
+        //_formattedTextCell("Head\nWind\nkt"),
+        //_formattedTextCell("Climb\nRate\nkt"),
+        _formattedTextCell("Head\nWind\nkt"),
+        _formattedTextCell("Clmb\nRate\nkt"),
+        _formattedTextCell("Gnd\nSpd\nkt"),
+        _formattedTextCell("Gnd\nSpd\nkm/h"),
+        _formattedTextCell("Air\nSpd\nkt"),
+        _formattedTextCell("Thermaling\nPct\n%"),
+      ],
+    );
+  }
+
+  Widget _getTurnpointsTableHeader() {
+    return Center(
+      child: Padding(
+          padding: const EdgeInsets.only(top: 16),
+          child: Text("Task Turnpoints", style: textStyleBoldBlackFontSize18)),
+    );
+  }
+
+  Widget _getLegTableHeader() {
+    return Center(
+      child: Padding(
+          padding: const EdgeInsets.only(top: 16),
+          child: Text(
+            "Leg Details\nUsing wind-adjusted speed-to-fly",
+            style: textStyleBoldBlackFontSize18,
+            textAlign: TextAlign.center,
+          )),
+    );
+  }
+
+  Widget _getWarningMsgDisplay(EstimatedFlightSummary optimalTaskSummary) {
+    List<Footer> footers =
+        optimalTaskSummary.routeSummary?.footers ?? <Footer>[];
+    List<Widget> warnings = [];
+
+    footers.forEach((footer) {
+      warnings.add(_formattedTextCell(footer.message ?? ""));
+    });
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.start,
+      children: warnings,
+    );
+  }
+
+  Widget _getOptimalFlightCloseButton() {
+    return ElevatedButton(
+      style: ElevatedButton.styleFrom(
+        minimumSize: Size(double.infinity,
+            40), // double.infinity is the width and 30 is the height
+        foregroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.primary,
+      ),
+      child: Text("Close"),
+      onPressed: () {
+        setState(() {
+          _estimatedFlightSummary = null;
+        });
+      },
+    );
+  }
 }

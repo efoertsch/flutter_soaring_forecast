@@ -1,23 +1,21 @@
-// To parse this JSON data, do
-//
-//     final forecastTypes = forecastTypesFromJson(jsonString);
-/// Steps to create class and ...g.dart file
-/// 1. Used assets/json/forecast_options as input to https://app.quicktype.io/
-/// 2. Modified code for generator:
-///    a. Added @JsonSerializable() for each class (except enums) below
-///    b. Add getters as needed for convenience
 import 'dart:convert';
-
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'forecast_types.g.dart';
 
-/// 1. Gen'ed Dart code from JSON string via using https://app.quicktype.io/
-/// 2. Dart code modified for generator
-/// 3. Added part'forecast_types.g.dart' above
+/// Steps to create class and ...g.dart file
+/// 1. Gen'ed Dart code from assets/json/forecast_options via using https://app.quicktype.io/
+/// 2. Modified code for generator:
+///    a. Added @JsonSerializable() for each class (except enums) below
+///    b. Add getters as needed for convenience
+/// 3. Added part 'forecast_types.g.dart' above
 /// 4. Generated ...g.dart file running following command in terminal
 ///    flutter packages pub run build_runner build
+
+// To parse this JSON data, do
+//
+//     final forecastTypes = forecastTypesFromJson(jsonString);
 
 ForecastTypes forecastTypesFromJson(String str) =>
     ForecastTypes.fromJson(json.decode(str));
@@ -32,23 +30,24 @@ class ForecastTypes {
     required this.forecasts,
   });
 
-  factory ForecastTypes.fromJson(Map<String, dynamic> json) => ForecastTypes(
-        forecasts: List<Forecast>.from(
-            json["forecasts"].map((x) => Forecast.fromJson(x))),
-      );
+  factory ForecastTypes.fromJson(Map<String, dynamic> json) =>
+      _$ForecastTypesFromJson(json);
 
-  Map<String, dynamic> toJson() => {
-        "forecasts": List<dynamic>.from(forecasts.map((x) => x.toJson())),
-      };
+  Map<String, dynamic> toJson() => _$ForecastTypesToJson(this);
 }
 
 @JsonSerializable()
 //ignore: must_be_immutable
 class Forecast extends Equatable {
+  @JsonKey(name: 'forecast_name')
   String forecastName;
+  @JsonKey(name: 'forecast_type')
   ForecastType? forecastType;
+  @JsonKey(name: 'forecast_name_display')
   String forecastNameDisplay;
+  @JsonKey(name: 'forecast_description')
   String forecastDescription;
+  @JsonKey(name: 'forecast_category')
   ForecastCategory? forecastCategory;
   bool? selectable;
 
@@ -61,22 +60,10 @@ class Forecast extends Equatable {
     this.selectable,
   });
 
-  factory Forecast.fromJson(Map<String, dynamic> json) => Forecast(
-      forecastName: json["forecast_name"],
-      forecastType: forecastTypeValues.map[json["forecast_type"]],
-      forecastNameDisplay: json["forecast_name_display"],
-      forecastDescription: json["forecast_description"],
-      forecastCategory: ForecastCategoryValues.map[json["forecast_category"]],
-      selectable: json["selectable"]);
+  factory Forecast.fromJson(Map<String, dynamic> json) =>
+      _$ForecastFromJson(json);
 
-  Map<String, dynamic> toJson() => {
-        "forecast_name": forecastName,
-        "forecast_type": forecastTypeValues.reverse[forecastType],
-        "forecast_name_display": forecastNameDisplay,
-        "forecast_description": forecastDescription,
-        "forecast_category": ForecastCategoryValues.reverse[forecastCategory],
-        "selectable": selectable
-      };
+  Map<String, dynamic> toJson() => _$ForecastToJson(this);
 
   @override
   List<Object?> get props => [
@@ -89,28 +76,20 @@ class Forecast extends Equatable {
       ];
 }
 
-enum ForecastCategory { THERMAL, WIND, CLOUD, WAVE }
+enum ForecastCategory {
+  @JsonValue("cloud")
+  CLOUD,
+  @JsonValue("thermal")
+  THERMAL,
+  @JsonValue("wave")
+  WAVE,
+  @JsonValue("wind")
+  WIND
+}
 
-final ForecastCategoryValues = EnumValues({
-  "cloud": ForecastCategory.CLOUD,
-  "thermal": ForecastCategory.THERMAL,
-  "wave": ForecastCategory.WAVE,
-  "wind": ForecastCategory.WIND
-});
-
-enum ForecastType { EMPTY, FULL }
-
-final forecastTypeValues =
-    EnumValues({"": ForecastType.EMPTY, "full": ForecastType.FULL});
-
-class EnumValues<T> {
-  Map<String, T> map;
-  Map<T, String> reverseMap = new Map();
-
-  EnumValues(this.map);
-
-  Map<T, String> get reverse {
-    reverseMap = map.map((k, v) => new MapEntry(v, k));
-    return reverseMap;
-  }
+enum ForecastType {
+  @JsonValue("")
+  EMPTY,
+  @JsonValue("full")
+  FULL,
 }

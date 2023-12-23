@@ -17,6 +17,13 @@
         "data_type": "String",
         "possible_values": ["0900","1000","1100","1200","1300","1400",
           "1500","1600","1700"]
+      },
+      {
+        "key": "SHOW_ESTIMATED_FLIGHT_BUTTON",
+        "title": "Show estimated flight button",
+        "description": "When task selected, show button to calculate estimated flight time and flight information",
+        "default": true,
+        "data_type": "bool"
       }
     ]
   },

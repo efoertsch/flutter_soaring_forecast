@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
 import 'package:flutter_soaring_forecast/soaring/app/custom_styles.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/rasp/estimated_flight_avg_summary.dart';
 
-class CommonForecastWidgets {
+class BottomSheetWidgets {
   static void showForecastDescriptionBottomSheet(
       BuildContext context, Forecast forecast) {
     showModalBottomSheet(
@@ -56,4 +57,7 @@ class CommonForecastWidgets {
       ],
     );
   }
+
+
+
 }

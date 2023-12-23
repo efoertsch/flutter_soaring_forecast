@@ -306,7 +306,7 @@ class _RaspScreenState extends State<RaspScreen>
       padding: const EdgeInsets.only(left: 8.0, right: 8.0),
       child: InkWell(
           onTap: () {
-            CommonForecastWidgets.showForecastDescriptionBottomSheet(
+            BottomSheetWidgets.showForecastDescriptionBottomSheet(
                 context, forecast);
           },
           child:
@@ -515,7 +515,7 @@ class _RaspScreenState extends State<RaspScreen>
         },
       ),
       PopupMenuButton<String>(
-        onSelected: handleClick,
+        onSelected: _handleClick,
         icon: Icon(Icons.more_vert),
         itemBuilder: (BuildContext context) {
           return {
@@ -567,7 +567,7 @@ class _RaspScreenState extends State<RaspScreen>
           Icon(Icons.arrow_right, size: 20.0, color: Colors.black),
         ],
       ),
-      onSelected: handleClick,
+      onSelected: _handleClick,
       itemBuilder: (BuildContext context) {
         return {
           RaspMenu.notamsBrief,
@@ -589,11 +589,10 @@ class _RaspScreenState extends State<RaspScreen>
     if (result != null && result is int && result > -1) {
       //debugPrint('Draw task for ' + result.toString());
       _sendEvent(GetTaskTurnpointsEvent(result));
-      _sendEvent(GetOptimizedTaskRouteEvent(result));
     }
   }
 
-  void handleClick(String value) async {
+  void _handleClick(String value) async {
     switch (value) {
       case RaspMenu.clearTask:
         _sendEvent(ClearTaskEvent());

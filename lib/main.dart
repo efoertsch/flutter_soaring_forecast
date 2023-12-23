@@ -16,6 +16,8 @@ import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     show WxBriefBriefingRequest;
 import 'package:flutter_soaring_forecast/soaring/app/custom_material_page_route.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_data_bloc.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast/cubit/glider_cubit.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast/ui/glider_polar_list.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/ui/rasp_screen.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast_types/bloc/forecast_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast_types/ui/forecast_list.dart';
@@ -107,8 +109,10 @@ void main() async {
   // website using Lets Encrypt SSL certificate
   // https://stackoverflow.com/questions/54285172/how-to-solve-flutter-certificate-verify-failed-error-while-performing-a-post-req
   // https://flutter-developer.medium.com/flutter-android-7-certificate-verify-failed-with-letsencrypt-ssl-cert-after-sept-30-2021-9cb5f672c090
-  ByteData data = await PlatformAssetBundle().load('assets/ca/lets-encrypt-r3.pem');
-  SecurityContext.defaultContext.setTrustedCertificatesBytes(data.buffer.asUint8List());
+  ByteData data =
+      await PlatformAssetBundle().load('assets/ca/lets-encrypt-r3.pem');
+  SecurityContext.defaultContext
+      .setTrustedCertificatesBytes(data.buffer.asUint8List());
   // End of Lets Encrypt SSL stuff
 
   runApp(RepositorySetup());
@@ -130,6 +134,7 @@ class SoaringForecastApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+        theme : ThemeData(useMaterial3: false,),
         debugShowCheckedModeBanner: false,
         // theme: ThemeData(
         //   // force iOS behaviour on Android (for testing)
@@ -356,6 +361,15 @@ class SoaringForecastApp extends StatelessWidget {
             return CustomMaterialPageRoute(
               builder: (context) {
                 return SettingsRouteBuilder();
+              },
+              settings: settings,
+            );
+          }
+
+          if (settings.name == GliderPolarListBuilder.routeName) {
+            return CustomMaterialPageRoute(
+              builder: (context) {
+                return GliderPolarListBuilder();
               },
               settings: settings,
             );
@@ -681,6 +695,18 @@ class SettingsRouteBuilder extends StatelessWidget {
       create: (BuildContext context) =>
           SettingsBloc(repository: RepositoryProvider.of<Repository>(context)),
       child: SettingsScreen(),
+    );
+  }
+}
+
+class GliderPolarListBuilder extends StatelessWidget {
+  static const routeName = '/GliderPolarList';
+
+  Widget build(BuildContext context) {
+    return BlocProvider<GliderCubit>(
+      create: (BuildContext context) => GliderCubit(
+          repository: RepositoryProvider.of<Repository>(context)),
+      child: GliderPolarListScreen(),
     );
   }
 }

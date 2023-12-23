@@ -9,7 +9,7 @@ import 'regions.dart';
 part 'rasp_api.g.dart';
 
 //!!! Remember to run generator with any changes !!!
-//!!!  flutter pub run build_runner build  --delete-conflicting-outputs     !!!
+//!!!  dart run build_runner build  --delete-conflicting-outputs     !!!
 @RestApi(baseUrl: Constants.RASP_BASE_URL)
 abstract class RaspClient {
   factory RaspClient(Dio dio) = _RaspClient;
@@ -65,21 +65,19 @@ abstract class RaspClient {
       @Query("lon") String lon,
       @Query("param") String forecasts);
 
-
-  @GET("/cgi/get_optimized_route.cgi")
-  Future<HttpResponse<String>> getOptimizedTaskRoute(
+  @GET("/cgi/get_estimated_flight_avg.cgi")
+  Future<HttpResponse<String>> getEstimatedFlightAverages(
       @Header("Content-Type") String contentType,
-      @Query("region")  String region,
-      @Query("date")    String date,
-      @Query("model")   String model,
-      @Query("grid")    String grid,
-      @Query("time")    String times,
-      @Query("polar")   String polar,
-      @Query("wgt")     double wgt,
-      @Query("tsink")   double tsink,
-      @Query("tmult")   double tmult,
-      @Query("latlons") String latlons);
+      @Query("region") String region,
+      @Query("date") String date,
+      @Query("model") String model,
+      @Query("grid") String grid,
+      @Query("time") String times,
+      @Query("glider") String glider,
+      @Query("polarFactor") double polarFactor,
+      @Query("polarCoefficients") String polarCoefficients , // a, b, c
+      @Query("tsink") double thermalSinkRate,
+      @Query("tmult") double thermalMultipler,
+      @Query("turnpts") String latlons);
+
 }
-
-
-

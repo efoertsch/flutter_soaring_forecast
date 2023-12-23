@@ -347,7 +347,7 @@
     {
     "forecast_name": "sfcwind0spd",
     "forecast_type": "",
-    "forecast_name_display": "wind speed (BL 2m)",
+    "forecast_name_display": "Wind speed (BL 2m)",
     "forecast_description": "This component is used to create the RASP Surface Wind (2m) display - surface wind speed and direction",
     "forecast_category": "wind",
     "selectable" : false
@@ -355,7 +355,7 @@
     {
       "forecast_name": "sfcwind0dir",
       "forecast_type": "",
-      "forecast_name_display": "wind direction (BL 2m)",
+      "forecast_name_display": "Wind direction (BL 2m)",
       "forecast_description": "This component is used to create the RASP Surface Wind (2m) display - surface wind speed and direction",
       "forecast_category": "wind",
       "selectable" : false
@@ -363,7 +363,7 @@
     {
       "forecast_name": "sfcwindspd",
       "forecast_type": "",
-      "forecast_name_display": "wind speed (BL 10m)",
+      "forecast_name_display": "Wind speed (BL 10m)",
       "forecast_description": "This component is used to create the RASP Sfc. Wind (10m) display - wind speed and direction at 10m",
       "forecast_category": "wind",
       "selectable" : false
@@ -371,7 +371,7 @@
     {
       "forecast_name": "sfcwinddir",
       "forecast_type": "",
-      "forecast_name_display": "wind direction (BL 10m)",
+      "forecast_name_display": "Wind direction (BL 10m)",
       "forecast_description": "This component is used to create the RASP Sfc. Wind (10m) display - wind speed and direction at 10m",
       "forecast_category": "wind",
       "selectable" : false
@@ -379,7 +379,7 @@
     {
       "forecast_name": "blwindspd",
       "forecast_type": "",
-      "forecast_name_display": "wind speed (BL avg)",
+      "forecast_name_display": "Wind speed (BL avg)",
       "forecast_description": "This component is used to create the RASP BL Avg. Wind display - average boundary layer wind speed and direction. This prediction can be misleading if there is a large change in wind direction through the BL.",
       "forecast_category": "wind",
       "selectable" : false
@@ -387,7 +387,7 @@
     {
       "forecast_name": "blwinddir",
       "forecast_type": "",
-      "forecast_name_display": "wind direction (BL avg)",
+      "forecast_name_display": "Wind direction (BL avg)",
       "forecast_description": "This component is used to create the RASP BL Avg. Wind display - average boundary layer wind speed and direction. This prediction can be misleading if there is a large change in wind direction through the BL.",
       "forecast_category": "wind",
       "selectable" : false
@@ -395,7 +395,7 @@
     {
       "forecast_name": "bltopwindspd",
       "forecast_type": "",
-      "forecast_name_display": "wind speed (BL top)",
+      "forecast_name_display": "Wind speed (BL top)",
       "forecast_description": "This component is used to create the RASP Wind at BL Top display - top of boundary layer wind speed and direction",
       "forecast_category": "wind",
       "selectable" : false
@@ -403,7 +403,7 @@
     {
       "forecast_name": "bltopwinddir",
       "forecast_type": "",
-      "forecast_name_display": "wind direction (BL top)",
+      "forecast_name_display": "Wind direction (BL top)",
       "forecast_description": "This component is used to create the RASP Wind at BL Top display - top of boundary layer wind speed and direction",
       "forecast_category": "wind",
       "selectable" : false

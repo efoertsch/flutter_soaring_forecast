@@ -9,9 +9,11 @@ import 'package:latlong2/latlong.dart';
 //-------- Non translatable values --------------------------------------------
 /// Hold any system wide constants
 // if you leave off www. below, the POST to get point forecast returns a 301
- const String BASE_URL = 'https://www.soargbsc.net/';
- const String RASP_BASE_URL = BASE_URL + 'rasp/';
-//const String RASP_BASE_URL ='http://192.168.1.6/';
+// If you modify the URLS you need to re-gen the API calls via:
+//      dart  run build_runner build  --delete-conflicting-outputs
+const String BASE_URL = 'https://www.soargbsc.net/';
+//const String RASP_BASE_URL = BASE_URL + 'rasp/';
+const String RASP_BASE_URL ='http://192.168.1.6/';
 const String RASP_OPTIONS_BASE_URL = 'https://soargbsc.com/soaringforecast/';
 const String AIRPORT_URL = 'http://ourairports.com/data/airports.csv';
 const String GEOS_GIF =
@@ -26,6 +28,10 @@ const String FEEDBACK_EMAIL_ADDRESS = 'ericfoertsch@gmail.com';
 const double metersToFeet = 3.28084;
 const String ft = "ft";
 const String NEW_LINE = '\n';
+enum DisplayUnits  {Metric, American}
+const String nauticalMiles = "nm";
+const String statueMiles = "sm";
+const String kilometers = "km";
 
 final LatLng NewEnglandMapCenter = LatLng(43.1394043, -72.0759888);
 final LatLngBounds NewEnglandMapLatLngBounds = LatLngBounds(
@@ -372,6 +378,9 @@ class WxBriefMenu {
   static const String HELP = "Help";
 }
 
+class PolarLiterals {
+  static const String POLAR = "Polar";
+}
 class WxBriefLiterals {
   static const String DO_NOT_SHOW_THIS_AGAIN = "Do not show this again";
   static const String WXBRIEF_AUTHORIZATION = "1800Brief Authorization";
@@ -443,6 +452,13 @@ class DrawerLiterals {
   static const String SETTINGS = "Settings";
   static const String FEEDBACK = "Feedback";
   static const String ABOUT = "About";
+}
+
+class PolarMenu {
+  static const String UNITS = "Units";
+  static const String METRIC = "Metric";
+  static const String AMERICAN = "American";
+
 }
 
 // Turnpoint icon colors for type of runway

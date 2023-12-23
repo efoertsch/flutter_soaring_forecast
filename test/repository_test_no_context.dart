@@ -7,6 +7,7 @@ import 'package:mockito/mockito.dart';
 class MockBuildContext extends Mock implements BuildContext {}
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   MockBuildContext _mockContext;
 
   _mockContext = MockBuildContext();
@@ -37,5 +38,9 @@ void main() {
         .getDisplayableForecastList()
         .then(expectAsync1((forecasts) => expect(forecasts.length, 43)));
     //print(foreastTypes.toString())))
+  });
+
+  test("Get list of glider polars", () async {
+    repository.getDefaultListOfGliders().then(expectAsync1((gliderList) => expect(gliderList?.length ,166)));
   });
 }

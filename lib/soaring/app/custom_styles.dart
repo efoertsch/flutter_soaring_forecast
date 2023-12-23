@@ -34,6 +34,9 @@ const textStyleBoldBlackFontSize14 =
 
 const textStyleBlackFontSize14 = TextStyle(color: Colors.black, fontSize: 14);
 
+const textStyleBoldBlackFontSize12 =
+TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 12);
+
 const textStyleBoldBlack87FontSize15 =
     TextStyle(fontWeight: FontWeight.bold, color: Colors.black87, fontSize: 15);
 
@@ -47,7 +50,16 @@ const textStyleBlack87FontSize14 =
     TextStyle(color: Colors.black87, fontSize: 14);
 
 const textStyleWhiteFontSize12 = TextStyle(color: Colors.white, fontSize: 12);
-const textStyleBlackFontSize12 = TextStyle(color: Colors.black, fontSize: 12);
-
 const textStyleWhiteFontSize13 = TextStyle(color: Colors.white, fontSize: 13);
+const textStyleWhiteFontSize14 = TextStyle(color: Colors.white, fontSize: 14);
+const textStyleWhiteFontSize16 = TextStyle(color: Colors.white, fontSize: 16);
+
+const textStyleBoldWhiteFontSize12 = TextStyle(color: Colors.white, fontSize: 12,fontWeight: FontWeight.bold,);
+const textStyleBoldWhiteFontSize13 = TextStyle(color: Colors.white, fontSize: 13,fontWeight: FontWeight.bold,);
+const textStyleBoldWhiteFontSize14 = TextStyle(color: Colors.white, fontSize: 14,fontWeight: FontWeight.bold,);
+const textStyleBoldWhiteFontSize16 = TextStyle(color: Colors.white, fontSize: 16,fontWeight: FontWeight.bold,);
+const textStyleBoldWhiteFontSize18 = TextStyle(color: Colors.white, fontSize: 18,fontWeight: FontWeight.bold,);
+
+
+const textStyleBlackFontSize12 = TextStyle(color: Colors.black, fontSize: 12);
 const textStyleBlackFontSize13 = TextStyle(color: Colors.black, fontSize: 13);

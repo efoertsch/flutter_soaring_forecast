@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:collection/collection.dart';
 import 'package:csv/csv.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:dio/dio.dart';
@@ -13,11 +14,12 @@ import 'package:flutter_map/src/geo/latlng_bounds.dart';
 import 'package:flutter_soaring_forecast/auth/secrets.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     show
-        RASP_BASE_URL,
+        DisplayUnits,
         PreferenceOption,
+        RASP_BASE_URL,
+        RaspDisplayOptions,
         WxBriefBriefingRequest,
-        WxBriefTypeOfBrief,
-        RaspDisplayOptions;
+        WxBriefTypeOfBrief;
 import 'package:flutter_soaring_forecast/soaring/floor/airport/airport.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/app_database.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/task/task.dart';
@@ -34,7 +36,8 @@ import 'package:flutter_soaring_forecast/soaring/repository/options/settings.dar
 import 'package:flutter_soaring_forecast/soaring/repository/options/special_use_airspace.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/sua_region_files.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/turnpoint_regions.dart';
-import 'package:flutter_soaring_forecast/soaring/repository/rasp/optimized_task_route.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/rasp/estimated_flight_avg_summary.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/rasp/gliders.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/view_bounds.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/usgs/national_map.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/cup/cup_styles.dart';
@@ -69,35 +72,45 @@ class Repository {
   static AppDatabase? _appDatabase;
   static var logger = DLogger.Logger();
 
-  static const String SELECTED_REGION = "SELECTED_REGION";
-  static const String DEFAULT_SELECTED_REGION = "NewEngland";
-  static const String FORECAST_LIST = "FORECAST_LIST";
-  static const String SELECTED_FORECAST = "SELECTED_FORECAST";
-  static const String FORECAST_OVERLAY_OPACITY = 'FORECAST_OVERLAY_OPACITY';
-  static const String CURRENT_TASK_ID = "CURRENT_TASK_ID";
-  static const String SATELLITE_TYPE = "SATELLITE_TYPE";
-  static const String SATELLITE_REGION = "SATELLITE_REGION";
-  static const String AIRPORT_CODES_FOR_METAR = "AIRPORT_CODES_FOR_METAR_TAF";
-  static const String ICAO_CODE_DELIMITER = " ";
-  static const String WXBRIEF_AIRPORT_ID = "WXBRIEF_AIRPORT_ID";
-  static const String VIEW_MAP_BOUNDS = "VIEW_MAP_BOUNDS";
-  static const String BEGINNER_FORECAST_MODE = "BEGINNER_FORECAST_MODE";
-  static const String LOCAL_FORECAST_FAVORITE = "LOCAL_FORECAST_FAVORITE";
-  static const String LAST_FORECAST_TIME = "LAST_FORECAST_TIME";
+  // TODO change field names to private
+  static const String _SELECTED_REGION = "SELECTED_REGION";
+  static const String _DEFAULT_SELECTED_REGION = "NewEngland";
+  static const String _FORECAST_LIST = "FORECAST_LIST";
+  static const String _SELECTED_FORECAST = "SELECTED_FORECAST";
+  static const String _FORECAST_OVERLAY_OPACITY = 'FORECAST_OVERLAY_OPACITY';
+  static const String _CURRENT_TASK_ID = "CURRENT_TASK_ID";
+  static const String _AIRPORT_CODES_FOR_METAR = "AIRPORT_CODES_FOR_METAR_TAF";
+  static const String _ICAO_CODE_DELIMITER = " ";
+  static const String _WXBRIEF_AIRPORT_ID = "WXBRIEF_AIRPORT_ID";
+  static const String _VIEW_MAP_BOUNDS = "VIEW_MAP_BOUNDS";
+  static const String _BEGINNER_FORECAST_MODE = "BEGINNER_FORECAST_MODE";
+  static const String _LOCAL_FORECAST_FAVORITE = "LOCAL_FORECAST_FAVORITE";
+  static const String _LAST_FORECAST_TIME = "LAST_FORECAST_TIME";
+  static const String _MY_GLIDERS = "MY_GLIDER_POLARS";
+  static const String _SELECTED_GLIDER = "SELECTED_GLIDER";
+  static const String _DISPLAY_UNITS = "DISPLAY_UNITS";
 
-  late final String satelliteRegionUS;
-  late final String satelliteTypeVis;
+  late final String _satelliteRegionUS;
+  late final String _satelliteTypeVis;
 
-  static const String WXBRIEF_AIRCRAFT_REGISTRATION =
+  static const String _WXBRIEF_AIRCRAFT_REGISTRATION =
       "WXBRIEF_AIRCRAFT_REGISTRATION";
-  static const String WXBRIEF_ACCOUNT_NAME = "WXBRIEF_ACCOUNT_NAME";
-  static const String WXBRIEF_CORRIDOR_WIDTH = "WXBRIEF_CORRIDOR_WIDTH";
-  static const String WXBRIEF_WINDS_ALOFT_WIDTH = "WXBRIEF_WINDS_ALOFT_WIDTH";
-  static const String WX_BRIEF_SHOW_AUTH_SCREEN = "WX_BRIEF_SHOW_DISCLAIMER";
+  static const String _WXBRIEF_ACCOUNT_NAME = "WXBRIEF_ACCOUNT_NAME";
+  static const String _WXBRIEF_CORRIDOR_WIDTH = "WXBRIEF_CORRIDOR_WIDTH";
+  static const String _WXBRIEF_WINDS_ALOFT_WIDTH = "WXBRIEF_WINDS_ALOFT_WIDTH";
+  static const String _WX_BRIEF_SHOW_AUTH_SCREEN = "WX_BRIEF_SHOW_DISCLAIMER";
+  static const String _EXPERIMENTAL_ESTIMATED_FLIGHT_FLAG = "EXPERIMENTAL_ESTIMATED_TASK_FLAG";
 
   static final _fullForecastList = <Forecast>[];
   static final _displayableForecastList = <Forecast>[];
   static final List<Group> _settingGroups = <Group>[];
+
+  static Gliders? _defaultGliders = null;
+  static Gliders? _customGliders = null;
+
+  // this value must be the same value as that in the settings.json file.
+  static const String _SHOW_ESTIMATED_FLIGHT_BUTTON = "SHOW_ESTIMATED_FLIGHT_BUTTON";
+  static const String _SHOW_ESTIMATED_FLIGHT_EXPERIMENTAL_TEXT = "SHOW_ESTIMATED_FLIGHT_EXPERIMENTAL_TEXT";
 
   Repository._();
 
@@ -146,22 +159,22 @@ class Repository {
 
   Future<bool> isBeginnerForecastMode() async {
     return await getGenericBool(
-        key: BEGINNER_FORECAST_MODE, defaultValue: true);
+        key: _BEGINNER_FORECAST_MODE, defaultValue: true);
   }
 
   // true is to display 'simple' forecast select, false to display 'expert' forecast select
   Future<void> setBeginnerForecastMode(bool isBeginnerForecastMode) async {
     await saveGenericBool(
-        key: BEGINNER_FORECAST_MODE, value: isBeginnerForecastMode);
+        key: _BEGINNER_FORECAST_MODE, value: isBeginnerForecastMode);
   }
 
   Future<String> getSelectedRegionName() async {
     return await getGenericString(
-        key: SELECTED_REGION, defaultValue: DEFAULT_SELECTED_REGION);
+        key: _SELECTED_REGION, defaultValue: _DEFAULT_SELECTED_REGION);
   }
 
   Future<void> saveSelectedRegionName(String regionName) async {
-    await saveGenericString(key: SELECTED_REGION, value: regionName);
+    await saveGenericString(key: _SELECTED_REGION, value: regionName);
   }
 
   /// 2. For selected region, iterate through dates for which forecasts have
@@ -240,7 +253,7 @@ class Repository {
   Future<List<Forecast>> _getCustomForecastList() async {
     final forecasts = <Forecast>[];
     final jsonString =
-        await getGenericString(key: FORECAST_LIST, defaultValue: "");
+        await getGenericString(key: _FORECAST_LIST, defaultValue: "");
     if (jsonString.isNotEmpty) {
       final forecastTypes = forecastTypesFromJson(jsonString);
       forecasts.addAll(forecastTypes.forecasts);
@@ -250,7 +263,7 @@ class Repository {
 
   Future<bool> deleteCustomForecastList() async {
     _displayableForecastList.clear();
-    return await _deleteGenericString(key: FORECAST_LIST);
+    return await _deleteGenericString(key: _FORECAST_LIST);
   }
 
   Future<bool> saveForecasts(List<Forecast> forecasts) async {
@@ -258,17 +271,17 @@ class Repository {
     _displayableForecastList.addAll(forecasts);
     final jsonForecasts =
         forecastTypesToJson(ForecastTypes(forecasts: _displayableForecastList));
-    return await saveGenericString(key: FORECAST_LIST, value: jsonForecasts);
+    return await saveGenericString(key: _FORECAST_LIST, value: jsonForecasts);
   }
 
   Future<void> saveSelectedForecast(Forecast forecast) async {
     String jsonString = jsonEncode(forecast);
-    await saveGenericString(key: SELECTED_FORECAST, value: jsonString);
+    await saveGenericString(key: _SELECTED_FORECAST, value: jsonString);
   }
 
   Future<Forecast?> getSelectedForecast() async {
     String jsonString =
-        await getGenericString(key: SELECTED_FORECAST, defaultValue: "");
+        await getGenericString(key: _SELECTED_FORECAST, defaultValue: "");
     if (jsonString.isEmpty) return null;
     return Forecast.fromJson(jsonDecode(jsonString));
   }
@@ -319,46 +332,75 @@ class Repository {
     return responseBody;
   }
 
-  Future<OptimizedTaskRoute?> getOptimizedTaskRoute(
-      String region,
-      String date,
-      String model,
-      String grid,
-      String times,
-      String polar,
-      double wgt,
-      double tsink,
-      double tmult,
-      String latlons) async {
+  Future<EstimatedFlightSummary?> getEstimatedFlightSummary(
+    String region,
+    String date,
+    String model,
+    String grid,
+    String times,
+    String glider,
+    double polarFactor,
+    String polarCoefficients,
+    double thermalSinkRate,
+    double thermalMultipler,
+    String turnpoints,
+  ) async {
+    EstimatedFlightSummary? optimalFlightSummary;
     final String contentType = "application/x-www-form-urlencoded";
-    final httpResponse = await _raspClient.getOptimizedTaskRoute(contentType,
-        region, date, model, grid, times, polar, wgt, tsink, tmult, latlons);
-    if (httpResponse.response.statusCode! >= 200 &&
-        httpResponse.response.statusCode! < 300) {
-      return OptimizedTaskRoute.fromJson(jsonDecode(httpResponse.data));
-    } else
-      return null;
+    await _raspClient
+        .getEstimatedFlightAverages(
+            contentType,
+            region,
+            date,
+            model,
+            grid,
+            times,
+            glider,
+            polarFactor,
+            polarCoefficients,
+            thermalSinkRate,
+            thermalMultipler,
+            turnpoints)
+        .then((httpResponse) {
+      if (httpResponse.response.statusCode! >= 200 &&
+          httpResponse.response.statusCode! < 300 &&
+          httpResponse.data.length > 0 &&
+          httpResponse.data.substring(0, 1) == "{") {
+        debugPrint(" httpResponse: " + httpResponse.data);
+        optimalFlightSummary =
+            EstimatedFlightSummary.fromJson(jsonDecode(httpResponse.data));
+      } else {
+        if (httpResponse.data.length > 0) {
+          var summary = RouteSummary(error: httpResponse.data);
+          optimalFlightSummary = EstimatedFlightSummary(routeSummary: summary);
+        }
+      }
+    }).catchError((onError) {
+      var summary = RouteSummary(error: onError.toString());
+      optimalFlightSummary = EstimatedFlightSummary(routeSummary: summary);
+    });
+    return optimalFlightSummary;
   }
 
   Future<double> getForecastOverlayOpacity() async {
     return await getGenericDouble(
-        key: FORECAST_OVERLAY_OPACITY, defaultValue: 50);
+        key: _FORECAST_OVERLAY_OPACITY, defaultValue: 50);
   }
 
   Future<void> setForecastOverlayOpacity(double forecastOverlayOpacity) async {
     await saveGenericDouble(
-        key: FORECAST_OVERLAY_OPACITY, value: forecastOverlayOpacity);
+        key: _FORECAST_OVERLAY_OPACITY, value: forecastOverlayOpacity);
   }
 
   Future<void> saveViewBounds(ViewBounds mapBoundsAndZoom) async {
     Map json = mapBoundsAndZoom.toJson();
     var stringBounds = jsonEncode(json);
-    await saveGenericString(key: VIEW_MAP_BOUNDS, value: stringBounds);
+    await saveGenericString(key: _VIEW_MAP_BOUNDS, value: stringBounds);
   }
 
   Future<ViewBounds?> getViewBoundsAndZoom() async {
     String stringBounds =
-        await getGenericString(key: VIEW_MAP_BOUNDS, defaultValue: "");
+        await getGenericString(key: _VIEW_MAP_BOUNDS, defaultValue: "");
     if (stringBounds.isEmpty) {
       return null;
     }
@@ -367,11 +409,11 @@ class Repository {
   }
 
   Future<void> saveLastForecastTime(int timeInMillSecs) async {
-    saveGenericInt(key: LAST_FORECAST_TIME, value: timeInMillSecs);
+    saveGenericInt(key: _LAST_FORECAST_TIME, value: timeInMillSecs);
   }
 
   Future<int> getLastForecastTime() async {
-    return await getGenericInt(key: LAST_FORECAST_TIME, defaultValue: 0);
+    return await getGenericInt(key: _LAST_FORECAST_TIME, defaultValue: 0);
   }
 
   // ----------- Get RASP forecast images -----------------------
@@ -452,11 +494,11 @@ class Repository {
 
   Future<String> getSelectedAirportCodesAsString() async {
     return await getGenericString(
-        key: AIRPORT_CODES_FOR_METAR, defaultValue: "");
+        key: _AIRPORT_CODES_FOR_METAR, defaultValue: "");
   }
 
   void saveSelectedAirportCodes(String icaoCodes) async {
-    await saveGenericString(key: AIRPORT_CODES_FOR_METAR, value: icaoCodes);
+    await saveGenericString(key: _AIRPORT_CODES_FOR_METAR, value: icaoCodes);
   }
 
   Future<List<Airport>?> getSelectedAirports(List<String> icaoCodes) async {
@@ -482,7 +524,7 @@ class Repository {
     String oldIcaoCodes = await getSelectedAirportCodesAsString();
     if (!oldIcaoCodes.contains(icaoCode)) {
       final newSelectedIcaoCodes =
-          oldIcaoCodes + ICAO_CODE_DELIMITER + icaoCode;
+          oldIcaoCodes + _ICAO_CODE_DELIMITER + icaoCode;
       saveSelectedAirportCodes(newSelectedIcaoCodes);
     }
   }
@@ -491,7 +533,7 @@ class Repository {
     final sb = new StringBuffer();
     airports.forEach((airport) {
       sb.write(airport.ident);
-      sb.write(ICAO_CODE_DELIMITER);
+      sb.write(_ICAO_CODE_DELIMITER);
     });
 
     saveSelectedAirportCodes(sb.toString());
@@ -600,7 +642,7 @@ class Repository {
         TurnpointRegions.fromJson(jsonDecode(stringJson));
     turnpointRegionList.addAll(turnpointRegions.turnpointRegions!);
     String selectedRegion = await getGenericString(
-        key: SELECTED_REGION, defaultValue: DEFAULT_SELECTED_REGION);
+        key: _SELECTED_REGION, defaultValue: _DEFAULT_SELECTED_REGION);
     return turnpointRegionList
         .firstWhere((region) => region.region == selectedRegion)
         .turnpointFiles;
@@ -703,12 +745,12 @@ class Repository {
 
   // -1 is no task defined
   Future<int> getCurrentTaskId() async {
-    return getGenericInt(key: CURRENT_TASK_ID, defaultValue: -1);
+    return getGenericInt(key: _CURRENT_TASK_ID, defaultValue: -1);
   }
 
   // Set to -1 to clear task
   void setCurrentTaskId(int taskId) async {
-    saveGenericInt(key: CURRENT_TASK_ID, value: taskId);
+    saveGenericInt(key: _CURRENT_TASK_ID, value: taskId);
   }
 
   // ----- Task Turnpoints----------------------------------------
@@ -988,11 +1030,11 @@ class Repository {
 
   //------ 1800wxbrief ---------------------------------
   Future<String> getSavedAirportId() async {
-    return await getGenericString(key: WXBRIEF_AIRPORT_ID, defaultValue: "3B3");
+    return await getGenericString(key: _WXBRIEF_AIRPORT_ID, defaultValue: "3B3");
   }
 
   Future<bool> saveAirportId(String airportId) async {
-    return await saveGenericString(key: WXBRIEF_AIRPORT_ID, value: airportId);
+    return await saveGenericString(key: _WXBRIEF_AIRPORT_ID, value: airportId);
   }
 
   Future<MetarTafResponse> getMetar({required String location}) async {
@@ -1018,49 +1060,49 @@ class Repository {
 
   Future<String> getAircraftRegistration() async {
     return getGenericString(
-        key: WXBRIEF_AIRCRAFT_REGISTRATION, defaultValue: "");
+        key: _WXBRIEF_AIRCRAFT_REGISTRATION, defaultValue: "");
   }
 
   Future<bool> setAircraftRegistration(String aircraftRegistration) async {
     return saveGenericString(
-        key: WXBRIEF_AIRCRAFT_REGISTRATION, value: aircraftRegistration);
+        key: _WXBRIEF_AIRCRAFT_REGISTRATION, value: aircraftRegistration);
   }
 
   Future<String> getWxBriefAccountName() {
-    return getGenericString(key: WXBRIEF_ACCOUNT_NAME, defaultValue: "");
+    return getGenericString(key: _WXBRIEF_ACCOUNT_NAME, defaultValue: "");
   }
 
   Future<bool> setWxBriefAccountName(String wxbriefAccountName) {
     return saveGenericString(
-        key: WXBRIEF_ACCOUNT_NAME, value: wxbriefAccountName);
+        key: _WXBRIEF_ACCOUNT_NAME, value: wxbriefAccountName);
   }
 
   Future<String> getWxBriefCorridorWidth() async {
-    return getGenericString(key: WXBRIEF_CORRIDOR_WIDTH, defaultValue: "25");
+    return getGenericString(key: _WXBRIEF_CORRIDOR_WIDTH, defaultValue: "25");
   }
 
   Future<bool> setWxBriefCorridorWidth(String corridorWidth) async {
-    return saveGenericString(key: WXBRIEF_CORRIDOR_WIDTH, value: corridorWidth);
+    return saveGenericString(key: _WXBRIEF_CORRIDOR_WIDTH, value: corridorWidth);
   }
 
   Future<String> getWxBriefWindsAloftWidth() async {
     return getGenericString(
-        key: WXBRIEF_WINDS_ALOFT_WIDTH, defaultValue: "200");
+        key: _WXBRIEF_WINDS_ALOFT_WIDTH, defaultValue: "200");
   }
 
   Future<bool> setWxBriefWindsAloftWidth(String windsAloftWidth) async {
     return saveGenericString(
-        key: WXBRIEF_WINDS_ALOFT_WIDTH, value: windsAloftWidth);
+        key: _WXBRIEF_WINDS_ALOFT_WIDTH, value: windsAloftWidth);
   }
 
   // return true if user no longer wants to see disclaimer
   Future<bool> getWxBriefShowAuthScreen() async {
-    return getGenericBool(key: WX_BRIEF_SHOW_AUTH_SCREEN, defaultValue: true);
+    return getGenericBool(key: _WX_BRIEF_SHOW_AUTH_SCREEN, defaultValue: true);
   }
 
   // return true to show disclaimer - false if not
   FutureOr<void> setWxBriefShowAuthScreen(bool displayDisclaimer) {
-    saveGenericBool(key: WX_BRIEF_SHOW_AUTH_SCREEN, value: displayDisclaimer);
+    saveGenericBool(key: _WX_BRIEF_SHOW_AUTH_SCREEN, value: displayDisclaimer);
   }
 
   Future<List<BriefingOption>> getWxBriefProductCodes(
@@ -1230,7 +1272,6 @@ class Repository {
         if (!await directory.exists()) {
           directory = await getExternalStorageDirectory();
         }
-
       }
     } else {
       //iOS
@@ -1270,17 +1311,140 @@ class Repository {
   void storeLocalForecastFavorite(
       LocalForecastFavorite localForecastFavorite) async {
     await saveGenericString(
-        key: LOCAL_FORECAST_FAVORITE,
+        key: _LOCAL_FORECAST_FAVORITE,
         value: jsonEncode(localForecastFavorite.toJson()));
   }
 
   Future<LocalForecastFavorite?> getLocateForecastFavorite() async {
     String favoriteString =
-        await getGenericString(key: LOCAL_FORECAST_FAVORITE, defaultValue: "");
+        await getGenericString(key: _LOCAL_FORECAST_FAVORITE, defaultValue: "");
     if (favoriteString.isEmpty) {
       return null;
     } else {
       return LocalForecastFavorite.fromJson(jsonDecode(favoriteString));
     }
+  }
+
+  Future<void> _loadDefaultGliders() async {
+    if (_defaultGliders == null || _defaultGliders!.gliders == null) {
+      final json = await DefaultAssetBundle.of(_context!)
+          .loadString('assets/json/gliders.json');
+      _defaultGliders = Gliders.glidersFromJsonString(json);
+    }
+  }
+
+  Future<List<Glider>?> getDefaultListOfGliders() async {
+    await _loadDefaultGliders();
+    return _defaultGliders?.gliders;
+  }
+
+  Future<void> _loadCustomGliders() async {
+    if (_customGliders == null) {
+      final json = await getGenericString(key: _MY_GLIDERS, defaultValue: "");
+      if (json.isNotEmpty) {
+        //Gliders gliders = Gliders.glidersFromJson(json);
+        _customGliders = Gliders.glidersFromJsonString(json);
+      } else {
+        _customGliders = Gliders();
+      }
+    }
+  }
+
+  Future<Gliders> getCustomGliders() async {
+    await _loadCustomGliders();
+    return _customGliders!;
+  }
+
+  Future<void> saveLastSelectedGliderName(String gliderName) async {
+    await saveGenericString(key: _SELECTED_GLIDER, value: gliderName);
+  }
+
+  Future<String> getLastSelectedGliderName() async {
+    return await getGenericString(key: _SELECTED_GLIDER, defaultValue: "");
+  }
+
+  Future<void> saveCustomPolar(Glider customPolar) async {
+    Glider? gliderPolar;
+    await getCustomGliders();
+    if (_customGliders!.gliders != null) {
+      gliderPolar = _customGliders!.gliders?.firstWhereOrNull(
+          (savedGlider) => savedGlider.glider == customPolar.glider);
+      if (gliderPolar == null) {
+        // customPolar not in list so add it
+        _customGliders!.gliders!.add(customPolar);
+      } else {
+        // customPolar already in list so update it with new info
+        gliderPolar.updatePolar(customPolar);
+      }
+    } else {
+      // no custom polars at all so add it
+      _customGliders!.gliders = <Glider>[customPolar];
+    }
+    await saveGenericString(
+        key: _MY_GLIDERS, value: Gliders.glidersToJsonString(_customGliders!));
+  }
+
+  Future<({Glider? defaultGlider, Glider? customGlider})> getDefaultAndCustomGliderDetails(
+      String gliderName) async {
+    // if master list not loaded yet load it
+    await _loadDefaultGliders();
+    await _loadCustomGliders();
+    Glider? defaultGlider = _defaultGliders!.gliders
+        ?.firstWhereOrNull((polar) => polar.glider == gliderName);
+    Glider? customGlider = _customGliders!.gliders
+        ?.firstWhereOrNull((polar) => polar.glider == gliderName);
+    return (
+      defaultGlider: defaultGlider,
+      customGlider: customGlider ?? defaultGlider?.copyWith()
+    );
+  }
+
+  /// Polars saved by user, likely customized
+  Future<Gliders?> getSavedPolarList() async {
+    // See if in repository first, if not get from full list
+    String jsonString =
+        await getGenericString(key: _MY_GLIDERS, defaultValue: "");
+    if (jsonString.isNotEmpty) {
+      final polars = Gliders.glidersFromJsonString(jsonString);
+      return polars;
+    }
+    return Gliders();
+  }
+
+  Future<DisplayUnits> getDisplayUnits() async {
+    String displayUnit =
+        await getGenericString(key: _DISPLAY_UNITS, defaultValue: DisplayUnits.American.toString());
+    return _convertDisplayUnitsStringToEnum(displayUnit);
+  }
+
+  DisplayUnits _convertDisplayUnitsStringToEnum(String displayUnits) {
+    return DisplayUnits.values.firstWhereOrNull(
+            (e) => e.toString() ==  displayUnits) ??
+        DisplayUnits.American;
+  }
+
+  Future<DisplayUnits> saveDisplayUnits(DisplayUnits displayUnits) async {
+    await saveGenericString(key: _DISPLAY_UNITS, value: displayUnits.toString());
+    return _convertDisplayUnitsStringToEnum(displayUnits.toString());
+  }
+
+  Future<bool> getDisplayExperimentalOptimalTaskAlertFlag() async {
+    return await getGenericBool(key: _EXPERIMENTAL_ESTIMATED_FLIGHT_FLAG, defaultValue: true);
+  }
+
+  Future<void> saveDisplayExperimentalOptimalTaskAlertFlag(bool flag) async {
+     await saveGenericBool(key: _EXPERIMENTAL_ESTIMATED_FLIGHT_FLAG, value: flag);
+  }
+
+  Future<bool>getDisplayEstimatedFlightButton() async {
+    return await getGenericBool(key: _SHOW_ESTIMATED_FLIGHT_BUTTON, defaultValue: true);
+  }
+
+  Future<bool> getShowEstimatedFlightExperimentalText() async {
+    return await getGenericBool(key: _SHOW_ESTIMATED_FLIGHT_EXPERIMENTAL_TEXT, defaultValue: true);
+  }
+
+  Future<bool> saveShowEstimatedFlightExperimentalText(bool show) async {
+    return await saveGenericBool(key: _SHOW_ESTIMATED_FLIGHT_EXPERIMENTAL_TEXT, value: show);
   }
 }

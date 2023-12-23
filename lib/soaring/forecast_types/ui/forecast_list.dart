@@ -219,9 +219,9 @@ class _ForecastListScreenState extends State<ForecastListScreen> {
               // Add icon to display type of forecast thermal cloud, wave,..
               Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: CommonForecastWidgets.getForecastDisplayNameAndIcon(
+                child: BottomSheetWidgets.getForecastDisplayNameAndIcon(
                     forecast,
-                    onTapIcon: (() => CommonForecastWidgets
+                    onTapIcon: (() => BottomSheetWidgets
                         .showForecastDescriptionBottomSheet(context, forecast)),
                     onTapText: (() => onTapText != null ? onTapText() : null)),
               ),

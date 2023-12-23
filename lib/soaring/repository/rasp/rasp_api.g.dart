@@ -13,7 +13,7 @@ class _RaspClient implements RaspClient {
     this._dio, {
     this.baseUrl,
   }) {
-    baseUrl ??= 'https://www.soargbsc.net/rasp/';
+    baseUrl ??= 'http://192.168.1.6/';
   }
 
   final Dio _dio;
@@ -172,17 +172,18 @@ class _RaspClient implements RaspClient {
   }
 
   @override
-  Future<HttpResponse<String>> getOptimizedTaskRoute(
+  Future<HttpResponse<String>> getEstimatedFlightAverages(
     String contentType,
     String region,
     String date,
     String model,
     String grid,
     String times,
-    String polar,
-    double wgt,
-    double tsink,
-    double tmult,
+    String glider,
+    double polarFactor,
+    String polarCoefficients,
+    double thermalSinkRate,
+    double thermalMultipler,
     String latlons,
   ) async {
     const _extra = <String, dynamic>{};
@@ -192,11 +193,12 @@ class _RaspClient implements RaspClient {
       r'model': model,
       r'grid': grid,
       r'time': times,
-      r'polar': polar,
-      r'wgt': wgt,
-      r'tsink': tsink,
-      r'tmult': tmult,
-      r'latlons': latlons,
+      r'glider': glider,
+      r'polarFactor': polarFactor,
+      r'polarCoefficients': polarCoefficients,
+      r'tsink': thermalSinkRate,
+      r'tmult': thermalMultipler,
+      r'turnpts': latlons,
     };
     final _headers = <String, dynamic>{r'Content-Type': contentType};
     _headers.removeWhere((k, v) => v == null);
@@ -210,7 +212,7 @@ class _RaspClient implements RaspClient {
     )
             .compose(
               _dio.options,
-              '/cgi/get_optimized_route.cgi',
+              '/cgi/get_estimated_flight_avg.cgi',
               queryParameters: queryParameters,
               data: _data,
             )

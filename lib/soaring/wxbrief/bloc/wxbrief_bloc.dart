@@ -172,8 +172,7 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
       }
     }
     final sb = StringBuffer();
-    _taskTurnpoints.fold(
-        sb, (previous, current) => sb.writeAll([current.code, ","]));
+    sb.writeAll( _taskTurnpoints.map((taskTurnpoint) => taskTurnpoint.code), ",");
     _routeBriefingRequest.setRoute(sb.toString());
   }
 
@@ -236,8 +235,7 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
         }
       } else if (routeBriefing.returnCodedMessage!.length > 0) {
         final sb = StringBuffer();
-        routeBriefing.returnCodedMessage!.fold(sb,
-            (previousValue, element) => sb.writeAll([element.message, "\n"]));
+        sb.writeAll(routeBriefing.returnCodedMessage!.map((e) => e.message), "\n");
         emit(WxBriefErrorState(sb.toString()));
       }
     }).catchError((Object obj) {

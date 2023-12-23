@@ -11,10 +11,10 @@ description: A new Flutter application.
 # In iOS, build-name is used as CFBundleShortVersionString while build-number used as CFBundleVersion.
 # Read more about iOS versioning at
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
-version: 1.10.6+40
+version: 1.11.0+41
 
 environment:
-  sdk: ">=2.17.0 <3.0.0"
+  sdk: ">=3.0.0 <=3.3.0"
 
 dependencies:
 
@@ -23,11 +23,11 @@ dependencies:
   #  DioError [DioErrorType.DEFAULT]: type 'String' is not a subtype of type 'Map<String, dynamic>'
   dio: ^5.2.1
   json_serializable: ^6.3.1
-  json_annotation: ^4.6.0
-  retrofit: '^4.0.1'
+  json_annotation: ^4.8.1
+  retrofit: '^4.0.3'
   logger: ^1.1.0  #for logging purpose
   provider: ^6.0.3
-  flutter_bloc: ^8.0.1
+  flutter_bloc: ^8.1.3
   equatable: ^2.0.3
   webview_flutter: ^3.0.4
   url_launcher: ^6.1.5
@@ -41,6 +41,7 @@ dependencies:
   flutter_svg: ^1.1.3   #Used to draw turnpoint icons
   linked_scroll_controller: 0.2.0   # Used for grid view with fixed header and column
   device_info_plus: ^8.2.2  # Get platform-specific device info. In this case used to get Android version
+  vector_math: ^2.1.4    # methods used for thermalling sink rate calculations
 
   flutter_cache_manager: ^3.3.0
   intl: ^0.17.0   # used for date/time formatting
@@ -112,6 +113,11 @@ dev_dependencies:
 # The following section is specific to Flutter.
 flutter:
 
+  fonts:
+    - family: Inconsolata
+      fonts:
+        - asset: assets/fonts/Inconsolata.ttf
+
   assets:
     - assets/json/
     - assets/svg/
@@ -120,6 +126,8 @@ flutter:
     - assets/txt/
     - assets/csv/
     - assets/ca/
+    - assets/fonts/
+
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
