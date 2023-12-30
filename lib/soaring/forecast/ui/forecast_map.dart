@@ -1050,12 +1050,12 @@ class ForecastMapState extends State<ForecastMap>
         border: TableBorder.all(),
         defaultVerticalAlignment: TableCellVerticalAlignment.middle,
         children: <TableRow>[
-          TableRow(
-            children: [
-              _formattedTextCell(header!.valid ?? ""),
-              _formattedTextCell(header!.region ?? ""),
-            ],
-          ),
+          // TableRow(
+          //   children: [
+          //     _formattedTextCell(header!.valid ?? ""),
+          //     _formattedTextCell(header!.region ?? ""),
+          //   ],
+          // ),
           TableRow(
             children: [
               _formattedTextCell("Glider " + (header!.glider ?? "")),

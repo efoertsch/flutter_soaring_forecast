@@ -56,17 +56,19 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
   static const String _ENTER_BANK_ANGLE = "Favorite Thermalling Bank Angle";
   static const String _POLAR_HELP = "HELP";
   static const String _EXPERIMENTAL_ESTIMATED_FLIGHT_TEXT =
-      " This is a feature based on Dr. Jack logic uses a glider's min sink and polar, and along"
-      " with the forecast, will show for the given task estimated flight time "
-      " and associated flight information."
-      "\nThe specific forecast values used in the calculations are:"
+      " This is a feature based on Dr. Jack logic that calculates a task's estimated flight time"
+      " and flight information based on the forecast and a glider's min sink rate and polar."
+      "\n\nThe values displayed on the underlying screen are based or calculated from XCSOAR glider data."
+      "\n\nThe min sink rate is calculated based on Vx/Wx values can give a wildly inaccurate value. "
+      "(Vx/Vw values are used for speed to fly calculations, not min sink/thermalling speed.)"
+      " Consult your glider POH or other sources to enter a more appropriate number."
+      "\n\nMost values under the 'Your Glider' column can be updated. Tap on the particular cell to update."
+      "\n\nThe specific forecast values used in the calculations are:"
       "\n1. Thermal Updraft Velocity (W*)"
       "\n2. Wind speed (Boundary Layer average)"
       "\n3. Wind direction (Boundary Layer average)"
-      "\nThe values displayed on the underlying screen are based or calculated from XCSOAR glider data."
-      "\nNote that the min sink rate is calculated based on Vx/Wx values which is not the best method to determine "
-      "your glider min sink. Consult your glider POH or other sources to enter a more appropriate number."
-      "\nMost values under the 'Your Glider' column can be updated. Tap on the particular cell to update."
+      "\n\n Task time, headwind, and related estimates are based on a straight line"
+      " course between turnpoints. (Yeah - how often does that happen.) "
       "\n\nFeedback is most welcome. ";
   static const String _GLIDER_POLAR_DATA =
       "The sink rate, glider mass and polar values (Vx/Wx) on this screen are "
