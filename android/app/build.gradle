@@ -38,7 +38,7 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    compileSdkVersion 33
+    compileSdkVersion 34
 
     sourceSets {
         main.java.srcDirs += 'src/main/kotlin'
@@ -51,7 +51,7 @@ android {
     defaultConfig {
         applicationId "org.soaringforecast.rasp"
         minSdkVersion 21
-        targetSdkVersion 33
+            targetSdkVersion 34
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -81,7 +81,7 @@ android {
         dev {
             dimension "version"
             applicationIdSuffix ".dev"
-            resValue "string", "app_name", "SoaringForecast-Dev"
+            resValue "string", "app_name", "SoarngFrcst-Dev"
         }
         prod {
             dimension "version"
@@ -108,14 +108,14 @@ dependencies {
 
     implementation 'androidx.multidex:multidex:2.0.1'
     // Added following to try to resolve compile problem when webview added to project
-    implementation "androidx.versionedparcelable:versionedparcelable:1.1.1"
-    implementation "androidx.lifecycle:lifecycle-runtime:2.6.0"
-    implementation "androidx.core:core:1.9.0"
-    implementation "androidx.drawerlayout:drawerlayout:1.1.1"
-    implementation "androidx.lifecycle:lifecycle-viewmodel:2.6.0"
+    implementation "androidx.versionedparcelable:versionedparcelable:1.2.0"
+    implementation "androidx.lifecycle:lifecycle-runtime:2.7.0"
+    implementation "androidx.core:core:1.12.0"
+    implementation "androidx.drawerlayout:drawerlayout:1.2.0"
+    implementation "androidx.lifecycle:lifecycle-viewmodel:2.7.0"
     implementation "androidx.legacy:legacy-support-core-ui:1.0.0"
-    implementation "androidx.fragment:fragment:1.5.5"
-    implementation 'androidx.work:work-runtime-ktx:2.8.0'
+    implementation "androidx.fragment:fragment:1.6.2"
+    implementation 'androidx.work:work-runtime-ktx:2.9.0'
 
     // These were added by flutter on project creation
     // implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
