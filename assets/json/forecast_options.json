@@ -1,10 +1,10 @@
 {
   "forecasts": [
     {
-      "forecast_name": "wstar_bsratio",
+      "forecast_name": "experimental1",
       "forecast_type": "",
-      "forecast_name_display": "Thermal Updraft Velocity & B/S Ratio",
-      "forecast_description": "A composite plot displaying the Thermal Updraft Velocity contours in colors overlaid by a stipple representing the Buoyancy/Shear Ratio.  The stipple is heavy for B/S Ratios 0-4 and light for B/S Ratios 4-7.  The intent is to mark regions where a small B/S Ratio will make thermals difficult (or impossible) to work, though that depends upon pilot skill and circling radius",
+      "forecast_name_display": "Ht of Critical Updraft Strength (175fpm)",
+      "forecast_description": "This parameter estimates the height at which the average dry updraft strength drops below 175 fpm and is expected to give better quantitative numbers for the maximum cloudless thermalling height than the BL Top height forecast, especially when mixing results from vertical wind shear rather than thermals.  (Note: the present assumptions tend to underpredict the max. thermalling height for dry conditions.) In the presence of clouds the maximum thermalling height may instead be limited by the cloud base. Being for dry thermals, this parameter omits the effect of cloudsuck",
       "forecast_category": "thermal",
       "selectable" : true
     },
@@ -17,6 +17,30 @@
       "selectable" : true
     },
     {
+      "forecast_name": "zsfclclmask",
+      "forecast_type": "",
+      "forecast_name_display": "Cu Cloudbase where CuPotential > 0",
+      "forecast_description": "This plot is a combination of the value of the 'Cumulus Potential for non-extensive puffy cloud' (LCL - which indicates areas where cloud may form) and the 'Lifted Condensation Level' (the level to which humid air must rise to form cloud). It thus depicts the Cumulus Cloudbase at locations where cumulus may form and so alleviates the need to look at both Cumulus Potential and Cumulus Cloudbase plots. Note that the threshold Cumulus Potential should be empirically determined for your site, which has not been done for the UK: it is assumed to approximate to the theoretical value of zero.  For locations where the actual threshold is greater than zero, as is often the case, this depiction will over-estimate the extent of the cumulus region.",
+      "forecast_category": "cloud",
+      "selectable" : true
+    },
+    {
+      "forecast_name": "zblclmask",
+      "forecast_type": "",
+      "forecast_name_display": "OD Cloudbase where ODpotential > 0",
+      "forecast_description": "Combining the previous two parameters, this depicts the OvercastDevelopment (OD) Cloudbase only at locations where the OD Potential parameter is positive.  This single plot can be used, instead of needing to look at both the OD Potential and OD Cloudbase plots, if the threshold OD Potential empirically determined for your site approximately equals the theoretical value of zero.",
+      "forecast_category": "cloud",
+      "selectable" : true
+    },
+    {
+      "forecast_name": "blwind",
+      "forecast_type": "",
+      "forecast_name_display": "BL Avg. Wind",
+      "forecast_description": "The speed and direction of the vector-averaged wind in the BL.  This prediction can be misleading if there is a large change in wind direction through the BL (for a complex wind profile, no single number is an adequate descriptor!).",
+      "forecast_category": "wind",
+      "selectable" : true
+    },
+    {
       "forecast_name": "bsratio",
       "forecast_type": "",
       "forecast_name_display": "Buoyancy/Shear Ratio",
@@ -24,6 +48,15 @@
       "forecast_category": "thermal",
       "selectable" : true
     },
+    {
+      "forecast_name": "wstar_bsratio",
+      "forecast_type": "",
+      "forecast_name_display": "Thermal Updraft Velocity & B/S Ratio",
+      "forecast_description": "A composite plot displaying the Thermal Updraft Velocity contours in colors overlaid by a stipple representing the Buoyancy/Shear Ratio.  The stipple is heavy for B/S Ratios 0-4 and light for B/S Ratios 4-7.  The intent is to mark regions where a small B/S Ratio will make thermals difficult (or impossible) to work, though that depends upon pilot skill and circling radius",
+      "forecast_category": "thermal",
+      "selectable" : true
+    },
+
     {
       "forecast_name": "hwcrit",
       "forecast_type": "full",
@@ -69,14 +102,6 @@
       "forecast_type": "full",
       "forecast_name_display": "Thermal Height Uncertainty",
       "forecast_description": "This parameter estimates the uncertainty (variability) of the BL Top height prediction which can result from meteorological variations.  Specifically, it gives the expected increase of a BL Top height based on a Thermal Index (TI) = 0 criteria should the actual surface temperature be 4 °F warmer than forecast.  Larger values indicate greater uncertainty/variability and thus better thermalling over local 'hot spots' or small-scale topography not resolved by the model.  But larger values also indicate greater sensitivity to error in the predicted surface temperature, so actual conditions have a greater likelihood of differing from those predicted.  Small values often result from the presence of a stable (inversion) layer capping and limiting thermal growth.  This parameter is most easily utilized through relative values, i.e. by first determining a 'typical' value for a location and subsequently noting whether predictions for a given day are for more/less uncertainty than is typical.",
-      "forecast_category": "thermal",
-      "selectable" : true
-    },
-    {
-      "forecast_name": "experimental1",
-      "forecast_type": "",
-      "forecast_name_display": "Ht of Critical Updraft Strength (175fpm)",
-      "forecast_description": "This parameter estimates the height at which the average dry updraft strength drops below 175 fpm and is expected to give better quantitative numbers for the maximum cloudless thermalling height than the BL Top height forecast, especially when mixing results from vertical wind shear rather than thermals.  (Note: the present assumptions tend to underpredict the max. thermalling height for dry conditions.) In the presence of clouds the maximum thermalling height may instead be limited by the cloud base. Being for dry thermals, this parameter omits the effect of cloudsuck",
       "forecast_category": "thermal",
       "selectable" : true
     },
@@ -161,14 +186,6 @@
       "selectable" : true
     },
     {
-      "forecast_name": "blwind",
-      "forecast_type": "",
-      "forecast_name_display": "BL Avg. Wind",
-      "forecast_description": "The speed and direction of the vector-averaged wind in the BL.  This prediction can be misleading if there is a large change in wind direction through the BL (for a complex wind profile, no single number is an adequate descriptor!).",
-      "forecast_category": "wind",
-      "selectable" : true
-    },
-    {
       "forecast_name": "bltopwind",
       "forecast_type": "full",
       "forecast_name_display": "Wind at BL Top",
@@ -225,14 +242,6 @@
       "selectable" : true
     },
     {
-      "forecast_name": "zsfclclmask",
-      "forecast_type": "",
-      "forecast_name_display": "Cu Cloudbase where CuPotential > 0",
-      "forecast_description": "This plot is a combination of the value of the 'Cumulus Potential for non-extensive puffy cloud' (LCL - which indicates areas where cloud may form) and the 'Lifted Condensation Level' (the level to which humid air must rise to form cloud). It thus depicts the Cumulus Cloudbase at locations where cumulus may form and so alleviates the need to look at both Cumulus Potential and Cumulus Cloudbase plots. Note that the threshold Cumulus Potential should be empirically determined for your site, which has not been done for the UK: it is assumed to approximate to the theoretical value of zero.  For locations where the actual threshold is greater than zero, as is often the case, this depiction will over-estimate the extent of the cumulus region.",
-      "forecast_category": "cloud",
-      "selectable" : true
-    },
-    {
       "forecast_name": "zblcldif",
       "forecast_type": "full",
       "forecast_name_display": "OD Potential",
@@ -245,14 +254,6 @@
       "forecast_type": "full",
       "forecast_name_display": "OD Cloudbase (BL CL) MSL",
       "forecast_description": "This height estimates the cloudbase for extensive BL clouds (OvercastDevelopment), if such exist, i.e. if the OvercastDevelopment Potential parameter (above) is positive.  The BL CL (Condensation Level) is based upon the humidity averaged through the BL and is therefore relevant only to extensive clouds (OvercastDevelopment) - unlike the above surface-based LCL which uses a surface humidity.  [This parameter is truncated at 22,000 for plotting.]",
-      "forecast_category": "cloud",
-      "selectable" : true
-    },
-    {
-      "forecast_name": "zblclmask",
-      "forecast_type": "",
-      "forecast_name_display": "OD Cloudbase where ODpotential > 0",
-      "forecast_description": "Combining the previous two parameters, this depicts the OvercastDevelopment (OD) Cloudbase only at locations where the OD Potential parameter is positive.  This single plot can be used, instead of needing to look at both the OD Potential and OD Cloudbase plots, if the threshold OD Potential empirically determined for your site approximately equals the theoretical value of zero.",
       "forecast_category": "cloud",
       "selectable" : true
     },

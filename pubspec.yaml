@@ -14,7 +14,7 @@ description: A new Flutter application.
 version: 1.11.0+41
 
 environment:
-  sdk: ">=3.0.0 <=3.3.0"
+  sdk: ">=3.4.3 <=3.5.0"
 
 dependencies:
 
@@ -25,14 +25,14 @@ dependencies:
   json_serializable: ^6.3.1
   json_annotation: ^4.8.1
   retrofit: '^4.0.3'
-  logger: ^1.1.0  #for logging purpose
+  logger: ^2.3.0  #for logging purpose
   provider: ^6.0.3
   flutter_bloc: ^8.1.3
   equatable: ^2.0.3
   webview_flutter: ^3.0.4
   url_launcher: ^6.1.5
   pinch_zoom: ^1.0.0
-  sprintf: ^6.0.0
+  sprintf: ^7.0.0
   cupertino_back_gesture: ^0.1.0
   cupertino_will_pop_scope: ^1.2.1
   path_provider: ^2.0.14      # for access to image cache manager and downloads directory
@@ -40,11 +40,11 @@ dependencies:
   location: ^4.4.0 # Get location via GPS - also provides permission so overlap with above
   flutter_svg: ^1.1.3   #Used to draw turnpoint icons
   linked_scroll_controller: 0.2.0   # Used for grid view with fixed header and column
-  device_info_plus: ^8.2.2  # Get platform-specific device info. In this case used to get Android version
+  device_info_plus: ^9.0.2  # Get platform-specific device info. In this case used to get Android version
   vector_math: ^2.1.4    # methods used for thermalling sink rate calculations
 
   flutter_cache_manager: ^3.3.0
-  intl: ^0.17.0   # used for date/time formatting
+  intl: ^0.19.0   # used for date/time formatting
   after_layout: ^1.2.0
   floor: ^1.3.0
   # https://pub.dev/packages/csv/install
@@ -57,29 +57,28 @@ dependencies:
   email_launcher: ^1.1.1
   package_info_plus: ^4.0.2  # for getting version name and build number
   email_validator: '^2.1.16'
-  syncfusion_flutter_pdfviewer:
-    path: ../syncfusion_flutter_pdfviewer-21.2.3
+  syncfusion_flutter_pdfviewer: ^26.1.41
+  #  path: ../syncfusion_flutter_pdfviewer-21.2.3
   graphic:  2.2.0
   colorize: any    # used by dio interceptor
 
   mockito: ^5.3.0   # needed for Android dev - not sure why
-  http: ^0.13.5
+  http: ^1.2.1
   workmanager: ^0.5.0   #0.5.0-dev.8   # to help download airports file (used for METAR/TAF)
   flutter_launcher_icons: ^0.10.0
 
-  flutter_map: ^3.0.0 # or the latest version on Pub, current used for rasp map
-  #map_controller: 0.9.1  # used to process/display SUA plus handle state with showing/removing markers
+  flutter_map: ^7.0.2 # or the latest version on Pub, current used for rasp map
+  flutter_map_animations: ^0.7.0
   google_maps_flutter: ^2.2.0 # used for overhead view of turnpoints
-  geojson_vector_slicer:
-    path: ../geojson_vector_slicer
+  flutter_map_geojson: ^1.0.8  # replaced geojson_vector_slicer
+  #geojson_vector_slicer:
+  #  path: ../geojson_vector_slicer
 
   flutter:
     sdk: flutter
  # map_controller:       # library not developed enough for what I need
  #   path: ../map_controller
 
-  # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.5
   firebase_core: ^2.7.1
   firebase_crashlytics: ^3.0.16

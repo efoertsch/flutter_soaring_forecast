@@ -4,7 +4,7 @@ class CustomStyle {
   static TextStyle bold18(BuildContext context) {
     return Theme.of(context)
         .textTheme
-        .bodyText1!
+        .bodyLarge!
         .copyWith(fontSize: 18.0, fontWeight: FontWeight.bold);
   }
 }

@@ -206,7 +206,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
         alignment: Alignment.topLeft,
         child: Text(
           TaskLiterals.TURNPOINTS,
-          style: Theme.of(context).textTheme.subtitle1,
+          style: Theme.of(context).textTheme.titleMedium,
         ),
       ),
     );
@@ -393,10 +393,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
         padding: const EdgeInsets.only(top: 8.0, left: 8.0, right: 8.0),
         child: ElevatedButton(
           style: ElevatedButton.styleFrom(
-            minimumSize: Size(double.infinity,
-                40), // double.infinity is the width and 30 is the height
-            onPrimary: Colors.white,
-            primary: Theme.of(context).colorScheme.primary,
+            foregroundColor: Colors.white, backgroundColor: Theme.of(context).colorScheme.primary, minimumSize: Size(double.infinity,
+                40),
           ),
           onPressed: () {
             _getTurnpointsForTask();
@@ -405,7 +403,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
             TaskLiterals.ADD_TURNPOINTS,
             style: TextStyle(
               color: Colors.white,
-              fontSize: Theme.of(context).textTheme.subtitle1?.fontSize,
+              fontSize: Theme.of(context).textTheme.titleMedium?.fontSize,
             ),
           ),
         ),

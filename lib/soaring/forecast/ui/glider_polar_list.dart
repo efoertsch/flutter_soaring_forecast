@@ -56,7 +56,7 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
   static const String _ENTER_BANK_ANGLE = "Favorite Thermalling Bank Angle";
   static const String _POLAR_HELP = "HELP";
   static const String _EXPERIMENTAL_ESTIMATED_FLIGHT_TEXT =
-      " This is a feature based on Dr. Jack logic that calculates a task's estimated flight time"
+      "This is a feature based on Dr. Jack logic that calculates a task's estimated flight time"
       " and flight information based on the forecast and a glider's min sink rate and polar."
       "\n\nThe values displayed on the underlying screen are based or calculated from XCSOAR glider data."
       "\n\nThe min sink rate is calculated based on Vx/Wx values can give a wildly inaccurate value. "
@@ -78,12 +78,12 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
       "However your gliders min sink rate, calculated from the polar Vx/Wx values (per Reichmann) "
       " is probably not a good value and should be updated from other sources (such as your glider's POH).\n"
       "You can modify most values under the 'Your Glider' column to provide a better calculated task time.\n"
-      "Toggle between metric and American units or reset you glider values back to "
+      "Toggle between metric and American units or reset your glider values back to "
       "the XCSOAR values using the top right menu dropdown";
   static const String _SINK_RATE_INFO =
       "The min. sink rate and speed are initially derived "
       "from the XCSOAR polar Vx/Wx values below but likely they will not give the best estimates."
-      " Perhaps better values can be obtained from you glider POH and entered here. "
+      " Perhaps better values can be obtained from your glider POH and entered here. "
       "Enter values for your glider + pilot weight. The sink rate will be adjusted should you add ballast. "
       "(Note the adjustment will be made when used in the flight calculations. It isn't show on this screen)"
       " Updating the values should lead to a better estimate of your gliders thermalling sink rate.\n"

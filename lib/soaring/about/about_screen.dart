@@ -88,7 +88,7 @@ class _AboutScreenState extends State<AboutScreen> {
                 String version = packageInfo.version;
                 String buildNumber = packageInfo.buildNumber;
                 return Text("Version: ${version}  Build: ${buildNumber}",
-                    style: Theme.of(context).textTheme.subtitle1);
+                    style: Theme.of(context).textTheme.titleMedium);
               } else {
                 return Center(child: Text('Error: could not get build info'));
               }
