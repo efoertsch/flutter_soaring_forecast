@@ -9,6 +9,8 @@ import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     show FEEDBACK_EMAIL_ADDRESS, Feedback;
 import 'package:package_info_plus/package_info_plus.dart';
 
+import '../app/web_launcher.dart';
+
 class AboutScreen extends StatefulWidget {
   const AboutScreen({Key? key}) : super(key: key);
 
@@ -116,14 +118,21 @@ class _AboutScreenState extends State<AboutScreen> {
               child: Html(
                 data: snapshot.data,
                 onLinkTap: (url, _, __, )  async {
-                  Email email = Email(
-                    //to: ['flightservice@soaringforecast.org'],
-                    to: [FEEDBACK_EMAIL_ADDRESS],
-                    subject: Feedback.FEEDBACK_TITLE +
-                        " - " +
-                        Platform.operatingSystem,
-                  );
-                  await EmailLauncher.launch(email);
+                  if (url!.isNotEmpty) {
+                    if (url.contains("privacy-policy")) {
+                      // yeah - hack just to use this launcher
+                      launchWebBrowser("soaringforecast.org","privacy-policy");
+                    } else if (url.startsWith("mailto")) {
+                      Email email = Email(
+                        //to: ['flightservice@soaringforecast.org'],
+                        to: [FEEDBACK_EMAIL_ADDRESS],
+                        subject: Feedback.FEEDBACK_TITLE +
+                            " - " +
+                            Platform.operatingSystem,
+                      );
+                      await EmailLauncher.launch(email);
+                    }
+                  };
                 },
               ),
             ); // snapshot.data  :- get your object which is pass from your downloadData() function

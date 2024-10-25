@@ -58,7 +58,7 @@ Reference obfuscate process at https://docs.flutter.dev/deployment/obfuscate
 2. To create an APK, install from AS terminal (for testing before creating bundle). 
    Note that you will need to uninstall any Play Store version as signing doesn't match
    (Apk gets your laptop signature, Play app bundle gets Googles)
-   flutter build apk --flavor prod --split-per-abi --obfuscate --split-debug-info=./android/release_debug_symbols   
+   flutter build apk --flavor prod --split-per-abi --obfuscate --split-debug-info=./android/release_debug_symbols
 3. Install apk (check - make sure apk path and name correct based on build output ) based on device architecture. 
    Example below is for arm device.
    adb install build/app/outputs/flutter-apk/app-armeabi-v7a-prod-release.apk (match release type to device)
