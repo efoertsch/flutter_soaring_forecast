@@ -24,6 +24,7 @@ const String GEOS_CURRENT =
 //const String WXBRIEF_URL = "https://ffspelabs.leidos.com/Website2/rest/";
 const String WXBRIEF_URL = "https://lmfsweb.afss.com/Website/rest/";
 const String FEEDBACK_EMAIL_ADDRESS = 'ericfoertsch@gmail.com';
+const String PRIVACY_POLICY_URL = 'https://soaringforecast.org/privacy-policy/';
 
 const double metersToFeet = 3.28084;
 const String ft = "ft";
