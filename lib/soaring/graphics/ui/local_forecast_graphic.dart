@@ -180,16 +180,6 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
     );
   }
 
-  Widget _getForecastScreenWidgets() {
-    final widgets = <Widget>[];
-    //widgets.add(_getBeginnerExpertWidget());
-    widgets.add(_getLocalForecastWidget());
-    return Padding(
-      padding: const EdgeInsets.only(left: 8.0, right: 8),
-      child: Column(children: widgets),
-    );
-  }
-
   Widget _getLocalForecastWidget() {
     return BlocConsumer<GraphicBloc, GraphState>(listener: (context, state) {
       if (state is GraphDataState) {
@@ -210,8 +200,9 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
         return  Expanded(
           child: (Column(mainAxisSize: MainAxisSize.max,
               crossAxisAlignment: CrossAxisAlignment.stretch,  children: [
-          Padding(
-            padding: const EdgeInsets.only(left: 8.0, right: 8),
+              Container(
+              color: Colors.grey[300],
+              padding:   const EdgeInsets.only(left: 8.0, right: 8),
             child: TabBar(
                 indicator: BoxDecoration(
                   color: Colors.white,
@@ -276,7 +267,8 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
       child: Column(
       children: [
         _getCloudbaseWidget(pointForecastGraphData),
-        _getThermalUpdraftWidget(pointForecastGraphData)
+        _getThermalUpdraftWidget(pointForecastGraphData),
+        //_getGridDataWidget(pointForecastGraphData)
       ],
             ),
     );
@@ -631,30 +623,30 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
   //   }
   // }
 
-  // Widget _getGridDataWidget(ForecastGraphData forecastGraphData) {
-  //   // get list of hours for which forecasts have been made
-  //   final hours = forecastGraphData.hours;
-  //   List<RowDescription> descriptions = [];
-  //   forecastGraphData.descriptions.forEach((forecast) {
-  //     descriptions.add(RowDescription(
-  //         description: forecast.forecastNameDisplay,
-  //         helpDescription: forecast.forecastDescription));
-  //   });
-  //   return Padding(
-  //     padding: const EdgeInsets.all(8.0),
-  //     child: ScrollableTable(
-  //         columnHeadings: hours,
-  //         dataCellWidth: 60,
-  //         dataCellHeight: 50,
-  //         headingBackgroundColor: Colors.yellow.withOpacity(0.3),
-  //         descriptionColumnWidth: 125,
-  //         descriptionBackgroundColor: Colors.yellow.withOpacity(0.3),
-  //         dataRowsBackgroundColors: [Colors.white, Colors.green.shade50],
-  //         gridData: forecastGraphData.gridData,
-  //         descriptions: descriptions),
-  //   );
-  // }
-  //
+  Widget _getGridDataWidget(PointForecastGraphData pointForecastGraphData) {
+    // get list of hours for which forecasts have been made
+    final hours = pointForecastGraphData.hours;
+    List<RowDescription> descriptions = [];
+    pointForecastGraphData.descriptions.forEach((forecast) {
+      descriptions.add(RowDescription(
+          description: forecast.forecastNameDisplay,
+          helpDescription: forecast.forecastDescription));
+    });
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: ScrollableTable(
+          columnHeadings: hours,
+          dataCellWidth: 60,
+          dataCellHeight: 50,
+          headingBackgroundColor: Colors.yellow.withOpacity(0.3),
+          descriptionColumnWidth: 125,
+          descriptionBackgroundColor: Colors.yellow.withOpacity(0.3),
+          dataRowsBackgroundColors: [Colors.white, Colors.green.shade50],
+          gridData: pointForecastGraphData.gridData,
+          descriptions: descriptions),
+    );
+  }
+
 
   Widget _getBeginnerExpertWidget() {
     return BlocConsumer<GraphicBloc, GraphState>(
