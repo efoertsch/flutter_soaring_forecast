@@ -47,12 +47,16 @@ class ForecastGraphData {
   final String date;
   List<PointForecastGraphData> pointForecastsGraphData;
   final int startIndex;
+  final double maxAltitude;
+  final double maxThermalStrength;
 
   ForecastGraphData(
       {required this.model,
       required this.date,
       required this.pointForecastsGraphData,
-      required this.startIndex});
+      required this.startIndex,
+      required this.maxAltitude,
+      required this.maxThermalStrength});
 }
 
 class PointForecastGraphData {

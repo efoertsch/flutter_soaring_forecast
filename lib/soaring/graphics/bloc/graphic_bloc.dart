@@ -115,40 +115,74 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
 
   Future<void> _generateGraphDataAndEmit(Emitter<GraphState> emit) async {
     List<PointForecastGraphData> pointForecastsGraphData = [];
-    for (var  localForecastPoint in _localForecastPoints!) {
-      PointForecastGraphData? pointForecastGraphData = await _getPointForecastGraphData(
-          localForecastPoint);
+    for (var localForecastPoint in _localForecastPoints!) {
+      PointForecastGraphData? pointForecastGraphData =
+          await _getPointForecastGraphData(localForecastPoint);
       if (pointForecastGraphData != null) {
         pointForecastsGraphData.add(pointForecastGraphData!);
       } else {
         // oh-oh
         emit(GraphErrorState(
-            "Could not get local forecast for ${localForecastPoint
-                .turnpointName}"));
+            "Could not get local forecast for ${localForecastPoint.turnpointName}"));
         return;
       }
     }
+    // now have all the forecast data for 1->n locations
+    // find the max altitude for thermal tops, cu, od
 
-    ForecastGraphData forecastGraphData = ForecastGraphData(model: _selectedModelName!,
-        date: _selectedForecastDate!, pointForecastsGraphData: pointForecastsGraphData,
-    startIndex:_startIndex );
-      emit(GraphDataState(forecastData: forecastGraphData));
-      debugPrint(
-          "Emitted GraphDataState: ${forecastGraphData.model} / ${forecastGraphData.date}");
-    }
+    double maxAltitude = _getMaxAltitude(pointForecastsGraphData);
 
+    double maxThermalStrength = _getMaxThermalStrength(pointForecastsGraphData);
 
-  Future<PointForecastGraphData?> _getPointForecastGraphData(LocalForecastPoint localForecastPoint) async {
+    ForecastGraphData forecastGraphData = ForecastGraphData(
+        model: _selectedModelName!,
+        date: _selectedForecastDate!,
+        pointForecastsGraphData: pointForecastsGraphData,
+        startIndex: _startIndex,
+        maxAltitude: maxAltitude,
+        maxThermalStrength: maxThermalStrength);
+    emit(GraphDataState(forecastData: forecastGraphData));
+    debugPrint(
+        "Emitted GraphDataState: ${forecastGraphData.model} / ${forecastGraphData.date}");
+  }
+
+  double _getMaxAltitude(List<PointForecastGraphData> pointForecastsGraphData) {
+    double maxAltitude = 0;
+    pointForecastsGraphData.forEach((pointForecastGraphData) {
+      pointForecastGraphData.altitudeData.forEach((altitudeList) {
+        if ((altitudeList['value'] as double) > maxAltitude) {
+          maxAltitude = (altitudeList['value'] as double);
+        }
+      });
+    });
+    return maxAltitude + 1000;
+  }
+
+  double _getMaxThermalStrength(
+      List<PointForecastGraphData> pointForecastsGraphData) {
+    double maxThermalStrength = 0;
+    pointForecastsGraphData.forEach((pointForecastGraphData) {
+      pointForecastGraphData.thermalData.forEach((thermalList) {
+        if ((thermalList['value'] as double) > maxThermalStrength) {
+          maxThermalStrength = (thermalList['value'] as double);
+        }
+      });
+    });
+    return maxThermalStrength + 100;
+  }
+
+  Future<PointForecastGraphData?> _getPointForecastGraphData(
+      LocalForecastPoint localForecastPoint) async {
     final List<Map<String, Object>> altitudeForecastData = [];
     final List<Map<String, Object>> thermalForecastData = [];
     final List<Map<String, Object>> allData = [];
     await _getLatLongForecast(
-    _regionName!,
-    _selectedForecastDate!,
-    _selectedModelName!,
-    _forecastTimesParams,
-    localForecastPoint.lat.toString(),
-        localForecastPoint.lng.toString())
+            _regionName!,
+            _selectedForecastDate!,
+            _selectedModelName!,
+            _forecastTimesParams,
+            localForecastPoint.lat.toString(),
+            localForecastPoint.lng.toString())
         .then((response) {
       // The dailyForecast should consist of
       // 1st line spaces
@@ -168,23 +202,23 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
       thermalForecastData.addAll(_getThermalForecast(allData));
     }).onError((error, stackTrace) {
       debugPrint(stackTrace.toString());
-     return null;
+      return null;
     });
     // Wheew! Now we have maps that contain the data for all forecast times
     // We need to sort altitude data so it can be properly graphed
     _sortAltitudeDataByCodeAndTime(altitudeForecastData);
     // and finally combine it all
-    PointForecastGraphData pointForecastsGraphData =  PointForecastGraphData(
+    PointForecastGraphData pointForecastsGraphData = PointForecastGraphData(
         turnpointTitle: localForecastPoint.turnpointName,
         turnpointCode: localForecastPoint.turnpointCode,
-        altitudeData:altitudeForecastData,
+        altitudeData: altitudeForecastData,
         thermalData: thermalForecastData,
         hours: _forecastTimes!,
         descriptions: _combinedForecastList,
         gridData:
-        _createGridData(allData, _forecastTimes!, _combinedForecastList),
+            _createGridData(allData, _forecastTimes!, _combinedForecastList),
         lat: localForecastPoint.lat,
-        lng : localForecastPoint.lng);
+        lng: localForecastPoint.lng);
     return pointForecastsGraphData;
   }
 
