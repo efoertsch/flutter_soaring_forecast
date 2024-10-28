@@ -172,8 +172,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
     return Column(
       children: [
         _widgetForMessages(),
-        //_getForecastScreenWidgets(),
-        _getBeginnerExpertWidget(),
+        Padding(child: _getBeginnerExpertWidget(), padding: EdgeInsets.all(8.0),),
         _getLocalForecastWidget(),
         _getProgressIndicator(),
       ],
@@ -268,7 +267,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
       children: [
         _getCloudbaseWidget(pointForecastGraphData),
         _getThermalUpdraftWidget(pointForecastGraphData),
-        //_getGridDataWidget(pointForecastGraphData)
+        _getGridDataWidget(pointForecastGraphData)
       ],
             ),
     );
@@ -633,7 +632,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
           helpDescription: forecast.forecastDescription));
     });
     return Padding(
-      padding: const EdgeInsets.all(8.0),
+      padding: const EdgeInsets.only(left:8.0, right: 8.0, top:20),
       child: ScrollableTable(
           columnHeadings: hours,
           dataCellWidth: 60,

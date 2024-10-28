@@ -54,29 +54,25 @@ class _ScrollableTableState extends State<ScrollableTable> {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
+    return Container(
       child: Column(
         children: [
-          Expanded(
-            child: TableHead(
-                scrollController: _headController,
-                columnHeadings: widget.columnHeadings,
-                descriptionColumnWidth: widget.descriptionColumnWidth,
-                cellWidth: widget.dataCellWidth,
-                cellHeight: widget.dataCellHeight,
-                backgroundColor: widget.headingBackgroundColor),
-          ),
-          Expanded(
-            child: TableBody(
-                scrollController: _bodyController,
-                descriptionColumnWidth: widget.descriptionColumnWidth,
-                dataCellWidth: widget.dataCellWidth,
-                dataCellHeight: widget.dataCellHeight,
-                descriptionBackgroundColor: widget.descriptionBackgroundColor,
-                dataRowBackgroundColors: widget.dataRowsBackgroundColors,
-                gridData: widget.gridData,
-                descriptions: widget.descriptions),
-          ),
+          TableHead(
+              scrollController: _headController,
+              columnHeadings: widget.columnHeadings,
+              descriptionColumnWidth: widget.descriptionColumnWidth,
+              cellWidth: widget.dataCellWidth,
+              cellHeight: widget.dataCellHeight,
+              backgroundColor: widget.headingBackgroundColor),
+          TableBody(
+              scrollController: _bodyController,
+              descriptionColumnWidth: widget.descriptionColumnWidth,
+              dataCellWidth: widget.dataCellWidth,
+              dataCellHeight: widget.dataCellHeight,
+              descriptionBackgroundColor: widget.descriptionBackgroundColor,
+              dataRowBackgroundColors: widget.dataRowsBackgroundColors,
+              gridData: widget.gridData,
+              descriptions: widget.descriptions),
         ],
       ),
     );
