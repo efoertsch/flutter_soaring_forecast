@@ -6,20 +6,29 @@ class LocalForecastInputData {
   final String date;
   final String model;
   final List<String> times;
-  final double lat;
-  final double lng;
-  final String? turnpointName;
-  final String? turnpointCode;
+  List<LocalForecastPoint> localForecastPoints;
+  final int startIndex;
 
   LocalForecastInputData(
       {required this.region,
       required this.date,
       required this.model,
       required this.times,
-      required this.lat,
+      required this.localForecastPoints,
+      this.startIndex = -1});
+}
+
+class LocalForecastPoint {
+  final double lat;
+  final double lng;
+  final String? turnpointName;
+  final String? turnpointCode;
+
+  LocalForecastPoint(
+      {required this.lat,
       required this.lng,
-      this.turnpointName = null,
-      this.turnpointCode = null});
+      this.turnpointName,
+      this.turnpointCode});
 }
 
 class ForecastData {
@@ -36,6 +45,17 @@ class ForecastData {
 class ForecastGraphData {
   final String model;
   final String date;
+  List<PointForecastGraphData> pointForecastsGraphData;
+  final int startIndex;
+
+  ForecastGraphData(
+      {required this.model,
+      required this.date,
+      required this.pointForecastsGraphData,
+      required this.startIndex});
+}
+
+class PointForecastGraphData {
   final String? turnpointTitle;
   final String? turnpointCode;
   final double? lat;
@@ -46,10 +66,8 @@ class ForecastGraphData {
   final List<Forecast> descriptions;
   final List<List<String>> gridData;
 
-  ForecastGraphData(
-      {required this.model,
-      required this.date,
-      this.turnpointTitle = null,
+  PointForecastGraphData(
+      {this.turnpointTitle = null,
       this.turnpointCode = null,
       required this.altitudeData,
       required this.thermalData,
@@ -63,6 +81,7 @@ class ForecastGraphData {
 class LocalForecastOutputData {
   final String model;
   final String date;
+
   LocalForecastOutputData({
     required this.model,
     required this.date,

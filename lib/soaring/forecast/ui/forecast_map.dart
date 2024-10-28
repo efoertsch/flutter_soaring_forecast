@@ -92,7 +92,6 @@ class ForecastMapState extends State<ForecastMap>
     super.initState();
     _mapController = AnimatedMapController(vsync: this);
     suaGeoJsonParser = SuaGeoJsonHandler(context);
-
   }
 
   @override
@@ -494,7 +493,8 @@ class ForecastMapState extends State<ForecastMap>
             latLng:
                 LatLng(taskTurnpoint.latitudeDeg, taskTurnpoint.longitudeDeg),
             turnpointName: taskTurnpoint.title,
-            turnpointCode: taskTurnpoint.code);
+            turnpointCode: taskTurnpoint.code,
+            forTask: true);
       },
       child: Container(
           color: Colors.white,
@@ -746,11 +746,15 @@ class ForecastMapState extends State<ForecastMap>
   _getLocalForecast(
       {required LatLng latLng,
       String? turnpointName = null,
-      String? turnpointCode}) {
+      String? turnpointCode, bool forTask = false}) {
     widget.stopAnimation();
     // debugPrint('Local forecast requested at : ${latLng.latitude.toString()}  :'
     //     '  ${latLng.longitude.toString()}');
-    _sendEvent(DisplayLocalForecastEvent(latLng, turnpointName, turnpointCode));
+    _sendEvent(DisplayLocalForecastEvent(
+        latLng: latLng,
+        turnpointName: turnpointName,
+        turnpointCode: turnpointCode,
+        forTask: forTask));
   }
 
   void _sendEvent(RaspDataEvent event) {

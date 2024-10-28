@@ -594,15 +594,32 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
 
   void _displayLocalForecast(
       DisplayLocalForecastEvent event, Emitter<RaspDataState> emit) async {
+    List<LocalForecastPoint> localForecastPoints = [];
+    int startIndex = 0;
+    if (event.forTask && _taskId > -1){
+      // ok - a task is displayed and a local forecast was requested on one of the
+      // task turnpoints so get assemble list of all turnpoints
+      List<TaskTurnpoint> taskTurnpoints  = await _getTaskTurnpoints(_taskId);
+       localForecastPoints.addAll(taskTurnpoints.map((taskTurnpoint) => LocalForecastPoint(lat:taskTurnpoint.latitudeDeg,
+       lng: taskTurnpoint.longitudeDeg, turnpointName: taskTurnpoint.title, turnpointCode: taskTurnpoint.code)).toList());
+       // set the turnpoint index to mark the tapped turnpoint;
+        startIndex  = localForecastPoints.indexWhere((localForecastPoint) =>
+          localForecastPoint.lat == event.latLng.latitude &&
+              localForecastPoint.lng == event.latLng.longitude );
+    } else {
+      localForecastPoints.add(
+          LocalForecastPoint(lat: event.latLng.latitude,
+              lng: event.latLng.longitude,
+              turnpointName: event.turnpointName,
+              turnpointCode: event.turnpointCode));
+    }
     final localForecastGraphData = LocalForecastInputData(
         region: _region!,
         date: _selectedForecastDate!,
         model: _selectedModelName!,
         times: _forecastTimes!,
-        lat: event.latLng.latitude,
-        lng: event.latLng.longitude,
-        turnpointName: event.turnpointName,
-        turnpointCode: event.turnpointCode);
+        localForecastPoints: localForecastPoints,
+    startIndex: startIndex);
     emit(DisplayLocalForecastGraphState(localForecastGraphData));
   }
 

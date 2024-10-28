@@ -61,11 +61,13 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
   ModelDates? _selectedModelDates;
   List<String>? _forecastDates;
   List<String>? _forecastTimes;
+  List<LocalForecastPoint>? _localForecastPoints;
   late double _lat;
   late double _lng;
   String? _turnpointName;
   String? _turnpointCode;
   ModelDateDetails? _beginnerModeModelDataDetails;
+  int _startIndex = 0;
 
   static final _options = <Forecast>[];
 
@@ -107,23 +109,46 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
     _selectedModelName = inputData.model;
     _selectedForecastDate = inputData.date;
     _regionName = inputData.region.name;
-    _lat = inputData.lat;
-    _lng = inputData.lng;
-    _turnpointName = inputData.turnpointName;
-    _turnpointCode = inputData.turnpointCode;
+    _localForecastPoints = inputData.localForecastPoints;
+    _startIndex = inputData.startIndex;
   }
 
   Future<void> _generateGraphDataAndEmit(Emitter<GraphState> emit) async {
+    List<PointForecastGraphData> pointForecastsGraphData = [];
+    for (var  localForecastPoint in _localForecastPoints!) {
+      PointForecastGraphData? pointForecastGraphData = await _getPointForecastGraphData(
+          localForecastPoint);
+      if (pointForecastGraphData != null) {
+        pointForecastsGraphData.add(pointForecastGraphData!);
+      } else {
+        // oh-oh
+        emit(GraphErrorState(
+            "Could not get local forecast for ${localForecastPoint
+                .turnpointName}"));
+        return;
+      }
+    }
+
+    ForecastGraphData forecastGraphData = ForecastGraphData(model: _selectedModelName!,
+        date: _selectedForecastDate!, pointForecastsGraphData: pointForecastsGraphData,
+    startIndex:_startIndex );
+      emit(GraphDataState(forecastData: forecastGraphData));
+      debugPrint(
+          "Emitted GraphDataState: ${forecastGraphData.model} / ${forecastGraphData.date}");
+    }
+
+
+  Future<PointForecastGraphData?> _getPointForecastGraphData(LocalForecastPoint localForecastPoint) async {
     final List<Map<String, Object>> altitudeForecastData = [];
     final List<Map<String, Object>> thermalForecastData = [];
     final List<Map<String, Object>> allData = [];
     await _getLatLongForecast(
-            _regionName!,
-            _selectedForecastDate!,
-            _selectedModelName!,
-            _forecastTimesParams,
-            _lat.toString(),
-            _lng.toString())
+    _regionName!,
+    _selectedForecastDate!,
+    _selectedModelName!,
+    _forecastTimesParams,
+    localForecastPoint.lat.toString(),
+        localForecastPoint.lng.toString())
         .then((response) {
       // The dailyForecast should consist of
       // 1st line spaces
@@ -134,37 +159,33 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
       // allData contains a map of all hourly forecasts for the day
       // so now we need to extract the forecasts used for the graphing
       // thermal height, Cu and OD cloud base and thermal strength
+      // allData.forEach((map) {
+      //   map.entries.forEach((element) {
+      //     print("${element.key} : ${element.value.toString()}");
+      //   });
+      // });
       altitudeForecastData.addAll(_getAltitudeForecasts(allData));
       thermalForecastData.addAll(_getThermalForecast(allData));
     }).onError((error, stackTrace) {
       debugPrint(stackTrace.toString());
-      emit(GraphErrorState(error.toString()));
+     return null;
     });
     // Wheew! Now we have maps that contain the data for all forecast times
     // We need to sort altitude data so it can be properly graphed
     _sortAltitudeDataByCodeAndTime(altitudeForecastData);
     // and finally combine it all
-    final forecastGraphData = ForecastGraphData(
-        date: _selectedForecastDate!,
-        model: _selectedModelName!,
-        turnpointTitle: _turnpointName,
-        turnpointCode: _turnpointCode,
-        lat: _lat,
-        lng: _lng,
-        altitudeData: altitudeForecastData,
+    PointForecastGraphData pointForecastsGraphData =  PointForecastGraphData(
+        turnpointTitle: localForecastPoint.turnpointName,
+        turnpointCode: localForecastPoint.turnpointCode,
+        altitudeData:altitudeForecastData,
         thermalData: thermalForecastData,
         hours: _forecastTimes!,
         descriptions: _combinedForecastList,
         gridData:
-            _createGridData(allData, _forecastTimes!, _combinedForecastList));
-    // allData.forEach((map) {
-    //   map.entries.forEach((element) {
-    //     print("${element.key} : ${element.value.toString()}");
-    //   });
-    // });
-    emit(GraphDataState(forecastData: forecastGraphData));
-    debugPrint(
-        "Emitted GraphDataState: ${forecastGraphData.model} / ${forecastGraphData.date}");
+        _createGridData(allData, _forecastTimes!, _combinedForecastList),
+        lat: localForecastPoint.lat,
+        lng : localForecastPoint.lng);
+    return pointForecastsGraphData;
   }
 
   // Compose space separated list of forecast parameters for sending to RASP api
