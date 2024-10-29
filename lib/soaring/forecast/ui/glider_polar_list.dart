@@ -269,17 +269,20 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
   }
 
   Widget _getBody() {
-    return SingleChildScrollView(
-      child: Column(
-        children: [
-          _getGliderList(),
-          _displayGliderDetail(),
-          _getIsWorkingIndicator(),
-          _getErrorMessagesWidget(),
-          _getMiscStatesHandlerWidget(),
-        ],
+    return Stack(
+      children: [SingleChildScrollView(
+        child: Column(
+          children: [
+            _getGliderList(),
+            _displayGliderDetail(),
+
+            _getErrorMessagesWidget(),
+            _getMiscStatesHandlerWidget(),
+          ],
+        ),
       ),
-    );
+      _getIsWorkingIndicator(),
+    ]);
   }
 
   Widget _getGliderList() {

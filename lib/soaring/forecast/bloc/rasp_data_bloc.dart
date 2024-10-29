@@ -357,7 +357,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
   /// _selectedForecastDate  2019-12-12
   /// _selectedModelName  gfs
   /// _selectedForecast  wstart
-  /// _forecastTimes   [0900,1000,...]
+  /// _forecastTimes   [1000,1100,...]
   void _getForecastImages() {
     String imageUrl;
     SoaringForecastImage soaringForecastBodyImage;

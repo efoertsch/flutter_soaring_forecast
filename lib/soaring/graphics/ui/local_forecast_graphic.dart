@@ -50,8 +50,8 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
   final shapesOfPoints = <PointShape>[];
   final annotationsOfPoints = <Annotation>[];
   final crossHairGuide = [
-    PaintStyle(strokeColor: Colors.black38),
-    PaintStyle(strokeColor: Colors.black38)
+    PaintStyle(strokeColor: Colors.black38, strokeWidth: 2),
+    PaintStyle(strokeColor: Colors.black38, strokeWidth: 2)
   ];
   ForecastGraphData? forecastGraphData;
 
@@ -107,10 +107,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
   }
 
   SafeArea _buildSafeArea(BuildContext context) {
-    _screenWidth = MediaQuery
-        .of(context)
-        .size
-        .width;
+    _screenWidth = MediaQuery.of(context).size.width;
     return SafeArea(
       child: Scaffold(
         appBar: getAppBar(context),
@@ -160,7 +157,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
     switch (value) {
       case StandardLiterals.expertMode:
       case StandardLiterals.beginnerMode:
-      // toggle flag
+        // toggle flag
         setState(() {
           _beginnerMode = !_beginnerMode;
           _sendEvent(BeginnerModeEvent(_beginnerMode));
@@ -172,12 +169,16 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
   }
 
   Widget _getBody() {
-    return Column(
+    return Stack(
       children: [
-        _widgetForMessages(),
-        Padding(
-          child: _getBeginnerExpertWidget(), padding: EdgeInsets.all(8.0),),
-        _getLocalForecastWidget(),
+        Column(children: [
+          _widgetForMessages(),
+          Padding(
+            child: _getBeginnerExpertWidget(),
+            padding: EdgeInsets.all(8.0),
+          ),
+          _getLocalForecastWidget(),
+        ]),
         _getProgressIndicator(),
       ],
     );
@@ -193,7 +194,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
     }, builder: (context, state) {
       if (state is GraphDataState) {
         List<Tab> forecastTabs =
-        _getLocalForecastTabs(state.forecastData.pointForecastsGraphData);
+            _getLocalForecastTabs(state.forecastData.pointForecastsGraphData);
         List<Widget> tabBarWidgets = _getLocalForecastTabView(
             state.forecastData.pointForecastsGraphData,
             state.forecastData.maxAltitude,
@@ -203,8 +204,10 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
             vsync: this,
             initialIndex: state.forecastData.startIndex);
         return Expanded(
-          child: (Column(mainAxisSize: MainAxisSize.max,
-              crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          child: (Column(
+              mainAxisSize: MainAxisSize.max,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
                 Container(
                   color: Colors.grey[300],
                   padding: const EdgeInsets.only(left: 8.0, right: 8),
@@ -221,8 +224,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
                 ),
                 Expanded(
                     child: TabBarView(
-                        controller: _tabController,
-                        children: tabBarWidgets))
+                        controller: _tabController, children: tabBarWidgets))
               ])),
         );
       }
@@ -243,8 +245,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
     var text;
     if (pointForecastGraphData.turnpointTitle != null) {
       text =
-      ("${pointForecastGraphData.turnpointTitle} (${pointForecastGraphData
-          .turnpointCode}) ");
+          ("${pointForecastGraphData.turnpointTitle} (${pointForecastGraphData.turnpointCode}) ");
     } else if (pointForecastGraphData.lat != null &&
         pointForecastGraphData.lng != null) {
       text = pointForecastGraphData.lat!.toStringAsFixed(5) +
@@ -264,17 +265,15 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
       double maxThermalStrength) {
     List<Widget> forecastGraphWidgets = [];
     pointForecastsGraphData.forEach((pointForecastGraphData) {
-      forecastGraphWidgets.add(_forecastGraphWidget(pointForecastGraphData,
-          maxAltitude,
-          maxThermalStrength));
+      forecastGraphWidgets.add(_forecastGraphWidget(
+          pointForecastGraphData, maxAltitude, maxThermalStrength));
     });
     return forecastGraphWidgets;
   }
 
   ///TODO - Expanded should be under Column, Row, or Flex.
   Widget _forecastGraphWidget(PointForecastGraphData pointForecastGraphData,
-      double maxAltitude,
-      double maxThermalStrength) {
+      double maxAltitude, double maxThermalStrength) {
     return SingleChildScrollView(
       child: Column(
         children: [
@@ -287,11 +286,12 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
   }
 
 // Hmmm, graph doesn't redraw on first previous or next click
-  Widget _getCloudbaseWidget(PointForecastGraphData pointForecastGraphData, double maxAltitude) {
+  Widget _getCloudbaseWidget(
+      PointForecastGraphData pointForecastGraphData, double maxAltitude) {
     _graphKey = Object();
     _checkForCuAndOdInForecast(pointForecastGraphData.altitudeData);
     // print(" ----------   altitude data -------------");
-    // state.forecastData.altitudeData.forEach((map) {
+    // (pointForecastGraphData.altitudeData.forEach((map) {
     //   map.forEach((key, value) {
     //     print("${key} : ${value.toString()}");
     //   });
@@ -317,8 +317,10 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
           ),
           'value': Variable(
             accessor: (Map map) => map['value'] as num,
-            scale:
-            LinearScale(formatter: (value) => '${value.toInt()}', min: 0, max:maxAltitude),
+            scale: LinearScale(
+                formatter: (value) => '${value.toInt()}',
+                min: 0,
+                max: maxAltitude),
           ),
           'name': Variable(
             accessor: (Map map) => map['name'] as String,
@@ -343,7 +345,12 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
           ),
         ],
         axes: [
-          Defaults.horizontalAxis..label = null,
+          Defaults.horizontalAxis
+            ..label = (LabelStyle(
+                textStyle: TextStyle(
+                    color: Colors.black,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold))),
           Defaults.verticalAxis
             ..label = (LabelStyle(
                 textStyle: TextStyle(
@@ -360,8 +367,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
     );
   }
 
-  Widget _getThermalUpdraftWidget(
-      PointForecastGraphData pointForecastGraphData,
+  Widget _getThermalUpdraftWidget(PointForecastGraphData pointForecastGraphData,
       double maxThermalStrength) {
     _graphKey = Object();
     _checkForCuAndOdInForecast(pointForecastGraphData.altitudeData);
@@ -390,8 +396,10 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
           ),
           'value': Variable(
             accessor: (Map map) => map['value'] as num,
-            scale:
-            LinearScale(formatter: (value) => '${value.toInt()}', min: 0, max:maxThermalStrength),
+            scale: LinearScale(
+                formatter: (value) => '${value.toInt()}',
+                min: 0,
+                max: maxThermalStrength),
           ),
         },
         coord: RectCoord(color: const Color(0xffdddddd)),
@@ -428,7 +436,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
             // same as thermal in top graph
             xPosIndex: 0,
             yPosIndex: 0,
-            yOffset: 100),
+            yOffset: 125),
       ),
     );
   }
@@ -500,12 +508,13 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
     }
   }
 
-  List<Annotation> _getGraphLegend({required String label,
-    required double initialOffset,
-    required int colorIndex,
-    required int xPosIndex,
-    required double yPosIndex,
-    required double yOffset}) {
+  List<Annotation> _getGraphLegend(
+      {required String label,
+      required double initialOffset,
+      required int colorIndex,
+      required int xPosIndex,
+      required double yPosIndex,
+      required double yOffset}) {
     var annotations = <Annotation>[
       _getCustomAnnotation(
         initialOffset: initialOffset,
@@ -524,24 +533,22 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
     return annotations;
   }
 
-  CustomAnnotation _getCustomAnnotation({required double initialOffset,
-    required int colorIndex,
-    required int xPosIndex,
-    required double yOffset,
-    required double yPosIndex}) {
+  CustomAnnotation _getCustomAnnotation(
+      {required double initialOffset,
+      required int colorIndex,
+      required int xPosIndex,
+      required double yOffset,
+      required double yPosIndex}) {
     return CustomAnnotation(
-      renderer: (offset, size) =>
-      [
+      renderer: (offset, size) => [
         RectElement(
           rect: Rect.fromLTWH(offset.dx - 3, offset.dy - 5, 10, 10),
           style: PaintStyle(fillColor: colorsOfPoints[colorIndex]),
         )
       ],
-      anchor: (size) =>
-          Offset(
-              initialOffset +
-                  (xPosIndex == 0 ? 0 : (size.width / 2) * xPosIndex),
-              yOffset + 12 * yPosIndex),
+      anchor: (size) => Offset(
+          initialOffset + (xPosIndex == 0 ? 0 : (size.width / 2) * xPosIndex),
+          yOffset + 12 * yPosIndex),
     );
   }
 
@@ -554,22 +561,21 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
 //       yOffset + 12 * yPosIndex),
 // );
 
-  TagAnnotation _getTagAnnotation({required double initialOffset,
-    required String label,
-    required int xPosIndex,
-    required double yOffset,
-    required double yPosIndex}) {
+  TagAnnotation _getTagAnnotation(
+      {required double initialOffset,
+      required String label,
+      required int xPosIndex,
+      required double yOffset,
+      required double yPosIndex}) {
     return TagAnnotation(
       label: Label(
         label,
         LabelStyle(
             textStyle: textStyleBlackFontSize13, align: Alignment.centerRight),
       ),
-      anchor: (size) =>
-          Offset(
-              initialOffset +
-                  (xPosIndex == 0 ? 0 : (size.width / 2) * xPosIndex),
-              yOffset + 12 * yPosIndex),
+      anchor: (size) => Offset(
+          initialOffset + (xPosIndex == 0 ? 0 : (size.width / 2) * xPosIndex),
+          yOffset + 12 * yPosIndex),
     );
   }
 
@@ -587,13 +593,14 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
         if (state is GraphWorkingState) {
           if (state.working) {
             return Container(
+
               child: AbsorbPointer(
                   absorbing: true,
                   child: CircularProgressIndicator(
-                    color: Colors.blue,
+                    color: Colors.white,
                   )),
               alignment: Alignment.center,
-              color: Colors.transparent,
+              color: Colors.black26,
             );
           }
         }
@@ -662,7 +669,6 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
     );
   }
 
-
   Widget _getBeginnerExpertWidget() {
     return BlocConsumer<GraphicBloc, GraphState>(
       listener: (context, state) {
@@ -684,7 +690,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
           _selectedForecastDate = state.selectedForecastDate;
           _shortDOWs = reformatDatesToDOW(state.forecastDates);
           _selectedForecastDOW = _shortDOWs[
-          state.forecastDates.indexOf(state.selectedForecastDate)];
+              state.forecastDates.indexOf(state.selectedForecastDate)];
         }
       },
       buildWhen: (previous, current) {
@@ -715,7 +721,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
           setState(() {});
         }),
         displayText:
-        "(${_selectedModelName.toUpperCase()}) $_selectedForecastDOW ");
+            "(${_selectedModelName.toUpperCase()}) $_selectedForecastDOW ");
   }
 
   Widget _getForecastModelsAndDates() {
@@ -742,7 +748,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
                 forecastDates: _shortDOWs,
                 onForecastDateChange: (String value) {
                   final selectedForecastDate =
-                  _forecastDates[_shortDOWs.indexOf(value)];
+                      _forecastDates[_shortDOWs.indexOf(value)];
                   _sendEvent(SelectedForecastDateEvent(selectedForecastDate));
                 },
               ),
