@@ -61,17 +61,17 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
   ModelDates? _selectedModelDates;
   List<String>? _forecastDates;
   List<String>? _forecastTimes;
-  List<LocalForecastPoint>? _localForecastPoints;
+  List<LocalForecastPoint> _localForecastPoints = [];
   late double _lat;
   late double _lng;
-  String? _turnpointName;
-  String? _turnpointCode;
   ModelDateDetails? _beginnerModeModelDataDetails;
   int _startIndex = 0;
 
   static final _options = <Forecast>[];
 
   bool _beginnerModeSelected = true;
+
+  int _currentLocationIndex = 0;
 
   GraphicBloc({required this.repository}) : super(GraphicInitialState()) {
     on<LocalForecastDataEvent>(_getLocalForecastData);
@@ -80,6 +80,7 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
     on<ForecastDateSwitchEvent>(_processForecastDateSwitchEvent);
     on<BeginnerModeEvent>(_processBeginnerModeEvent);
     on<SetLocationAsFavoriteEvent>(_setLocationAsFavorite);
+    on<SetLocationTabIndex>(_setLocationIndex);
   }
 
   FutureOr<void> _getLocalForecastData(
@@ -111,14 +112,15 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
     _regionName = inputData.region.name;
     _localForecastPoints = inputData.localForecastPoints;
     _startIndex = inputData.startIndex;
+    _currentLocationIndex = _startIndex;
   }
 
   Future<void> _generateGraphDataAndEmit(Emitter<GraphState> emit) async {
     List<PointForecastGraphData> pointForecastsGraphData = [];
     for (var localForecastPoint in _localForecastPoints!) {
       PointForecastGraphData? pointForecastGraphData =
-          await _getPointForecastGraphData(localForecastPoint);
-      if (pointForecastGraphData != null) {
+          await _getPointForecastGraphData(localForecastPoint, emit);
+      if (pointForecastGraphData != null ) {
         pointForecastsGraphData.add(pointForecastGraphData!);
       } else {
         // oh-oh
@@ -172,7 +174,7 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
   }
 
   Future<PointForecastGraphData?> _getPointForecastGraphData(
-      LocalForecastPoint localForecastPoint) async {
+      LocalForecastPoint localForecastPoint, Emitter<GraphState> emit) async {
     final List<Map<String, Object>> altitudeForecastData = [];
     final List<Map<String, Object>> thermalForecastData = [];
     final List<Map<String, Object>> allData = [];
@@ -189,6 +191,13 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
       // 2nd and subsequent lines
       // space separated list forecast param , forecast for each hour
       // eg. experimental1   1000  2000 3000
+      // first check if you got any lines with "extract.blipspot read_datafile_pt ERROR"
+      // which likely indicate the forecast is being updated
+      if (response.any((line) => line.contains("extract.blipspot"))){
+        emit(GraphErrorState("Looks like the this forecast is being updated. Please retry again in a couple minutes"));
+        return null;
+      }
+
       allData.addAll(_extractDailyForecastValues(response));
       // allData contains a map of all hourly forecasts for the day
       // so now we need to extract the forecasts used for the graphing
@@ -660,11 +669,16 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
 
   FutureOr<void> _setLocationAsFavorite(
       SetLocationAsFavoriteEvent event, Emitter<GraphState> emit) {
+    LocalForecastPoint localForecastPoint = _localForecastPoints[ _currentLocationIndex <  _localForecastPoints!.length ? _currentLocationIndex : 0];
     var localForecastFavorite = LocalForecastFavorite(
-        turnpointName: _turnpointName,
-        turnpointCode: _turnpointCode,
-        lat: _lat,
-        lng: _lng);
+        turnpointName: localForecastPoint.turnpointName,
+        turnpointCode: localForecastPoint.turnpointCode,
+        lat: localForecastPoint.lat,
+        lng: localForecastPoint.lng);
     repository.storeLocalForecastFavorite(localForecastFavorite);
+  }
+
+  FutureOr<void> _setLocationIndex(SetLocationTabIndex event, Emitter<GraphState> emit) {
+    _currentLocationIndex = event.index;
   }
 }

@@ -203,6 +203,10 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
             length: tabBarWidgets.length,
             vsync: this,
             initialIndex: state.forecastData.startIndex);
+        _tabController.addListener((){
+          _sendEvent(SetLocationTabIndex(_tabController.index));
+        });
+
         return Expanded(
           child: (Column(
               mainAxisSize: MainAxisSize.max,
