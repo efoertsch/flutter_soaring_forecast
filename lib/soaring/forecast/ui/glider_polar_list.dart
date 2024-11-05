@@ -509,7 +509,7 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
             _formattedTextCell("Min Sink Rate " + _sinkRateUnits),
             InkWell(
               child: _formattedTextCell(
-                  _customGlider!.minSinkRate.toStringAsFixed(2)),
+                  _customGlider!.minSinkRate.toStringAsFixed(2),modifiable: true),
               onTap: (() {
                 _updateGliderValueDialog(
                     label: "Min Sink Rate " + _sinkRateUnits,
@@ -534,7 +534,7 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
             _formattedTextCell("Min Sink Speed " + _velocityUnits),
             InkWell(
               child: _formattedTextCell(
-                  _customGlider!.minSinkSpeed.toStringAsFixed(0)),
+                  _customGlider!.minSinkSpeed.toStringAsFixed(0), modifiable: true),
               onTap: (() {
                 _updateGliderValueDialog(
                     label: "Min Sink Speed " + _velocityUnits,
@@ -560,7 +560,7 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
               _formattedTextCell("Thermal Bank Angle"),
               InkWell(
                 child: _formattedTextCell(
-                    _customGlider!.bankAngle.toStringAsFixed(0)),
+                    _customGlider!.bankAngle.toStringAsFixed(0), modifiable: true),
                 onTap: (() {
                   _updateGliderValueDialog(
                       label: "Thermal Bank Angle ",
@@ -610,7 +610,7 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
           children: [
             _formattedTextCell("V1 " + _velocityUnits),
             InkWell(
-              child: _formattedTextCell(_customGlider!.v1.toStringAsFixed(1)),
+              child: _formattedTextCell(_customGlider!.v1.toStringAsFixed(1), modifiable: true),
               onTap: (() {
                 _updateGliderValueDialog(
                     label: "V1 " + _velocityUnits,
@@ -635,7 +635,7 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
         TableRow(children: [
           _formattedTextCell("W1 " + _sinkRateUnits),
           InkWell(
-            child: _formattedTextCell(_customGlider!.w1.toStringAsFixed(2)),
+            child: _formattedTextCell(_customGlider!.w1.toStringAsFixed(2), modifiable: true),
             onTap: (() {
               _updateGliderValueDialog(
                   label: "W1 " + _sinkRateUnits,
@@ -660,7 +660,7 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
           children: [
             _formattedTextCell("V2 " + _velocityUnits),
             InkWell(
-              child: _formattedTextCell(_customGlider!.v2.toStringAsFixed(1)),
+              child: _formattedTextCell(_customGlider!.v2.toStringAsFixed(1), modifiable: true),
               onTap: (() {
                 _updateGliderValueDialog(
                     label: "V2 " + _velocityUnits,
@@ -686,7 +686,7 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
           children: [
             _formattedTextCell("W2 " + _sinkRateUnits),
             InkWell(
-              child: _formattedTextCell(_customGlider!.w2.toStringAsFixed(2)),
+              child: _formattedTextCell(_customGlider!.w2.toStringAsFixed(2), modifiable: true),
               onTap: (() {
                 _updateGliderValueDialog(
                     label: "W2 " + _sinkRateUnits,
@@ -712,7 +712,7 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
           children: [
             _formattedTextCell("V3 " + _velocityUnits),
             InkWell(
-              child: _formattedTextCell(_customGlider!.v3.toStringAsFixed(1)),
+              child: _formattedTextCell(_customGlider!.v3.toStringAsFixed(1), modifiable: true),
               onTap: (() {
                 _updateGliderValueDialog(
                     label: "V3 " + _velocityUnits,
@@ -738,7 +738,7 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
           children: [
             _formattedTextCell("W3 " + _sinkRateUnits),
             InkWell(
-              child: _formattedTextCell(_customGlider!.w3.toStringAsFixed(2)),
+              child: _formattedTextCell(_customGlider!.w3.toStringAsFixed(2), modifiable: true),
               onTap: (() {
                 _updateGliderValueDialog(
                     label: "W3 " + _sinkRateUnits,
@@ -780,7 +780,7 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
             _formattedTextCell("Glider Mass " + massLabel),
             InkWell(
               child: _formattedTextCell(
-                  _customGlider!.gliderEmptyMass.toStringAsFixed(1)),
+                  _customGlider!.gliderEmptyMass.toStringAsFixed(1), modifiable: true),
               onTap: (() {
                 _updateGliderValueDialog(
                     label: "Glider Mass " + massLabel,
@@ -807,7 +807,7 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
             _formattedTextCell("Pilot Mass " + massLabel),
             InkWell(
               child: _formattedTextCell(
-                  _customGlider!.pilotMass.toStringAsFixed(1)),
+                  _customGlider!.pilotMass.toStringAsFixed(1), modifiable: true),
               onTap: (() {
                 _updateGliderValueDialog(
                     label: "Pilot Mass " + massLabel,
@@ -840,7 +840,7 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
             _formattedTextCell("On Board Ballast" + massLabel),
             InkWell(
               child: _formattedTextCell(
-                  _customGlider!.loadedBallast.toStringAsFixed(1)),
+                  _customGlider!.loadedBallast.toStringAsFixed(1), modifiable: true),
               onTap: (() {
                 _updateGliderValueDialog(
                     label: "On Board Ballast " + massLabel,
@@ -893,9 +893,19 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
     );
   }
 
-  Widget _formattedTextCell(String? text) {
+  Widget _formattedTextCell(String? text, {bool modifiable = false}) {
+    if (modifiable){
+      return Ink(height: 50,
+          color: Colors.green[50],
+        child: Container(
+          alignment: Alignment.center,
+          child: Text(text ?? "",
+            style: textStyleBoldBlackFontSize18, textAlign: TextAlign.center),
+        ),
+      );
+    }
     return Text(text ?? "",
-        style: textStyleBoldBlackFontSize18, textAlign: TextAlign.center);
+        style:textStyleBoldBlackFontSize18, textAlign: TextAlign.center);
   }
 
   Widget _getIsWorkingIndicator() {
