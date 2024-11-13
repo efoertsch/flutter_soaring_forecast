@@ -24,8 +24,10 @@ class GliderPolarState extends GliderState {
   final String sinkRateUnits;
   final String velocityUnits;
   final String massUnits;
+  final String distanceUnits;
 
-  GliderPolarState(this.defaultPolar, this.customPolar,this.displayUnits, this.sinkRateUnits,this.velocityUnits,this.massUnits);
+  GliderPolarState(this.defaultPolar, this.customPolar,this.displayUnits, this.sinkRateUnits,this.velocityUnits,this.massUnits,
+      this.distanceUnits);
 }
 
 class GliderPolarIsWorkingState extends GliderState {

@@ -1374,17 +1374,14 @@ class Repository {
     Glider? gliderPolar;
     await getCustomGliders();
     if (_customGliders!.gliders != null) {
-      gliderPolar = _customGliders!.gliders?.firstWhereOrNull(
+      // remove old entry if there was one
+       _customGliders!.gliders?.removeWhere(
           (savedGlider) => savedGlider.glider == customPolar.glider);
-      if (gliderPolar == null) {
-        // customPolar not in list so add it
+     // and add updated glider to list
         _customGliders!.gliders!.add(customPolar);
-      } else {
-        // customPolar already in list so update it with new info
-        gliderPolar.updatePolar(customPolar);
       }
-    } else {
-      // no custom polars at all so add it
+     else {
+      // no custom polars at all create list
       _customGliders!.gliders = <Glider>[customPolar];
     }
     await saveGenericString(

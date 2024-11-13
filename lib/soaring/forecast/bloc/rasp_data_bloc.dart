@@ -539,7 +539,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
         _forecastTimes![_selectedForecastTimeIndex] + 'x',
         event.glider.glider,
         event.glider.polarWeightAdjustment,
-        event.glider.getPolarCoefficients(),
+        event.glider.getPolarCoefficientsAsString(),   // string of a,b,c
         event.glider.ballastAdjThermallingSinkRate,
         1,
         latLonString);

@@ -10,10 +10,10 @@ NationalMap _$NationalMapFromJson(Map<String, dynamic> json) => NationalMap(
       location: json['location'] == null
           ? null
           : Location.fromJson(json['location'] as Map<String, dynamic>),
-      locationId: json['locationId'] as int?,
+      locationId: (json['locationId'] as num?)?.toInt(),
       value: json['value'] as String?,
-      rasterId: json['rasterId'] as int?,
-      resolution: json['resolution'] as int?,
+      rasterId: (json['rasterId'] as num?)?.toInt(),
+      resolution: (json['resolution'] as num?)?.toInt(),
     );
 
 Map<String, dynamic> _$NationalMapToJson(NationalMap instance) =>
@@ -42,8 +42,8 @@ Map<String, dynamic> _$LocationToJson(Location instance) => <String, dynamic>{
 
 SpatialReference _$SpatialReferenceFromJson(Map<String, dynamic> json) =>
     SpatialReference(
-      wkid: json['wkid'] as int?,
-      latestWkid: json['latestWkid'] as int?,
+      wkid: (json['wkid'] as num?)?.toInt(),
+      latestWkid: (json['latestWkid'] as num?)?.toInt(),
     );
 
 Map<String, dynamic> _$SpatialReferenceToJson(SpatialReference instance) =>
