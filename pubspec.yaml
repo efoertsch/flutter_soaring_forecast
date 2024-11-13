@@ -11,7 +11,7 @@ description: A new Flutter application.
 # In iOS, build-name is used as CFBundleShortVersionString while build-number used as CFBundleVersion.
 # Read more about iOS versioning at
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
-version: 1.13.0+43
+version: 1.14.0+44
 
 environment:
   sdk: ">=3.4.3 <=3.5.0"
@@ -51,7 +51,7 @@ dependencies:
   csv: ^5.0.1
   path: ^1.8.1
   sqflite: ^2.0.3+1
-  shared_preferences: ^2.0.15
+  shared_preferences: ^2.3.2
   scrollable_positioned_list: ^0.3.2
   flutter_html: ^3.0.0-alpha.3
   email_launcher: ^1.1.1
@@ -59,7 +59,7 @@ dependencies:
   email_validator: '^2.1.16'
   syncfusion_flutter_pdfviewer: ^26.1.41
   #  path: ../syncfusion_flutter_pdfviewer-21.2.3
-  graphic:  2.2.0
+  graphic:  2.5.0
   colorize: any    # used by dio interceptor
 
   mockito: ^5.3.0   # needed for Android dev - not sure why

@@ -39,6 +39,10 @@ class BeginnerModeEvent extends GraphicEvent{
 }
 
 class SetLocationAsFavoriteEvent extends GraphicEvent{
+}
 
+class SetLocationTabIndex extends GraphicEvent {
+  final int index;
+  SetLocationTabIndex(this.index);
 }
 

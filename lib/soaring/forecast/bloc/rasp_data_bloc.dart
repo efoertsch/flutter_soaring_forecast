@@ -357,7 +357,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
   /// _selectedForecastDate  2019-12-12
   /// _selectedModelName  gfs
   /// _selectedForecast  wstart
-  /// _forecastTimes   [0900,1000,...]
+  /// _forecastTimes   [1000,1100,...]
   void _getForecastImages() {
     String imageUrl;
     SoaringForecastImage soaringForecastBodyImage;
@@ -539,7 +539,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
         _forecastTimes![_selectedForecastTimeIndex] + 'x',
         event.glider.glider,
         event.glider.polarWeightAdjustment,
-        event.glider.getPolarCoefficients(),
+        event.glider.getPolarCoefficientsAsString(),   // string of a,b,c
         event.glider.ballastAdjThermallingSinkRate,
         1,
         latLonString);
@@ -594,15 +594,32 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
 
   void _displayLocalForecast(
       DisplayLocalForecastEvent event, Emitter<RaspDataState> emit) async {
+    List<LocalForecastPoint> localForecastPoints = [];
+    int startIndex = 0;
+    if (event.forTask && _taskId > -1){
+      // ok - a task is displayed and a local forecast was requested on one of the
+      // task turnpoints so get assemble list of all turnpoints
+      List<TaskTurnpoint> taskTurnpoints  = await _getTaskTurnpoints(_taskId);
+       localForecastPoints.addAll(taskTurnpoints.map((taskTurnpoint) => LocalForecastPoint(lat:taskTurnpoint.latitudeDeg,
+       lng: taskTurnpoint.longitudeDeg, turnpointName: taskTurnpoint.title, turnpointCode: taskTurnpoint.code)).toList());
+       // set the turnpoint index to mark the tapped turnpoint;
+        startIndex  = localForecastPoints.indexWhere((localForecastPoint) =>
+          localForecastPoint.lat == event.latLng.latitude &&
+              localForecastPoint.lng == event.latLng.longitude );
+    } else {
+      localForecastPoints.add(
+          LocalForecastPoint(lat: event.latLng.latitude,
+              lng: event.latLng.longitude,
+              turnpointName: event.turnpointName,
+              turnpointCode: event.turnpointCode));
+    }
     final localForecastGraphData = LocalForecastInputData(
         region: _region!,
         date: _selectedForecastDate!,
         model: _selectedModelName!,
         times: _forecastTimes!,
-        lat: event.latLng.latitude,
-        lng: event.latLng.longitude,
-        turnpointName: event.turnpointName,
-        turnpointCode: event.turnpointCode);
+        localForecastPoints: localForecastPoints,
+    startIndex: startIndex);
     emit(DisplayLocalForecastGraphState(localForecastGraphData));
   }
 

@@ -42,8 +42,9 @@ class _AppDrawerWidgetState extends State<AppDrawerWidget> {
   late final Future<bool> _getDrJacksVisibilitySetting =
       RepositoryProvider.of<Repository>(context)
           .getGenericBool(key: "DISPLAY_DRJACKS", defaultValue: true);
-  late final Future<LocalForecastFavorite?>  _getLocalForecastFavorite =
-        RepositoryProvider.of<Repository>(widget.context).getLocateForecastFavorite();
+  late final Future<LocalForecastFavorite?> _getLocalForecastFavorite =
+      RepositoryProvider.of<Repository>(widget.context)
+          .getLocateForecastFavorite();
 
   @override
   Widget build(BuildContext context) {
@@ -75,7 +76,8 @@ class _AppDrawerWidgetState extends State<AppDrawerWidget> {
               color: Colors.black54,
             ),
           )),
-          _getOptionalWidget(_getLocalForecastFavorite, _getLocalForecastFavoriteWidget),
+          _getOptionalWidget(
+              _getLocalForecastFavorite, _getLocalForecastFavoriteWidget),
           _getOptionalWidget(_getWindyVisibilitySetting, _getWindyMenuWidget),
           _getOptionalWidget(
               _getSkySightVisibilitySetting, _getSkySightMenuWidget),
@@ -172,42 +174,44 @@ class _AppDrawerWidgetState extends State<AppDrawerWidget> {
     );
   }
 
-  Widget _getLocalForecastFavoriteWidget(LocalForecastFavorite? localForecastFavorite) {
+  Widget _getLocalForecastFavoriteWidget(
+      LocalForecastFavorite? localForecastFavorite) {
     if (localForecastFavorite != null) {
       return BlocBuilder<RaspDataBloc, RaspDataState>(
           builder: (context, state) {
-            return ListTile(
-                title: Text("${localForecastFavorite
-                    .turnpointName} (${localForecastFavorite
-                    .turnpointCode}) Forecast"),
-                onTap: () async {
-                  Navigator.pop(context);
-                 _sendEvent( DisplayLocalForecastEvent(LatLng(localForecastFavorite.lat,
-                 localForecastFavorite.lng),
-                 localForecastFavorite.turnpointName, localForecastFavorite.turnpointCode) );
-                }
-            );
-          });
+        return ListTile(
+            title: Text(
+                "${localForecastFavorite.turnpointName} (${localForecastFavorite.turnpointCode}) Forecast"),
+            onTap: () async {
+              Navigator.pop(context);
+              _sendEvent(DisplayLocalForecastEvent(
+                  latLng: LatLng(
+                      localForecastFavorite.lat, localForecastFavorite.lng),
+                  turnpointName: localForecastFavorite.turnpointName,
+                  turnpointCode: localForecastFavorite.turnpointCode,
+                  forTask: false));
+            });
+      });
     }
     return SizedBox.shrink();
   }
 
   Widget _getWindyMenuWidget(bool? visible) {
     if (visible != null && visible) {
-    return ListTile(
-      title: Text(DrawerLiterals.WINDY),
-      onTap: () async {
-        var possibleTaskChange = await Navigator.popAndPushNamed(
-            context, WindyRouteBuilder.routeName);
-        if (widget.refreshTaskDisplayFunction != null &&
-            possibleTaskChange != null &&
-            (possibleTaskChange is bool)) {
-          widget.refreshTaskDisplayFunction!(possibleTaskChange);
-        }
-      },
-    );
-  }
-  return SizedBox.shrink();
+      return ListTile(
+        title: Text(DrawerLiterals.WINDY),
+        onTap: () async {
+          var possibleTaskChange = await Navigator.popAndPushNamed(
+              context, WindyRouteBuilder.routeName);
+          if (widget.refreshTaskDisplayFunction != null &&
+              possibleTaskChange != null &&
+              (possibleTaskChange is bool)) {
+            widget.refreshTaskDisplayFunction!(possibleTaskChange);
+          }
+        },
+      );
+    }
+    return SizedBox.shrink();
   }
 
   Widget _getSkySightMenuWidget(bool? visible) {
@@ -225,15 +229,15 @@ class _AppDrawerWidgetState extends State<AppDrawerWidget> {
 
   Widget _getDrJacksMenuWidget(bool? visible) {
     if (visible != null && visible) {
-    return ListTile(
-      title: Text(DrawerLiterals.DR_JACKS),
-      onTap: () async {
-        Navigator.pop(context);
-        launchWebBrowser("www.drjack.info", "BLIP/univiewer.html",
-            useHttp: true);
-        // _launchWebBrowser("http://www.drjack.info/BLIP/univiewer.html");
-      },
-    );
+      return ListTile(
+        title: Text(DrawerLiterals.DR_JACKS),
+        onTap: () async {
+          Navigator.pop(context);
+          launchWebBrowser("www.drjack.info", "BLIP/univiewer.html",
+              useHttp: true);
+          // _launchWebBrowser("http://www.drjack.info/BLIP/univiewer.html");
+        },
+      );
     }
     return SizedBox.shrink();
   }
@@ -246,11 +250,12 @@ class _AppDrawerWidgetState extends State<AppDrawerWidget> {
       future: futureFunction, // a previously-obtained Future<String> or null
       builder: (BuildContext context, AsyncSnapshot<dynamic> snapshot) {
         List<Widget> children = <Widget>[];
-        if (snapshot.connectionState == ConnectionState.done && !snapshot.hasData){
+        if (snapshot.connectionState == ConnectionState.done &&
+            !snapshot.hasData) {
           return SizedBox.shrink();
         }
         if (snapshot.hasData) {
-          children.add( menuWidget(snapshot.data)  );
+          children.add(menuWidget(snapshot.data));
         } else if (snapshot.hasError) {
           children = <Widget>[
             const Icon(
@@ -289,6 +294,4 @@ class _AppDrawerWidgetState extends State<AppDrawerWidget> {
   void _sendEvent(RaspDataEvent event) {
     BlocProvider.of<RaspDataBloc>(context).add(event);
   }
-
-
 }

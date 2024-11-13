@@ -1,15 +1,12 @@
-import 'dart:math';
-
-import 'package:flutter/foundation.dart';
-import 'package:json_annotation/json_annotation.dart';
 import 'dart:convert';
+
 import 'package:equatable/equatable.dart';
-import 'package:vector_math/vector_math_64.dart';
+import 'package:json_annotation/json_annotation.dart';
 
 part 'gliders.g.dart';
 
 ///  Fields correspond to polar data from XCSoar github  XCSoar/src/Polar/PolarStore.cpp
-///  Download to Googlesheet, parsed, then converted to polar JSON string
+///  Downloaded to Googlesheet, parsed, then converted to polar JSON string
 ///  https://docs.google.com/spreadsheets/d/11s6b0BEiOLh2ITzhs9nVlh9HWSmoBeUtlxkrAEwkKUs/edit?usp=sharing
 /// 1. Gen'ed Dart code from assets/json/forecast_options via using https://app.quicktype.io/
 /// 2. Modified code for generator:
@@ -18,6 +15,7 @@ part 'gliders.g.dart';
 /// 3. Added part 'polars.g.dart' above
 /// 4. Generated ...g.dart file running following command in terminal
 ///    dart run build_runner build --delete-conflicting-outputs
+///  All XCSoar data is metric - kph, m/sec, kg, ...
 
 @JsonSerializable()
 class Gliders {
@@ -81,16 +79,24 @@ class Glider extends Equatable {
   late double minSinkRate;
 
   // fields not on XCSoar glider database nor calculated on original spreadsheet, user will input or program will set/calculate
+  @JsonKey(includeFromJson: false, includeToJson: false)
   late double loadedBallast;
-  late bool updatedVW;
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  late bool updatedVW = false;
 
   // values user defined or calculated
-  late double minSinkMass; // user defined,metric
-  late int
-      bankAngle; // Pilot estimate of bank angle they will use when flying the task.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  late double minSinkMass;
+
+  // Pilot estimate of bank angle they will use when flying the task.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  late int bankAngle;
+
   // Calculated sink rate using min sink and angle of bank
-  late double
-      thermallingSinkRate; // calculated value based on min SinkRate and bank Angle
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  late double thermallingSinkRate;
+
+  @JsonKey(includeFromJson: false, includeToJson: false)
   late double polarWeightAdjustment; // assign  using
   // 1. Use value of 1 if using all XCSoar provided values
   // 2. User uses XCSoar Vx/Wx but adjusted where glider/pilot/ballast weight
@@ -98,8 +104,22 @@ class Glider extends Equatable {
   // 3. User defined their own Vx/Wx polar figures
   //     Similar calc as 2 but using user specified glider,pilot, ballast values
   //     sq root((glider + pilot + ballast)/(glider + pilot)
-  late double
-      ballastAdjThermallingSinkRate; // sink rate adjusted for added ballast (value used to send to server)
+
+  // sink rate adjusted for added ballast (value used to send to server)
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  late double ballastAdjThermallingSinkRate;
+
+  // Calculated min sink speed at specified angle of bank;
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  late double minSinkSpeedAtBankAngle;
+
+  // Diameter of glider thermalling circle based on min sink speed for angle of bank
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  late double turnDiameter;
+
+  // Number of seconds it will take for the glider to make 1 turn based on min sink speed for angle of bank
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  late double secondsForTurn;
 
   Glider({
     required this.glider,
@@ -129,9 +149,10 @@ class Glider extends Equatable {
     this.thermallingSinkRate = 0,
     this.polarWeightAdjustment = 1,
     this.ballastAdjThermallingSinkRate = 0,
-  }) {
-    calcThermallingSinkRate();
-  }
+    this.minSinkSpeedAtBankAngle = 45,
+    this.turnDiameter = 0,
+    this.secondsForTurn = 0,
+  });
 
   factory Glider.fromJson(Map<String, dynamic> json) => _$GliderFromJson(json);
 
@@ -164,6 +185,9 @@ class Glider extends Equatable {
     double? thermallingSinkRate,
     double? polarWeightAdjustment,
     double? ballastAdjThermallingSinkRate,
+    double? minSinkSpeedAtBankAngle,
+    double? turnDiameter,
+    double? secondsForTurn,
   }) =>
       Glider(
         glider: glider ?? this.glider,
@@ -192,8 +216,22 @@ class Glider extends Equatable {
         thermallingSinkRate: thermallingSinkRate ?? this.thermallingSinkRate,
         polarWeightAdjustment:
             polarWeightAdjustment ?? this.polarWeightAdjustment,
-        ballastAdjThermallingSinkRate: ballastAdjThermallingSinkRate ?? this.ballastAdjThermallingSinkRate,
+        ballastAdjThermallingSinkRate:
+            ballastAdjThermallingSinkRate ?? this.ballastAdjThermallingSinkRate,
+        minSinkSpeedAtBankAngle:
+            minSinkSpeedAtBankAngle ?? this.minSinkSpeedAtBankAngle,
+        turnDiameter: turnDiameter ?? this.turnDiameter,
+        secondsForTurn: secondsForTurn ?? this.secondsForTurn,
       );
+
+  // Get polar coefficients as string a,b,c
+  String getPolarCoefficientsAsString() {
+    return a.toStringAsFixed(5) +
+        ',' +
+        b.toStringAsFixed(5) +
+        ',' +
+        c.toStringAsFixed(5);
+  }
 
   static Glider gliderFromJson(String str) => Glider.fromJson(json.decode(str));
 
@@ -227,87 +265,8 @@ class Glider extends Equatable {
         thermallingSinkRate,
         polarWeightAdjustment,
         ballastAdjThermallingSinkRate,
+        minSinkSpeedAtBankAngle,
+        turnDiameter,
+        secondsForTurn,
       ];
-
-  //----------- Custom Code ----------------------------------
-  // Get polar coefficients as string a,b,c
-  String getPolarCoefficients() {
-    return a.toStringAsFixed(5) +
-        ',' +
-        b.toStringAsFixed(5) +
-        ',' +
-        c.toStringAsFixed(5);
-  }
-
-  // updated XCSoar json input to have a,b,c calculated in spreadsheet and placed in JSON
-  // keeping for future reference
-  // a,b,c calculated per Reichman  Cross country soaring pg 122.
-  void recalcPolarValues() {
-    a = ((v2 - v3) * (w1 - w3) + (v3 - v1) * (w2 - w3)) /
-        (pow(v1, 2) * (v2 - v3) +
-            pow(v2, 2) * (v3 - v1) +
-            pow(v3, 2) * (v1 - v2));
-
-    b = ((w2 - w3) - a * (pow(v2, 2) - pow(v3, 2))) / (v2 - v3);
-
-    c = w3 - a * pow(v3, 2) - b * v3;
-
-    // Good reference for finding min sink speed/ min sink based on quadratic
-    // https://www.youtube.com/watch?v=jn_4oUlKGjc&t=152s
-    minSinkSpeed = b / (2 * a);
-    minSinkRate = (minSinkSpeed * a * a) + (b * minSinkSpeed) + c;
-  }
-
-  void updatePolar(Glider updatedPolar) {
-    this.gliderAndMaxPilotWgt = updatedPolar.gliderAndMaxPilotWgt;
-    this.maxBallast = updatedPolar.maxBallast;
-    this.v1 = updatedPolar.v1;
-    this.w1 = updatedPolar.w1;
-    this.v2 = updatedPolar.v2;
-    this.w2 = updatedPolar.w2;
-    this.v3 = updatedPolar.v3;
-    this.w3 = updatedPolar.w3;
-    this.wingArea = updatedPolar.wingArea;
-    this.ballastDumpTime = updatedPolar.ballastDumpTime;
-    this.handicap = updatedPolar.handicap;
-    this.gliderEmptyMass = updatedPolar.gliderEmptyMass;
-    this.pilotMass = updatedPolar.pilotMass;
-    this.a = updatedPolar.a;
-    this.b = updatedPolar.b;
-    this.c = updatedPolar.c;
-    this.loadedBallast = updatedPolar.loadedBallast;
-    this.updatedVW = updatedPolar.updatedVW;
-    this.minSinkSpeed = updatedPolar.minSinkSpeed;
-    this.minSinkRate = updatedPolar.minSinkRate;
-    this.minSinkMass = updatedPolar.minSinkMass;
-    this.bankAngle = updatedPolar.bankAngle;
-    this.thermallingSinkRate = updatedPolar.thermallingSinkRate;
-    this.polarWeightAdjustment = updatedPolar.polarWeightAdjustment;
-    this.ballastAdjThermallingSinkRate = updatedPolar.ballastAdjThermallingSinkRate;
-  }
-
-  // Calculation from https://groups.io/g/WarnerSpringsSoaring/topic/optimal_bank_angle/87513283?p=,,,20,0,0,0::recentpostdate/sticky,,,20,0,0,87513283,previd=1640661436050123677,nextid=1630163573444280014&previd=1640661436050123677&nextid=1630163573444280014
-  //  and https://groups.io/g/WarnerSpringsSoaring/attachment/458/0/Bank%20angles%20Wt%20and%20balance.xlsx
-  // adjusted for adding ballast. Note that just using the 'your glider' mass values not XCSOAR default values
-  void calcThermallingSinkRate() {
-    thermallingSinkRate =
-        (1 / cos(radians(bankAngle.toDouble())) * 1.5).toDouble() *
-            minSinkRate;
-    ballastAdjThermallingSinkRate = thermallingSinkRate * sqrt(
-        (pilotMass + gliderEmptyMass + loadedBallast) /
-            (pilotMass + gliderEmptyMass));
-  }
-
-  void calculatePolarAdjustmentFactor(Glider xcSoarGlider) {
-    if (updatedVW = true) {
-      // user changed the Vx/Wx values so just use myGlider weights
-      polarWeightAdjustment = sqrt(
-          (pilotMass + gliderEmptyMass + loadedBallast) /
-              (pilotMass + gliderEmptyMass));
-    } else {
-      polarWeightAdjustment =
-          (sqrt(pilotMass + gliderEmptyMass + loadedBallast) /
-              xcSoarGlider.gliderAndMaxPilotWgt);
-    }
-  }
 }

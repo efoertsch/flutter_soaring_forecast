@@ -45,7 +45,7 @@ Soundings _$SoundingsFromJson(Map<String, dynamic> json) => Soundings(
       location: json['location'] as String?,
       longitude: json['longitude'] as String?,
       latitude: json['latitude'] as String?,
-    )..position = json['position'] as int?;
+    )..position = (json['position'] as num?)?.toInt();
 
 Map<String, dynamic> _$SoundingsToJson(Soundings instance) => <String, dynamic>{
       'position': instance.position,

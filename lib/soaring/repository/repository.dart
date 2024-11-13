@@ -71,6 +71,7 @@ class Repository {
   static One800WxBriefClient? _one800WxBriefClient;
   static AppDatabase? _appDatabase;
   static var logger = DLogger.Logger();
+  static SharedPreferences? sharedPreferences;
 
   // TODO change field names to private
   static const String _SELECTED_REGION = "SELECTED_REGION";
@@ -1190,58 +1191,64 @@ class Repository {
   // ----- Shared preferences --------------------------
   // Make sure keys are unique among calling routines!
 
+ Future<void> ensureSharedPreferences() async {
+    if (sharedPreferences == null) {
+      sharedPreferences = await SharedPreferences.getInstance();
+    }
+  }
+
   Future<bool> saveGenericString(
       {required String key, required String value}) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    return await prefs.setString(key, value);
+    await ensureSharedPreferences();
+    return await sharedPreferences!.setString(key, value);
   }
 
   Future<String> getGenericString(
       {required String key, required String defaultValue}) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    return await prefs.getString(key) ?? defaultValue;
+    await ensureSharedPreferences();
+    return await sharedPreferences!.getString(key) ?? defaultValue;
   }
 
   Future<bool> _deleteGenericString({required String key}) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    return await prefs.remove(key);
+    await ensureSharedPreferences();
+    return await sharedPreferences!.remove(key);
   }
 
   Future<bool> saveGenericInt({required String key, required int value}) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    return await prefs.setInt(key, value);
+    await ensureSharedPreferences();
+    return await sharedPreferences!.setInt(key, value);
   }
 
   Future<int> getGenericInt(
       {required String key, required int defaultValue}) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getInt(key) ?? defaultValue;
+    await ensureSharedPreferences();
+    return await sharedPreferences!.getInt(key) ?? defaultValue;
   }
 
   Future<bool> saveGenericDouble(
       {required String key, required double value}) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    return await prefs.setDouble(key, value);
+    await ensureSharedPreferences();
+    return await sharedPreferences!.setDouble(key, value);
   }
 
   Future<double> getGenericDouble(
       {required String key, required double defaultValue}) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    return await prefs.getDouble(key) ?? defaultValue;
+    await ensureSharedPreferences();
+    return await sharedPreferences!.getDouble(key) ?? defaultValue;
   }
 
   Future<bool> saveGenericBool(
       {required String key, required bool value}) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    return await prefs.setBool(key, value);
+    await ensureSharedPreferences();
+    return await sharedPreferences!.setBool(key, value);
   }
 
   Future<bool> getGenericBool(
       {required String key, required bool defaultValue}) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    final value = await prefs.getBool(key);
-    debugPrint("getGenericBool  key: $key   value: $value");
-    return await value ?? defaultValue;
+    await ensureSharedPreferences();
+    final value = await sharedPreferences!.getBool(key);
+    //debugPrint("getGenericBool  key: $key   value: $value");
+    return  value ?? defaultValue;
   }
 
   // ----- File access -----------------------------------------------
@@ -1367,17 +1374,14 @@ class Repository {
     Glider? gliderPolar;
     await getCustomGliders();
     if (_customGliders!.gliders != null) {
-      gliderPolar = _customGliders!.gliders?.firstWhereOrNull(
+      // remove old entry if there was one
+       _customGliders!.gliders?.removeWhere(
           (savedGlider) => savedGlider.glider == customPolar.glider);
-      if (gliderPolar == null) {
-        // customPolar not in list so add it
+     // and add updated glider to list
         _customGliders!.gliders!.add(customPolar);
-      } else {
-        // customPolar already in list so update it with new info
-        gliderPolar.updatePolar(customPolar);
       }
-    } else {
-      // no custom polars at all so add it
+     else {
+      // no custom polars at all create list
       _customGliders!.gliders = <Glider>[customPolar];
     }
     await saveGenericString(

@@ -57,7 +57,6 @@ class ForecastsForDay {
   final options = <Forecast>[]; //json['forecasts'];
   final repository = Repository(null);
   var times = {
-  "0900",
   "1000",
   "1100",
   "1200",
@@ -66,6 +65,7 @@ class ForecastsForDay {
   "1500",
   "1600",
   "1700",
+    "1800"
   };
 
   var date = "2022-11-19";

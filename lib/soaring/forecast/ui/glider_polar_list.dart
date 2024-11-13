@@ -29,6 +29,7 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
   String _velocityUnits = "";
   String _sinkRateUnits = "";
   String _massUnits = "";
+  String _distanceUnits = "";
   DisplayUnits? _displayUnits;
 
   // Menu options
@@ -62,11 +63,12 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
       "\n\nThe min sink rate is calculated based on Vx/Wx values can give a wildly inaccurate value. "
       "(Vx/Vw values are used for speed to fly calculations, not min sink/thermalling speed.)"
       " Consult your glider POH or other sources to enter a more appropriate number."
-      "\n\nMost values under the 'Your Glider' column can be updated. Tap on the particular cell to update."
+      "\n\nHighlighted values under the 'Your Glider' column can be updated. Tap on the particular cell to update."
       "\n\nThe specific forecast values used in the calculations are:"
       "\n1. Thermal Updraft Velocity (W*)"
       "\n2. Wind speed (Boundary Layer average)"
       "\n3. Wind direction (Boundary Layer average)"
+      "\n\n Note that thermal height is not used so you may be gliding at treetop height!"
       "\n\n Task time, headwind, and related estimates are based on a straight line"
       " course between turnpoints. (Yeah - how often does that happen.) "
       "\n\nFeedback is most welcome. ";
@@ -81,12 +83,12 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
       "Toggle between metric and American units or reset your glider values back to "
       "the XCSOAR values using the top right menu dropdown";
   static const String _SINK_RATE_INFO =
-      "The min. sink rate and speed are initially derived "
-      "from the XCSOAR polar Vx/Wx values below but likely they will not give the best estimates."
-      " Perhaps better values can be obtained from your glider POH and entered here. "
+      "The min. sink rate and speed are initially calculated "
+      "using the XCSOAR Vx/Wx values below, but the polar curve formula likely produces a wildly inaccurate min sink value."
+      " It is better to calculate your own min sink values based from your glider POH and entered here. "
       "Enter values for your glider + pilot weight. The sink rate will be adjusted should you add ballast. "
       "(Note the adjustment will be made when used in the flight calculations. It isn't show on this screen)"
-      " Updating the values should lead to a better estimate of your gliders thermalling sink rate.\n"
+      " Updating the values should also lead to a better estimate of your gliders thermalling sink rate.\n"
       "The thermalling sink rate (based on your bank angle) is used to estimate your actual climb rate in the forcasted thermals. ";
   static const String _GLIDER_MASS_INFO =
       "Glider mass may be used to adjust the polar based on your Vx/Wx values below. "
@@ -94,16 +96,17 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
       "1) If you only change your glider, pilot or ballast mass, the glider polar is adjusted by the sq root(your mass/XCSoar reference mass)\n "
       "2) If you update your glider Vx/Wx values then it is assumed you measured your Vx/Wx values at your (glider + pilot) mass."
       " So a polar adjustment is only made if you add ballast, i.e. the polar is adjusted by sq root((glider + pilot + ballast)/(glider + pilot)).";
-  static const String _GLIDER_POLAR_INFO =
-      "If your Vx/Wx values are modified,"
+  static const String _GLIDER_POLAR_INFO = "If your Vx/Wx values are modified,"
       " your polar will be calculated based on your glider's glider + pilot mass. No change will be made to your min sink values.";
 
   bool _showExperimentalDialog = false;
 
   @override
-  FutureOr<void> afterFirstLayout(BuildContext context) {
-    _getGliderCubit().getListOfGliders();
+  FutureOr<void> afterFirstLayout(BuildContext context) async {
+    await _getGliderCubit().getListOfGliders();
   }
+
+  GliderCubit _getGliderCubit() => BlocProvider.of<GliderCubit>(context);
 
   @override
   Widget build(BuildContext context) {
@@ -269,17 +272,19 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
   }
 
   Widget _getBody() {
-    return SingleChildScrollView(
-      child: Column(
-        children: [
-          _getGliderList(),
-          _displayGliderDetail(),
-          _getIsWorkingIndicator(),
-          _getErrorMessagesWidget(),
-          _getMiscStatesHandlerWidget(),
-        ],
+    return Stack(children: [
+      SingleChildScrollView(
+        child: Column(
+          children: [
+            _getGliderList(),
+            _displayGliderDetail(),
+            _getErrorMessagesWidget(),
+            _getMiscStatesHandlerWidget(),
+          ],
+        ),
       ),
-    );
+      _getIsWorkingIndicator(),
+    ]);
   }
 
   Widget _getGliderList() {
@@ -359,17 +364,16 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
     );
   }
 
-  GliderCubit _getGliderCubit() => BlocProvider.of<GliderCubit>(context);
-
   Widget _displayGliderDetail() {
     return BlocConsumer<GliderCubit, GliderState>(listener: (context, state) {
       if (state is GliderPolarState) {
         _defaultGlider = state.defaultPolar;
         _customGlider = state.customPolar;
         _displayUnits = state.displayUnits;
-        _velocityUnits = "(" + state.velocityUnits + ")";
+        _velocityUnits = " (" + state.velocityUnits + ")";
         _sinkRateUnits = " (" + state.sinkRateUnits + ")";
         _massUnits = " (" + state.massUnits + ")";
+        _distanceUnits = " (" + state.distanceUnits + ")";
       }
     }, buildWhen: (previous, current) {
       return current is GliderPolarState;
@@ -387,105 +391,113 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
   Widget _getGliderDetailsWidget() {
     return SingleChildScrollView(
       child: Padding(
-        padding: const EdgeInsets.all(8.0),
+        padding: const EdgeInsets.only(left: 8.0, right: 8.0, bottom: 8.0),
         child: Column(children: [
-          Center(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(_customGlider!.glider + " Glider Sink Rate",
-                    style: textStyleBoldBlackFontSize18,
-                    textAlign: TextAlign.center),
-                Padding(
-                  padding: const EdgeInsets.only(left: 8.0),
-                  child: IconButton(
-                    icon: Icon(
-                      Icons.info,
-                      color: Colors.blueAccent,
-                    ),
-                    onPressed: () {
-                      CommonWidgets.showInfoDialog(
-                        context: context,
-                        title: "Sink Rate",
-                        msg: _SINK_RATE_INFO,
-                        button1Text: StandardLiterals.OK,
-                        button1Function: (() => Navigator.of(context).pop()),
-                      );
-                    },
-                  ),
-                )
-              ],
-            ),
-          ),
-          _getThermallingValues(),
-          Padding(
-            padding: const EdgeInsets.only(top: 8.0),
-            child: Center(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text("Glider Mass",
-                      style: textStyleBoldBlackFontSize18,
-                      textAlign: TextAlign.center),
-                  Padding(
-                    padding: const EdgeInsets.only(left: 8.0),
-                    child: IconButton(
-                      icon: Icon(
-                        Icons.info,
-                        color: Colors.blueAccent,
-                      ),
-                      onPressed: () {
-                        CommonWidgets.showInfoDialog(
-                          context: context,
-                          title: "Glider Mass",
-                          msg: _GLIDER_MASS_INFO,
-                          button1Text: StandardLiterals.OK,
-                          button1Function: (() => Navigator.of(context).pop()),
-                        );
-                      },
-                    ),
-                  )
-                ],
-              ),
-            ),
-          ),
+          _getGliderMassTableHeader(),
           _getGliderWeightDisplay(),
-          Padding(
-            padding: const EdgeInsets.only(top: 8.0),
-            child: Center(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text("Speed vs Sink Rate",
-                      style: textStyleBoldBlackFontSize18,
-                      textAlign: TextAlign.center),
-                  Padding(
-                    padding: const EdgeInsets.only(left: 8.0),
-                    child: IconButton(
-                      icon: Icon(
-                        Icons.info,
-                        color: Colors.blueAccent,
-                      ),
-                      onPressed: () {
-                        CommonWidgets.showInfoDialog(
-                          context: context,
-                          title: "Glider Polar",
-                          msg: _GLIDER_POLAR_INFO,
-                          button1Text: StandardLiterals.OK,
-                          button1Function: (() => Navigator.of(context).pop()),
-                        );
-                      },
-                    ),
-                  )
-                ],
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(top: 8.0),
-            child: _getPolarTable(),
-          ),
+          _getGliderSinkRateTableHeader(),
+          _getThermallingValues(),
+          _getSpeedVsSinkRateTableHeader(),
+          _getPolarTable(),
         ]),
+      ),
+    );
+  }
+
+  Padding _getSpeedVsSinkRateTableHeader() {
+    return Padding(
+      padding: const EdgeInsets.only(top: 8.0),
+      child: Center(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text("Speed vs Sink Rate",
+                style: textStyleBoldBlackFontSize18,
+                textAlign: TextAlign.center),
+            Padding(
+              padding: const EdgeInsets.only(left: 8.0),
+              child: IconButton(
+                icon: Icon(
+                  Icons.info,
+                  color: Colors.blueAccent,
+                ),
+                onPressed: () {
+                  CommonWidgets.showInfoDialog(
+                    context: context,
+                    title: "Glider Polar",
+                    msg: _GLIDER_POLAR_INFO,
+                    button1Text: StandardLiterals.OK,
+                    button1Function: (() => Navigator.of(context).pop()),
+                  );
+                },
+              ),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _getGliderMassTableHeader() {
+    return Center(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text("Glider Mass",
+              style: textStyleBoldBlackFontSize18, textAlign: TextAlign.center),
+          Padding(
+            padding: const EdgeInsets.only(left: 8.0),
+            child: IconButton(
+              icon: Icon(
+                Icons.info,
+                color: Colors.blueAccent,
+              ),
+              onPressed: () {
+                CommonWidgets.showInfoDialog(
+                  context: context,
+                  title: "Glider Mass",
+                  msg: _GLIDER_MASS_INFO,
+                  button1Text: StandardLiterals.OK,
+                  button1Function: (() => Navigator.of(context).pop()),
+                );
+              },
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget _getGliderSinkRateTableHeader() {
+    return Padding(
+      padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
+      child: Center(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(_customGlider!.glider + " Glider Sink Rate",
+                style: textStyleBoldBlackFontSize18,
+                textAlign: TextAlign.center),
+            Padding(
+              padding: const EdgeInsets.only(left: 8.0),
+              child: IconButton(
+                icon: Icon(
+                  Icons.info,
+                  color: Colors.blueAccent,
+                ),
+                onPressed: () {
+                  CommonWidgets.showInfoDialog(
+                    context: context,
+                    title: "Sink Rate",
+                    msg: _SINK_RATE_INFO,
+                    button1Text: StandardLiterals.OK,
+                    button1Function: (() => Navigator.of(context).pop()),
+                  );
+                },
+              ),
+            )
+          ],
+        ),
       ),
     );
   }
@@ -503,10 +515,39 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
             ],
           ),
           TableRow(children: [
+            _formattedTextCell("Min Sink Speed " + _velocityUnits),
+            InkWell(
+              child: _formattedTextCell(
+                  _customGlider!.minSinkSpeed.toStringAsFixed(0),
+                  modifiable: true),
+              onTap: (() {
+                _updateGliderValueDialog(
+                    label: "Min Sink Speed " + _velocityUnits,
+                    regexValidation: _REGEX_TO_999,
+                    value: _customGlider!.minSinkSpeed.toStringAsFixed(0),
+                    updateFunction: ((String value) {
+                      double doubleValue = _convertToDouble(value);
+                      if (doubleValue != _customGlider?.minSinkSpeed) {
+                        setState(() {
+                          _customGlider?.minSinkSpeed = doubleValue;
+                          _getGliderCubit().calculateThermallingValues(_customGlider!);
+                        });
+                      }
+                    }),
+                    validationErrorMsg: _NUMBER_TO_999,
+                    hintText: _ENTER_VELOCITY);
+              }),
+            ),
+            _formattedTextCell(_defaultGlider!.minSinkSpeed.toStringAsFixed(0)),
+          ]),
+          TableRow(children: [
             _formattedTextCell("Min Sink Rate " + _sinkRateUnits),
             InkWell(
               child: _formattedTextCell(
-                  _customGlider!.minSinkRate.toStringAsFixed(2)),
+                  (_sinkRateUnits.startsWith(" (ft")
+                      ? _customGlider!.minSinkRate.round().toString()
+                      : _customGlider!.minSinkRate.toStringAsFixed(2)),
+                  modifiable: true),
               onTap: (() {
                 _updateGliderValueDialog(
                     label: "Min Sink Rate " + _sinkRateUnits,
@@ -517,7 +558,7 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
                       if (doubleValue != _customGlider?.minSinkRate) {
                         setState(() {
                           _customGlider?.minSinkRate = doubleValue;
-                          _customGlider?.calcThermallingSinkRate();
+                          _getGliderCubit().calculateThermallingValues(_customGlider!);
                         });
                       }
                     }),
@@ -525,39 +566,17 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
                     hintText: _ENTER_MIN_SINKRATE);
               }),
             ),
-            _formattedTextCell(_defaultGlider!.minSinkRate.toStringAsFixed(2)),
-          ]),
-          TableRow(children: [
-            _formattedTextCell("Min Sink Speed " + _velocityUnits),
-            InkWell(
-              child: _formattedTextCell(
-                  _customGlider!.minSinkSpeed.toStringAsFixed(0)),
-              onTap: (() {
-                _updateGliderValueDialog(
-                    label: "Min Sink Speed " + _velocityUnits,
-                    regexValidation: _REGEX_TO_999,
-                    value: _customGlider!.minSinkSpeed.toStringAsFixed(0),
-                    updateFunction: ((String value) {
-                      double doubleValue = _convertToDouble(value);
-                      if (doubleValue != _customGlider?.minSinkRate) {
-                        setState(() {
-                          _customGlider?.minSinkSpeed = doubleValue;
-                          _customGlider?.calcThermallingSinkRate();
-                        });
-                      }
-                    }),
-                    validationErrorMsg: _NUMBER_TO_999,
-                    hintText: _ENTER_VELOCITY);
-              }),
-            ),
-            _formattedTextCell(_defaultGlider!.minSinkSpeed.toStringAsFixed(0)),
+            _formattedTextCell((_sinkRateUnits.startsWith(" (ft")
+                ? _defaultGlider!.minSinkRate.round().toString()
+                : _defaultGlider!.minSinkRate.toStringAsFixed(2))),
           ]),
           TableRow(
             children: [
               _formattedTextCell("Thermal Bank Angle"),
               InkWell(
                 child: _formattedTextCell(
-                    _customGlider!.bankAngle.toStringAsFixed(0)),
+                    _customGlider!.bankAngle.toStringAsFixed(0),
+                    modifiable: true),
                 onTap: (() {
                   _updateGliderValueDialog(
                       label: "Thermal Bank Angle ",
@@ -567,8 +586,8 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
                         int intValue = _convertToInt(value);
                         if (intValue != _customGlider?.bankAngle) {
                           setState(() {
-                            _customGlider?.bankAngle = intValue;
-                            _customGlider?.calcThermallingSinkRate();
+                            _customGlider!.bankAngle = intValue;
+                            _getGliderCubit().calculateThermallingValues(_customGlider!);
                           });
                         }
                       }),
@@ -581,120 +600,104 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
           ),
           TableRow(
             children: [
+              _formattedTextCell("Thermalling Speed" + _velocityUnits),
+              _formattedTextCell(
+                  _customGlider!.minSinkSpeedAtBankAngle.round().toString()),
+              _formattedTextCell(
+                  _defaultGlider!.minSinkSpeedAtBankAngle.round().toString()),
+            ],
+          ),
+          TableRow(
+            children: [
               _formattedTextCell("Thermalling Sink Rate" + _sinkRateUnits),
+              _formattedTextCell((_sinkRateUnits.startsWith(" (ft")
+                  ? _customGlider!.thermallingSinkRate.round().toString()
+                  : _customGlider!.thermallingSinkRate.toStringAsFixed(1))),
+              _formattedTextCell((_sinkRateUnits.startsWith(" (ft")
+                  ? _defaultGlider!.thermallingSinkRate.round().toString()
+                  : _defaultGlider!.thermallingSinkRate.toStringAsFixed(1))),
+            ],
+          ),
+          TableRow(
+            children: [
+              _formattedTextCell("Turn Diameter" + _distanceUnits),
               _formattedTextCell(
-                  _customGlider!.thermallingSinkRate.toStringAsFixed(1)),
+                  _customGlider!.turnDiameter.round().toString()),
               _formattedTextCell(
-                  _defaultGlider!.thermallingSinkRate.toStringAsFixed(1)),
+                  _defaultGlider!.turnDiameter.round().toString()),
+            ],
+          ),
+          TableRow(
+            children: [
+              _formattedTextCell("Time for turn (sec)"),
+              _formattedTextCell(
+                  _customGlider!.secondsForTurn.round().toString()),
+              _formattedTextCell(
+                  _defaultGlider!.secondsForTurn.round().toString()),
             ],
           ),
         ]);
   }
 
   Widget _getPolarTable() {
-    return Table(
-      border: TableBorder.all(),
-      defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-      children: <TableRow>[
-        TableRow(
-          children: [
-            _formattedTextCell("Polar Values"),
-            _formattedTextCell('Your\nGlider'),
-            _formattedTextCell('XCSoar\nValues'),
-          ],
-        ),
-        TableRow(
-          children: [
-            _formattedTextCell("V1 " + _velocityUnits),
-            InkWell(
-              child: _formattedTextCell(_customGlider!.v1.toStringAsFixed(1)),
-              onTap: (() {
-                _updateGliderValueDialog(
-                    label: "V1 " + _velocityUnits,
-                    regexValidation: _REGEX_TO_999_9,
-                    value: _customGlider!.v1.toStringAsFixed(1),
-                    updateFunction: ((String value) {
-                      double doubleValue = _convertToDouble(value);
-                      if (doubleValue != _customGlider?.v1) {
-                        setState(() {
-                          _customGlider?.updatedVW = true;
-                          _customGlider?.v1 = doubleValue;
-                        });
-                      }
-                    }),
-                    validationErrorMsg: _NUMBER_TO_999_9,
-                    hintText: _ENTER_VELOCITY);
-              }),
-            ),
-            _formattedTextCell(_defaultGlider!.v1.toStringAsFixed(1)),
-          ],
-        ),
-        TableRow(children: [
-          _formattedTextCell("W1 " + _sinkRateUnits),
-          InkWell(
-            child: _formattedTextCell(_customGlider!.w1.toStringAsFixed(2)),
-            onTap: (() {
-              _updateGliderValueDialog(
-                  label: "W1 " + _sinkRateUnits,
-                  regexValidation: _REGEX_MINUS_999_99_TO_0,
-                  value: _customGlider!.w1.toStringAsFixed(2),
-                  updateFunction: ((String value) {
-                    double doubleValue = _convertToDouble(value);
-                    if (doubleValue != _customGlider?.w1) {
-                      setState(() {
-                        _customGlider?.updatedVW = true;
-                        _customGlider?.w1 = doubleValue;
-                      });
-                    }
-                  }),
-                  validationErrorMsg: _SINKRATE_TO_MINUS_999_99,
-                  hintText: _ENTER_SINKRATE);
-            }),
+    return Padding(
+      padding: const EdgeInsets.only(top: 8.0),
+      child: Table(
+        border: TableBorder.all(),
+        defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+        children: <TableRow>[
+          TableRow(
+            children: [
+              _formattedTextCell("Polar Values"),
+              _formattedTextCell('Your\nGlider'),
+              _formattedTextCell('XCSoar\nValues'),
+            ],
           ),
-          _formattedTextCell(_defaultGlider!.w1.toStringAsFixed(2)),
-        ]),
-        TableRow(
-          children: [
-            _formattedTextCell("V2 " + _velocityUnits),
+          TableRow(
+            children: [
+              _formattedTextCell("V1 " + _velocityUnits),
+              InkWell(
+                child: _formattedTextCell(_customGlider!.v1.toStringAsFixed(1),
+                    modifiable: true),
+                onTap: (() {
+                  _updateGliderValueDialog(
+                      label: "V1 " + _velocityUnits,
+                      regexValidation: _REGEX_TO_999_9,
+                      value: _customGlider!.v1.toStringAsFixed(1),
+                      updateFunction: ((String value) {
+                        double doubleValue = _convertToDouble(value);
+                        if (doubleValue != _customGlider?.v1) {
+                          setState(() {
+                            _customGlider?.updatedVW = true;
+                            _customGlider?.v1 = doubleValue;
+                            _getGliderCubit().storeCustomGlider(_customGlider!);
+                          });
+                        }
+                      }),
+                      validationErrorMsg: _NUMBER_TO_999_9,
+                      hintText: _ENTER_VELOCITY);
+                }),
+              ),
+              _formattedTextCell(_defaultGlider!.v1.toStringAsFixed(1)),
+            ],
+          ),
+          TableRow(children: [
+            _formattedTextCell("W1 " + _sinkRateUnits),
             InkWell(
-              child: _formattedTextCell(_customGlider!.v2.toStringAsFixed(1)),
+              child: _formattedTextCell(_customGlider!.w1.toStringAsFixed(2),
+                  modifiable: true),
               onTap: (() {
                 _updateGliderValueDialog(
-                    label: "V2 " + _velocityUnits,
-                    regexValidation: _REGEX_TO_999_9,
-                    value: _customGlider!.v2.toStringAsFixed(1),
-                    updateFunction: ((String value) {
-                      double doubleValue = _convertToDouble(value);
-                      if (doubleValue != _customGlider?.v2) {
-                        setState(() {
-                          _customGlider?.updatedVW = true;
-                          _customGlider?.v2 = doubleValue;
-                        });
-                      }
-                    }),
-                    validationErrorMsg: _NUMBER_TO_999_9,
-                    hintText: _ENTER_VELOCITY);
-              }),
-            ),
-            _formattedTextCell(_defaultGlider!.v2.toStringAsFixed(1)),
-          ],
-        ),
-        TableRow(
-          children: [
-            _formattedTextCell("W2 " + _sinkRateUnits),
-            InkWell(
-              child: _formattedTextCell(_customGlider!.w2.toStringAsFixed(2)),
-              onTap: (() {
-                _updateGliderValueDialog(
-                    label: "W2 " + _sinkRateUnits,
+                    label: "W1 " + _sinkRateUnits,
                     regexValidation: _REGEX_MINUS_999_99_TO_0,
-                    value: _customGlider!.w2.toStringAsFixed(2),
+                    value: _customGlider!.w1.toStringAsFixed(2),
                     updateFunction: ((String value) {
                       double doubleValue = _convertToDouble(value);
-                      if (doubleValue != _customGlider?.w2) {
+                      if (doubleValue != _customGlider?.w1) {
                         setState(() {
                           _customGlider?.updatedVW = true;
-                          _customGlider?.w2 = doubleValue;
+                          _customGlider?.w1 = doubleValue;
+                          _getGliderCubit().storeCustomGlider(_customGlider!);
                         });
                       }
                     }),
@@ -702,67 +705,127 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
                     hintText: _ENTER_SINKRATE);
               }),
             ),
-            _formattedTextCell(_defaultGlider!.w2.toStringAsFixed(2)),
-          ],
-        ),
-        TableRow(
-          children: [
-            _formattedTextCell("V3 " + _velocityUnits),
-            InkWell(
-              child: _formattedTextCell(_customGlider!.v3.toStringAsFixed(1)),
-              onTap: (() {
-                _updateGliderValueDialog(
-                    label: "V3 " + _velocityUnits,
-                    regexValidation: _REGEX_TO_999_9,
-                    value: _customGlider!.v3.toStringAsFixed(1),
-                    updateFunction: ((String value) {
-                      double doubleValue = _convertToDouble(value);
-                      if (doubleValue != _customGlider?.v3) {
-                        setState(() {
-                          _customGlider?.updatedVW = true;
-                          _customGlider?.v3 = doubleValue;
-                        });
-                      }
-                    }),
-                    validationErrorMsg: _NUMBER_TO_999_9,
-                    hintText: _ENTER_VELOCITY);
-              }),
-            ),
-            _formattedTextCell(_defaultGlider!.v3.toStringAsFixed(1)),
-          ],
-        ),
-        TableRow(
-          children: [
-            _formattedTextCell("W3 " + _sinkRateUnits),
-            InkWell(
-              child: _formattedTextCell(_customGlider!.w3.toStringAsFixed(2)),
-              onTap: (() {
-                _updateGliderValueDialog(
-                    label: "W3 " + _sinkRateUnits,
-                    regexValidation: _REGEX_MINUS_999_99_TO_0,
-                    value: _customGlider!.w3.toStringAsFixed(2),
-                    updateFunction: ((String value) {
-                      double doubleValue = _convertToDouble(value);
-                      if (doubleValue != _customGlider?.w3) {
-                        setState(() {
-                          _customGlider?.updatedVW = true;
-                          _customGlider?.w3 = doubleValue;
-                        });
-                      }
-                    }),
-                    validationErrorMsg: _SINKRATE_TO_MINUS_999_99,
-                    hintText: _ENTER_SINKRATE);
-              }),
-            ),
-            _formattedTextCell(_defaultGlider!.w3.toStringAsFixed(2)),
-          ],
-        ),
-      ],
+            _formattedTextCell(_defaultGlider!.w1.toStringAsFixed(2)),
+          ]),
+          TableRow(
+            children: [
+              _formattedTextCell("V2 " + _velocityUnits),
+              InkWell(
+                child: _formattedTextCell(_customGlider!.v2.toStringAsFixed(1),
+                    modifiable: true),
+                onTap: (() {
+                  _updateGliderValueDialog(
+                      label: "V2 " + _velocityUnits,
+                      regexValidation: _REGEX_TO_999_9,
+                      value: _customGlider!.v2.toStringAsFixed(1),
+                      updateFunction: ((String value) {
+                        double doubleValue = _convertToDouble(value);
+                        if (doubleValue != _customGlider?.v2) {
+                          setState(() {
+                            _customGlider?.updatedVW = true;
+                            _customGlider?.v2 = doubleValue;
+                            _getGliderCubit().storeCustomGlider(_customGlider!);
+                          });
+                        }
+                      }),
+                      validationErrorMsg: _NUMBER_TO_999_9,
+                      hintText: _ENTER_VELOCITY);
+                }),
+              ),
+              _formattedTextCell(_defaultGlider!.v2.toStringAsFixed(1)),
+            ],
+          ),
+          TableRow(
+            children: [
+              _formattedTextCell("W2 " + _sinkRateUnits),
+              InkWell(
+                child: _formattedTextCell(_customGlider!.w2.toStringAsFixed(2),
+                    modifiable: true),
+                onTap: (() {
+                  _updateGliderValueDialog(
+                      label: "W2 " + _sinkRateUnits,
+                      regexValidation: _REGEX_MINUS_999_99_TO_0,
+                      value: _customGlider!.w2.toStringAsFixed(2),
+                      updateFunction: ((String value) {
+                        double doubleValue = _convertToDouble(value);
+                        if (doubleValue != _customGlider?.w2) {
+                          setState(() {
+                            _customGlider?.updatedVW = true;
+                            _customGlider?.w2 = doubleValue;
+                            _getGliderCubit().storeCustomGlider(_customGlider!);
+                          });
+                        }
+                      }),
+                      validationErrorMsg: _SINKRATE_TO_MINUS_999_99,
+                      hintText: _ENTER_SINKRATE);
+                }),
+              ),
+              _formattedTextCell(_defaultGlider!.w2.toStringAsFixed(2)),
+            ],
+          ),
+          TableRow(
+            children: [
+              _formattedTextCell("V3 " + _velocityUnits),
+              InkWell(
+                child: _formattedTextCell(_customGlider!.v3.toStringAsFixed(1),
+                    modifiable: true),
+                onTap: (() {
+                  _updateGliderValueDialog(
+                      label: "V3 " + _velocityUnits,
+                      regexValidation: _REGEX_TO_999_9,
+                      value: _customGlider!.v3.toStringAsFixed(1),
+                      updateFunction: ((String value) {
+                        double doubleValue = _convertToDouble(value);
+                        if (doubleValue != _customGlider?.v3) {
+                          setState(() {
+                            _customGlider?.updatedVW = true;
+                            _customGlider?.v3 = doubleValue;
+                            _getGliderCubit().storeCustomGlider(_customGlider!);
+                          });
+                        }
+                      }),
+                      validationErrorMsg: _NUMBER_TO_999_9,
+                      hintText: _ENTER_VELOCITY);
+                }),
+              ),
+              _formattedTextCell(_defaultGlider!.v3.toStringAsFixed(1)),
+            ],
+          ),
+          TableRow(
+            children: [
+              _formattedTextCell("W3 " + _sinkRateUnits),
+              InkWell(
+                child: _formattedTextCell(_customGlider!.w3.toStringAsFixed(2),
+                    modifiable: true),
+                onTap: (() {
+                  _updateGliderValueDialog(
+                      label: "W3 " + _sinkRateUnits,
+                      regexValidation: _REGEX_MINUS_999_99_TO_0,
+                      value: _customGlider!.w3.toStringAsFixed(2),
+                      updateFunction: ((String value) {
+                        double doubleValue = _convertToDouble(value);
+                        if (doubleValue != _customGlider?.w3) {
+                          setState(() {
+                            _customGlider?.updatedVW = true;
+                            _customGlider?.w3 = doubleValue;
+                            _getGliderCubit().storeCustomGlider(_customGlider!);
+                          });
+                        }
+                      }),
+                      validationErrorMsg: _SINKRATE_TO_MINUS_999_99,
+                      hintText: _ENTER_SINKRATE);
+                }),
+              ),
+              _formattedTextCell(_defaultGlider!.w3.toStringAsFixed(2)),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
   Table _getGliderWeightDisplay() {
-    String massLabel =   _massUnits ;
+    String massLabel = _massUnits;
     return Table(
       border: TableBorder.all(),
       defaultVerticalAlignment: TableCellVerticalAlignment.middle,
@@ -777,7 +840,8 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
             _formattedTextCell("Glider Mass " + massLabel),
             InkWell(
               child: _formattedTextCell(
-                  _customGlider!.gliderEmptyMass.toStringAsFixed(1)),
+                  _customGlider!.gliderEmptyMass.toStringAsFixed(1),
+                  modifiable: true),
               onTap: (() {
                 _updateGliderValueDialog(
                     label: "Glider Mass " + massLabel,
@@ -788,6 +852,7 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
                       if (doubleValue != _customGlider!.gliderEmptyMass) {
                         setState(() {
                           _customGlider!.gliderEmptyMass = doubleValue;
+                          _getGliderCubit().storeCustomGlider(_customGlider!);
                         });
                       }
                     }),
@@ -804,7 +869,8 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
             _formattedTextCell("Pilot Mass " + massLabel),
             InkWell(
               child: _formattedTextCell(
-                  _customGlider!.pilotMass.toStringAsFixed(1)),
+                  _customGlider!.pilotMass.toStringAsFixed(1),
+                  modifiable: true),
               onTap: (() {
                 _updateGliderValueDialog(
                     label: "Pilot Mass " + massLabel,
@@ -815,6 +881,7 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
                       if (doubleValue != _customGlider!.pilotMass) {
                         setState(() {
                           _customGlider!.pilotMass = doubleValue;
+                          _getGliderCubit().storeCustomGlider(_customGlider!);
                         });
                       }
                     }),
@@ -837,7 +904,8 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
             _formattedTextCell("On Board Ballast" + massLabel),
             InkWell(
               child: _formattedTextCell(
-                  _customGlider!.loadedBallast.toStringAsFixed(1)),
+                  _customGlider!.loadedBallast.toStringAsFixed(1),
+                  modifiable: true),
               onTap: (() {
                 _updateGliderValueDialog(
                     label: "On Board Ballast " + massLabel,
@@ -848,7 +916,7 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
                       if (doubleValue != _customGlider!.loadedBallast) {
                         setState(() {
                           _customGlider!.loadedBallast = doubleValue;
-                          _customGlider!.calcThermallingSinkRate();
+                          _getGliderCubit().calculateThermallingValues(_customGlider!);
                         });
                       }
                     }),
@@ -890,7 +958,18 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
     );
   }
 
-  Widget _formattedTextCell(String? text) {
+  Widget _formattedTextCell(String? text, {bool modifiable = false}) {
+    if (modifiable) {
+      return Ink(
+        height: 50,
+        color: Colors.green[50],
+        child: Container(
+          alignment: Alignment.center,
+          child: Text(text ?? "",
+              style: textStyleBoldBlackFontSize18, textAlign: TextAlign.center),
+        ),
+      );
+    }
     return Text(text ?? "",
         style: textStyleBoldBlackFontSize18, textAlign: TextAlign.center);
   }
@@ -1033,10 +1112,11 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
       child: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.only(top:4.0, bottom:8.0),
+            padding: const EdgeInsets.only(top: 4.0, bottom: 8.0),
             child: Text(_EXPERIMENTAL_ESTIMATED_FLIGHT_TEXT),
           ),
-          StatefulBuilder(builder: (BuildContext context, StateSetter setState) {
+          StatefulBuilder(
+              builder: (BuildContext context, StateSetter setState) {
             return CheckboxListTile(
               title: Text("Do not show this again"),
               controlAffinity: ListTileControlAffinity.leading,

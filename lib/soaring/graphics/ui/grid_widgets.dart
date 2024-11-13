@@ -54,17 +54,17 @@ class _ScrollableTableState extends State<ScrollableTable> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        TableHead(
-            scrollController: _headController,
-            columnHeadings: widget.columnHeadings,
-            descriptionColumnWidth: widget.descriptionColumnWidth,
-            cellWidth: widget.dataCellWidth,
-            cellHeight: widget.dataCellHeight,
-            backgroundColor: widget.headingBackgroundColor),
-        Expanded(
-          child: TableBody(
+    return Container(
+      child: Column(
+        children: [
+          TableHead(
+              scrollController: _headController,
+              columnHeadings: widget.columnHeadings,
+              descriptionColumnWidth: widget.descriptionColumnWidth,
+              cellWidth: widget.dataCellWidth,
+              cellHeight: widget.dataCellHeight,
+              backgroundColor: widget.headingBackgroundColor),
+          TableBody(
               scrollController: _bodyController,
               descriptionColumnWidth: widget.descriptionColumnWidth,
               dataCellWidth: widget.dataCellWidth,
@@ -73,8 +73,8 @@ class _ScrollableTableState extends State<ScrollableTable> {
               dataRowBackgroundColors: widget.dataRowsBackgroundColors,
               gridData: widget.gridData,
               descriptions: widget.descriptions),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

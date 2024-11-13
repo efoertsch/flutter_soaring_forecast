@@ -25,10 +25,16 @@ class LocalForecastGraphic extends StatefulWidget {
   State<LocalForecastGraphic> createState() => _LocalForecastGraphicState();
 }
 
+class TabsConfig {
+  static List<Tab> forecastTabs = [];
+  static int selectedTabIndex = 0;
+}
+
 class _LocalForecastGraphicState extends State<LocalForecastGraphic>
     with TickerProviderStateMixin {
   final forecastChannel = StreamController<GestureEvent>.broadcast();
   late final AnimationController bottomSheetController;
+  late TabController _tabController;
 
   double _screenWidth = 0;
   double _chartWidthMargin = 30;
@@ -44,8 +50,8 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
   final shapesOfPoints = <PointShape>[];
   final annotationsOfPoints = <Annotation>[];
   final crossHairGuide = [
-    PaintStyle(strokeColor: Colors.black38),
-    PaintStyle(strokeColor: Colors.black38)
+    PaintStyle(strokeColor: Colors.black38, strokeWidth: 2),
+    PaintStyle(strokeColor: Colors.black38, strokeWidth: 2)
   ];
   ForecastGraphData? forecastGraphData;
 
@@ -65,11 +71,17 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
     bottomSheetController = BottomSheet.createAnimationController(this);
     bottomSheetController.duration = Duration(milliseconds: 2000);
     bottomSheetController.drive(CurveTween(curve: Curves.easeIn));
+    _tabController = TabController(
+      length: TabsConfig.forecastTabs.length,
+      vsync: this,
+      initialIndex: TabsConfig.selectedTabIndex,
+    );
   }
 
   @override
   void dispose() {
     bottomSheetController.dispose();
+    _tabController.dispose();
     super.dispose();
   }
 
@@ -115,12 +127,12 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
 
   List<Widget> _getGraphMenu() {
     return <Widget>[
-      TextButton(
-          child: const Text(GraphLiterals.GRAPH_DATA,
-              style: TextStyle(color: Colors.white)),
-          onPressed: () {
-            _showGraphDataTable();
-          }),
+      // TextButton(
+      //     child: const Text(GraphLiterals.GRAPH_DATA,
+      //         style: TextStyle(color: Colors.white)),
+      //     onPressed: () {
+      //       //_showGraphDataTable();
+      //     }),
       PopupMenuButton<String>(
         onSelected: handleClick,
         icon: Icon(Icons.more_vert),
@@ -159,25 +171,20 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
   Widget _getBody() {
     return Stack(
       children: [
-        _widgetForMessages(),
-        _getForecastScreenWidgets(),
+        Column(children: [
+          _widgetForMessages(),
+          Padding(
+            child: _getBeginnerExpertWidget(),
+            padding: EdgeInsets.all(8.0),
+          ),
+          _getLocalForecastWidget(),
+        ]),
         _getProgressIndicator(),
       ],
     );
   }
 
-  Widget _getForecastScreenWidgets() {
-    final widgets = <Widget>[];
-    widgets.add(_getLocationTitleWidget());
-    widgets.add(_getBeginnerExpertWidget());
-    widgets.add(_getGraphWidgets());
-    return Padding(
-      padding: const EdgeInsets.only(left: 8.0, right: 8),
-      child: Column(children: widgets),
-    );
-  }
-
-  Widget _getLocationTitleWidget() {
+  Widget _getLocalForecastWidget() {
     return BlocConsumer<GraphicBloc, GraphState>(listener: (context, state) {
       if (state is GraphDataState) {
         //
@@ -186,303 +193,256 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
       return current is GraphDataState;
     }, builder: (context, state) {
       if (state is GraphDataState) {
-        var text;
-        if (state.forecastData.turnpointTitle != null) {
-          text =
-              ("${state.forecastData.turnpointTitle} (${state.forecastData.turnpointCode}) ");
-        } else if (state.forecastData.lat != null &&
-            state.forecastData.lng != null) {
-          text = state.forecastData.lat!.toStringAsFixed(5) +
-              "/" +
-              state.forecastData.lng!.toStringAsFixed(5);
-        }
-        if (text != null) {
-          return Container(
-            child: Padding(
-              padding: const EdgeInsets.only(top: 8.0),
-              child: Center(
-                child: Text(
-                  text,
-                  style: textStyleBlackFontSize20,
+        List<Tab> forecastTabs =
+            _getLocalForecastTabs(state.forecastData.pointForecastsGraphData);
+        List<Widget> tabBarWidgets = _getLocalForecastTabView(
+            state.forecastData.pointForecastsGraphData,
+            state.forecastData.maxAltitude,
+            state.forecastData.maxThermalStrength);
+        _tabController = TabController(
+            length: tabBarWidgets.length,
+            vsync: this,
+            initialIndex: state.forecastData.startIndex);
+        _tabController.addListener((){
+          _sendEvent(SetLocationTabIndex(_tabController.index));
+        });
+
+        return Expanded(
+          child: (Column(
+              mainAxisSize: MainAxisSize.max,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Container(
+                  color: Colors.grey[300],
+                  padding: const EdgeInsets.only(left: 8.0, right: 8),
+                  child: TabBar(
+                    indicator: BoxDecoration(
+                      color: Colors.white,
+                    ),
+                    controller: _tabController,
+                    isScrollable: true,
+                    tabs: forecastTabs,
+                    labelStyle: textStyleBoldBlackFontSize16,
+                    unselectedLabelStyle: textStyleBoldBlackFontSize16,
+                  ),
                 ),
-              ),
-            ),
-          );
-        } else {
-          return SizedBox.shrink();
-        }
-      }
-      return SizedBox.shrink();
-    });
-  }
-
-  Widget _getBeginnerExpertWidget() {
-    return BlocConsumer<GraphicBloc, GraphState>(
-      listener: (context, state) {
-        if (state is BeginnerModeState) {
-          _beginnerMode = state.beginnerMode;
-        }
-        if (state is BeginnerForecastDateModelState) {
-          _selectedForecastDate = state.date;
-          _selectedForecastDOW = reformatDateToDOW(_selectedForecastDate) ?? '';
-          _selectedModelName = state.model;
-        }
-        if (state is GraphModelsState) {
-          _selectedModelName = state.selectedModelName;
-          _modelNames.clear();
-          _modelNames.addAll(state.modelNames);
-        }
-        if (state is GraphModelDatesState) {
-          _forecastDates = state.forecastDates;
-          _selectedForecastDate = state.selectedForecastDate;
-          _shortDOWs = reformatDatesToDOW(state.forecastDates);
-          _selectedForecastDOW = _shortDOWs[
-              state.forecastDates.indexOf(state.selectedForecastDate)];
-        }
-      },
-      buildWhen: (previous, current) {
-        return current is BeginnerModeState ||
-            current is BeginnerForecastDateModelState ||
-            current is GraphModelsState ||
-            current is GraphModelDatesState;
-      },
-      builder: (context, state) {
-        if (_beginnerMode) {
-          return _getBeginnerForecast();
-        } else {
-          return _getForecastModelsAndDates();
-        }
-      },
-    );
-  }
-
-  Widget _getBeginnerForecast() {
-    return BeginnerForecast(
-        context: context,
-        leftArrowOnTap: (() {
-          _sendEvent(ForecastDateSwitchEvent(ForecastDateChange.previous));
-          setState(() {});
-        }),
-        rightArrowOnTap: (() {
-          _sendEvent(ForecastDateSwitchEvent(ForecastDateChange.next));
-          setState(() {});
-        }),
-        displayText:
-            "(${_selectedModelName.toUpperCase()}) $_selectedForecastDOW ");
-  }
-
-  Widget _getForecastModelsAndDates() {
-    //debugPrint('creating/updating main ForecastModelsAndDates');
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.start,
-      children: [
-        Expanded(
-          flex: 3,
-          child: ModelDropDownList(
-            selectedModelName: _selectedModelName,
-            modelNames: _modelNames,
-            onModelChange: (String value) {
-              _sendEvent(SelectedModelEvent(value));
-            },
-          ),
-        ),
-        Expanded(
-            flex: 7,
-            child: Padding(
-              padding: EdgeInsets.only(left: 16.0),
-              child: ForecastDatesDropDown(
-                selectedForecastDate: _selectedForecastDOW,
-                forecastDates: _shortDOWs,
-                onForecastDateChange: (String value) {
-                  final selectedForecastDate =
-                      _forecastDates[_shortDOWs.indexOf(value)];
-                  _sendEvent(SelectedForecastDateEvent(selectedForecastDate));
-                },
-              ),
-            )),
-      ],
-    );
-  }
-
-  //TODO - Expanded should be under Column, Row, or Flex.
-  Widget _getGraphWidgets() {
-    return Expanded(
-      child: SingleChildScrollView(
-          child: Column(
-        children: [_getCloudbaseWidget(), _getThermalUpdraftWidget()],
-      )),
-    );
-  }
-
-  // Hmmm, graph doesn't redraw on first previous or next click
-  Widget _getCloudbaseWidget() {
-    return BlocConsumer<GraphicBloc, GraphState>(listener: (context, state) {
-      if (state is GraphDataState) {
-        _graphKey = Object();
-        // Very Important! Determine what forecasts are present in data
-        // Used to determine shapes, colors, legends, etc.
-        forecastGraphData = state.forecastData;
-        _checkForCuAndOdInForecast(state.forecastData.altitudeData);
-        // print(" ----------   altitude data -------------");
-        // state.forecastData.altitudeData.forEach((map) {
-        //   map.forEach((key, value) {
-        //     print("${key} : ${value.toString()}");
-        //   });
-        // });
-        // print(" ------- end altitude data -------------");
-        // WidgetsBinding.instance!.addPostFrameCallback((_) {
-        //   _getModelSheetForGridDataWidget(context, state.forecastData);
-        // });
-      }
-    }, buildWhen: (previous, current) {
-      return current is GraphDataState;
-    }, builder: (context, state) {
-      if (state is GraphDataState) {
-        //  debugPrint("Plotting GraphDataState: ${state.forecastData.model} / ${state.forecastData.date}");
-        return Container(
-          key: ValueKey<Object>(_graphKey),
-          margin: const EdgeInsets.only(top: 8),
-          width: _screenWidth - _chartWidthMargin,
-          height: 300,
-          child: Chart(
-            data: state.forecastData.altitudeData,
-            rebuild: false,
-            padding: (_) => const EdgeInsets.fromLTRB(30, 0, 10, 4),
-            variables: {
-              'time': Variable(
-                accessor: (Map map) => map['time'] as String,
-              ),
-              'value': Variable(
-                accessor: (Map map) => map['value'] as num,
-                scale: LinearScale(
-                    formatter: (value) => '${value.toInt()}', min: 0),
-              ),
-              'name': Variable(
-                accessor: (Map map) => map['name'] as String,
-              ),
-            },
-
-            coord: RectCoord(
-                horizontalRange: [0.01, 0.99], color: altitudeGraphBackground),
-            //coord: RectCoord(color: const Color(0xffdddddd)),
-            marks: [
-              PointMark(
-                size: SizeEncode(variable: "name", values: sizeOfPoints),
-                color: ColorEncode(
-                  variable: 'name',
-                  values: colorsOfPoints,
-                  updaters: {
-                    'groupMouse': {false: (color) => color.withAlpha(100)},
-                    'groupTouch': {false: (color) => color.withAlpha(100)},
-                  },
-                ),
-                shape: ShapeEncode(variable: 'name', values: shapesOfPoints),
-              ),
-            ],
-            axes: [
-              Defaults.horizontalAxis..label = null,
-              Defaults.verticalAxis
-                ..label = (LabelStyle(
-                    textStyle: TextStyle(
-                        color: Colors.black,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold))),
-            ],
-            selections: {'tap': PointSelection(dim: Dim.x)},
-            //tooltip: TooltipGuide(),
-            crosshair: CrosshairGuide(styles: crossHairGuide),
-            gestureStream: forecastChannel,
-            annotations: annotationsOfPoints,
-          ),
+                Expanded(
+                    child: TabBarView(
+                        controller: _tabController, children: tabBarWidgets))
+              ])),
         );
       }
       return SizedBox.shrink();
     });
   }
 
-  Widget _getThermalUpdraftWidget() {
-    return BlocConsumer<GraphicBloc, GraphState>(listener: (context, state) {
-      if (state is GraphDataState) {
-        // Very Important! Determine what forecasts are present in data
-        // Used to determine shapes, colors, legends, etc.
-        _checkForCuAndOdInForecast(state.forecastData.altitudeData);
-        // print(" ----------   thermal data -------------");
-        // state.forecastData.thermalData.forEach((map) {
-        //   map.forEach((key, value) {
-        //     print("${key} : ${value.toString()}");
-        //   });
-        // });
-        // print(" ------- end thermal data -------------");
-        // WidgetsBinding.instance!.addPostFrameCallback((_) {
-        //   _getModelSheetForGridDataWidget(context, state.forecastData);
-        // });
-      }
-    }, buildWhen: (previous, current) {
-      return current is GraphDataState;
-    }, builder: (context, state) {
-      if (state is GraphDataState) {
-        return Container(
-          key: ValueKey<Object>(_graphKey),
-          margin: const EdgeInsets.only(top: 0),
-          width: _screenWidth - _chartWidthMargin,
-          height: 140,
-          child: Padding(
-            padding: const EdgeInsets.only(top: 20.0),
-            child: Chart(
-              padding: (_) => const EdgeInsets.fromLTRB(30, 0, 10, 8),
-              rebuild: false,
-              data: state.forecastData.thermalData,
-              variables: {
-                'time': Variable(
-                  accessor: (Map map) => map['time'] as String,
-                ),
-                'value': Variable(
-                  accessor: (Map map) => map['value'] as num,
-                  scale: LinearScale(
-                      formatter: (value) => '${value.toInt()}', min: 0),
-                ),
+  List<Tab> _getLocalForecastTabs(
+      List<PointForecastGraphData> pointForecastsGraphData) {
+    List<Tab> forecastTabs = [];
+    pointForecastsGraphData.forEach((pointForecastGraphData) {
+      forecastTabs.add(Tab(text: _getLocationTitle(pointForecastGraphData)));
+    });
+    return forecastTabs;
+  }
+
+  String _getLocationTitle(PointForecastGraphData pointForecastGraphData) {
+    var text;
+    if (pointForecastGraphData.turnpointTitle != null) {
+      text =
+          ("${pointForecastGraphData.turnpointTitle} (${pointForecastGraphData.turnpointCode}) ");
+    } else if (pointForecastGraphData.lat != null &&
+        pointForecastGraphData.lng != null) {
+      text = pointForecastGraphData.lat!.toStringAsFixed(5) +
+          "/" +
+          pointForecastGraphData.lng!.toStringAsFixed(5);
+    }
+    if (text != null) {
+      return text;
+    } else {
+      return "Undefined";
+    }
+  }
+
+  List<Widget> _getLocalForecastTabView(
+      List<PointForecastGraphData> pointForecastsGraphData,
+      double maxAltitude,
+      double maxThermalStrength) {
+    List<Widget> forecastGraphWidgets = [];
+    pointForecastsGraphData.forEach((pointForecastGraphData) {
+      forecastGraphWidgets.add(_forecastGraphWidget(
+          pointForecastGraphData, maxAltitude, maxThermalStrength));
+    });
+    return forecastGraphWidgets;
+  }
+
+  ///TODO - Expanded should be under Column, Row, or Flex.
+  Widget _forecastGraphWidget(PointForecastGraphData pointForecastGraphData,
+      double maxAltitude, double maxThermalStrength) {
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          _getCloudbaseWidget(pointForecastGraphData, maxAltitude),
+          _getThermalUpdraftWidget(pointForecastGraphData, maxThermalStrength),
+          _getGridDataWidget(pointForecastGraphData)
+        ],
+      ),
+    );
+  }
+
+// Hmmm, graph doesn't redraw on first previous or next click
+  Widget _getCloudbaseWidget(
+      PointForecastGraphData pointForecastGraphData, double maxAltitude) {
+    _graphKey = Object();
+    _checkForCuAndOdInForecast(pointForecastGraphData.altitudeData);
+    // print(" ----------   altitude data -------------");
+    // (pointForecastGraphData.altitudeData.forEach((map) {
+    //   map.forEach((key, value) {
+    //     print("${key} : ${value.toString()}");
+    //   });
+    // });
+    // print(" ------- end altitude data -------------");
+    // WidgetsBinding.instance!.addPostFrameCallback((_) {
+    //   _getModelSheetForGridDataWidget(context, state.forecastData);
+    // });
+
+    //  debugPrint("Plotting GraphDataState: ${state.forecastData.model} / ${state.forecastData.date}");
+    return Container(
+      key: ValueKey<Object>(_graphKey),
+      margin: const EdgeInsets.only(top: 8),
+      width: _screenWidth - _chartWidthMargin,
+      height: 300,
+      child: Chart(
+        data: pointForecastGraphData.altitudeData,
+        rebuild: false,
+        padding: (_) => const EdgeInsets.fromLTRB(30, 0, 10, 4),
+        variables: {
+          'time': Variable(
+            accessor: (Map map) => map['time'] as String,
+          ),
+          'value': Variable(
+            accessor: (Map map) => map['value'] as num,
+            scale: LinearScale(
+                formatter: (value) => '${value.toInt()}',
+                min: 0,
+                max: maxAltitude),
+          ),
+          'name': Variable(
+            accessor: (Map map) => map['name'] as String,
+          ),
+        },
+
+        coord: RectCoord(
+            horizontalRange: [0.01, 0.99], color: altitudeGraphBackground),
+        //coord: RectCoord(color: const Color(0xffdddddd)),
+        marks: [
+          PointMark(
+            size: SizeEncode(variable: "name", values: sizeOfPoints),
+            color: ColorEncode(
+              variable: 'name',
+              values: colorsOfPoints,
+              updaters: {
+                'groupMouse': {false: (color) => color.withAlpha(100)},
+                'groupTouch': {false: (color) => color.withAlpha(100)},
               },
-              coord: RectCoord(color: const Color(0xffdddddd)),
-              marks: [
-                LineMark(
-                  color: ColorEncode(
-                      variable: 'value', values: [Colors.red, Colors.red]),
-                  shape: ShapeEncode(value: BasicLineShape(smooth: true)),
-                  size: SizeEncode(value: 4.0),
-                ),
-              ],
-              axes: [
-                Defaults.horizontalAxis
-                  ..label = (LabelStyle(
-                      textStyle: TextStyle(
-                          color: Colors.black,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold))),
-                Defaults.verticalAxis
-                  ..label = (LabelStyle(
-                      textStyle: TextStyle(
-                          color: Colors.black,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold))),
-              ],
-              selections: {'tap': PointSelection(dim: Dim.x)},
-              //tooltip: TooltipGuide(),
-              crosshair: CrosshairGuide(styles: crossHairGuide),
-              gestureStream: forecastChannel,
-              annotations: _getGraphLegend(
-                  label: "Thermal Updraft ft/min",
-                  initialOffset: graphLegendOffset,
-                  colorIndex: 0,
-                  // same as thermal in top graph
-                  xPosIndex: 0,
-                  yPosIndex: 0,
-                  yOffset: 100),
             ),
+            shape: ShapeEncode(variable: 'name', values: shapesOfPoints),
           ),
-        );
-      }
-      return SizedBox.shrink();
-    });
+        ],
+        axes: [
+          Defaults.horizontalAxis
+            ..label = (LabelStyle(
+                textStyle: TextStyle(
+                    color: Colors.black,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold))),
+          Defaults.verticalAxis
+            ..label = (LabelStyle(
+                textStyle: TextStyle(
+                    color: Colors.black,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold))),
+        ],
+        selections: {'tap': PointSelection(dim: Dim.x)},
+        //tooltip: TooltipGuide(),
+        crosshair: CrosshairGuide(styles: crossHairGuide),
+        gestureStream: forecastChannel,
+        annotations: annotationsOfPoints,
+      ),
+    );
+  }
+
+  Widget _getThermalUpdraftWidget(PointForecastGraphData pointForecastGraphData,
+      double maxThermalStrength) {
+    _graphKey = Object();
+    _checkForCuAndOdInForecast(pointForecastGraphData.altitudeData);
+    // print(" ----------   thermal data -------------");
+    // state.forecastData.thermalData.forEach((map) {
+    //   map.forEach((key, value) {
+    //     print("${key} : ${value.toString()}");
+    //   });
+    // });
+    // print(" ------- end thermal data -------------");
+    // WidgetsBinding.instance!.addPostFrameCallback((_) {
+    //   _getModelSheetForGridDataWidget(context, state.forecastData);
+    // });
+    return Container(
+      key: ValueKey<Object>(_graphKey),
+      margin: const EdgeInsets.only(top: 20),
+      width: _screenWidth - _chartWidthMargin,
+      height: 140,
+      child: Chart(
+        padding: (_) => const EdgeInsets.fromLTRB(30, 0, 10, 8),
+        rebuild: false,
+        data: pointForecastGraphData.thermalData,
+        variables: {
+          'time': Variable(
+            accessor: (Map map) => map['time'] as String,
+          ),
+          'value': Variable(
+            accessor: (Map map) => map['value'] as num,
+            scale: LinearScale(
+                formatter: (value) => '${value.toInt()}',
+                min: 0,
+                max: maxThermalStrength),
+          ),
+        },
+        coord: RectCoord(color: const Color(0xffdddddd)),
+        marks: [
+          LineMark(
+            color: ColorEncode(
+                variable: 'value', values: [Colors.red, Colors.red]),
+            shape: ShapeEncode(value: BasicLineShape(smooth: true)),
+            size: SizeEncode(value: 4.0),
+          ),
+        ],
+        axes: [
+          Defaults.horizontalAxis
+            ..label = (LabelStyle(
+                textStyle: TextStyle(
+                    color: Colors.black,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold))),
+          Defaults.verticalAxis
+            ..label = (LabelStyle(
+                textStyle: TextStyle(
+                    color: Colors.black,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold))),
+        ],
+        selections: {'tap': PointSelection(dim: Dim.x)},
+        //tooltip: TooltipGuide(),
+        crosshair: CrosshairGuide(styles: crossHairGuide),
+        gestureStream: forecastChannel,
+        annotations: _getGraphLegend(
+            label: "Thermal Updraft ft/min",
+            initialOffset: graphLegendOffset,
+            colorIndex: 0,
+            // same as thermal in top graph
+            xPosIndex: 0,
+            yPosIndex: 0,
+            yOffset: 125),
+      ),
+    );
   }
 
   /// conditions might be that the forecast doesn't include Cu or OD so we need
@@ -584,26 +544,26 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
       required double yOffset,
       required double yPosIndex}) {
     return CustomAnnotation(
-    renderer:(offset, size) => [
-      RectElement(
-        rect: Rect.fromLTWH(offset.dx -3  ,offset.dy -5,10,10),
-        style: PaintStyle(fillColor: colorsOfPoints[colorIndex]),
-      )
-    ],
+      renderer: (offset, size) => [
+        RectElement(
+          rect: Rect.fromLTWH(offset.dx - 3, offset.dy - 5, 10, 10),
+          style: PaintStyle(fillColor: colorsOfPoints[colorIndex]),
+        )
+      ],
       anchor: (size) => Offset(
           initialOffset + (xPosIndex == 0 ? 0 : (size.width / 2) * xPosIndex),
-           yOffset + 12 * yPosIndex),);
+          yOffset + 12 * yPosIndex),
+    );
   }
 
-    // return MarkAnnotation(
-    //   relativePath: Path()
-    //     ..addRect(Rect.fromCircle(center: const Offset(0, 0), radius: 5)),
-    //   style: Paint()..color = colorsOfPoints[colorIndex],
-    //   anchor: (size) => Offset(
-    //       initialOffset + (xPosIndex == 0 ? 0 : (size.width / 2) * xPosIndex),
-    //       yOffset + 12 * yPosIndex),
-    // );
-
+// return MarkAnnotation(
+//   relativePath: Path()
+//     ..addRect(Rect.fromCircle(center: const Offset(0, 0), radius: 5)),
+//   style: Paint()..color = colorsOfPoints[colorIndex],
+//   anchor: (size) => Offset(
+//       initialOffset + (xPosIndex == 0 ? 0 : (size.width / 2) * xPosIndex),
+//       yOffset + 12 * yPosIndex),
+// );
 
   TagAnnotation _getTagAnnotation(
       {required double initialOffset,
@@ -637,13 +597,14 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
         if (state is GraphWorkingState) {
           if (state.working) {
             return Container(
+
               child: AbsorbPointer(
                   absorbing: true,
                   child: CircularProgressIndicator(
-                    color: Colors.blue,
+                    color: Colors.white,
                   )),
               alignment: Alignment.center,
-              color: Colors.transparent,
+              color: Colors.black26,
             );
           }
         }
@@ -663,39 +624,42 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
     );
   }
 
-  void _showGraphDataTable() {
-    if (forecastGraphData == null) {
-      CommonWidgets.showErrorDialog(
-          context, StandardLiterals.UH_OH, GraphLiterals.GRAPH_DATA_MISSING);
-    } else {
-      showModalBottomSheet<void>(
-          context: context,
-          transitionAnimationController: bottomSheetController,
-          enableDrag: true,
-          isDismissible: false,
-          isScrollControlled: true,
-          barrierColor: Colors.transparent,
-          builder: (BuildContext context) {
-            return Container(
-              height: MediaQuery.of(context).size.height * .75,
-              color: Colors.white,
-              child: _getGridDataWidget(forecastGraphData!),
-            );
-          });
-    }
-  }
+  // void _showGraphDataTable() {
+  //   if (forecastGraphData == null) {
+  //     CommonWidgets.showErrorDialog(
+  //         context, StandardLiterals.UH_OH, GraphLiterals.GRAPH_DATA_MISSING);
+  //   } else {
+  //     showModalBottomSheet<void>(
+  //         context: context,
+  //         transitionAnimationController: bottomSheetController,
+  //         enableDrag: true,
+  //         isDismissible: false,
+  //         isScrollControlled: true,
+  //         barrierColor: Colors.transparent,
+  //         builder: (BuildContext context) {
+  //           return Container(
+  //             height: MediaQuery
+  //                 .of(context)
+  //                 .size
+  //                 .height * .75,
+  //             color: Colors.white,
+  //             child: _getGridDataWidget(forecastGraphData!),
+  //           );
+  //         });
+  //   }
+  // }
 
-  Widget _getGridDataWidget(ForecastGraphData forecastGraphData) {
+  Widget _getGridDataWidget(PointForecastGraphData pointForecastGraphData) {
     // get list of hours for which forecasts have been made
-    final hours = forecastGraphData.hours;
+    final hours = pointForecastGraphData.hours;
     List<RowDescription> descriptions = [];
-    forecastGraphData.descriptions.forEach((forecast) {
+    pointForecastGraphData.descriptions.forEach((forecast) {
       descriptions.add(RowDescription(
           description: forecast.forecastNameDisplay,
           helpDescription: forecast.forecastDescription));
     });
     return Padding(
-      padding: const EdgeInsets.all(8.0),
+      padding: const EdgeInsets.only(left: 8.0, right: 8.0, top: 20),
       child: ScrollableTable(
           columnHeadings: hours,
           dataCellWidth: 60,
@@ -704,8 +668,96 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
           descriptionColumnWidth: 125,
           descriptionBackgroundColor: Colors.yellow.withOpacity(0.3),
           dataRowsBackgroundColors: [Colors.white, Colors.green.shade50],
-          gridData: forecastGraphData.gridData,
+          gridData: pointForecastGraphData.gridData,
           descriptions: descriptions),
+    );
+  }
+
+  Widget _getBeginnerExpertWidget() {
+    return BlocConsumer<GraphicBloc, GraphState>(
+      listener: (context, state) {
+        if (state is BeginnerModeState) {
+          _beginnerMode = state.beginnerMode;
+        }
+        if (state is BeginnerForecastDateModelState) {
+          _selectedForecastDate = state.date;
+          _selectedForecastDOW = reformatDateToDOW(_selectedForecastDate) ?? '';
+          _selectedModelName = state.model;
+        }
+        if (state is GraphModelsState) {
+          _selectedModelName = state.selectedModelName;
+          _modelNames.clear();
+          _modelNames.addAll(state.modelNames);
+        }
+        if (state is GraphModelDatesState) {
+          _forecastDates = state.forecastDates;
+          _selectedForecastDate = state.selectedForecastDate;
+          _shortDOWs = reformatDatesToDOW(state.forecastDates);
+          _selectedForecastDOW = _shortDOWs[
+              state.forecastDates.indexOf(state.selectedForecastDate)];
+        }
+      },
+      buildWhen: (previous, current) {
+        return current is BeginnerModeState ||
+            current is BeginnerForecastDateModelState ||
+            current is GraphModelsState ||
+            current is GraphModelDatesState;
+      },
+      builder: (context, state) {
+        if (_beginnerMode) {
+          return _getBeginnerForecast();
+        } else {
+          return _getForecastModelsAndDates();
+        }
+      },
+    );
+  }
+
+  Widget _getBeginnerForecast() {
+    return BeginnerForecast(
+        context: context,
+        leftArrowOnTap: (() {
+          _sendEvent(ForecastDateSwitchEvent(ForecastDateChange.previous));
+          setState(() {});
+        }),
+        rightArrowOnTap: (() {
+          _sendEvent(ForecastDateSwitchEvent(ForecastDateChange.next));
+          setState(() {});
+        }),
+        displayText:
+            "(${_selectedModelName.toUpperCase()}) $_selectedForecastDOW ");
+  }
+
+  Widget _getForecastModelsAndDates() {
+    //debugPrint('creating/updating main ForecastModelsAndDates');
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.start,
+      children: [
+        Expanded(
+          flex: 3,
+          child: ModelDropDownList(
+            selectedModelName: _selectedModelName,
+            modelNames: _modelNames,
+            onModelChange: (String value) {
+              _sendEvent(SelectedModelEvent(value));
+            },
+          ),
+        ),
+        Expanded(
+            flex: 7,
+            child: Padding(
+              padding: EdgeInsets.only(left: 16.0),
+              child: ForecastDatesDropDown(
+                selectedForecastDate: _selectedForecastDOW,
+                forecastDates: _shortDOWs,
+                onForecastDateChange: (String value) {
+                  final selectedForecastDate =
+                      _forecastDates[_shortDOWs.indexOf(value)];
+                  _sendEvent(SelectedForecastDateEvent(selectedForecastDate));
+                },
+              ),
+            )),
+      ],
     );
   }
 
