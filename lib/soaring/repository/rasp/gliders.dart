@@ -78,25 +78,21 @@ class Glider extends Equatable {
   @JsonKey(name: 'minSinkRate')
   late double minSinkRate;
 
-  // fields not on XCSoar glider database nor calculated on original spreadsheet, user will input or program will set/calculate
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  // fields not on XCSoar glider database nor calculated on original spreadsheet,
+  // user will input or program will set/calculate
+  @JsonKey(name:'loadedBallast', required: false)
   late double loadedBallast;
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(name : 'updatedVW', required: false)
   late bool updatedVW = false;
-
-  // values user defined or calculated
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(name: 'minSinkMass', required: false)
   late double minSinkMass;
-
   // Pilot estimate of bank angle they will use when flying the task.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(name:'bankAngle', required: false)
   late int bankAngle;
-
   // Calculated sink rate using min sink and angle of bank
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(name: 'thermallingSinkRate', required: false)
   late double thermallingSinkRate;
-
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(name:'polarWeightAdjustment', required: false)
   late double polarWeightAdjustment; // assign  using
   // 1. Use value of 1 if using all XCSoar provided values
   // 2. User uses XCSoar Vx/Wx but adjusted where glider/pilot/ballast weight
@@ -106,19 +102,16 @@ class Glider extends Equatable {
   //     sq root((glider + pilot + ballast)/(glider + pilot)
 
   // sink rate adjusted for added ballast (value used to send to server)
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  late double ballastAdjThermallingSinkRate;
-
+  @JsonKey(name:'ballastAdjThermalingSinkRate', required: false)
+  late double ballastAdjThermalingSinkRate;
   // Calculated min sink speed at specified angle of bank;
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(name:'minSinkSpeedAtBankAngle', required: false)
   late double minSinkSpeedAtBankAngle;
-
   // Diameter of glider thermalling circle based on min sink speed for angle of bank
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(name:'turnDiameter', required: false)
   late double turnDiameter;
-
   // Number of seconds it will take for the glider to make 1 turn based on min sink speed for angle of bank
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(name :'secondsForTurn', required: false)
   late double secondsForTurn;
 
   Glider({
@@ -139,17 +132,17 @@ class Glider extends Equatable {
     required this.a,
     required this.b,
     required this.c,
-    required this.minSinkSpeed,
-    required this.minSinkRate,
+     this.minSinkSpeed = 0,
+     this.minSinkRate = 0,
     // custom code
     this.loadedBallast = 0,
     this.updatedVW = false,
     this.minSinkMass = 0,
-    this.bankAngle = 45,
+    this.bankAngle = 0,
     this.thermallingSinkRate = 0,
     this.polarWeightAdjustment = 1,
-    this.ballastAdjThermallingSinkRate = 0,
-    this.minSinkSpeedAtBankAngle = 45,
+    this.ballastAdjThermalingSinkRate = 0,
+    this.minSinkSpeedAtBankAngle = 0,
     this.turnDiameter = 0,
     this.secondsForTurn = 0,
   });
@@ -216,8 +209,8 @@ class Glider extends Equatable {
         thermallingSinkRate: thermallingSinkRate ?? this.thermallingSinkRate,
         polarWeightAdjustment:
             polarWeightAdjustment ?? this.polarWeightAdjustment,
-        ballastAdjThermallingSinkRate:
-            ballastAdjThermallingSinkRate ?? this.ballastAdjThermallingSinkRate,
+        ballastAdjThermalingSinkRate:
+            ballastAdjThermallingSinkRate ?? this.ballastAdjThermalingSinkRate,
         minSinkSpeedAtBankAngle:
             minSinkSpeedAtBankAngle ?? this.minSinkSpeedAtBankAngle,
         turnDiameter: turnDiameter ?? this.turnDiameter,
@@ -264,7 +257,7 @@ class Glider extends Equatable {
         bankAngle,
         thermallingSinkRate,
         polarWeightAdjustment,
-        ballastAdjThermallingSinkRate,
+        ballastAdjThermalingSinkRate,
         minSinkSpeedAtBankAngle,
         turnDiameter,
         secondsForTurn,

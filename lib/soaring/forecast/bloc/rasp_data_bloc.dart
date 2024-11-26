@@ -540,7 +540,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
         event.glider.glider,
         event.glider.polarWeightAdjustment,
         event.glider.getPolarCoefficientsAsString(),   // string of a,b,c
-        event.glider.ballastAdjThermallingSinkRate,
+        event.glider.ballastAdjThermalingSinkRate,
         1,
         latLonString);
     if (optimizedTaskRoute?.routeSummary?.error != null) {
