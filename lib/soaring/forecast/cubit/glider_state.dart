@@ -11,23 +11,31 @@ class GliderPolarInitialState extends GliderState {
 }
 
 class GliderListState extends GliderState {
-  final List<String> gliderList;
-  final String selectedGlider;
+  final List<String> gliderNameList;
+  final String selectedGliderName;
 
-  GliderListState(this.gliderList, this.selectedGlider);
+  GliderListState(this.gliderNameList, this.selectedGliderName);
 }
 
 class GliderPolarState extends GliderState {
-  final Glider? defaultPolar;
-  final Glider? customPolar;
+  final Glider defaultPolar;
+  final Glider customPolar;
   final DisplayUnits displayUnits;
   final String sinkRateUnits;
   final String velocityUnits;
   final String massUnits;
   final String distanceUnits;
+  final bool displayXCSoarValues;
 
-  GliderPolarState(this.defaultPolar, this.customPolar,this.displayUnits, this.sinkRateUnits,this.velocityUnits,this.massUnits,
-      this.distanceUnits);
+  GliderPolarState(
+      {required this.defaultPolar,
+      required this.customPolar,
+      required this.displayUnits,
+      required this.sinkRateUnits,
+      required this.velocityUnits,
+      required this.massUnits,
+      required this.distanceUnits,
+      required this.displayXCSoarValues});
 }
 
 class GliderPolarIsWorkingState extends GliderState {
@@ -44,13 +52,8 @@ class GliderPolarErrorState extends GliderState {
 
 class CalcEstimatedFlightState extends GliderState {
   final Glider glider;
+
   CalcEstimatedFlightState(this.glider);
 }
 
 class DisplayEstimatedFlightText extends GliderState {}
-
-
-
-
-
-

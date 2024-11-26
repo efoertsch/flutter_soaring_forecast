@@ -6,70 +6,35 @@ import 'package:flutter_soaring_forecast/soaring/forecast/cubit/glider_state.dar
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/gliders.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 import 'package:vector_math/vector_math_64.dart';
-
-enum VelocityConversion { kmh2kts, kts2kmh }
-
-enum SinkRateConversion { mpsec2ftpmin, ftpmin2mpsec }
-
-enum MassConversion { kg2lbs, lbs2kg }
-
-enum DistanceConversion { mt2ft, ft2mt }
-
-enum SinkUnits {
-  ftPerMin(display: "ft/min"),
-  mPerSec(display: "m/sec");
-
-  const SinkUnits({required this.display});
-
-  final String display;
-}
-
-enum SpeedUnits {
-  kph(display: "kph"),
-  kts(display: "kts");
-
-  const SpeedUnits({required this.display});
-
-  final String display;
-}
-
-enum WeightUnits {
-  lbs(display: "lbs"),
-  kg(display: "kg");
-
-  const WeightUnits({required this.display});
-
-  final String display;
-}
-
-enum DistanceUnits {
-  meters(display: "meters"),
-  feet(display: "ft");
-
-  const DistanceUnits({required this.display});
-
-  final String display;
-}
+import 'package:flutter_soaring_forecast/soaring/forecast/cubit/glider_enums.dart';
 
 class GliderCubit extends Cubit<GliderState> {
   late final Repository _repository;
 
-  DisplayUnits? _displayUnits;
-  Glider? _defaultGlider;
-  Glider? _customGlider;
+  late DisplayUnits _displayUnits;
+  Glider? _defaultGlider; // values always in metric
+  Glider? _customGlider; // values always in metric
+  Glider?
+      _defaultGliderLocalUnits; // values may be metric, or imperial kts, mph, lbs,..
+  Glider?
+      _customGliderLocalUnits; // values may be metric, or imperial kts, mph, lbs,..
+
   String _velocityUnits = "";
   String _sinkRateUnits = "";
   String _massUnits = "";
   String _distanceUnits = "";
+  bool _displayXCSoarValues = false;
 
   // double angleInDegrees = 30;
   // double speed = 40; // mph
 
   // used to calculate thermal turn diameter at given bank angle;
   static const double ktsToFtperSec = 1.68781;
+  static const double mphToFtperSec = 1.46667;
   static const double gravityFtPerSec2 = 32.174; // ft/sec^2
   static const double gravityMetersPerSec2 = 9.8; // gravity meters/sec^2
-  static const double kphToMetersPerSec = .27778;// 1000 / (60 * 60); // kph to meters per second
+  static const double kphToMetersPerSec =
+      .27778; // 1000 / (60 * 60); // kph to meters per second
   static const double twoPi = 2 * pi;
 
   GliderCubit({required Repository repository})
@@ -91,8 +56,8 @@ class GliderCubit extends Cubit<GliderState> {
   Future<void> getListOfGliders() async {
     _indicateWorking(true);
     List<String> gliders = [];
-    List<Glider>? defaultList = await _repository.getDefaultListOfGliders();
-    gliders.addAll(defaultList?.map((polar) => polar.glider) ?? <String>[]);
+    List<Glider>? fullGliderList = await _repository.getFullListOfGliders();
+    gliders.addAll(fullGliderList?.map((polar) => polar.glider) ?? <String>[]);
     emit(GliderListState(
         gliders, await _repository.getLastSelectedGliderName()));
     String selectedGlider = await _repository.getLastSelectedGliderName();
@@ -105,149 +70,262 @@ class GliderCubit extends Cubit<GliderState> {
     _indicateWorking(false);
   }
 
-  Future<void> getGliderPolar(String glider) async {
+  Future<void> getGliderPolar(String gliderName) async {
     _indicateWorking(true);
-    await _repository.saveLastSelectedGliderName(glider);
+    await _repository.saveLastSelectedGliderName(gliderName);
+    _displayXCSoarValues = await _repository.getDisplayXCSoarValues();
     _displayUnits = await _repository.getDisplayUnits();
-    _assignDisplayUnitLabels();
+    _assignDisplayUnitLabels(_displayUnits);
     var gliderRecord =
-        await _repository.getDefaultAndCustomGliderDetails(glider);
+        await _repository.getDefaultAndCustomGliderDetails(gliderName);
     // repository always have glider details in metric units
     _defaultGlider = gliderRecord.defaultGlider;
     _customGlider = gliderRecord.customGlider;
-    // May need to convert to American units -kts, ft, lbs
-    var defaultGliderLocalUnits = _convertGliderValues(
-        _defaultGlider!.copyWith(), DisplayUnits.Metric, _displayUnits!);
-    var customGliderLocalUnits = _convertGliderValues(
-        _customGlider!.copyWith(), DisplayUnits.Metric, _displayUnits!);
-    calculateThermallingValues(defaultGliderLocalUnits);
-    calculateThermallingValues(customGliderLocalUnits);
-
-    emit(GliderPolarState(
-        defaultGliderLocalUnits,
-        customGliderLocalUnits,
-        _displayUnits!,
-        _sinkRateUnits,
-        _velocityUnits,
-        _massUnits,
-        _distanceUnits));
+    // glider values always stored in metric so
+    // may need to convert to Imperial units -kts/mph, ft, lbs
+    _convertGliderInfoToPreferredUnits();
+    calculateThermalingValues(_defaultGliderLocalUnits!);
+    calculateThermalingValues(_customGliderLocalUnits!);
+    _emitGlidersInfo();
     _indicateWorking(false);
   }
 
-  Future<void> saveDisplayUnits(
-      DisplayUnits newDisplayUnits, Glider customGlider) async {
+  Future<void> saveDisplayUnits(DisplayUnits newDisplayUnits) async {
     _indicateWorking(true);
     if (_displayUnits == newDisplayUnits) return;
     _displayUnits = newDisplayUnits;
     await _repository.saveDisplayUnits(newDisplayUnits);
-    _assignDisplayUnitLabels();
-    //TODO very similar to above logic. Consolidate?
-    var defaultGliderLocalUnits;
-    var customGliderLocalUnits;
-    if (newDisplayUnits == DisplayUnits.American) {
-      // previously displaying metric, now want display in american units
-      defaultGliderLocalUnits = _convertGliderValues(
-          _defaultGlider!.copyWith(), DisplayUnits.Metric, _displayUnits!);
-      customGliderLocalUnits = _convertGliderValues(
-          _customGlider!.copyWith(), DisplayUnits.Metric, _displayUnits!);
-    } else {
-      // was american, now show in metric
-      defaultGliderLocalUnits = _defaultGlider!.copyWith(); //
-      customGliderLocalUnits = _convertGliderValues(
-          _customGlider!.copyWith(), DisplayUnits.American, DisplayUnits.Metric);
-    }
-    emit(GliderPolarState(
-        defaultGliderLocalUnits,
-        customGliderLocalUnits,
-        _displayUnits!,
-        _sinkRateUnits,
-        _velocityUnits,
-        _massUnits,
-        _distanceUnits));
+    _assignDisplayUnitLabels(newDisplayUnits);
+    _convertGliderInfoToPreferredUnits();
+    calculateThermalingValues(_defaultGliderLocalUnits!);
+    calculateThermalingValues(_customGliderLocalUnits!);
+    _emitGlidersInfo();
     _indicateWorking(false);
   }
 
-  Glider _convertGliderValues(
-      Glider gliderPolar, DisplayUnits fromUnits, DisplayUnits toUnits) {
-    if (fromUnits == toUnits) return gliderPolar;
-    VelocityConversion? velocityConversion;
-    SinkRateConversion? sinkRateConversion;
-    MassConversion? massConversion;
-    DistanceConversion? distanceConversion;
-
-    if (toUnits == DisplayUnits.American) {
-      velocityConversion = VelocityConversion.kmh2kts;
-      sinkRateConversion = SinkRateConversion.mpsec2ftpmin;
-      massConversion = MassConversion.kg2lbs;
-      distanceConversion = DistanceConversion.mt2ft;
-    } else {
-      velocityConversion = VelocityConversion.kts2kmh;
-      sinkRateConversion = SinkRateConversion.ftpmin2mpsec;
-      massConversion = MassConversion.lbs2kg;
-      distanceConversion = DistanceConversion.ft2mt;
-    }
-
-    gliderPolar.gliderAndMaxPilotWgt =
-        _convertMass(gliderPolar.gliderAndMaxPilotWgt, massConversion);
-    gliderPolar.maxBallast =
-        _convertMass(gliderPolar.maxBallast, massConversion);
-    gliderPolar.gliderEmptyMass =
-        _convertMass(gliderPolar.gliderEmptyMass, massConversion);
-    gliderPolar.pilotMass = _convertMass(gliderPolar.pilotMass, massConversion);
-    gliderPolar.minSinkSpeed =
-        _convertVelocity(gliderPolar.minSinkSpeed, velocityConversion);
-    gliderPolar.minSinkRate =
-        _convertSinkRate(gliderPolar.minSinkRate, sinkRateConversion);
-    gliderPolar.thermallingSinkRate =
-        _convertSinkRate(gliderPolar.thermallingSinkRate, sinkRateConversion);
-    gliderPolar.minSinkSpeedAtBankAngle = _convertVelocity(
-        gliderPolar.minSinkSpeedAtBankAngle, velocityConversion);
-    gliderPolar.turnDiameter =
-        _convertDistance(gliderPolar.turnDiameter, distanceConversion);
-
-    gliderPolar.v1 = _convertVelocity(gliderPolar.v1, velocityConversion);
-    gliderPolar.v2 = _convertVelocity(gliderPolar.v2, velocityConversion);
-    gliderPolar.v3 = _convertVelocity(gliderPolar.v3, velocityConversion);
-
-    gliderPolar.w1 = _convertSinkRate(gliderPolar.w1, sinkRateConversion);
-    gliderPolar.w2 = _convertSinkRate(gliderPolar.w2, sinkRateConversion);
-    gliderPolar.w3 = _convertSinkRate(gliderPolar.w3, sinkRateConversion);
-
-    return gliderPolar;
+  void _convertGliderInfoToPreferredUnits() {
+    _defaultGliderLocalUnits =
+        _convertAllGliderValues(_defaultGlider!.copyWith(), _displayUnits);
+    _customGliderLocalUnits =
+        _convertAllGliderValues(_customGlider!.copyWith(), _displayUnits);
   }
 
-  void _assignDisplayUnitLabels() {
-    _velocityUnits = (_displayUnits == DisplayUnits.Metric)
-        ? SpeedUnits.kph.display
-        : SpeedUnits.kts.display;
-    _sinkRateUnits = (_displayUnits == DisplayUnits.Metric)
-        ? SinkUnits.mPerSec.display
-        : SinkUnits.ftPerMin.display;
-    _massUnits = (_displayUnits == DisplayUnits.Metric)
-        ? WeightUnits.kg.display
-        : WeightUnits.lbs.display;
-    _distanceUnits = (_displayUnits == DisplayUnits.Metric)
-        ? DistanceUnits.meters.display
-        : DistanceUnits.feet.display;
+  void _emitGlidersInfo() {
+    emit(GliderPolarState(
+        defaultPolar: _defaultGliderLocalUnits!,
+        customPolar: _customGliderLocalUnits!,
+        displayUnits: _displayUnits,
+        sinkRateUnits: _sinkRateUnits,
+        velocityUnits: _velocityUnits,
+        massUnits: _massUnits,
+        distanceUnits: _distanceUnits,
+        displayXCSoarValues: _displayXCSoarValues));
+  }
+
+  // This logic is only to convert ALL glider values from
+  // Metric to Imperial(kts or mph, lbs, ft, ...
+  // Use other methods to update individual fields from 'local units' to metric
+  Glider _convertAllGliderValues(Glider glider, DisplayUnits toUnits) {
+    if (toUnits == DisplayUnits.Metric) {
+      return glider;
+    }
+
+    VELOCITY_CONVERSION velocityConversion;
+    SINK_RATE_CONVERSION sinkRateConversion;
+    MASS_CONVERSION massConversion;
+    DISTANCE_CONVERSION distanceConversion;
+
+    if (toUnits == DisplayUnits.Imperial_kts) {
+      velocityConversion = VELOCITY_CONVERSION.kph2kts;
+    } else if (toUnits == DisplayUnits.Imperial_mph) {
+      velocityConversion = VELOCITY_CONVERSION.kph2mph;
+    } else {
+      emit(GliderPolarErrorState(
+          "Invalid displayUnits.  Conversion: ${toUnits.toString()}"));
+      return glider;
+    }
+
+    glider.minSinkSpeed =
+        _convertVelocity(glider.minSinkSpeed, velocityConversion);
+    glider.v1 = _convertVelocity(glider.v1, velocityConversion);
+    glider.v2 = _convertVelocity(glider.v2, velocityConversion);
+    glider.v3 = _convertVelocity(glider.v3, velocityConversion);
+
+    // sink speeds always m/sec to ft/min, weights kg to lbs,
+    // distance meters to ft
+    sinkRateConversion = SINK_RATE_CONVERSION.mpsec2ftpmin;
+    massConversion = MASS_CONVERSION.kg2lbs;
+    distanceConversion = DISTANCE_CONVERSION.mt2ft;
+
+    glider.gliderAndMaxPilotWgt =
+        _convertMass(glider.gliderAndMaxPilotWgt, massConversion);
+    glider.maxBallast = _convertMass(glider.maxBallast, massConversion);
+    glider.gliderEmptyMass =
+        _convertMass(glider.gliderEmptyMass, massConversion);
+    glider.pilotMass = _convertMass(glider.pilotMass, massConversion);
+
+    glider.minSinkRate =
+        _convertSinkRate(glider.minSinkRate, sinkRateConversion);
+    glider.ballastAdjThermalingSinkRate = _convertSinkRate(
+        glider.ballastAdjThermalingSinkRate, sinkRateConversion);
+    glider.thermallingSinkRate =
+        _convertSinkRate(glider.thermallingSinkRate, sinkRateConversion);
+    glider.minSinkSpeedAtBankAngle =
+        _convertVelocity(glider.minSinkSpeedAtBankAngle, velocityConversion);
+    glider.turnDiameter =
+        _convertDistance(glider.turnDiameter, distanceConversion);
+
+    glider.w1 = _convertSinkRate(glider.w1, sinkRateConversion);
+    glider.w2 = _convertSinkRate(glider.w2, sinkRateConversion);
+    glider.w3 = _convertSinkRate(glider.w3, sinkRateConversion);
+
+    return glider;
+  }
+
+  void _assignDisplayUnitLabels(DisplayUnits displayUnits) {
+    _velocityUnits = (displayUnits == DisplayUnits.Metric)
+        ? SPEED_UNITS.kph.display
+        : (displayUnits == DisplayUnits.Imperial_kts)
+            ? SPEED_UNITS.kts.display
+            : SPEED_UNITS.mph.display;
+    _sinkRateUnits = (displayUnits == DisplayUnits.Metric)
+        ? SINK_UNITS.mPerSec.display
+        : SINK_UNITS.ftPerMin.display;
+    _massUnits = (displayUnits == DisplayUnits.Metric)
+        ? WEIGHT_UNITS.kg.display
+        : WEIGHT_UNITS.lbs.display;
+    _distanceUnits = (displayUnits == DisplayUnits.Metric)
+        ? DISTANCE_UNITS.meters.display
+        : DISTANCE_UNITS.feet.display;
   }
 
   double _convertVelocity(
-      double? velocity, VelocityConversion velocityConversion) {
+      double? velocity, VELOCITY_CONVERSION velocityConversion) {
     if (velocity == null) return 0;
-    if (velocityConversion == VelocityConversion.kmh2kts) {
-      // input in metric (km/h) so convert velocity to kts
-      return velocity * .539957;
-    } else {
-      // convert kts to km/h
-      return velocity / .539957;
+    if (velocityConversion == VELOCITY_CONVERSION.kph2kts) {
+      return velocity * .539957; // 1 kph = .539957 kph
+    } else if (velocityConversion == VELOCITY_CONVERSION.kts2kph) {
+      return velocity * 1.852; // 1 kt = 1.852 kph
+    } else if (velocityConversion == VELOCITY_CONVERSION.mph2kph) {
+      return velocity * 1.60934; // 1 mph = 1/60934 kph
+    } else if (velocityConversion == VELOCITY_CONVERSION.kph2mph) {
+      return velocity * 0.621371; // 1 kph = 0.621371 mph
     }
+    emit(GliderPolarErrorState(
+        "Invalid velocity conversion: ${velocityConversion.toString()}"));
+    return 0;
+  }
+
+  void updateSinkRate(SINK_RATE_PARM sinkRateParm, double updatedValue) {
+    double newValue = 0;
+    if (_displayUnits == DisplayUnits.Metric) {
+      newValue = updatedValue;
+    } else {
+      // convert ft/min to m/sec
+      newValue =
+          _convertSinkRate(updatedValue, SINK_RATE_CONVERSION.ftpmin2mpsec);
+    }
+    switch (sinkRateParm) {
+      case SINK_RATE_PARM.MIN_SINK:
+        _customGlider!.minSinkRate = newValue;
+        calculateThermalingValues(_customGlider!);
+      case SINK_RATE_PARM.W1:
+        _customGlider!.updatedVW = true;
+        _customGlider!.w1 = newValue;
+        break;
+      case SINK_RATE_PARM.W2:
+        _customGlider!.updatedVW = true;
+        _customGlider!.w2 = newValue;
+        break;
+      case SINK_RATE_PARM.W3:
+        _customGlider!.updatedVW = true;
+        _customGlider!.v3 = newValue;
+        break;
+      default:
+        emit(GliderPolarErrorState(
+            "Missing update logic for sink rate parm ${sinkRateParm}"));
+    }
+    storeCustomGlider();
+    _customGliderLocalUnits =
+        _convertAllGliderValues(_customGlider!.copyWith(), _displayUnits);
+    _emitGlidersInfo();
+  }
+
+  void updateMass(MASS_PARM massParm, double updatedValue) {
+    double newValue = 0;
+    if (_displayUnits == DisplayUnits.Metric) {
+      newValue = updatedValue;
+    } else {
+      newValue = _convertMass(updatedValue, MASS_CONVERSION.lbs2kg);
+    }
+    switch (massParm) {
+      case MASS_PARM.GLIDER:
+        _customGlider!.gliderEmptyMass = newValue;
+        break;
+      case MASS_PARM.PILOT:
+        _customGlider!.pilotMass = newValue;
+        break;
+      case MASS_PARM.BALLAST:
+        _customGlider!.loadedBallast = newValue;
+        break;
+      case MASS_PARM.MAX_BALLAST:
+        _customGlider!.maxBallast = newValue;
+        break;
+      default:
+        emit(GliderPolarErrorState(
+            "Missing update logic for glider mass ${massParm}"));
+        return;
+    }
+    storeCustomGlider();
+    _customGliderLocalUnits =
+        _convertAllGliderValues(_customGlider!.copyWith(), _displayUnits);
+    _emitGlidersInfo();
+  }
+
+  void updateVelocity(VELOCITY_PARM velocityParm, double updatedValue) {
+    double newValue = 0;
+    if (_displayUnits == DisplayUnits.Metric) {
+      newValue = updatedValue;
+    } else {
+      if (_displayUnits == DisplayUnits.Imperial_kts) {
+        newValue = _convertVelocity(updatedValue, VELOCITY_CONVERSION.kts2kph);
+      } else {
+        newValue = _convertVelocity(updatedValue, VELOCITY_CONVERSION.mph2kph);
+      }
+    }
+    switch (velocityParm) {
+      case VELOCITY_PARM.MIN_SINK_SPEED:
+        _customGlider!.minSinkSpeed = newValue;
+        calculateThermalingValues(_customGlider!);
+        break;
+      case VELOCITY_PARM.V1:
+        _customGlider!.v1 = newValue;
+        _customGlider!.updatedVW = true;
+        break;
+      case VELOCITY_PARM.V2:
+        _customGlider!.v2 = newValue;
+        _customGlider!.updatedVW = true;
+        break;
+      case VELOCITY_PARM.V3:
+        _customGlider!.v3 = newValue;
+        _customGlider!.updatedVW = true;
+        break;
+      default:
+        emit(GliderPolarErrorState(
+            "Missing update logic for polar sink rate parm ${velocityParm}"));
+        return;
+    }
+    storeCustomGlider();
+    _customGliderLocalUnits =
+        _convertAllGliderValues(_customGlider!.copyWith(), _displayUnits);
+    _emitGlidersInfo();
   }
 
 // Jason Input value is always metric
   double _convertSinkRate(
-      double? sinkRate, SinkRateConversion sinkRateConversion) {
+      double? sinkRate, SINK_RATE_CONVERSION sinkRateConversion) {
     if (sinkRate == null) return 0;
-    if (sinkRateConversion == SinkRateConversion.mpsec2ftpmin) {
+    if (sinkRateConversion == SINK_RATE_CONVERSION.mpsec2ftpmin) {
       // input is m/sec so convert to ft/min
       return sinkRate * 3.28084 * 60.0;
     } else {
@@ -256,9 +334,9 @@ class GliderCubit extends Cubit<GliderState> {
     }
   }
 
-  double _convertMass(double? mass, MassConversion massConversion) {
+  double _convertMass(double? mass, MASS_CONVERSION massConversion) {
     if (mass == null) return 0;
-    if (massConversion == MassConversion.kg2lbs) {
+    if (massConversion == MASS_CONVERSION.kg2lbs) {
       // convert from kg to lbs
       return mass * 2.20462;
     } else {
@@ -268,9 +346,9 @@ class GliderCubit extends Cubit<GliderState> {
   }
 
   double _convertDistance(
-      double? distance, DistanceConversion distanceConversion) {
+      double? distance, DISTANCE_CONVERSION distanceConversion) {
     if (distance == null) return 0;
-    if (distanceConversion == DistanceConversion.mt2ft) {
+    if (distanceConversion == DISTANCE_CONVERSION.mt2ft) {
       // convert meters to feet
       return distance * 3.28084;
     } else {
@@ -279,23 +357,15 @@ class GliderCubit extends Cubit<GliderState> {
     }
   }
 
-  void calcEstimatedTaskTime(Glider customGlider) async {
-    _indicateWorking(true);
-    await storeCustomGlider(customGlider);
-    //  call repository
-    _indicateWorking(false);
+  void calcEstimatedTaskTime() async {
+    // need to send values in metric
     emit(CalcEstimatedFlightState(_customGlider!));
   }
 
-  Future<void> storeCustomGlider(Glider customGlider) async {
-    if (_displayUnits == DisplayUnits.American) {
-      // convert to metric
-      _customGlider = _convertGliderValues(
-          customGlider.copyWith(), DisplayUnits.American, DisplayUnits.Metric);
-    } else {
-      _customGlider = customGlider.copyWith();
-    };
-
+  // Store the customized glider mass/min sink/polar values
+  // Note any updates to glider must be done prior to this point and all
+  // values must be metric
+  Future<void> storeCustomGlider() async {
     calculatePolarAdjustmentFactor(_customGlider!, _defaultGlider!);
     await _repository.saveCustomPolar(_customGlider!);
   }
@@ -309,36 +379,71 @@ class GliderCubit extends Cubit<GliderState> {
     emit(DisplayEstimatedFlightText());
   }
 
+  void updateThermalingBankAngle(int newBankAngle) {
+    _customGlider!.bankAngle = newBankAngle;
+    storeCustomGlider();
+    _customGliderLocalUnits =
+        _convertAllGliderValues(_customGlider!.copyWith(), _displayUnits);
+    calculateThermalingValues(_customGliderLocalUnits!);
+
+    _emitGlidersInfo();
+  }
 
 // Calculation from https://groups.io/g/WarnerSpringsSoaring/topic/optimal_bank_angle/87513283?p=,,,20,0,0,0::recentpostdate/sticky,,,20,0,0,87513283,previd=1640661436050123677,nextid=1630163573444280014&previd=1640661436050123677&nextid=1630163573444280014
 //  and https://groups.io/g/WarnerSpringsSoaring/attachment/458/0/Bank%20angles%20Wt%20and%20balance.xlsx
 // adjusted for adding ballast. Note that just using the 'your glider' mass values not XCSOAR default values
-  void calculateThermallingValues(Glider glider) {
-    glider.thermallingSinkRate = (1 /
-        pow(cos(radians(glider.bankAngle.toDouble())), 1.5).toDouble() *
-        glider.minSinkRate);
-    glider.ballastAdjThermallingSinkRate = glider.thermallingSinkRate *
-        sqrt(
-            (glider.pilotMass + glider.gliderEmptyMass + glider.loadedBallast) /
-                (glider.pilotMass + glider.gliderEmptyMass));
-
-    glider.minSinkSpeedAtBankAngle =
-        glider.minSinkSpeed * pow(1 / cos(glider.bankAngle * pi / 180), .5);
+  void calculateThermalingValues(Glider glider) {
+    _calcThermallingSinkRate(glider);
+    _calcBallastAdjSinkRate(glider);
+    _calcMinSinkSpeedAtBankAngle(glider);
 
     double speed = 0;
     double funkyNumber = 0;
     double tangent = tan(twoPi / 360.0 * glider.bankAngle);
-    //TODO convert to metric if needed
-    if (_displayUnits == DisplayUnits.Metric) {
-      speed = glider.minSinkSpeedAtBankAngle * kphToMetersPerSec;
-      funkyNumber = gravityMetersPerSec2 * tangent;
-    } else {
-      speed = glider.minSinkSpeedAtBankAngle * ktsToFtperSec;
-      funkyNumber = gravityFtPerSec2 * tangent;
+    if (tangent == 0){  // if  bank angle is 0
+      glider.turnDiameter = 0;
+      glider.secondsForTurn = 0;
+      return;
     }
+    //TODO convert to metric if needed
+    switch (_displayUnits) {
+      case DisplayUnits.Metric:
+        speed = glider.minSinkSpeedAtBankAngle * kphToMetersPerSec;
+        funkyNumber = gravityMetersPerSec2 * tangent;
+        break;
+      case DisplayUnits.Imperial_kts:
+        speed = glider.minSinkSpeedAtBankAngle * ktsToFtperSec;
+        funkyNumber = gravityFtPerSec2 * tangent;
+      case DisplayUnits.Imperial_mph:
+        speed = glider.minSinkSpeedAtBankAngle * mphToFtperSec;
+        funkyNumber = gravityFtPerSec2 * tangent;
+      default:
+        emit(GliderPolarErrorState(
+            "Missing thermaling logic for ${_displayUnits}"));
+        speed = 0;
+        funkyNumber = 1;
+    }
+
     glider.turnDiameter = 2 * pow(speed, 2) / funkyNumber;
     glider.secondsForTurn = (twoPi * speed) / funkyNumber;
-    storeCustomGlider(glider);
+  }
+
+  void _calcMinSinkSpeedAtBankAngle(Glider glider) {
+    glider.minSinkSpeedAtBankAngle =
+        glider.minSinkSpeed * pow(1 / cos(glider.bankAngle * pi / 180), .5);
+  }
+
+  void _calcThermallingSinkRate(Glider glider) {
+    glider.thermallingSinkRate = (1 /
+        pow(cos(radians(glider.bankAngle.toDouble())), 1.5).toDouble() *
+        glider.minSinkRate);
+  }
+
+  void _calcBallastAdjSinkRate(Glider glider) {
+    glider.ballastAdjThermalingSinkRate = glider.thermallingSinkRate *
+        sqrt(
+            (glider.pilotMass + glider.gliderEmptyMass + glider.loadedBallast) /
+                (glider.pilotMass + glider.gliderEmptyMass));
   }
 
   void calculatePolarAdjustmentFactor(
@@ -355,6 +460,10 @@ class GliderCubit extends Cubit<GliderState> {
               customGlider.loadedBallast) /
           xcSoarGlider.gliderAndMaxPilotWgt);
     }
+  }
+
+  void displayXCSoarValues(bool dislayXCSoarValues) {
+    _repository.saveDisplayXCSoarValues(dislayXCSoarValues);
   }
 
 // updated XCSoar json input to have a,b,c calculated in spreadsheet and placed in JSON

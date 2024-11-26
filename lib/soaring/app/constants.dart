@@ -29,7 +29,7 @@ const String PRIVACY_POLICY_URL = 'https://soaringforecast.org/privacy-policy/';
 const double metersToFeet = 3.28084;
 const String ft = "ft";
 const String NEW_LINE = '\n';
-enum DisplayUnits  {Metric, American}
+enum DisplayUnits  {Metric, Imperial_kts, Imperial_mph}
 const String nauticalMiles = "nm";
 const String statueMiles = "sm";
 const String kilometers = "km";
@@ -45,6 +45,7 @@ const String APP_DATABASE = 'app_database.db'; // Floor database name
 enum TurnpointEditReturn { noChange, tpAddedUpdated, tpDeleted }
 
 enum ForecastCategoryEnum { thermal, wave, wind }
+
 
 // Order must be most current, 'best' model
 enum ModelsEnum {hrrr, rap, nam, gfs }

@@ -41,6 +41,6 @@ void main() {
   });
 
   test("Get list of glider polars", () async {
-    repository.getDefaultListOfGliders().then(expectAsync1((gliderList) => expect(gliderList?.length ,166)));
+    repository.getFullListOfGliders().then(expectAsync1((gliderList) => expect(gliderList?.length ,166)));
   });
 }

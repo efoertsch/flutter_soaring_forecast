@@ -90,6 +90,7 @@ class Repository {
   static const String _MY_GLIDERS = "MY_GLIDER_POLARS";
   static const String _SELECTED_GLIDER = "SELECTED_GLIDER";
   static const String _DISPLAY_UNITS = "DISPLAY_UNITS";
+  static const String _DISPLAY_XCSOAR_VALUES = "DISPLAY_XCSOAR_VALUES";
 
   late final String _satelliteRegionUS;
   late final String _satelliteTypeVis;
@@ -106,7 +107,7 @@ class Repository {
   static final _displayableForecastList = <Forecast>[];
   static final List<Group> _settingGroups = <Group>[];
 
-  static Gliders? _defaultGliders = null;
+  static Gliders? _fullGliderList = null;
   static Gliders? _customGliders = null;
 
   // this value must be the same value as that in the settings.json file.
@@ -1332,17 +1333,17 @@ class Repository {
     }
   }
 
-  Future<void> _loadDefaultGliders() async {
-    if (_defaultGliders == null || _defaultGliders!.gliders == null) {
+  Future<void> _loadFullListOfGliders() async {
+    if (_fullGliderList == null || _fullGliderList!.gliders == null) {
       final json = await DefaultAssetBundle.of(_context!)
           .loadString('assets/json/gliders.json');
-      _defaultGliders = Gliders.glidersFromJsonString(json);
+      _fullGliderList = Gliders.glidersFromJsonString(json);
     }
   }
 
-  Future<List<Glider>?> getDefaultListOfGliders() async {
-    await _loadDefaultGliders();
-    return _defaultGliders?.gliders;
+  Future<List<Glider>?> getFullListOfGliders() async {
+    await _loadFullListOfGliders();
+    return _fullGliderList?.gliders;
   }
 
   Future<void> _loadCustomGliders() async {
@@ -1391,9 +1392,9 @@ class Repository {
   Future<({Glider? defaultGlider, Glider? customGlider})> getDefaultAndCustomGliderDetails(
       String gliderName) async {
     // if master list not loaded yet load it
-    await _loadDefaultGliders();
+    await _loadFullListOfGliders();
     await _loadCustomGliders();
-    Glider? defaultGlider = _defaultGliders!.gliders
+    Glider? defaultGlider = _fullGliderList!.gliders
         ?.firstWhereOrNull((polar) => polar.glider == gliderName);
     Glider? customGlider = _customGliders!.gliders
         ?.firstWhereOrNull((polar) => polar.glider == gliderName);
@@ -1417,14 +1418,14 @@ class Repository {
 
   Future<DisplayUnits> getDisplayUnits() async {
     String displayUnit =
-        await getGenericString(key: _DISPLAY_UNITS, defaultValue: DisplayUnits.American.toString());
+        await getGenericString(key: _DISPLAY_UNITS, defaultValue: DisplayUnits.Imperial_kts.toString());
     return _convertDisplayUnitsStringToEnum(displayUnit);
   }
 
   DisplayUnits _convertDisplayUnitsStringToEnum(String displayUnits) {
     return DisplayUnits.values.firstWhereOrNull(
             (e) => e.toString() ==  displayUnits) ??
-        DisplayUnits.American;
+        DisplayUnits.Imperial_kts;
   }
 
   Future<DisplayUnits> saveDisplayUnits(DisplayUnits displayUnits) async {
@@ -1439,6 +1440,14 @@ class Repository {
   Future<void> saveDisplayExperimentalOptimalTaskAlertFlag(bool flag) async {
      await saveGenericBool(key: _EXPERIMENTAL_ESTIMATED_FLIGHT_FLAG, value: flag);
   }
+
+  Future<bool> getDisplayXCSoarValues() async {
+    return await getGenericBool(key: _DISPLAY_XCSOAR_VALUES, defaultValue: false);
+  }
+  Future<bool> saveDisplayXCSoarValues(bool display) async {
+    return await saveGenericBool(key: _DISPLAY_XCSOAR_VALUES, value: display);
+  }
+
 
   Future<bool>getDisplayEstimatedFlightButton() async {
     return await getGenericBool(key: _SHOW_ESTIMATED_FLIGHT_BUTTON, defaultValue: true);
