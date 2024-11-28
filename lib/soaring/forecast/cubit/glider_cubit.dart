@@ -81,11 +81,12 @@ class GliderCubit extends Cubit<GliderState> {
     // repository always have glider details in metric units
     _defaultGlider = gliderRecord.defaultGlider;
     _customGlider = gliderRecord.customGlider;
+    // recalc thermalling values
+    calculateThermalingValues(_defaultGlider!, DisplayUnits.Metric);
+    calculateThermalingValues(_customGlider!, DisplayUnits.Metric);
     // glider values always stored in metric so
     // may need to convert to Imperial units -kts/mph, ft, lbs
     _convertGliderInfoToPreferredUnits();
-    calculateThermalingValues(_defaultGliderLocalUnits!);
-    calculateThermalingValues(_customGliderLocalUnits!);
     _emitGlidersInfo();
     _indicateWorking(false);
   }
@@ -97,8 +98,6 @@ class GliderCubit extends Cubit<GliderState> {
     await _repository.saveDisplayUnits(newDisplayUnits);
     _assignDisplayUnitLabels(newDisplayUnits);
     _convertGliderInfoToPreferredUnits();
-    calculateThermalingValues(_defaultGliderLocalUnits!);
-    calculateThermalingValues(_customGliderLocalUnits!);
     _emitGlidersInfo();
     _indicateWorking(false);
   }
@@ -228,7 +227,8 @@ class GliderCubit extends Cubit<GliderState> {
     switch (sinkRateParm) {
       case SINK_RATE_PARM.MIN_SINK:
         _customGlider!.minSinkRate = newValue;
-        calculateThermalingValues(_customGlider!);
+        calculateThermalingValues(_customGlider!, DisplayUnits.Metric);
+        calculatePolarAdjustmentFactor(_customGlider!, _defaultGlider!);
       case SINK_RATE_PARM.W1:
         _customGlider!.updatedVW = true;
         _customGlider!.w1 = newValue;
@@ -276,6 +276,7 @@ class GliderCubit extends Cubit<GliderState> {
             "Missing update logic for glider mass ${massParm}"));
         return;
     }
+    calculatePolarAdjustmentFactor(_customGlider!, _defaultGlider!);
     storeCustomGlider();
     _customGliderLocalUnits =
         _convertAllGliderValues(_customGlider!.copyWith(), _displayUnits);
@@ -296,7 +297,8 @@ class GliderCubit extends Cubit<GliderState> {
     switch (velocityParm) {
       case VELOCITY_PARM.MIN_SINK_SPEED:
         _customGlider!.minSinkSpeed = newValue;
-        calculateThermalingValues(_customGlider!);
+        calculateThermalingValues(_customGlider!, DisplayUnits.Metric);
+        calculatePolarAdjustmentFactor(_customGlider!, _defaultGlider!);
         break;
       case VELOCITY_PARM.V1:
         _customGlider!.v1 = newValue;
@@ -366,7 +368,6 @@ class GliderCubit extends Cubit<GliderState> {
   // Note any updates to glider must be done prior to this point and all
   // values must be metric
   Future<void> storeCustomGlider() async {
-    calculatePolarAdjustmentFactor(_customGlider!, _defaultGlider!);
     await _repository.saveCustomPolar(_customGlider!);
   }
 
@@ -381,10 +382,10 @@ class GliderCubit extends Cubit<GliderState> {
 
   void updateThermalingBankAngle(int newBankAngle) {
     _customGlider!.bankAngle = newBankAngle;
+    calculateThermalingValues(_customGlider!, DisplayUnits.Metric);
     storeCustomGlider();
     _customGliderLocalUnits =
         _convertAllGliderValues(_customGlider!.copyWith(), _displayUnits);
-    calculateThermalingValues(_customGliderLocalUnits!);
 
     _emitGlidersInfo();
   }
@@ -392,7 +393,7 @@ class GliderCubit extends Cubit<GliderState> {
 // Calculation from https://groups.io/g/WarnerSpringsSoaring/topic/optimal_bank_angle/87513283?p=,,,20,0,0,0::recentpostdate/sticky,,,20,0,0,87513283,previd=1640661436050123677,nextid=1630163573444280014&previd=1640661436050123677&nextid=1630163573444280014
 //  and https://groups.io/g/WarnerSpringsSoaring/attachment/458/0/Bank%20angles%20Wt%20and%20balance.xlsx
 // adjusted for adding ballast. Note that just using the 'your glider' mass values not XCSOAR default values
-  void calculateThermalingValues(Glider glider) {
+  void calculateThermalingValues(Glider glider, DisplayUnits displayUnits) {
     _calcThermallingSinkRate(glider);
     _calcBallastAdjSinkRate(glider);
     _calcMinSinkSpeedAtBankAngle(glider);
@@ -405,8 +406,7 @@ class GliderCubit extends Cubit<GliderState> {
       glider.secondsForTurn = 0;
       return;
     }
-    //TODO convert to metric if needed
-    switch (_displayUnits) {
+    switch (displayUnits) {
       case DisplayUnits.Metric:
         speed = glider.minSinkSpeedAtBankAngle * kphToMetersPerSec;
         funkyNumber = gravityMetersPerSec2 * tangent;
@@ -419,7 +419,7 @@ class GliderCubit extends Cubit<GliderState> {
         funkyNumber = gravityFtPerSec2 * tangent;
       default:
         emit(GliderPolarErrorState(
-            "Missing thermaling logic for ${_displayUnits}"));
+            "Missing thermaling logic for ${displayUnits}"));
         speed = 0;
         funkyNumber = 1;
     }

@@ -1333,18 +1333,24 @@ class Repository {
     }
   }
 
-  Future<void> _loadFullListOfGliders() async {
-    if (_fullGliderList == null || _fullGliderList!.gliders == null) {
-      final json = await DefaultAssetBundle.of(_context!)
-          .loadString('assets/json/gliders.json');
-      _fullGliderList = Gliders.glidersFromJsonString(json);
+  Future<List<Glider>?> getFullListOfGliders() async {
+   // await _loadFullListOfGliders();
+    await _downloadListOfGliderPolars();
+    return _fullGliderList?.gliders;
+  }
+
+  Future<void> _downloadListOfGliderPolars() async {
+    if (_fullGliderList == null || _fullGliderList!.gliders == null ||
+        _fullGliderList!.gliders!.length == 0) {
+      var stringJson = await _raspOptionsClient.getGliderPolars();
+      if (stringJson != null) {
+        _fullGliderList = Gliders.fromJson(jsonDecode(stringJson));
+      } else {
+        _fullGliderList = Gliders(gliders: []);
+      }
     }
   }
 
-  Future<List<Glider>?> getFullListOfGliders() async {
-    await _loadFullListOfGliders();
-    return _fullGliderList?.gliders;
-  }
 
   Future<void> _loadCustomGliders() async {
     if (_customGliders == null) {
@@ -1392,7 +1398,7 @@ class Repository {
   Future<({Glider? defaultGlider, Glider? customGlider})> getDefaultAndCustomGliderDetails(
       String gliderName) async {
     // if master list not loaded yet load it
-    await _loadFullListOfGliders();
+    await _downloadListOfGliderPolars();
     await _loadCustomGliders();
     Glider? defaultGlider = _fullGliderList!.gliders
         ?.firstWhereOrNull((polar) => polar.glider == gliderName);

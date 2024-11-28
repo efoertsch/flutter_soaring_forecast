@@ -13,7 +13,7 @@ class _RaspClient implements RaspClient {
     this._dio, {
     this.baseUrl,
   }) {
-    baseUrl ??= 'https://www.soargbsc.net/rasp/';
+    baseUrl ??= 'http://192.168.1.7/';
   }
 
   final Dio _dio;

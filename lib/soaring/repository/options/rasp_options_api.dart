@@ -26,4 +26,8 @@ abstract class RaspOptionsClient {
   @GET("/{suaFilename}")
   //Future<SUA> downloadSuaFile(@Path("suaFilename") String suaFilename);
   Future<String?> downloadSuaFile(@Path("suaFilename") String suaFilename);
+
+  //Get List of Gliders are related polar info
+  @GET("/gliders.json")
+  Future<String?> getGliderPolars();
 }
