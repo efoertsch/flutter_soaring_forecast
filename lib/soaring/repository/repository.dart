@@ -1333,14 +1333,6 @@ class Repository {
     }
   }
 
-  // Future<void> _loadFullListOfGliders() async {
-  //   if (_fullGliderList == null || _fullGliderList!.gliders == null) {
-  //     final json = await DefaultAssetBundle.of(_context!)
-  //         .loadString('assets/json/gliders.json');
-  //     _fullGliderList = Gliders.glidersFromJsonString(json);
-  //   }
-  // }
-
   Future<List<Glider>?> getFullListOfGliders() async {
    // await _loadFullListOfGliders();
     await _downloadListOfGliderPolars();
