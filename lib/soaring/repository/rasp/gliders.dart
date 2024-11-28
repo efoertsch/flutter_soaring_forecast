@@ -12,7 +12,7 @@ part 'gliders.g.dart';
 /// 2. Modified code for generator:
 ///    a. Added @JsonSerializable() for each class (except enums) below
 ///    b. Add getters as needed for convenience
-/// 3. Added part 'polars.g.dart' above
+/// 3. Added part 'gliders.g.dart' above
 /// 4. Generated ...g.dart file running following command in terminal
 ///    dart run build_runner build --delete-conflicting-outputs
 ///  All XCSoar data is metric - kph, m/sec, kg, ...
