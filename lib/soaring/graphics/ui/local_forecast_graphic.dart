@@ -30,6 +30,16 @@ class TabsConfig {
   static int selectedTabIndex = 0;
 }
 
+// Used to determine chart point colors, size, shape, and legends
+class DataPointsConfig{
+  bool cuInForecast = false;
+  bool odInForecast = false;
+  final sizeOfPoints = <double>[];
+  final colorsOfPoints = <Color>[];
+  final shapesOfPoints = <PointShape>[];
+  final annotationsOfPoints = <Annotation>[];
+}
+
 class _LocalForecastGraphicState extends State<LocalForecastGraphic>
     with TickerProviderStateMixin {
   final forecastChannel = StreamController<GestureEvent>.broadcast();
@@ -42,13 +52,6 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
 
   final altitudeGraphBackground = Colors.blue[200];
 
-  // Used to determine chart point colors, size, shape, and legends
-  bool cuInForecast = false;
-  bool odInForecast = false;
-  final sizeOfPoints = <double>[];
-  final colorsOfPoints = <Color>[];
-  final shapesOfPoints = <PointShape>[];
-  final annotationsOfPoints = <Annotation>[];
   final crossHairGuide = [
     PaintStyle(strokeColor: Colors.black38, strokeWidth: 2),
     PaintStyle(strokeColor: Colors.black38, strokeWidth: 2)
@@ -293,13 +296,13 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
   Widget _getCloudbaseWidget(
       PointForecastGraphData pointForecastGraphData, double maxAltitude) {
     _graphKey = Object();
-    _checkForCuAndOdInForecast(pointForecastGraphData.altitudeData);
+    DataPointsConfig dataPointsConfig = _checkForCuAndOdInForecast(pointForecastGraphData.altitudeData);
     // print(" ----------   altitude data -------------");
     // (pointForecastGraphData.altitudeData.forEach((map) {
     //   map.forEach((key, value) {
     //     print("${key} : ${value.toString()}");
     //   });
-    // });
+    // }));
     // print(" ------- end altitude data -------------");
     // WidgetsBinding.instance!.addPostFrameCallback((_) {
     //   _getModelSheetForGridDataWidget(context, state.forecastData);
@@ -336,16 +339,16 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
         //coord: RectCoord(color: const Color(0xffdddddd)),
         marks: [
           PointMark(
-            size: SizeEncode(variable: "name", values: sizeOfPoints),
+            size: SizeEncode(variable: "name", values: dataPointsConfig.sizeOfPoints),
             color: ColorEncode(
               variable: 'name',
-              values: colorsOfPoints,
+              values: dataPointsConfig.colorsOfPoints,
               updaters: {
                 'groupMouse': {false: (color) => color.withAlpha(100)},
                 'groupTouch': {false: (color) => color.withAlpha(100)},
               },
             ),
-            shape: ShapeEncode(variable: 'name', values: shapesOfPoints),
+            shape: ShapeEncode(variable: 'name', values: dataPointsConfig.shapesOfPoints),
           ),
         ],
         axes: [
@@ -366,7 +369,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
         //tooltip: TooltipGuide(),
         crosshair: CrosshairGuide(styles: crossHairGuide),
         gestureStream: forecastChannel,
-        annotations: annotationsOfPoints,
+        annotations: dataPointsConfig.annotationsOfPoints,
       ),
     );
   }
@@ -374,17 +377,6 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
   Widget _getThermalUpdraftWidget(PointForecastGraphData pointForecastGraphData,
       double maxThermalStrength) {
     _graphKey = Object();
-    _checkForCuAndOdInForecast(pointForecastGraphData.altitudeData);
-    // print(" ----------   thermal data -------------");
-    // state.forecastData.thermalData.forEach((map) {
-    //   map.forEach((key, value) {
-    //     print("${key} : ${value.toString()}");
-    //   });
-    // });
-    // print(" ------- end thermal data -------------");
-    // WidgetsBinding.instance!.addPostFrameCallback((_) {
-    //   _getModelSheetForGridDataWidget(context, state.forecastData);
-    // });
     return Container(
       key: ValueKey<Object>(_graphKey),
       margin: const EdgeInsets.only(top: 20),
@@ -436,7 +428,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
         annotations: _getGraphLegend(
             label: "Thermal Updraft ft/min",
             initialOffset: graphLegendOffset,
-            colorIndex: 0,
+            color: Colors.red,
             // same as thermal in top graph
             xPosIndex: 0,
             yPosIndex: 0,
@@ -447,37 +439,34 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
 
   /// conditions might be that the forecast doesn't include Cu or OD so we need
   ///
-  void _checkForCuAndOdInForecast(List<Map<String, Object>> altitudeData) {
-    colorsOfPoints.clear();
-    sizeOfPoints.clear();
-    shapesOfPoints.clear();
-    annotationsOfPoints.clear();
+  DataPointsConfig _checkForCuAndOdInForecast(List<Map<String, Object>> altitudeData) {
+    DataPointsConfig dataPointsConfig = DataPointsConfig();
 
     // always add thermal color,size, shape,etc
-    colorsOfPoints.add(Colors.red);
-    sizeOfPoints.add(30.0);
-    shapesOfPoints.add(ThermalShape(hollow: false));
-    annotationsOfPoints.addAll(_getGraphLegend(
+    dataPointsConfig.colorsOfPoints.add(Colors.red);
+    dataPointsConfig.sizeOfPoints.add(30.0);
+    dataPointsConfig.shapesOfPoints.add(ThermalShape(hollow: false));
+    dataPointsConfig.annotationsOfPoints.addAll(_getGraphLegend(
         label: "MSL Thermal Updraft Strength @ 175fpm (Dry)",
         initialOffset: graphLegendOffset,
-        colorIndex: 0,
+        color : Colors.red,
         xPosIndex: 0,
         yPosIndex: -1,
         yOffset: 290));
 
     // See if any OD Cloudbase forcast present
-    odInForecast = false;
-    cuInForecast = false;
+    dataPointsConfig.odInForecast = false;
+    dataPointsConfig.cuInForecast = false;
     for (var map in altitudeData) {
       if (map.containsValue("zblcl")) {
-        odInForecast = true;
-        colorsOfPoints.add(Colors.black);
-        sizeOfPoints.add(30.0);
-        shapesOfPoints.add(CumulusShape(hollow: false));
-        annotationsOfPoints.addAll(_getGraphLegend(
+        dataPointsConfig.odInForecast = true;
+        dataPointsConfig.colorsOfPoints.add(Colors.black);
+        dataPointsConfig.sizeOfPoints.add(30.0);
+        dataPointsConfig.shapesOfPoints.add(CumulusShape(hollow: false));
+        dataPointsConfig.annotationsOfPoints.addAll(_getGraphLegend(
             label: "OD Cloudbase(MSL)",
             initialOffset: graphLegendOffset,
-            colorIndex: 1,
+            color : Colors.black,
             xPosIndex: 0,
             yPosIndex: 0,
             yOffset: 290));
@@ -487,15 +476,15 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
     // See if Cu Cloudbase present. But adjust positions if OD also present
     for (var map in altitudeData) {
       if (map.containsValue("zsfclcl")) {
-        cuInForecast = true;
-        colorsOfPoints.add(Colors.white);
-        sizeOfPoints.add(30.0);
-        shapesOfPoints.add(CumulusShape(hollow: false));
-        annotationsOfPoints.addAll(_getGraphLegend(
+        dataPointsConfig.cuInForecast = true;
+        dataPointsConfig.colorsOfPoints.add(Colors.white);
+        dataPointsConfig.sizeOfPoints.add(30.0);
+        dataPointsConfig.shapesOfPoints.add(CumulusShape(hollow: false));
+        dataPointsConfig.annotationsOfPoints.addAll(_getGraphLegend(
             label: "Cu Cloudbase(MSL)",
             initialOffset: graphLegendOffset,
-            colorIndex: odInForecast ? 2 : 1,
-            xPosIndex: odInForecast ? 1 : 0,
+            color: dataPointsConfig.odInForecast ? dataPointsConfig.colorsOfPoints[2] : dataPointsConfig.colorsOfPoints[1],
+            xPosIndex: dataPointsConfig.odInForecast ? 1 : 0,
             yPosIndex: 0,
             yOffset: 290));
         break;
@@ -503,26 +492,27 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
     }
     // Hack alert.  Don't know why but SizeAttr/ColorAttr values requires at
     // least 2 sizes in array so if no OD or Cu add values to get array lengths to 2
-    if (!odInForecast && !cuInForecast) {
-      colorsOfPoints.add(Colors.transparent);
-      sizeOfPoints.add(0);
-      shapesOfPoints.add(
+    if (!dataPointsConfig.odInForecast && !dataPointsConfig.cuInForecast) {
+      dataPointsConfig.colorsOfPoints.add(Colors.transparent);
+      dataPointsConfig.sizeOfPoints.add(0);
+      dataPointsConfig.shapesOfPoints.add(
         CircleShape(hollow: true),
       );
     }
+    return dataPointsConfig;
   }
 
   List<Annotation> _getGraphLegend(
       {required String label,
       required double initialOffset,
-      required int colorIndex,
+      required Color color,
       required int xPosIndex,
       required double yPosIndex,
       required double yOffset}) {
     var annotations = <Annotation>[
       _getCustomAnnotation(
         initialOffset: initialOffset,
-        colorIndex: colorIndex,
+        color: color,
         xPosIndex: xPosIndex,
         yOffset: yOffset,
         yPosIndex: yPosIndex,
@@ -539,7 +529,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
 
   CustomAnnotation _getCustomAnnotation(
       {required double initialOffset,
-      required int colorIndex,
+      required Color color,
       required int xPosIndex,
       required double yOffset,
       required double yPosIndex}) {
@@ -547,7 +537,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
       renderer: (offset, size) => [
         RectElement(
           rect: Rect.fromLTWH(offset.dx - 3, offset.dy - 5, 10, 10),
-          style: PaintStyle(fillColor: colorsOfPoints[colorIndex]),
+          style: PaintStyle(fillColor: color),
         )
       ],
       anchor: (size) => Offset(
