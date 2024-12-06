@@ -47,7 +47,7 @@ enum TurnpointEditReturn { noChange, tpAddedUpdated, tpDeleted }
 enum ForecastCategoryEnum { thermal, wave, wind }
 
 
-// Order must be most current, 'best' model
+// Order must be most current, (arguably) 'best' model for the day
 enum ModelsEnum {hrrr, rap, nam, gfs }
 enum ForecastDateChange{previous, next}
 
@@ -194,8 +194,10 @@ class StandardLiterals {
   static const REMOVED = "Removed";
   static const UNSAVED_CHANGES = "Unsaved Changes!";
   static const CHANGES_WILL_BE_LOST = "Changes will be lost. Continue?";
-  static const String beginnerMode = "Beginner Mode";
-  static const String expertMode = "Expert Mode";
+  static const String BEGINNER_MODE = "Beginner Mode";
+  static const String EXPERT_MODE = "Expert Mode";
+  static const String PAUSE_LABEL = "Pause";
+  static const String LOOP_LABEL = "Loop";
 
 }
 

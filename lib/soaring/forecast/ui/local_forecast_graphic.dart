@@ -6,17 +6,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
-    show ForecastDateChange, GraphLiterals, StandardLiterals;
+    show GraphLiterals, StandardLiterals;
 import 'package:flutter_soaring_forecast/soaring/app/custom_styles.dart';
-import 'package:flutter_soaring_forecast/soaring/forecast/util/rasp_utils.dart';
-import 'package:flutter_soaring_forecast/soaring/forecast/widgets/model_date_widgets.dart';
-import 'package:flutter_soaring_forecast/soaring/graphics/bloc/graphic_bloc.dart';
-import 'package:flutter_soaring_forecast/soaring/graphics/bloc/graphic_event.dart';
-import 'package:flutter_soaring_forecast/soaring/graphics/bloc/graphic_state.dart';
-import 'package:flutter_soaring_forecast/soaring/graphics/data/forecast_graph_data.dart';
-import 'package:flutter_soaring_forecast/soaring/graphics/shapes/custom_shapes.dart';
-import 'package:flutter_soaring_forecast/soaring/graphics/ui/grid_widgets.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast/bloc/local_forecast_bloc.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/forecast_graph_data.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast/shapes/custom_shapes.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast/ui/common/model_date_display.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast/ui/grid_widgets.dart';
 import 'package:graphic/graphic.dart';
+
+import '../bloc/rasp_data_event.dart';
+import '../bloc/rasp_data_state.dart';
+import 'common/rasp_progress_indicator.dart';
 
 class LocalForecastGraphic extends StatefulWidget {
   LocalForecastGraphic({Key? key}) : super(key: key);
@@ -31,7 +32,7 @@ class TabsConfig {
 }
 
 // Used to determine chart point colors, size, shape, and legends
-class DataPointsConfig{
+class DataPointsConfig {
   bool cuInForecast = false;
   bool odInForecast = false;
   final sizeOfPoints = <double>[];
@@ -43,7 +44,6 @@ class DataPointsConfig{
 class _LocalForecastGraphicState extends State<LocalForecastGraphic>
     with TickerProviderStateMixin {
   final forecastChannel = StreamController<GestureEvent>.broadcast();
-  late final AnimationController bottomSheetController;
   late TabController _tabController;
 
   double _screenWidth = 0;
@@ -60,20 +60,13 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
 
   bool _beginnerMode = true;
   String _selectedModelName = '';
-  List<String> _modelNames = [];
-  List<String> _forecastDates = [];
   String _selectedForecastDate = '';
-  List<String> _shortDOWs = [];
-  String _selectedForecastDOW = '';
 
   late Object _graphKey;
 
   @override
   void initState() {
     super.initState();
-    bottomSheetController = BottomSheet.createAnimationController(this);
-    bottomSheetController.duration = Duration(milliseconds: 2000);
-    bottomSheetController.drive(CurveTween(curve: Curves.easeIn));
     _tabController = TabController(
       length: TabsConfig.forecastTabs.length,
       vsync: this,
@@ -83,7 +76,6 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
 
   @override
   void dispose() {
-    bottomSheetController.dispose();
     _tabController.dispose();
     super.dispose();
   }
@@ -130,20 +122,14 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
 
   List<Widget> _getGraphMenu() {
     return <Widget>[
-      // TextButton(
-      //     child: const Text(GraphLiterals.GRAPH_DATA,
-      //         style: TextStyle(color: Colors.white)),
-      //     onPressed: () {
-      //       //_showGraphDataTable();
-      //     }),
       PopupMenuButton<String>(
         onSelected: handleClick,
         icon: Icon(Icons.more_vert),
         itemBuilder: (BuildContext context) {
           return {
             _beginnerMode
-                ? StandardLiterals.expertMode
-                : StandardLiterals.beginnerMode,
+                ? StandardLiterals.EXPERT_MODE
+                : StandardLiterals.BEGINNER_MODE,
             GraphLiterals.SET_AS_FAVORITE
           }.map((String choice) {
             return PopupMenuItem<String>(
@@ -158,8 +144,8 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
 
   void handleClick(String value) async {
     switch (value) {
-      case StandardLiterals.expertMode:
-      case StandardLiterals.beginnerMode:
+      case StandardLiterals.EXPERT_MODE:
+      case StandardLiterals.BEGINNER_MODE:
         // toggle flag
         setState(() {
           _beginnerMode = !_beginnerMode;
@@ -171,24 +157,47 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
     }
   }
 
+  Widget _miscStatesHandlerWidget() {
+    return BlocListener<LocalForecastBloc, RaspDataState>(
+      listener: (context, state) {
+        if (state is BeginnerModeState) {
+          _beginnerMode = state.beginnerMode;
+        }
+        if (state is RaspForecastModelsAndDates){
+          _selectedModelName = state.selectedModelName;
+          _selectedForecastDate = state.selectedForecastDate;
+        }
+        if (state is BeginnerForecastDateModelState){
+          _selectedModelName = state.model;
+          _selectedForecastDate = state.date;
+        }
+      },
+      child: SizedBox.shrink(),
+    );
+  }
+
   Widget _getBody() {
     return Stack(
       children: [
         Column(children: [
           _widgetForMessages(),
           Padding(
-            child: _getBeginnerExpertWidget(),
+            child: ModelDatesDisplay<LocalForecastBloc>(
+              sendEvent: _sendEvent,
+            ),
             padding: EdgeInsets.all(8.0),
           ),
           _getLocalForecastWidget(),
+          _miscStatesHandlerWidget(),
         ]),
-        _getProgressIndicator(),
+        RaspProgressIndicator<LocalForecastBloc>(),
       ],
     );
   }
 
   Widget _getLocalForecastWidget() {
-    return BlocConsumer<GraphicBloc, GraphState>(listener: (context, state) {
+    return BlocConsumer<LocalForecastBloc, RaspDataState>(
+        listener: (context, state) {
       if (state is GraphDataState) {
         //
       }
@@ -206,7 +215,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
             length: tabBarWidgets.length,
             vsync: this,
             initialIndex: state.forecastData.startIndex);
-        _tabController.addListener((){
+        _tabController.addListener(() {
           _sendEvent(SetLocationTabIndex(_tabController.index));
         });
 
@@ -296,7 +305,8 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
   Widget _getCloudbaseWidget(
       PointForecastGraphData pointForecastGraphData, double maxAltitude) {
     _graphKey = Object();
-    DataPointsConfig dataPointsConfig = _checkForCuAndOdInForecast(pointForecastGraphData.altitudeData);
+    DataPointsConfig dataPointsConfig =
+        _checkForCuAndOdInForecast(pointForecastGraphData.altitudeData);
     // print(" ----------   altitude data -------------");
     // (pointForecastGraphData.altitudeData.forEach((map) {
     //   map.forEach((key, value) {
@@ -339,7 +349,8 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
         //coord: RectCoord(color: const Color(0xffdddddd)),
         marks: [
           PointMark(
-            size: SizeEncode(variable: "name", values: dataPointsConfig.sizeOfPoints),
+            size: SizeEncode(
+                variable: "name", values: dataPointsConfig.sizeOfPoints),
             color: ColorEncode(
               variable: 'name',
               values: dataPointsConfig.colorsOfPoints,
@@ -348,7 +359,8 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
                 'groupTouch': {false: (color) => color.withAlpha(100)},
               },
             ),
-            shape: ShapeEncode(variable: 'name', values: dataPointsConfig.shapesOfPoints),
+            shape: ShapeEncode(
+                variable: 'name', values: dataPointsConfig.shapesOfPoints),
           ),
         ],
         axes: [
@@ -439,7 +451,8 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
 
   /// conditions might be that the forecast doesn't include Cu or OD so we need
   ///
-  DataPointsConfig _checkForCuAndOdInForecast(List<Map<String, Object>> altitudeData) {
+  DataPointsConfig _checkForCuAndOdInForecast(
+      List<Map<String, Object>> altitudeData) {
     DataPointsConfig dataPointsConfig = DataPointsConfig();
 
     // always add thermal color,size, shape,etc
@@ -449,7 +462,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
     dataPointsConfig.annotationsOfPoints.addAll(_getGraphLegend(
         label: "MSL Thermal Updraft Strength @ 175fpm (Dry)",
         initialOffset: graphLegendOffset,
-        color : Colors.red,
+        color: Colors.red,
         xPosIndex: 0,
         yPosIndex: -1,
         yOffset: 290));
@@ -466,7 +479,7 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
         dataPointsConfig.annotationsOfPoints.addAll(_getGraphLegend(
             label: "OD Cloudbase(MSL)",
             initialOffset: graphLegendOffset,
-            color : Colors.black,
+            color: Colors.black,
             xPosIndex: 0,
             yPosIndex: 0,
             yOffset: 290));
@@ -483,7 +496,9 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
         dataPointsConfig.annotationsOfPoints.addAll(_getGraphLegend(
             label: "Cu Cloudbase(MSL)",
             initialOffset: graphLegendOffset,
-            color: dataPointsConfig.odInForecast ? dataPointsConfig.colorsOfPoints[2] : dataPointsConfig.colorsOfPoints[1],
+            color: dataPointsConfig.odInForecast
+                ? dataPointsConfig.colorsOfPoints[2]
+                : dataPointsConfig.colorsOfPoints[1],
             xPosIndex: dataPointsConfig.odInForecast ? 1 : 0,
             yPosIndex: 0,
             yOffset: 290));
@@ -573,71 +588,20 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
     );
   }
 
-  _sendEvent(GraphicEvent event) {
-    BlocProvider.of<GraphicBloc>(context).add(event);
-  }
-
-  Widget _getProgressIndicator() {
-    return BlocConsumer<GraphicBloc, GraphState>(
-      listener: (context, state) {},
-      buildWhen: (previous, current) {
-        return current is GraphWorkingState;
-      },
-      builder: (context, state) {
-        if (state is GraphWorkingState) {
-          if (state.working) {
-            return Container(
-
-              child: AbsorbPointer(
-                  absorbing: true,
-                  child: CircularProgressIndicator(
-                    color: Colors.white,
-                  )),
-              alignment: Alignment.center,
-              color: Colors.black26,
-            );
-          }
-        }
-        return SizedBox.shrink();
-      },
-    );
+  _sendEvent(RaspDataEvent event) {
+    BlocProvider.of<LocalForecastBloc>(context).add(event);
   }
 
   Widget _widgetForMessages() {
-    return BlocListener<GraphicBloc, GraphState>(
+    return BlocListener<LocalForecastBloc, RaspDataState>(
       listener: (context, state) async {
-        if (state is GraphErrorState) {
+        if (state is RaspErrorState) {
           CommonWidgets.showErrorDialog(context, "Error", state.error);
         }
       },
       child: SizedBox.shrink(),
     );
   }
-
-  // void _showGraphDataTable() {
-  //   if (forecastGraphData == null) {
-  //     CommonWidgets.showErrorDialog(
-  //         context, StandardLiterals.UH_OH, GraphLiterals.GRAPH_DATA_MISSING);
-  //   } else {
-  //     showModalBottomSheet<void>(
-  //         context: context,
-  //         transitionAnimationController: bottomSheetController,
-  //         enableDrag: true,
-  //         isDismissible: false,
-  //         isScrollControlled: true,
-  //         barrierColor: Colors.transparent,
-  //         builder: (BuildContext context) {
-  //           return Container(
-  //             height: MediaQuery
-  //                 .of(context)
-  //                 .size
-  //                 .height * .75,
-  //             color: Colors.white,
-  //             child: _getGridDataWidget(forecastGraphData!),
-  //           );
-  //         });
-  //   }
-  // }
 
   Widget _getGridDataWidget(PointForecastGraphData pointForecastGraphData) {
     // get list of hours for which forecasts have been made
@@ -663,99 +627,13 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
     );
   }
 
-  Widget _getBeginnerExpertWidget() {
-    return BlocConsumer<GraphicBloc, GraphState>(
-      listener: (context, state) {
-        if (state is BeginnerModeState) {
-          _beginnerMode = state.beginnerMode;
-        }
-        if (state is BeginnerForecastDateModelState) {
-          _selectedForecastDate = state.date;
-          _selectedForecastDOW = reformatDateToDOW(_selectedForecastDate) ?? '';
-          _selectedModelName = state.model;
-        }
-        if (state is GraphModelsState) {
-          _selectedModelName = state.selectedModelName;
-          _modelNames.clear();
-          _modelNames.addAll(state.modelNames);
-        }
-        if (state is GraphModelDatesState) {
-          _forecastDates = state.forecastDates;
-          _selectedForecastDate = state.selectedForecastDate;
-          _shortDOWs = reformatDatesToDOW(state.forecastDates);
-          _selectedForecastDOW = _shortDOWs[
-              state.forecastDates.indexOf(state.selectedForecastDate)];
-        }
-      },
-      buildWhen: (previous, current) {
-        return current is BeginnerModeState ||
-            current is BeginnerForecastDateModelState ||
-            current is GraphModelsState ||
-            current is GraphModelDatesState;
-      },
-      builder: (context, state) {
-        if (_beginnerMode) {
-          return _getBeginnerForecast();
-        } else {
-          return _getForecastModelsAndDates();
-        }
-      },
-    );
-  }
-
-  Widget _getBeginnerForecast() {
-    return BeginnerForecast(
-        context: context,
-        leftArrowOnTap: (() {
-          _sendEvent(ForecastDateSwitchEvent(ForecastDateChange.previous));
-          setState(() {});
-        }),
-        rightArrowOnTap: (() {
-          _sendEvent(ForecastDateSwitchEvent(ForecastDateChange.next));
-          setState(() {});
-        }),
-        displayText:
-            "(${_selectedModelName.toUpperCase()}) $_selectedForecastDOW ");
-  }
-
-  Widget _getForecastModelsAndDates() {
-    //debugPrint('creating/updating main ForecastModelsAndDates');
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.start,
-      children: [
-        Expanded(
-          flex: 3,
-          child: ModelDropDownList(
-            selectedModelName: _selectedModelName,
-            modelNames: _modelNames,
-            onModelChange: (String value) {
-              _sendEvent(SelectedModelEvent(value));
-            },
-          ),
-        ),
-        Expanded(
-            flex: 7,
-            child: Padding(
-              padding: EdgeInsets.only(left: 16.0),
-              child: ForecastDatesDropDown(
-                selectedForecastDate: _selectedForecastDOW,
-                forecastDates: _shortDOWs,
-                onForecastDateChange: (String value) {
-                  final selectedForecastDate =
-                      _forecastDates[_shortDOWs.indexOf(value)];
-                  _sendEvent(SelectedForecastDateEvent(selectedForecastDate));
-                },
-              ),
-            )),
-      ],
-    );
-  }
-
   Future<bool> _onWillPop() async {
     Navigator.pop(
         context,
         LocalForecastOutputData(
-            model: _selectedModelName, date: _selectedForecastDate));
+            modelName: _selectedModelName,
+            date: _selectedForecastDate,
+            beginnerMode: _beginnerMode));
     return true;
   }
 }

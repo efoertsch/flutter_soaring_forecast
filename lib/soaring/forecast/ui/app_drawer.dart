@@ -10,12 +10,12 @@ import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
         FEEDBACK_EMAIL_ADDRESS,
         Feedback,
         WxBriefBriefingRequest;
-import 'package:flutter_soaring_forecast/soaring/graphics/data/local_forecast_favorite.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../bloc/rasp_bloc.dart';
 import '../../app/web_launcher.dart';
+import '../forecast_data/local_forecast_favorite.dart';
 
 class AppDrawerWidget extends StatefulWidget {
   final Function? refreshTaskDisplayFunction;

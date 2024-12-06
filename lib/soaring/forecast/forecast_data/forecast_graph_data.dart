@@ -83,11 +83,13 @@ class PointForecastGraphData {
 }
 
 class LocalForecastOutputData {
-  final String model;
+  final String modelName;
   final String date;
+  final bool beginnerMode;
 
   LocalForecastOutputData({
-    required this.model,
+    required this.modelName,
     required this.date,
+    required this.beginnerMode
   });
 }

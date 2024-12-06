@@ -15,16 +15,16 @@ import 'package:flutter_soaring_forecast/soaring/airport/ui/selected_airports_li
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     show WxBriefBriefingRequest;
 import 'package:flutter_soaring_forecast/soaring/app/custom_material_page_route.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast/bloc/local_forecast_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_data_bloc.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_data_event.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/cubit/glider_cubit.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/forecast_graph_data.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/ui/glider_polar_list.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast/ui/local_forecast_graphic.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/ui/rasp_screen.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast_types/bloc/forecast_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast_types/ui/forecast_list.dart';
-import 'package:flutter_soaring_forecast/soaring/graphics/bloc/graphic_bloc.dart';
-import 'package:flutter_soaring_forecast/soaring/graphics/bloc/graphic_event.dart';
-import 'package:flutter_soaring_forecast/soaring/graphics/data/forecast_graph_data.dart';
-import 'package:flutter_soaring_forecast/soaring/graphics/ui/local_forecast_graphic.dart';
 import 'package:flutter_soaring_forecast/soaring/pdfviewer/pdf_view_screen.dart';
 import 'package:flutter_soaring_forecast/soaring/region/bloc/region_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/region/ui/region_list_screen.dart';
@@ -136,22 +136,6 @@ class SoaringForecastApp extends StatelessWidget {
     return MaterialApp(
         theme : ThemeData(useMaterial3: false,),
         debugShowCheckedModeBanner: false,
-        // theme: ThemeData(
-        //   // force iOS behaviour on Android (for testing)
-        //   // (or toggle platform via Flutter Inspector)
-        //   // platform: TargetPlatform.iOS,
-        //
-        //   // specify page transitions for each platform
-        //   pageTransitionsTheme: PageTransitionsTheme(
-        //     builders: {
-        //       // for Android - default page transition
-        //       TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
-        //
-        //       // for iOS - one which considers ancestor BackGestureWidthTheme
-        //       TargetPlatform.iOS: CupertinoWillPopScopePageTransionsBuilder(),
-        //     },
-        //   ),
-        // ),
         title: Strings.appTitle,
         home: SoaringForecastRouteBuilder(),
         initialRoute: SoaringForecastRouteBuilder.routeName,
@@ -389,7 +373,7 @@ class SoaringForecastRouteBuilder extends StatelessWidget {
     return BlocProvider<RaspDataBloc>(
       create: (BuildContext context) =>
           RaspDataBloc(repository: RepositoryProvider.of<Repository>(context)),
-      child: RaspScreen(repositoryContext: context),
+      child: RaspScreen(),
     );
   }
 }
@@ -678,10 +662,10 @@ class LocalForecastGraphRouteBuilder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<GraphicBloc>(
+    return BlocProvider<LocalForecastBloc>(
       create: (BuildContext context) =>
-          GraphicBloc(repository: RepositoryProvider.of<Repository>(context))
-            ..add(LocalForecastDataEvent(localForecastGraphData: graphData)),
+          LocalForecastBloc(repository: RepositoryProvider.of<Repository>(context))
+            ..add(LocalForecastGraphDataEvent(localForecastGraphData: graphData)),
       child: LocalForecastGraphic(),
     );
   }
