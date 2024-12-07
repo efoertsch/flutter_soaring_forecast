@@ -111,17 +111,17 @@ class Region {
 
   /// For a particular model (e.g. nam) add the date and model details
   void addToModelDates(Model model, String date, String printDate) {
-    ModelDateDetails modelDateDetails =
-        ModelDateDetails(printDate, date, model);
+    ModelDateDetail modelDateDetail =
+        ModelDateDetail(printDate, date, model);
     // See if you have already seen that model
     ModelDates? modelDates = _modelDates
         .firstWhereOrNull((modelDates) => (modelDates.modelName == model.name));
     if (modelDates == null) {
       // First time for that model so add it to the list with the date details
-      _modelDates.add(ModelDates(model.name, modelDateDetails));
+      _modelDates.add(ModelDates(model.name, modelDateDetail));
     } else {
       // model already in list so just add new date/details to the list
-      modelDates.addNewModelDates(modelDateDetails);
+      modelDates.addNewModelDates(modelDateDetail);
     }
   }
 
@@ -131,7 +131,7 @@ class Region {
   }
 
   // Model in form of 'hrrr','rap,...   Date in form of YYYY-MM-DD
-  ModelDateDetails? doModelDateDetailsExist(String modelName, String date ){
+  ModelDateDetail? doModelDateDetailsExist(String modelName, String date ){
     ModelDates? modelDates = _modelDates
         .firstWhereOrNull((modelDates) => (modelDates.modelName == modelName));
     if (modelDates == null) {
@@ -200,29 +200,29 @@ class Airspace {
 /// whereas web is dates, model
 class ModelDates {
   String? modelName;
-  List<ModelDateDetails> modelDateDetailList = [];
+  List<ModelDateDetail> modelDateDetailList = [];
 
-  ModelDates(String modelName, ModelDateDetails modelDateDetails) {
+  ModelDates(String modelName, ModelDateDetail modelDateDetails) {
     this.modelName = modelName;
     modelDateDetailList.add(modelDateDetails);
   }
 
-  List<ModelDateDetails> getModelDateDetailList() {
+  List<ModelDateDetail> getModelDateDetailList() {
     return modelDateDetailList;
   }
 
-  void addNewModelDates(ModelDateDetails newModelDateDetails) {
+  void addNewModelDates(ModelDateDetail newModelDateDetails) {
     modelDateDetailList.add(newModelDateDetails);
   }
 }
 
 /// For a specific model and date , hold the date data
-class ModelDateDetails {
+class ModelDateDetail {
   String? printDate;
   String? date;
   Model? model;
 
-  ModelDateDetails(String printDate, String date, Model model) {
+  ModelDateDetail(String printDate, String date, Model model) {
     this.printDate = printDate;
     this.date = date;
     this.model = model;

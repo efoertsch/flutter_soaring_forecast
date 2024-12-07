@@ -5,7 +5,7 @@ import 'package:flutter_soaring_forecast/soaring/floor/taskturnpoint/task_turnpo
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/LatLngForecast.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image_set.dart';
-import 'package:flutter_soaring_forecast/soaring/graphics/data/forecast_graph_data.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/forecast_graph_data.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/estimated_flight_avg_summary.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/regions.dart';
@@ -32,20 +32,17 @@ class SelectedRegionNameState extends RaspDataState {
 }
 
 // GFS, NAM, etc and the default (or previously saved selected model
-class RaspForecastModels extends RaspDataState {
-  final List<String> modelNames;
-  final String selectedModelName;
-
-  RaspForecastModels(this.modelNames, this.selectedModelName);
-}
-
-//  list of forecast dates available for the selected forecast model and the
-//  default selected date.
-class RaspModelDates extends RaspDataState {
+class RaspForecastModelsAndDates extends RaspDataState {
+  late final List<String> modelNames;
+  late final String selectedModelName;
   final List<String> forecastDates; // array of dates like  2019-12-19
   final String selectedForecastDate;
 
-  RaspModelDates(this.forecastDates, this.selectedForecastDate);
+  RaspForecastModelsAndDates(
+      {required this.modelNames,
+      required this.selectedModelName,
+      required this.forecastDates,
+      required this.selectedForecastDate});
 }
 
 // List of forecast model (eg. 'Thermal updraft velocity & B/S Ratio', 'B/L Top', etc )
@@ -181,16 +178,18 @@ class RegionsLoadedState extends RaspDataState {
 
 class DisplayLocalForecastGraphState extends RaspDataState {
   final LocalForecastInputData localForecastGraphData;
+
   DisplayLocalForecastGraphState(this.localForecastGraphData);
 }
 
 class RaspWorkingState extends RaspDataState {
   final bool working;
+
   RaspWorkingState({required this.working});
 }
 
-class BeginnerModeState extends RaspDataState{
-  final bool beginnerMode ;
+class BeginnerModeState extends RaspDataState {
+  final bool beginnerMode;
 
   BeginnerModeState(this.beginnerMode);
 }
@@ -198,15 +197,53 @@ class BeginnerModeState extends RaspDataState{
 class BeginnerForecastDateModelState extends RaspDataState {
   final String date;
   final String model;
-  BeginnerForecastDateModelState (this.date, this.model);
+
+  BeginnerForecastDateModelState(this.date, this.model);
 }
 
 class EstimatedFlightSummaryState extends RaspDataState {
-  final  EstimatedFlightSummary? estimatedFlightSummary;
-  EstimatedFlightSummaryState (this.estimatedFlightSummary);
+  final EstimatedFlightSummary? estimatedFlightSummary;
+
+  EstimatedFlightSummaryState(this.estimatedFlightSummary);
 }
 
-class ShowEstimatedFlightButton extends RaspDataState{
+class ShowEstimatedFlightButton extends RaspDataState {
   final bool showEstimatedFlightButton;
+
   ShowEstimatedFlightButton(this.showEstimatedFlightButton);
 }
+
+//------------ Specific to forecast graphics ------------------
+
+class GraphInitialState extends RaspDataState {
+  final state = "GraphInitialState";
+
+  @override
+  String toString() => state;
+}
+
+class GraphDataState extends RaspDataState {
+  final ForecastGraphData forecastData;
+
+  GraphDataState({required this.forecastData});
+}
+
+// // TODO replace with  RaspForecastModelsAndDates?
+// class GraphModelDatesState extends RaspDataState {
+//   final List<String> forecastDates; // array of dates like  2019-12-19
+//   final String selectedForecastDate;
+//
+//   GraphModelDatesState(this.forecastDates, this.selectedForecastDate);
+//
+// }
+//
+//
+// /// TODO combine above and replace with  RaspForecastModelsAndDates?
+// // GFS, NAM, etc and the default (or previously saved selected model
+// class GraphModelsState extends GraphState {
+//   final List<String> modelNames;
+//   final String selectedModelName;
+//
+//   GraphModelsState(this.modelNames, this.selectedModelName);
+//
+// }

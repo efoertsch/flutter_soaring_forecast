@@ -3,13 +3,14 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
-import 'package:flutter_soaring_forecast/soaring/graphics/bloc/graphic_event.dart';
-import 'package:flutter_soaring_forecast/soaring/graphics/bloc/graphic_state.dart';
-import 'package:flutter_soaring_forecast/soaring/graphics/data/forecast_graph_data.dart';
-import 'package:flutter_soaring_forecast/soaring/graphics/data/local_forecast_favorite.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_data_event.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_data_state.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/forecast_graph_data.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/regions.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
+
+import '../forecast_data/local_forecast_favorite.dart';
 
 //  For following forecasts, you actually need to combine values from 2 other forecasts to determine display
 //  zsfclclmask - Cu Cloudbase where CuPotential > 0  requires:
@@ -19,7 +20,7 @@ import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 //        zblcldif  (OD Potential)
 //        zblcl (OD Cloudbase (BL CL) MSL)
 
-class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
+class LocalForecastBloc extends Bloc<RaspDataEvent, RaspDataState> {
   final Repository repository;
 
   static const UNKNOWN = "Unknown";
@@ -59,12 +60,12 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
   String? _regionName;
   List<String> _modelNames = [];
   ModelDates? _selectedModelDates;
-  List<String>? _forecastDates;
-  List<String>? _forecastTimes;
+  List<String> _forecastDates = [];
+  List<String> _forecastTimes = [] ;
   List<LocalForecastPoint> _localForecastPoints = [];
   late double _lat;
   late double _lng;
-  ModelDateDetails? _beginnerModeModelDataDetails;
+  ModelDateDetail? _beginnerModeModelDataDetails;
   int _startIndex = 0;
 
   static final _options = <Forecast>[];
@@ -73,10 +74,10 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
 
   int _currentLocationIndex = 0;
 
-  GraphicBloc({required this.repository}) : super(GraphicInitialState()) {
-    on<LocalForecastDataEvent>(_getLocalForecastData);
+  LocalForecastBloc({required this.repository}) : super(GraphInitialState()) {
+    on<LocalForecastGraphDataEvent>(_getLocalForecastData);
     on<SelectedModelEvent>(_processSelectedModelEvent);
-    on<SelectedForecastDateEvent>(_processSelectedDateEvent);
+    on<SelectForecastDateEvent>(_processSelectedDateEvent);
     on<ForecastDateSwitchEvent>(_processForecastDateSwitchEvent);
     on<BeginnerModeEvent>(_processBeginnerModeEvent);
     on<SetLocationAsFavoriteEvent>(_setLocationAsFavorite);
@@ -84,8 +85,8 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
   }
 
   FutureOr<void> _getLocalForecastData(
-      LocalForecastDataEvent event, Emitter<GraphState> emit) async {
-    emit(GraphWorkingState(working: true));
+      LocalForecastGraphDataEvent event, Emitter<RaspDataState> emit) async {
+    emit(RaspWorkingState(working: true));
     _assignInitialForecastFields(event.localForecastGraphData);
     _setRegionModelNames();
     _getSelectedModelDates();
@@ -96,13 +97,16 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
       _getBeginnerModeStartup();
       _emitBeginnerModelDateState(emit);
     } else {
-      _emitModelDates(emit);
-      _emitRaspModels(emit);
+      emit(RaspForecastModelsAndDates(
+          modelNames: _modelNames,
+          selectedModelName: _selectedModelName!,
+          forecastDates: _forecastDates,
+          selectedForecastDate: _selectedForecastDate!));
     }
     _composeRequestParamsString();
     await _getForecastList();
     await _generateGraphDataAndEmit(emit);
-    emit(GraphWorkingState(working: false));
+    emit(RaspWorkingState(working: false));
   }
 
   void _assignInitialForecastFields(LocalForecastInputData inputData) {
@@ -115,16 +119,16 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
     _currentLocationIndex = _startIndex;
   }
 
-  Future<void> _generateGraphDataAndEmit(Emitter<GraphState> emit) async {
+  Future<void> _generateGraphDataAndEmit(Emitter<RaspDataState> emit) async {
     List<PointForecastGraphData> pointForecastsGraphData = [];
-    for (var localForecastPoint in _localForecastPoints!) {
+    for (var localForecastPoint in _localForecastPoints) {
       PointForecastGraphData? pointForecastGraphData =
           await _getPointForecastGraphData(localForecastPoint, emit);
-      if (pointForecastGraphData != null ) {
-        pointForecastsGraphData.add(pointForecastGraphData!);
+      if (pointForecastGraphData != null) {
+        pointForecastsGraphData.add(pointForecastGraphData);
       } else {
         // oh-oh
-        emit(GraphErrorState(
+        emit(RaspErrorState(
             "Could not get local forecast for ${localForecastPoint.turnpointName}"));
         return;
       }
@@ -174,7 +178,8 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
   }
 
   Future<PointForecastGraphData?> _getPointForecastGraphData(
-      LocalForecastPoint localForecastPoint, Emitter<GraphState> emit) async {
+      LocalForecastPoint localForecastPoint,
+      Emitter<RaspDataState> emit) async {
     final List<Map<String, Object>> altitudeForecastData = [];
     final List<Map<String, Object>> thermalForecastData = [];
     final List<Map<String, Object>> allData = [];
@@ -193,8 +198,9 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
       // eg. experimental1   1000  2000 3000
       // first check if you got any lines with "extract.blipspot read_datafile_pt ERROR"
       // which likely indicate the forecast is being updated
-      if (response.any((line) => line.contains("extract.blipspot"))){
-        emit(GraphErrorState("Looks like the this forecast is being updated. Please retry again in a couple minutes"));
+      if (response.any((line) => line.contains("extract.blipspot"))) {
+        emit(RaspErrorState(
+            "Looks like the this forecast is being updated. Please retry again in a couple minutes"));
         return null;
       }
 
@@ -222,10 +228,10 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
         turnpointCode: localForecastPoint.turnpointCode,
         altitudeData: altitudeForecastData,
         thermalData: thermalForecastData,
-        hours: _forecastTimes!,
+        hours: _forecastTimes,
         descriptions: _combinedForecastList,
         gridData:
-            _createGridData(allData, _forecastTimes!, _combinedForecastList),
+            _createGridData(allData, _forecastTimes, _combinedForecastList),
         lat: localForecastPoint.lat,
         lng: localForecastPoint.lng);
     return pointForecastsGraphData;
@@ -238,7 +244,7 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
         _thermalParmList.join("@") +
         "@" +
         _windParmList.join("@");
-    _forecastTimesParams = _forecastTimes!.join("@");
+    _forecastTimesParams = _forecastTimes.join("@");
   }
 
   /// Need to sort the forecasts so that graphing routine can properly assign point colors
@@ -339,7 +345,7 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
       // first row of response should be string
       var forecastValues = response[i].trim().split(" ");
       // The size of the forecastValues list should equal  the param name + the number of forecast times
-      if (forecastValues.length == 1 + (_forecastTimes?.length ?? 0)) {
+      if (forecastValues.length == 1 + _forecastTimes.length) {
         // Get the param name and remove from list (so list size equals the number of times requested)
         var param = forecastValues.removeAt(0);
         var forecastNameDisplay = _combinedForecastList
@@ -348,7 +354,7 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
         for (int j = 0; j < forecastValues.length; ++j) {
           final forecastMap = Map<String, Object>();
           forecastMap.addAll({
-            "time": _forecastTimes![j],
+            "time": _forecastTimes[j],
             "code": param,
             "value": (double.tryParse(forecastValues[j]) ?? 0),
             "name": forecastNameDisplay
@@ -446,31 +452,34 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
   }
 
   void _processSelectedModelEvent(
-      SelectedModelEvent event, Emitter<GraphState> emit) async {
-    emit(GraphWorkingState(working: true));
+      SelectedModelEvent event, Emitter<RaspDataState> emit) async {
+    emit(RaspWorkingState(working: true));
     _selectedModelName = event.modelName;
     // print('Selected model: $_selectedModelname');
     // emits same list of models with new selected model
-    _emitRaspModels(emit);
     _getSelectedModelDates();
-    _emitModelDates(emit);
+    _emitRaspModelsAndDates(emit);
     await _generateGraphDataAndEmit(emit);
-    emit(GraphWorkingState(working: false));
+    emit(RaspWorkingState(working: false));
   }
 
   void _processSelectedDateEvent(
-      SelectedForecastDateEvent event, Emitter<GraphState> emit) async {
-    emit(GraphWorkingState(working: true));
+      SelectForecastDateEvent event, Emitter<RaspDataState> emit) async {
+    emit(RaspWorkingState(working: true));
     _selectedForecastDate = event.forecastDate;
     _emitModelDates(emit);
     // update times and images for new date
     _setForecastTimesForDate();
     await _generateGraphDataAndEmit(emit);
-    emit(GraphWorkingState(working: false));
+    emit(RaspWorkingState(working: false));
   }
 
-  void _emitModelDates(Emitter<GraphState> emit) {
-    emit(GraphModelDatesState(_forecastDates!, _selectedForecastDate!));
+  void _emitModelDates(Emitter<RaspDataState> emit) {
+    emit(RaspForecastModelsAndDates(
+        modelNames: _modelNames,
+        selectedModelName: _selectedModelName!,
+        forecastDates: _forecastDates,
+        selectedForecastDate: _selectedForecastDate!));
     //debugPrint('emitted GraphModelDates');
   }
 
@@ -488,14 +497,14 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
     _setForecastDates();
     // stay on same date if new model has forecast for that date
     if (_selectedForecastDate == null ||
-        !_forecastDates!.contains(_selectedForecastDate)) {
-      _selectedForecastDate = _forecastDates!.first;
+        !_forecastDates.contains(_selectedForecastDate)) {
+      _selectedForecastDate = (_forecastDates.firstOrNull ?? "");
     }
     _updateForecastTimesList();
   }
 
   void _setForecastDates() {
-    List<ModelDateDetails> modelDateDetails =
+    List<ModelDateDetail> modelDateDetails =
         _selectedModelDates!.getModelDateDetailList();
     _forecastDates = modelDateDetails
         .map((modelDateDetails) => modelDateDetails.date!)
@@ -538,9 +547,12 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
         .toList();
   }
 
-  void _emitRaspModels(Emitter<GraphState> emit) {
-    emit(GraphModelsState(_modelNames, _selectedModelName!));
-    // debugPrint('emitted GraphModelsState');
+  void _emitRaspModelsAndDates(Emitter<RaspDataState> emit) {
+    emit(RaspForecastModelsAndDates(
+        modelNames: _modelNames,
+        selectedModelName: _selectedModelName!,
+        forecastDates: _forecastDates,
+        selectedForecastDate: _selectedForecastDate!));
   }
 
   // Assign values only if not already assigned (code in anticipation of option to
@@ -562,7 +574,7 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
   // Set the forecast date (yyyy-mm-dd)
   // Search in order for HRRR, RAP, NAM, GFS
   void _getBeginnerModeDateDetails() {
-    ModelDateDetails? modelDateDetails;
+    ModelDateDetail? modelDateDetails;
     // iterate through models to  to see if forecast ex
     for (var model in ModelsEnum.values) {
       modelDateDetails =
@@ -581,9 +593,9 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
     }
   }
 
-  void _emitBeginnerModelDateState(Emitter<GraphState> emit) {
+  void _emitBeginnerModelDateState(Emitter<RaspDataState> emit) {
     if (_beginnerModeModelDataDetails == null) {
-      emit(GraphErrorState("Oops. No forecast models available!"));
+      emit(RaspErrorState("Oops. No forecast models available!"));
     }
     emit(BeginnerForecastDateModelState(
       _selectedForecastDate!,
@@ -593,8 +605,8 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
 
   // Go to either previous or next date for beginner mode
   FutureOr<void> _processForecastDateSwitchEvent(
-      ForecastDateSwitchEvent event, Emitter<GraphState> emit) async {
-    emit(GraphWorkingState(working: true));
+      ForecastDateSwitchEvent event, Emitter<RaspDataState> emit) async {
+    emit(RaspWorkingState(working: true));
     int? dateIndex = _region?.dates?.indexOf(_selectedForecastDate!);
     if (dateIndex != null) {
       if (event.forecastDateSwitch == ForecastDateChange.previous) {
@@ -610,9 +622,9 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
     _getBeginnerModeDateDetails();
     _selectedModelName = _beginnerModeModelDataDetails?.model?.name ?? UNKNOWN;
     if (_selectedModelName == UNKNOWN) {
-      emit(GraphErrorState(
+      emit(RaspErrorState(
           "Hmmm. It seems like RASP is missing forecast models names (GFS, NAM, etc.). Please check RASP website"));
-      emit(GraphWorkingState(working: false));
+      emit(RaspWorkingState(working: false));
       return;
     }
 
@@ -623,7 +635,7 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
       emit(BeginnerForecastDateModelState(
           _selectedForecastDate!, _selectedModelName!));
     }
-    emit(GraphWorkingState(working: false));
+    emit(RaspWorkingState(working: false));
   }
 
 // A new model (e.g. nam) has been selected so get new dates and times
@@ -642,8 +654,8 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
   // if switching from expert to simple may switch modes (to get most 'accurate' for day)
   // if switched from simple to expert stay on current model
   void _processBeginnerModeEvent(
-      BeginnerModeEvent event, Emitter<GraphState> emit) async {
-    emit(GraphWorkingState(working: true));
+      BeginnerModeEvent event, Emitter<RaspDataState> emit) async {
+    emit(RaspWorkingState(working: true));
     _beginnerModeSelected = event.beginnerMode;
     await repository.setBeginnerForecastMode(event.beginnerMode);
     if (_beginnerModeSelected) {
@@ -653,23 +665,21 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
       emit(BeginnerForecastDateModelState(
           _selectedForecastDate ?? '', _selectedModelName!));
       await _generateGraphDataAndEmit(emit);
-      emit(GraphWorkingState(working: false));
+      emit(RaspWorkingState(working: false));
     } else {
       //  switched from beginner to expert
       // stay on same model and date so just send info to update ui
-      _emitRaspModels(emit);
-      _emitRaspModelDates(emit);
+      _emitRaspModelsAndDates(emit);
     }
-    emit(GraphWorkingState(working: false));
-  }
-
-  void _emitRaspModelDates(Emitter<GraphState> emit) {
-    emit(GraphModelDatesState(_forecastDates!, _selectedForecastDate!));
+    emit(RaspWorkingState(working: false));
   }
 
   FutureOr<void> _setLocationAsFavorite(
-      SetLocationAsFavoriteEvent event, Emitter<GraphState> emit) {
-    LocalForecastPoint localForecastPoint = _localForecastPoints[ _currentLocationIndex <  _localForecastPoints!.length ? _currentLocationIndex : 0];
+      SetLocationAsFavoriteEvent event, Emitter<RaspDataState> emit) {
+    LocalForecastPoint localForecastPoint = _localForecastPoints[
+        _currentLocationIndex < _localForecastPoints.length
+            ? _currentLocationIndex
+            : 0];
     var localForecastFavorite = LocalForecastFavorite(
         turnpointName: localForecastPoint.turnpointName,
         turnpointCode: localForecastPoint.turnpointCode,
@@ -678,7 +688,8 @@ class GraphicBloc extends Bloc<GraphicEvent, GraphState> {
     repository.storeLocalForecastFavorite(localForecastFavorite);
   }
 
-  FutureOr<void> _setLocationIndex(SetLocationTabIndex event, Emitter<GraphState> emit) {
+  FutureOr<void> _setLocationIndex(
+      SetLocationTabIndex event, Emitter<RaspDataState> emit) {
     _currentLocationIndex = event.index;
   }
 }

@@ -21,7 +21,7 @@ class SoaringForecast extends StatelessWidget {
     return BlocProvider<RaspDataBloc>(
       create: (BuildContext context) =>
           RaspDataBloc(repository: RepositoryProvider.of<Repository>(context)),
-      child: RaspScreen(repositoryContext: context),
+      child: RaspScreen(),
     );
   }
 }

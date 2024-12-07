@@ -7,6 +7,8 @@ import 'package:flutter_soaring_forecast/soaring/repository/rasp/gliders.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/regions.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../forecast_data/forecast_graph_data.dart';
+
 /// https://medium.com/flutter-community/flutter-bloc-pattern-for-dummies-like-me-c22d40f05a56
 /// Event In - State Out
 ///
@@ -24,10 +26,10 @@ class SwitchedRegionEvent extends RaspDataEvent {
   SwitchedRegionEvent();
 }
 
-class SelectedRaspModelEvent extends RaspDataEvent {
+class SelectedModelEvent extends RaspDataEvent {
   final String modelName;
 
-  SelectedRaspModelEvent(this.modelName);
+  SelectedModelEvent(this.modelName);
 }
 
 class SelectedRaspRegion extends RaspDataEvent {
@@ -36,10 +38,10 @@ class SelectedRaspRegion extends RaspDataEvent {
   SelectedRaspRegion(this.region);
 }
 
-class SelectRaspForecastDateEvent extends RaspDataEvent {
+class SelectForecastDateEvent extends RaspDataEvent {
   final String forecastDate;
 
-  SelectRaspForecastDateEvent(this.forecastDate);
+  SelectForecastDateEvent(this.forecastDate);
 }
 
 class SetRaspForecastTimeEvent extends RaspDataEvent {
@@ -50,8 +52,9 @@ class SetRaspForecastTimeEvent extends RaspDataEvent {
 
 class SelectedRaspForecastEvent extends RaspDataEvent {
   final Forecast forecast;
+  final bool resendForecasts;
 
-  SelectedRaspForecastEvent(this.forecast);
+  SelectedRaspForecastEvent(this.forecast, {this.resendForecasts = false});
 }
 
 class SetRaspForecastType extends RaspDataEvent {
@@ -89,7 +92,8 @@ class GetTaskTurnpointsEvent extends RaspDataEvent {
 }
 
 class GetEstimatedFlightAvgEvent extends RaspDataEvent {
-  Glider glider ;
+  Glider glider;
+
   GetEstimatedFlightAvgEvent(this.glider);
 }
 
@@ -114,7 +118,11 @@ class DisplayLocalForecastEvent extends RaspDataEvent {
   final String? turnpointCode;
   final bool forTask;
 
-  DisplayLocalForecastEvent({required this.latLng, this.turnpointName, this.turnpointCode, this.forTask = false});
+  DisplayLocalForecastEvent(
+      {required this.latLng,
+      this.turnpointName,
+      this.turnpointCode,
+      this.forTask = false});
 }
 
 class RedisplayMarkersEvent extends RaspDataEvent {
@@ -168,7 +176,7 @@ class ForecastDateSwitchEvent extends RaspDataEvent {
   ForecastDateSwitchEvent(this.forecastDateSwitch);
 }
 
-class BeginnerModeEvent extends RaspDataEvent{
+class BeginnerModeEvent extends RaspDataEvent {
   final bool beginnerMode;
 
   BeginnerModeEvent(this.beginnerMode);
@@ -182,5 +190,27 @@ class CheckIfForecastRefreshNeededEvent extends RaspDataEvent {
   CheckIfForecastRefreshNeededEvent();
 }
 
+//------------ Specific to forecast graphics ----------------
+class LocalForecastGraphDataEvent extends RaspDataEvent {
+  final LocalForecastInputData localForecastGraphData;
 
+  LocalForecastGraphDataEvent({
+    required this.localForecastGraphData,
+  });
+}
 
+class LocalForecastOutputDataEvent extends RaspDataEvent {
+  final LocalForecastOutputData localForecastOutputData;
+
+  LocalForecastOutputDataEvent({
+    required this.localForecastOutputData,
+  });
+}
+
+class SetLocationAsFavoriteEvent extends RaspDataEvent {}
+
+class SetLocationTabIndex extends RaspDataEvent {
+  final int index;
+
+  SetLocationTabIndex(this.index);
+}
