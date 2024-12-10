@@ -7,13 +7,12 @@ import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/LatLngFo
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image_set.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/estimated_flight_avg_summary.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
-
+import 'package:latlong2/latlong.dart';
 
 import '../../local_forecast/bloc/local_forecast_graph.dart';
+import '../../repository/rasp/regions.dart';
 
-/// https://medium.com/flutter-community/flutter-bloc-pattern-for-dummies-like-me-c22d40f05a56
-/// Event In - State Out
-///
+
 @immutable
 abstract class RaspDataState {}
 
@@ -139,11 +138,7 @@ class RaspWorkingState extends RaspDataState {
   RaspWorkingState({required this.working});
 }
 
-class BeginnerModeState extends RaspDataState {
-  final bool beginnerMode;
 
-  BeginnerModeState(this.beginnerMode);
-}
 
 class BeginnerForecastDateModelState extends RaspDataState {
   final String date;
@@ -164,23 +159,8 @@ class ShowEstimatedFlightButton extends RaspDataState {
   ShowEstimatedFlightButton(this.showEstimatedFlightButton);
 }
 
+class ForecastBoundsState extends RaspDataState  {
+  final LatLngBounds latLngBounds;
 
-// // TODO replace with  RaspForecastModelsAndDates?
-// class GraphModelDatesState extends RaspDataState {
-//   final List<String> forecastDates; // array of dates like  2019-12-19
-//   final String selectedForecastDate;
-//
-//   GraphModelDatesState(this.forecastDates, this.selectedForecastDate);
-//
-// }
-//
-//
-// /// TODO combine above and replace with  RaspForecastModelsAndDates?
-// // GFS, NAM, etc and the default (or previously saved selected model
-// class GraphModelsState extends GraphState {
-//   final List<String> modelNames;
-//   final String selectedModelName;
-//
-//   GraphModelsState(this.modelNames, this.selectedModelName);
-//
-// }
+  ForecastBoundsState(this.latLngBounds);
+}

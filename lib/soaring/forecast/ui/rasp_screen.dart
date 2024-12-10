@@ -15,6 +15,7 @@ import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_overhea
 
 import '../../region_model/bloc/region_model_bloc.dart';
 import '../../region_model/bloc/region_model_event.dart';
+import '../../region_model/bloc/region_model_state.dart';
 import '../bloc/rasp_data_bloc.dart';
 import '../bloc/rasp_data_event.dart';
 import 'forecast_time_display.dart';
@@ -34,7 +35,6 @@ class _RaspScreenState extends State<RaspScreen>
   final _forecastMapStateKey = GlobalKey<ForecastMapState>();
   late List<PreferenceOption> _raspDisplayOptions;
   String _selectedRegionName = "";
-
 
   int _currentImageIndex = 0;
   int _lastImageIndex = 0;
@@ -99,11 +99,12 @@ class _RaspScreenState extends State<RaspScreen>
               _getDividerWidget(),
               ForecastTimeDisplay(
                 runAnimation: runAnimation,
-                timeIndexChangeFunction:  _timeIndexChangedFunction,
+                timeIndexChangeFunction: _timeIndexChangedFunction,
               ),
               _getForecastWindow(),
               _widgetForSnackBarMessages(),
-              _miscStatesHandlerWidget(),
+              _miscRaspStatesHandler(),
+              _miscRegionModelStatesHandler()
             ],
           ),
           RaspProgressIndicator<RaspDataBloc>(),
@@ -140,12 +141,9 @@ class _RaspScreenState extends State<RaspScreen>
     });
   }
 
-  Widget _miscStatesHandlerWidget() {
+  Widget _miscRaspStatesHandler() {
     return BlocListener<RaspDataBloc, RaspDataState>(
       listener: (context, state) {
-        if (state is BeginnerModeState) {
-          _beginnerMode = state.beginnerMode;
-        }
         if (state is RaspTaskTurnpoints) {
           taskSelected = state.taskTurnpoints.isNotEmpty;
           return;
@@ -163,6 +161,28 @@ class _RaspScreenState extends State<RaspScreen>
       },
       child: SizedBox.shrink(),
     );
+  }
+
+  Widget _miscRegionModelStatesHandler() {
+    return BlocListener<RegionModelBloc, RegionModelState>(
+        listener: (context, state) {
+      if (state is ForecastModelsAndDates) {
+        _beginnerMode = state.beginnerMode;
+        SelectedRegionModelDetailEvent selectedRegionModelDetailEvent =
+            SelectedRegionModelDetailEvent(
+                region: state.regionName,
+                modelName: state.modelNameIndex >= 0
+                    ? state.modelNames[state.modelNameIndex]
+                    : "",
+                modelDate: state.forecastDateIndex >= 0
+                    ? state.forecastDates[state.forecastDateIndex]
+                    : "",
+                localTimes: state.localTimes,
+                localTime: state.localTimeIndex >=0 ? state.localTimes[state.localTimeIndex] :"");
+        _sendEvent(selectedRegionModelDetailEvent);
+      }
+    },
+      child: SizedBox.shrink(),);
   }
 
   // runAnimation = true - run the animation of course!
@@ -316,8 +336,7 @@ class _RaspScreenState extends State<RaspScreen>
       case StandardLiterals.BEGINNER_MODE:
         // toggle flag
         setState(() {
-          _beginnerMode = !_beginnerMode;
-          _sendEvent(BeginnerModeEvent(_beginnerMode));
+          _sendEvent(BeginnerModeEvent(!_beginnerMode));
         });
         break;
       case RaspMenu.refreshForecast:
@@ -338,19 +357,10 @@ class _RaspScreenState extends State<RaspScreen>
   void _sendEvent(dynamic event) {
     if (event is RegionModelEvent) {
       BlocProvider.of<RegionModelBloc>(context).add(event);
-    }
-    else if (event is RaspDataEvent){
+    } else if (event is RaspDataEvent) {
       BlocProvider.of<RaspDataBloc>(context).add(event);
     }
   }
-
-  // void _sendRegionModelEvent(RegionModelEvent event) {
-  //   BlocProvider.of<RegionModelBloc>(context).add(event);
-  // }
-  //
-  // void _sendRaspDataEvent(RaspDataEvent event) {
-  //   BlocProvider.of<RaspDataBloc>(context).add(event);
-  // }
 
   Widget _getForecastWindow() {
     return ForecastMap(key: _forecastMapStateKey, runAnimation: runAnimation);
@@ -417,9 +427,7 @@ class _RaspScreenState extends State<RaspScreen>
         arguments: request);
   }
 
-
   _timeIndexChangedFunction(int indexChange) {
-    print ("Time Index change: ${indexChange}");
+    print("Time Index change: ${indexChange}");
   }
-
 }

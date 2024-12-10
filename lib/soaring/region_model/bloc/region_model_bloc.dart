@@ -41,6 +41,7 @@ class RegionModelBloc extends Bloc<RegionModelEvent, RegionModelState> {
   RegionModelBloc({required this.repository})
       : super(RegionModelInitialState()) {
     on<InitialRegionModelEvent>(_processInitialRegionModelEvent);
+    on<BeginnerDateSwitchEvent>(_processBeginnerDateSwitch);
     on<RegionChangedEvent>(_processRegionChangedEvent);
     on<ModelChangeEvent>(_processModelChangeEvent);
     on<DateChangeEvent>(_processDateChangeEvent);
@@ -66,6 +67,16 @@ class RegionModelBloc extends Bloc<RegionModelEvent, RegionModelState> {
         // get default time to start displaying forecast
         await _getDefaultForecastTime();
         _beginnerMode = await repository.isBeginnerForecastMode();
+        if (_beginnerMode){
+          _selectedForecastDate = _region?.dates?.first;
+          _getBeginnerModeDateDetails();
+          if (_beginnerModeModelDataDetail == null) {
+            emit( WorkingState(working: false));
+            emit(ErrorState(
+                "Hmmm. No forecast models available! Please check main RASP site to see if issue there also"));
+            return;
+          }
+        }
         _emitRaspModelsAndDates(emit);
         _emitCenterOfRegion(emit);
         emit(WorkingState(working: false));
@@ -265,6 +276,11 @@ class RegionModelBloc extends Bloc<RegionModelEvent, RegionModelState> {
         break;
       }
     }
+    _beginnerModeModelDataDetail = modelDateDetails;
+    _selectedModelName = modelDateDetails?.model?.name;
+    if (_modelNames.isEmpty) {
+      _setRegionModelNames();
+    }
   }
 
 
@@ -307,7 +323,7 @@ class RegionModelBloc extends Bloc<RegionModelEvent, RegionModelState> {
     _regionLatLngBounds = modelDateDetail.latLngBounds;
     _centerOfRegion =
         LatLng(modelDateDetail.center[0], modelDateDetail.center[1]);
-    emit(ForecastBoundsState(_regionLatLngBounds!));
+    emit(RegionLatLngBoundsState(_regionLatLngBounds!));
   }
 
   void _emitRaspModelsAndDates(Emitter<RegionModelState> emit) {
@@ -362,8 +378,9 @@ class RegionModelBloc extends Bloc<RegionModelEvent, RegionModelState> {
       // stay on same model and date so just send info to update ui
       // Still need to update available dates/times for the model that you are on
       _getDatesForSelectedModel();
-      _emitRaspModelsAndDates(emit);
+
     }
+    _emitRaspModelsAndDates(emit);
   }
 
 

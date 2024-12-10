@@ -241,6 +241,8 @@ class ForecastMapState extends State<ForecastMap>
             ),
             onMapReady: (() {
               _sendEvent(MapReadyEvent());
+              _mapController.animatedFitCamera(
+                  cameraFit: CameraFit.bounds(bounds: _forecastLatLngBounds));
             }),
 
             onMapEvent: ((mapEvent) => _processMapEvent(mapEvent)),
@@ -1286,13 +1288,8 @@ class ForecastMapState extends State<ForecastMap>
           if (state is CenterOfMapState) {
             _mapCenter = state.latLng;
           }
-          if (state is ForecastBoundsState) {
+          if (state is RegionLatLngBoundsState) {
             _forecastLatLngBounds = state.latLngBounds;
-            // _printMapBounds(
-            //     "ForecastBoundsState  bounds ", _forecastLatLngBounds!);
-            //_mapController.animatedFitBounds(_forecastLatLngBounds);
-            _mapController.animatedFitCamera(
-                cameraFit: CameraFit.bounds(bounds: _forecastLatLngBounds));
             return;
           }
         },

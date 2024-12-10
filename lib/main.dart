@@ -26,6 +26,7 @@ import 'package:flutter_soaring_forecast/soaring/pdfviewer/pdf_view_screen.dart'
 import 'package:flutter_soaring_forecast/soaring/region/bloc/region_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/region/ui/region_list_screen.dart';
 import 'package:flutter_soaring_forecast/soaring/region_model/bloc/region_model_bloc.dart';
+import 'package:flutter_soaring_forecast/soaring/region_model/bloc/region_model_event.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 import 'package:flutter_soaring_forecast/soaring/satellite/geos/geos.dart';
 import 'package:flutter_soaring_forecast/soaring/settings/bloc/settings_bloc.dart';
@@ -135,7 +136,9 @@ class SoaringForecastApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-        theme : ThemeData(useMaterial3: false,),
+        theme: ThemeData(
+          useMaterial3: false,
+        ),
         debugShowCheckedModeBanner: false,
         title: Strings.appTitle,
         home: SoaringForecastRouteBuilder(),
@@ -373,15 +376,14 @@ class SoaringForecastRouteBuilder extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        BlocProvider<RegionModelBloc>(
-          create: (BuildContext context) =>
-              RegionModelBloc(
-                  repository: RepositoryProvider.of<Repository>(context)),
-        ),
         BlocProvider<RaspDataBloc>(
-          create: (BuildContext context) =>
-              RaspDataBloc(
-                  repository: RepositoryProvider.of<Repository>(context)),
+          create: (BuildContext context) => RaspDataBloc(
+              repository: RepositoryProvider.of<Repository>(context)),
+        ),
+        BlocProvider<RegionModelBloc>(
+          create: (BuildContext context) => RegionModelBloc(
+              repository: RepositoryProvider.of<Repository>(context))
+            ..add(InitialRegionModelEvent()),
         ),
       ],
       child: RaspScreen(),
@@ -674,9 +676,9 @@ class LocalForecastGraphRouteBuilder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider<LocalForecastBloc>(
-      create: (BuildContext context) =>
-          LocalForecastBloc(repository: RepositoryProvider.of<Repository>(context))
-            ..add(LocalForecastGraphEvent(localForecastGraphData: graphData)),
+      create: (BuildContext context) => LocalForecastBloc(
+          repository: RepositoryProvider.of<Repository>(context))
+        ..add(LocalForecastGraphEvent(localForecastGraphData: graphData)),
       child: LocalForecastGraphDisplay(),
     );
   }
@@ -699,8 +701,8 @@ class GliderPolarListBuilder extends StatelessWidget {
 
   Widget build(BuildContext context) {
     return BlocProvider<GliderCubit>(
-      create: (BuildContext context) => GliderCubit(
-          repository: RepositoryProvider.of<Repository>(context)),
+      create: (BuildContext context) =>
+          GliderCubit(repository: RepositoryProvider.of<Repository>(context)),
       child: GliderPolarListScreen(),
     );
   }

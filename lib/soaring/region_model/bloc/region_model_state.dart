@@ -35,10 +35,10 @@ class ForecastModelsAndDates extends RegionModelState {
       required this.localTimeIndex});
 }
 
-class ForecastBoundsState extends RegionModelState {
+class RegionLatLngBoundsState extends RegionModelState {
   final LatLngBounds latLngBounds;
 
-  ForecastBoundsState(this.latLngBounds);
+  RegionLatLngBoundsState(this.latLngBounds);
 }
 
 class CenterOfMapState extends RegionModelState {

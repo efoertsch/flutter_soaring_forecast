@@ -73,7 +73,9 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
   }
 
   void _processInitialRaspRegionEvent(
-      InitialRaspRegionEvent event, Emitter<RaspDataState> emit) async {}
+      InitialRaspRegionEvent event, Emitter<RaspDataState> emit) async {
+   await _emitTypesOfForecasts(emit);
+  }
 
   FutureOr<void> _processSelectedRegionModelDetail(
       SelectedRegionModelDetailEvent event, Emitter<RaspDataState> emit) {
@@ -82,10 +84,20 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     _selectedForecastDate = event.modelDate; // selected date  2019-12-19
     _forecastTimes = event.localTimes;
     _selectedForecastTime = event.localTime;
-    _getForecastImages();
+    _emitForecastSoundingImageSets(emit);
   }
 
-  Future<void> _emitForecastRegionInfo(Emitter<RaspDataState> emit) async {
+  void _emitForecastSoundingImageSets(Emitter<RaspDataState> emit) {
+    if (_displayType == _DisplayType.forecast) {
+      _getForecastImages();
+      _emitRaspForecastImageSet(emit);
+    } else {
+      _getSoundingImages(_soundingPosition);
+      _emitSoundingImageSet(emit);
+    }
+  }
+
+  Future<void> _emitTypesOfForecasts(Emitter<RaspDataState> emit) async {
     emit(RaspWorkingState(working: true));
 
     try {
@@ -130,20 +142,14 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
   }
 
   Future<void> _refreshForecast(_, Emitter<RaspDataState> emit) async {
-    await _emitForecastRegionInfo(emit);
+    await _emitTypesOfForecasts(emit);
     await _emitForecastMapInfo(emit);
   }
 
   Future<void> _processModelChange(
       String modelName, Emitter<RaspDataState> emit) async {
     _selectedModelName = modelName;
-    if (_displayType == _DisplayType.forecast) {
-      _getForecastImages();
-      _emitRaspForecastImageSet(emit);
-    } else {
-      _getSoundingImages(_soundingPosition);
-      _emitSoundingImageSet(emit);
-    }
+    _emitForecastSoundingImageSets(emit);
     emit(EstimatedFlightSummaryState(null));
   }
 
@@ -162,13 +168,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
   Future<void> _processSelectedDateChange(
       String forecastDate, Emitter<RaspDataState> emit) async {
     _selectedForecastDate = forecastDate;
-    if (_displayType == _DisplayType.forecast) {
-      _getForecastImages();
-      _emitRaspForecastImageSet(emit);
-    } else {
-      _getSoundingImages(_soundingPosition);
-      _emitSoundingImageSet(emit);
-    }
+    _emitForecastSoundingImageSets(emit);
     emit(EstimatedFlightSummaryState(null));
   }
 
@@ -206,15 +206,15 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
 
     _forecastImageSets.clear();
     var soaringForecastImages = [];
-    for (var time in _forecastTimes!) {
+    for (var time in _forecastTimes) {
       // Get forecast overlay
-      imageUrl = _createForecastImageUrl(_regionName, _selectedForecastDate!,
+      imageUrl = _createForecastImageUrl(_regionName, _selectedForecastDate,
           _selectedModelName, _selectedForecast!.forecastName, time, 'body');
       soaringForecastBodyImage = SoaringForecastImage(imageUrl, time);
       soaringForecastImages.add(soaringForecastBodyImage);
 
       // Get scale image
-      imageUrl = _createForecastImageUrl(_regionName, _selectedForecastDate!,
+      imageUrl = _createForecastImageUrl(_regionName, _selectedForecastDate,
           _selectedModelName, _selectedForecast!.forecastName, time, 'side');
       soaringForecastSideImage = SoaringForecastImage(imageUrl, time);
       soaringForecastImages.add(soaringForecastSideImage);

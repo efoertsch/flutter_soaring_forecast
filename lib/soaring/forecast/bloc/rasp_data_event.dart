@@ -162,3 +162,13 @@ class ReturnedFromLocalForecastEvent extends RaspDataEvent {
 
   ReturnedFromLocalForecastEvent({required this.modelName, required this.date});
 }
+
+
+
+
+class ForecastBoundsEvent extends RaspDataEvent {
+  final LatLngBounds latLngBounds;
+
+  ForecastBoundsEvent(this.latLngBounds);
+}
+
