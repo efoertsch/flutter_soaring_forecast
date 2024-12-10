@@ -1,8 +1,7 @@
-import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
-import 'package:flutter_soaring_forecast/soaring/repository/rasp/regions.dart';
+import '../../repository/rasp/forecast_types.dart';
 
 class LocalForecastInputData {
-  final Region region;
+  final String regionName;
   final String date;
   final String model;
   final List<String> times;
@@ -10,12 +9,21 @@ class LocalForecastInputData {
   final int startIndex;
 
   LocalForecastInputData(
-      {required this.region,
+      {required this.regionName,
       required this.date,
       required this.model,
       required this.times,
       required this.localForecastPoints,
       this.startIndex = -1});
+}
+
+class LocalModelDateChange {
+  final String regionName;
+  final String model;
+  final String date;
+  final List<String> times;
+
+  LocalModelDateChange(this.regionName, this.model, this.date, this.times);
 }
 
 class LocalForecastPoint {
@@ -85,11 +93,9 @@ class PointForecastGraphData {
 class LocalForecastOutputData {
   final String modelName;
   final String date;
-  final bool beginnerMode;
 
   LocalForecastOutputData({
     required this.modelName,
     required this.date,
-    required this.beginnerMode
   });
 }

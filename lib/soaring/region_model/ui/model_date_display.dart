@@ -1,61 +1,80 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/app/custom_styles.dart';
-import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_bloc.dart';
 
-import '../../../app/constants.dart';
-import '../../forecast_data/rasp_widgets.dart';
-import '../../util/rasp_utils.dart';
+import '../../app/constants.dart' show ForecastDateChange;
+import '../../forecast/bloc/rasp_data_event.dart';
+import '../../repository/rasp/regions.dart';
+import '../bloc/region_model_event.dart';
+import 'rasp_widgets.dart';
+import '../../forecast/util/rasp_utils.dart';
+import '../bloc/region_model_bloc.dart';
+import '../bloc/region_model_state.dart';
 
-class ModelDatesDisplay<T extends Bloc<RaspDataEvent, RaspDataState>>
-    extends StatelessWidget {
-  final Function(RaspDataEvent) sendEvent;
+class ModelDatesDisplay extends StatefulWidget {
   final Function? stopAnimation;
 
-  ModelDatesDisplay(
-      {required Function(RaspDataEvent) this.sendEvent,
-      Function? this.stopAnimation});
+  ModelDatesDisplay({Function? this.stopAnimation});
+
+  @override
+  State<ModelDatesDisplay> createState() => _ModelDatesDisplayState();
+}
+
+class _ModelDatesDisplayState extends State<ModelDatesDisplay> {
+  String regionName = "";
+  List<String> _modelNames = [];
+  int _modelNameIndex = 0;
+  List<String> _forecastDates =[];// array of dates like  2019-12-19
+  int _forecastDateIndex = 0;
+  List<String> _localTimes = [];
+  int _localTimeIndex = 0;
+  List<String> _shortDOWs = [];
+  String _selectedForecastDOW = '';
+
+  void sendEvent(BuildContext context, RegionModelEvent event) {
+    BlocProvider.of<RegionModelBloc>(context).add(event);
+  }
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<T, RaspDataState>(
-        listener: (BuildContext context, RaspDataState state) {
-      if (state is BeginnerForecastDateModelState ||
-          state is RaspForecastModelsAndDates) ;
+    return BlocConsumer<RegionModelBloc, RegionModelState>(
+        listener: (BuildContext context, RegionModelState state) {
+      if (state is ForecastModelsAndDates){
+        _modelNames = state.modelNames;
+        _modelNameIndex = state.modelNameIndex;
+        _forecastDates = state.forecastDates;
+        _forecastDateIndex = state.forecastDateIndex;
+        _localTimes = state.localTimes;
+        _localTimeIndex = state.localTimeIndex;
+        _shortDOWs = reformatDatesToDOW(_forecastDates);
+       _selectedForecastDOW =  _forecastDateIndex >= 0? _shortDOWs[_forecastDateIndex]: "";
+      };
     }, buildWhen: (previous, current) {
-      return current is BeginnerForecastDateModelState ||
-          current is RaspForecastModelsAndDates;
+      return current is ForecastModelsAndDates;
     }, builder: (context, state) {
-      String selectedModelName = "";
-      List<String> modelNames = [];
-      List<String> shortDOWs = [];
-      String selectedForecastDOW = '';
-      List<String> forecastDates = [];
-      if (state is BeginnerForecastDateModelState) {
+      if (state is ForecastModelsAndDates) {
+        if (state.beginnerMode){
         return _getBeginnerForecast(
             context: context,
-            selectedModelName: state.model,
-            selectedForecastDOW: reformatDateToDOW(state.date) ?? '',
-            stopAnimation: stopAnimation,
+            selectedModelName: _modelNameIndex >= 0 ? _modelNames[_modelNameIndex] : "",
+            selectedForecastDOW: _selectedForecastDOW,
+            stopAnimation: widget.stopAnimation,
             sendEvent: sendEvent);
-      } else if (state is RaspForecastModelsAndDates) {
-        selectedModelName = state.selectedModelName;
-        modelNames = state.modelNames;
-        forecastDates = state.forecastDates;
-        shortDOWs = reformatDatesToDOW(state.forecastDates);
-        selectedForecastDOW =
-            shortDOWs[state.forecastDates.indexOf(state.selectedForecastDate)];
-      }
+        } else {
       // if first time called just display 'empty' models/dates
-      return _getForecastModelsAndDates(
+          return _getForecastModelsAndDates(
           context: context,
-          selectedModelName: selectedModelName,
-          modelNames: modelNames,
-          forecastDates: forecastDates,
-          selectedForecastDOW: selectedForecastDOW,
-          shortDOWs: shortDOWs,
-          stopAnimation: stopAnimation,
+          selectedModelName: _modelNames[_modelNameIndex],
+          modelNames: _modelNames,
+          forecastDates: _forecastDates,
+          selectedForecastDOW: _selectedForecastDOW,
+          shortDOWs: _shortDOWs,
+          stopAnimation: widget.stopAnimation,
           sendEvent: sendEvent);
+    }}
+        else {
+          return SizedBox.shrink();
+      }
     });
   }
 }
@@ -65,20 +84,21 @@ Widget _getBeginnerForecast(
     required String selectedModelName,
     required String selectedForecastDOW,
     required Function? stopAnimation,
-    required Function(RaspDataEvent) sendEvent}) {
+    required Function(BuildContext context, RegionModelEvent) sendEvent}) {
   return BeginnerForecast(
       context: context,
       leftArrowOnTap: (() {
         if (stopAnimation != null) {
           stopAnimation();
         }
-        sendEvent(ForecastDateSwitchEvent(ForecastDateChange.previous));
+        sendEvent(
+            context, BeginnerDateSwitchEvent(ForecastDateChange.previous));
       }),
       rightArrowOnTap: (() {
         if (stopAnimation != null) {
           stopAnimation();
         }
-        sendEvent(ForecastDateSwitchEvent(ForecastDateChange.next));
+        sendEvent(context, BeginnerDateSwitchEvent(ForecastDateChange.next));
       }),
       displayText: "(${selectedModelName.toUpperCase()}) $selectedForecastDOW");
 }
@@ -91,7 +111,7 @@ Widget _getForecastModelsAndDates(
     required String selectedForecastDOW,
     required List<String> shortDOWs,
     required Function? stopAnimation,
-    required Function(RaspDataEvent) sendEvent}) {
+    required Function(BuildContext context, RegionModelEvent) sendEvent}) {
   //debugPrint('creating/updating main ForecastModelsAndDates');
   return Row(
     mainAxisAlignment: MainAxisAlignment.start,
@@ -105,7 +125,7 @@ Widget _getForecastModelsAndDates(
             if (stopAnimation != null) {
               stopAnimation();
             }
-            sendEvent(SelectedModelEvent(value));
+            sendEvent(context, ModelChangeEvent(value));
           },
         ),
       ),
@@ -122,7 +142,8 @@ Widget _getForecastModelsAndDates(
                 }
                 final selectedForecastDate =
                     forecastDates[shortDOWs.indexOf(value)];
-                sendEvent(SelectForecastDateEvent(selectedForecastDate));
+                sendEvent(
+                    context, DateChangeEvent(selectedForecastDate));
               },
             ),
           )),
@@ -205,8 +226,7 @@ class _ModelDropDownListState extends State<ModelDropDownList> {
       iconSize: 24,
       elevation: 16,
       onChanged: (String? newValue) {
-        widget.onModelChange(
-            newValue!); //_sendEvent(SelectedRaspModelEvent(newValue!));
+        widget.onModelChange(newValue!);
       },
       items: widget.modelNames.map<DropdownMenuItem<String>>((String value) {
         return DropdownMenuItem<String>(

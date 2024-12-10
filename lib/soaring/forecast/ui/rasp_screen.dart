@@ -7,15 +7,17 @@ import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_data_state.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/ui/app_drawer.dart';
-import 'package:flutter_soaring_forecast/soaring/forecast/ui/common/model_date_display.dart';
+import 'package:flutter_soaring_forecast/soaring/region_model/ui/model_date_display.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/ui/display_ticker.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/ui/forecast_map.dart';
 import 'package:flutter_soaring_forecast/soaring/tasks/ui/task_list.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_overhead_view.dart';
 
+import '../../region_model/bloc/region_model_bloc.dart';
+import '../../region_model/bloc/region_model_event.dart';
 import '../bloc/rasp_data_bloc.dart';
 import '../bloc/rasp_data_event.dart';
-import 'common/forecast_time_display.dart';
+import 'forecast_time_display.dart';
 import 'common/forecast_types_display.dart';
 import 'common/rasp_progress_indicator.dart';
 
@@ -31,7 +33,8 @@ class _RaspScreenState extends State<RaspScreen>
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _forecastMapStateKey = GlobalKey<ForecastMapState>();
   late List<PreferenceOption> _raspDisplayOptions;
-  late String _selectedRegionName;
+  String _selectedRegionName = "";
+
 
   int _currentImageIndex = 0;
   int _lastImageIndex = 0;
@@ -58,31 +61,6 @@ class _RaspScreenState extends State<RaspScreen>
     stopAnimation();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
-  }
-
-  // Leaving this in for now to learn about the Flutter app life cycle
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    switch (state) {
-      case AppLifecycleState.resumed:
-        debugPrint("app in resumed");
-        _sendEvent(CheckIfForecastRefreshNeededEvent());
-        break;
-      case AppLifecycleState.inactive:
-        debugPrint("app in inactive");
-        stopAnimation();
-        break;
-      case AppLifecycleState.paused:
-        debugPrint("app in paused");
-        stopAnimation();
-        break;
-      case AppLifecycleState.hidden:
-        debugPrint("app in detached");
-        break;
-      case AppLifecycleState.detached:
-        debugPrint("app in detached");
-        break;
-    }
   }
 
   @override
@@ -116,13 +94,12 @@ class _RaspScreenState extends State<RaspScreen>
           Column(
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              ModelDatesDisplay<RaspDataBloc>(
-                  sendEvent: _sendEvent, stopAnimation: stopAnimation),
-              SelectedForecastDisplay(sendEvent: _sendEvent),
+              ModelDatesDisplay(stopAnimation: stopAnimation),
+              SelectedForecastDisplay(),
               _getDividerWidget(),
               ForecastTimeDisplay(
-                sendEvent: _sendEvent,
                 runAnimation: runAnimation,
+                timeIndexChangeFunction:  _timeIndexChangedFunction,
               ),
               _getForecastWindow(),
               _widgetForSnackBarMessages(),
@@ -178,10 +155,7 @@ class _RaspScreenState extends State<RaspScreen>
           _raspDisplayOptions = state.displayOptions;
           return;
         }
-        if (state is SelectedRegionNameState) {
-          _selectedRegionName = state.selectedRegionName;
-          return;
-        }
+
         if (state is DisplayLocalForecastGraphState) {
           stopAnimation();
           return;
@@ -347,7 +321,7 @@ class _RaspScreenState extends State<RaspScreen>
         });
         break;
       case RaspMenu.refreshForecast:
-        _refreshForecast();
+        _sendEvent(RefreshForecastEvent());
         break;
     }
   }
@@ -361,9 +335,22 @@ class _RaspScreenState extends State<RaspScreen>
     );
   }
 
-  void _sendEvent(RaspDataEvent event) {
-    BlocProvider.of<RaspDataBloc>(context).add(event);
+  void _sendEvent(dynamic event) {
+    if (event is RegionModelEvent) {
+      BlocProvider.of<RegionModelBloc>(context).add(event);
+    }
+    else if (event is RaspDataEvent){
+      BlocProvider.of<RaspDataBloc>(context).add(event);
+    }
   }
+
+  // void _sendRegionModelEvent(RegionModelEvent event) {
+  //   BlocProvider.of<RegionModelBloc>(context).add(event);
+  // }
+  //
+  // void _sendRaspDataEvent(RaspDataEvent event) {
+  //   BlocProvider.of<RaspDataBloc>(context).add(event);
+  // }
 
   Widget _getForecastWindow() {
     return ForecastMap(key: _forecastMapStateKey, runAnimation: runAnimation);
@@ -430,7 +417,9 @@ class _RaspScreenState extends State<RaspScreen>
         arguments: request);
   }
 
-  void _refreshForecast() {
-    _sendEvent(RefreshForecastEvent());
+
+  _timeIndexChangedFunction(int indexChange) {
+    print ("Time Index change: ${indexChange}");
   }
+
 }

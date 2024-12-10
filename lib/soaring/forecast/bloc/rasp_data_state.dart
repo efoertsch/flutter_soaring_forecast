@@ -5,12 +5,11 @@ import 'package:flutter_soaring_forecast/soaring/floor/taskturnpoint/task_turnpo
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/LatLngForecast.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image_set.dart';
-import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/forecast_graph_data.dart';
-import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/estimated_flight_avg_summary.dart';
-import 'package:flutter_soaring_forecast/soaring/repository/rasp/regions.dart';
-import 'package:flutter_soaring_forecast/soaring/repository/rasp/view_bounds.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
+
+
+import '../../local_forecast/bloc/local_forecast_graph.dart';
 
 /// https://medium.com/flutter-community/flutter-bloc-pattern-for-dummies-like-me-c22d40f05a56
 /// Event In - State Out
@@ -25,26 +24,6 @@ class RaspInitialState extends RaspDataState {
   String toString() => state;
 }
 
-class SelectedRegionNameState extends RaspDataState {
-  final String selectedRegionName;
-
-  SelectedRegionNameState(this.selectedRegionName);
-}
-
-// GFS, NAM, etc and the default (or previously saved selected model
-class RaspForecastModelsAndDates extends RaspDataState {
-  late final List<String> modelNames;
-  late final String selectedModelName;
-  final List<String> forecastDates; // array of dates like  2019-12-19
-  final String selectedForecastDate;
-
-  RaspForecastModelsAndDates(
-      {required this.modelNames,
-      required this.selectedModelName,
-      required this.forecastDates,
-      required this.selectedForecastDate});
-}
-
 // List of forecast model (eg. 'Thermal updraft velocity & B/S Ratio', 'B/L Top', etc )
 class RaspForecasts extends RaspDataState {
   final List<Forecast> forecasts;
@@ -53,29 +32,13 @@ class RaspForecasts extends RaspDataState {
   RaspForecasts(this.forecasts, this.selectedForecast);
 }
 
-class ForecastBoundsState extends RaspDataState {
-  final LatLngBounds latLngBounds;
 
-  ForecastBoundsState(this.latLngBounds);
-}
-
-class CenterOfMapState extends RaspDataState {
-  final LatLng latLng;
-
-  CenterOfMapState(this.latLng);
-}
-
-class ViewBoundsState extends RaspDataState {
-  final ViewBounds viewBounds;
-
-  ViewBoundsState(this.viewBounds);
-}
-
-class RaspForecastTime extends RaspDataState {
+class RaspTimeState extends RaspDataState {
   final String forecastTime;
 
-  RaspForecastTime(this.forecastTime);
+  RaspTimeState(this.forecastTime);
 }
+
 
 class RaspErrorState extends RaspDataState {
   final String error;
@@ -129,12 +92,6 @@ class RedisplayMarkersState extends RaspDataState {
   RedisplayMarkersState();
 }
 
-class RaspSoundingsState extends RaspDataState {
-  final List<Soundings> soundings;
-
-  RaspSoundingsState(this.soundings);
-}
-
 class SoundingForecastImageSet extends RaspDataState {
   final SoaringForecastImageSet soaringForecastImageSet;
   final int displayIndex;
@@ -168,12 +125,6 @@ class ForecastOverlayOpacityState extends RaspDataState {
   final double opacity;
 
   ForecastOverlayOpacityState(this.opacity);
-}
-
-class RegionsLoadedState extends RaspDataState {
-  final List<String> regions;
-
-  RegionsLoadedState(this.regions);
 }
 
 class DisplayLocalForecastGraphState extends RaspDataState {
@@ -213,20 +164,6 @@ class ShowEstimatedFlightButton extends RaspDataState {
   ShowEstimatedFlightButton(this.showEstimatedFlightButton);
 }
 
-//------------ Specific to forecast graphics ------------------
-
-class GraphInitialState extends RaspDataState {
-  final state = "GraphInitialState";
-
-  @override
-  String toString() => state;
-}
-
-class GraphDataState extends RaspDataState {
-  final ForecastGraphData forecastData;
-
-  GraphDataState({required this.forecastData});
-}
 
 // // TODO replace with  RaspForecastModelsAndDates?
 // class GraphModelDatesState extends RaspDataState {

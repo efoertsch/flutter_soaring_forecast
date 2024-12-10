@@ -53,7 +53,7 @@ import 'package:retrofit/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
 
-import '../forecast/forecast_data/local_forecast_favorite.dart';
+import '../local_forecast/bloc/local_forecast_favorite.dart';
 import 'dio_interceptor.dart';
 import 'rasp/forecast_models.dart';
 import 'rasp/forecast_types.dart';

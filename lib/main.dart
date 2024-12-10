@@ -15,19 +15,17 @@ import 'package:flutter_soaring_forecast/soaring/airport/ui/selected_airports_li
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     show WxBriefBriefingRequest;
 import 'package:flutter_soaring_forecast/soaring/app/custom_material_page_route.dart';
-import 'package:flutter_soaring_forecast/soaring/forecast/bloc/local_forecast_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_data_bloc.dart';
-import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_data_event.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/cubit/glider_cubit.dart';
-import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/forecast_graph_data.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/ui/glider_polar_list.dart';
-import 'package:flutter_soaring_forecast/soaring/forecast/ui/local_forecast_graphic.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/ui/rasp_screen.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast_types/bloc/forecast_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast_types/ui/forecast_list.dart';
+import 'package:flutter_soaring_forecast/soaring/local_forecast/bloc/local_forecast_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/pdfviewer/pdf_view_screen.dart';
 import 'package:flutter_soaring_forecast/soaring/region/bloc/region_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/region/ui/region_list_screen.dart';
+import 'package:flutter_soaring_forecast/soaring/region_model/bloc/region_model_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 import 'package:flutter_soaring_forecast/soaring/satellite/geos/geos.dart';
 import 'package:flutter_soaring_forecast/soaring/settings/bloc/settings_bloc.dart';
@@ -50,6 +48,9 @@ import 'package:flutter_soaring_forecast/soaring/wxbrief/ui/wxbrief_request_scre
 import 'package:workmanager/workmanager.dart';
 
 import 'firebase_options.dart';
+import 'soaring/local_forecast/bloc/local_forecast_event.dart';
+import 'soaring/local_forecast/bloc/local_forecast_graph.dart';
+import 'soaring/local_forecast/ui/local_forecast_graph_display.dart';
 
 // https://github.com/fluttercommunity/flutter_workmanager#customisation-android-only
 @pragma(
@@ -370,9 +371,19 @@ class SoaringForecastRouteBuilder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<RaspDataBloc>(
-      create: (BuildContext context) =>
-          RaspDataBloc(repository: RepositoryProvider.of<Repository>(context)),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<RegionModelBloc>(
+          create: (BuildContext context) =>
+              RegionModelBloc(
+                  repository: RepositoryProvider.of<Repository>(context)),
+        ),
+        BlocProvider<RaspDataBloc>(
+          create: (BuildContext context) =>
+              RaspDataBloc(
+                  repository: RepositoryProvider.of<Repository>(context)),
+        ),
+      ],
       child: RaspScreen(),
     );
   }
@@ -665,8 +676,8 @@ class LocalForecastGraphRouteBuilder extends StatelessWidget {
     return BlocProvider<LocalForecastBloc>(
       create: (BuildContext context) =>
           LocalForecastBloc(repository: RepositoryProvider.of<Repository>(context))
-            ..add(LocalForecastGraphDataEvent(localForecastGraphData: graphData)),
-      child: LocalForecastGraphic(),
+            ..add(LocalForecastGraphEvent(localForecastGraphData: graphData)),
+      child: LocalForecastGraphDisplay(),
     );
   }
 }

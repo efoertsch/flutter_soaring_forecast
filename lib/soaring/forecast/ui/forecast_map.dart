@@ -11,8 +11,7 @@ import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     NewEnglandMapCenter,
     NewEnglandMapLatLngBounds,
     RASP_BASE_URL,
-    SUAColor,
-    StandardLiterals;
+    SUAColor;
 import 'package:flutter_soaring_forecast/soaring/app/custom_styles.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/taskturnpoint/task_turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
@@ -20,7 +19,6 @@ import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/LatLngForecast.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image_set.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/ui/sua_layer.dart';
-import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/forecast_graph_data.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/estimated_flight_avg_summary.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/gliders.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/regions.dart';
@@ -28,6 +26,10 @@ import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoint_utils.dart
 import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_overhead_view.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:latlong2/latlong.dart';
+
+import '../../local_forecast/bloc/local_forecast_graph.dart';
+import '../../region_model/bloc/region_model_bloc.dart';
+import '../../region_model/bloc/region_model_state.dart';
 
 class ForecastMap extends StatefulWidget {
   final Function runAnimation;
@@ -146,7 +148,8 @@ class ForecastMapState extends State<ForecastMap>
       ),
       _getOpacitySlider(),
       _getOptimalFlightIcon(),
-      _showOptimalFlightAvgTable()
+      _showOptimalFlightAvgTable(),
+      _regionModelListener()
     ]);
   }
 
@@ -176,9 +179,6 @@ class ForecastMapState extends State<ForecastMap>
   Widget _forecastMap() {
     return BlocConsumer<RaspDataBloc, RaspDataState>(
         listener: (context, state) {
-          if (state is CenterOfMapState) {
-            _mapCenter = state.latLng;
-          }
           if (state is RaspForecastImageSet) {
             // print('Received RaspForecastImageSet in ForecastMap');
             soaringForecastImageSet = state.soaringForecastImageSet;
@@ -196,11 +196,7 @@ class ForecastMapState extends State<ForecastMap>
             _placeLocalForecastMarker(state.latLngForecast);
             return;
           }
-          if (state is RaspSoundingsState) {
-            //  print('Received Soundings in ForecastMap');
-            _placeSoundingMarkers(state.soundings);
-            return;
-          }
+
           if (state is TurnpointsInBoundsState) {
             //print('Received TurnpointsInBoundsState in ForecastMap');
             _updateTurnpointMarkers(state.turnpoints);
@@ -225,7 +221,6 @@ class ForecastMapState extends State<ForecastMap>
           current is RaspForecastImageSet ||
           current is RaspTaskTurnpoints ||
           current is LocalForecastState ||
-          current is RaspSoundingsState ||
           current is TurnpointsInBoundsState ||
           current is RedisplayMarkersState ||
           current is SuaDetailsState ||
@@ -376,15 +371,7 @@ class ForecastMapState extends State<ForecastMap>
           _routeIconIsVisible = state.taskTurnpoints.length > 0;
           _routeSummaryIsVisible = false;
         }
-        if (state is ForecastBoundsState) {
-          _forecastLatLngBounds = state.latLngBounds;
-          // _printMapBounds(
-          //     "ForecastBoundsState  bounds ", _forecastLatLngBounds!);
-          //_mapController.animatedFitBounds(_forecastLatLngBounds);
-          _mapController.animatedFitCamera(
-              cameraFit: CameraFit.bounds(bounds: _forecastLatLngBounds));
-          return;
-        }
+
         if (state is ShowEstimatedFlightButton) {
           _showEstimatedFlightButton = state.showEstimatedFlightButton;
         }
@@ -401,11 +388,11 @@ class ForecastMapState extends State<ForecastMap>
       arguments: inputParms,
     );
     if (result is LocalForecastOutputData) {
-      _sendEvent(LocalForecastOutputDataEvent(
-          localForecastOutputData: LocalForecastOutputData(modelName: result.modelName,
-              date: result.date, beginnerMode: result.beginnerMode)));
-
-  }
+      // There was a model/date change on the local forecast screen so
+      _sendEvent(ReturnedFromLocalForecastEvent(
+          modelName: result.modelName,
+          date: result.date));
+    }
   }
 
   void _updateTaskTurnpoints(List<TaskTurnpoint> taskTurnpoints) {
@@ -803,7 +790,7 @@ class ForecastMapState extends State<ForecastMap>
     _combinedTaskLines.addAll(_optimizedTaskRoute);
   }
 
-  // Currently only display max of 1, so if changes in future need to revisit logic
+// Currently only display max of 1, so if changes in future need to revisit logic
   void _removeLocalForecastMarker() {
     _latLngMarkers.clear();
     _rebuildMarkerArray();
@@ -821,65 +808,65 @@ class ForecastMapState extends State<ForecastMap>
     _suaPolygons.addAll(suaGeoJsonParser.getGeoJasonPolygons());
   }
 
-  //Widget _getGeoJsonWidget() {
-  // return GeoJSONWidget(
-  //   drawClusters: false,
-  //   drawFeatures: true,
-  //   index: geoJsonIndex,
-  //   options: GeoJSONOptions(
-  //     featuresHaveSameStyle: false,
-  //     overallStyleFunc: (TileFeature feature) {
-  //       var paint = Paint()
-  //         ..style = PaintingStyle.stroke
-  //         ..color = Colors.blue.shade200
-  //         ..strokeWidth = 5
-  //         ..isAntiAlias = false;
-  //       if (feature.type == 3) {
-  //         // lineString
-  //         ///paint.style = PaintingStyle.fill;
-  //       }
-  //       return paint;
-  //     },
-  //     // f
-  //     ///clusterFunc: () { return Text("Cluster"); },
-  //     ///lineStringFunc: () { if(CustomImages.imageLoaded) return CustomImages.plane;}
-  //     lineStringStyle: (feature) {
-  //       return Paint()
-  //         ..style = PaintingStyle.stroke
-  //         ..color = Colors.red
-  //         ..strokeWidth = 2
-  //         ..isAntiAlias = true;
-  //     },
-  //     polygonFunc: null,
-  //     polygonStyle: (feature) {
-  //       var suaColor = suaColors.firstWhere(
-  //           (sua) => sua.suaClassType == feature.tags['TYPE'],
-  //           orElse: (() => SUAColor.classUnKnown));
-  //       suaColor.airspaceColor;
-  //       var paint = Paint()
-  //         ..style = PaintingStyle.stroke
-  //         ..strokeWidth = 2
-  //         ..isAntiAlias = true
-  //         ..color = suaColor.airspaceColor;
-  //       paint.isAntiAlias = false;
-  //       return paint;
-  //     },
-  //     polygonLabel: (feature, canvas, offsets) {
-  //       Label.paintText(
-  //         canvas,
-  //         offsets,
-  //         feature.tags['TYPE'],
-  //         // If I don't include as TextStyle I get class conflict. Don't know why AS is showing that
-  //         textStyleBlack87FontSize14,
-  //         _mapController.rotation, // rotationRad,
-  //         rotate: true, //polygonOpt.rotateLabel,
-  //         labelPlacement:
-  //             PolygonLabelPlacement.centroid, //polygonOpt.labelPlacement
-  //       );
-  //     },
-  //   ),
-  // );
-  //
+//Widget _getGeoJsonWidget() {
+// return GeoJSONWidget(
+//   drawClusters: false,
+//   drawFeatures: true,
+//   index: geoJsonIndex,
+//   options: GeoJSONOptions(
+//     featuresHaveSameStyle: false,
+//     overallStyleFunc: (TileFeature feature) {
+//       var paint = Paint()
+//         ..style = PaintingStyle.stroke
+//         ..color = Colors.blue.shade200
+//         ..strokeWidth = 5
+//         ..isAntiAlias = false;
+//       if (feature.type == 3) {
+//         // lineString
+//         ///paint.style = PaintingStyle.fill;
+//       }
+//       return paint;
+//     },
+//     // f
+//     ///clusterFunc: () { return Text("Cluster"); },
+//     ///lineStringFunc: () { if(CustomImages.imageLoaded) return CustomImages.plane;}
+//     lineStringStyle: (feature) {
+//       return Paint()
+//         ..style = PaintingStyle.stroke
+//         ..color = Colors.red
+//         ..strokeWidth = 2
+//         ..isAntiAlias = true;
+//     },
+//     polygonFunc: null,
+//     polygonStyle: (feature) {
+//       var suaColor = suaColors.firstWhere(
+//           (sua) => sua.suaClassType == feature.tags['TYPE'],
+//           orElse: (() => SUAColor.classUnKnown));
+//       suaColor.airspaceColor;
+//       var paint = Paint()
+//         ..style = PaintingStyle.stroke
+//         ..strokeWidth = 2
+//         ..isAntiAlias = true
+//         ..color = suaColor.airspaceColor;
+//       paint.isAntiAlias = false;
+//       return paint;
+//     },
+//     polygonLabel: (feature, canvas, offsets) {
+//       Label.paintText(
+//         canvas,
+//         offsets,
+//         feature.tags['TYPE'],
+//         // If I don't include as TextStyle I get class conflict. Don't know why AS is showing that
+//         textStyleBlack87FontSize14,
+//         _mapController.rotation, // rotationRad,
+//         rotate: true, //polygonOpt.rotateLabel,
+//         labelPlacement:
+//             PolygonLabelPlacement.centroid, //polygonOpt.labelPlacement
+//       );
+//     },
+//   ),
+// );
+//
 
   Widget _getOpacitySlider() {
     return Positioned(
@@ -1165,7 +1152,7 @@ class ForecastMapState extends State<ForecastMap>
     );
   }
 
-  //  routeTurnpoints.length must be legDetails.length -1
+//  routeTurnpoints.length must be legDetails.length -1
   List<TableRow> _getLegTableRows(List<LegDetail> legDetails,
       List<RouteTurnpoint> routeTurnPoints) {
     var legDetailTableRows = <TableRow>[];
@@ -1287,5 +1274,28 @@ class ForecastMapState extends State<ForecastMap>
         });
       },
     );
+  }
+
+
+  _regionModelListener() {
+    return BlocListener<RegionModelBloc, RegionModelState>(
+        listener: (context, state) {
+          if (state is RegionSoundingsState) {
+            _placeSoundingMarkers(state.soundings);
+          }
+          if (state is CenterOfMapState) {
+            _mapCenter = state.latLng;
+          }
+          if (state is ForecastBoundsState) {
+            _forecastLatLngBounds = state.latLngBounds;
+            // _printMapBounds(
+            //     "ForecastBoundsState  bounds ", _forecastLatLngBounds!);
+            //_mapController.animatedFitBounds(_forecastLatLngBounds);
+            _mapController.animatedFitCamera(
+                cameraFit: CameraFit.bounds(bounds: _forecastLatLngBounds));
+            return;
+          }
+        },
+        child: SizedBox.shrink());
   }
 }

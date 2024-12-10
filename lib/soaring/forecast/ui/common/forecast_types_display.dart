@@ -13,9 +13,12 @@ import '../../bloc/rasp_bloc.dart';
 
 
 class SelectedForecastDisplay extends StatelessWidget {
-  final Function(RaspDataEvent) sendEvent;
 
-  SelectedForecastDisplay({required Function(RaspDataEvent) this.sendEvent});
+
+  void sendEvent(BuildContext context, RaspDataEvent event) {
+    BlocProvider.of<RaspDataBloc>(context).add(event);
+  }
+  SelectedForecastDisplay();
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +42,7 @@ class SelectedForecastDisplay extends StatelessWidget {
                 keepPage: false),
             itemCount: forecasts.length,
             onPageChanged: ((int index) {
-                sendEvent(SelectedRaspForecastEvent(forecasts[index]));
+                sendEvent(context,SelectedRaspForecastEvent(forecasts[index]));
             }),
             itemBuilder: (context, index) {
               return Padding(
@@ -84,7 +87,7 @@ Widget _getSelectedForecastIcon(BuildContext context, Forecast forecast) {
 
 Widget _getForecastTextWidget(
     {required BuildContext context,
-    required Function(RaspDataEvent) sendEvent,
+    required Function sendEvent,
     required Forecast forecast}) {
   return Expanded(
       child: InkWell(
@@ -103,7 +106,7 @@ Widget _getForecastTextWidget(
 
 InkWell _getForecastDropDownIconWidget(
     {required BuildContext context,
-    required Function(RaspDataEvent) sendEvent,
+    required Function sendEvent,
     Forecast? forecast}) {
   return InkWell(
     onTap: () {
@@ -118,7 +121,7 @@ InkWell _getForecastDropDownIconWidget(
 
 Future<void> displayForecastList(
     {required BuildContext context,
-    required Function(RaspDataEvent) sendEvent,
+    required Function sendEvent,
     Forecast? forecast = null}) async {
   final result = await Navigator.pushNamed(
       context, ForecastListRouteBuilder.routeName,
