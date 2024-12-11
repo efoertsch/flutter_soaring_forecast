@@ -9,28 +9,12 @@ import '../bloc/rasp_data_event.dart';
 import '../bloc/rasp_data_state.dart';
 import '../../region_model/ui/rasp_widgets.dart';
 
-
 /// The forecast time is driven by the RaspDataBloc when it sends out a
 /// new forecast image overlay or sounding. The goal is to keep the time in
 /// sync with the forecast image/sounding  time.
-class ForecastTimeDisplay extends StatefulWidget {
-  final Function(bool) runAnimation;
-  final Function(int) timeIndexChangeFunction;
+class ForecastTimeDisplay extends StatelessWidget {
 
-
-  ForecastTimeDisplay({required this.runAnimation, required this.timeIndexChangeFunction});
-
-  @override
-  State<ForecastTimeDisplay> createState() => _ForecastTimeDisplayState();
-}
-
-class _ForecastTimeDisplayState extends State<ForecastTimeDisplay> {
-  // int currentImageIndex = 0;
-  // int lastImageIndex = 0;
-  bool _startImageAnimation = false;
- String  _localTime = "";
-
-  void _sendEvent(RaspDataEvent event) {
+  void _sendEvent(BuildContext context, RaspDataEvent event) {
     BlocProvider.of<RaspDataBloc>(context).add(event);
   }
 
@@ -51,31 +35,25 @@ class _ForecastTimeDisplayState extends State<ForecastTimeDisplay> {
                 flex: 1,
                 child: GestureDetector(
                   onTap: () {
-                    setState(() {
-                      _startImageAnimation = false;
-                      widget.runAnimation(_startImageAnimation);
-                      _sendEvent(PreviousTimeEvent());
-                    });
-                  },
+                    _sendEvent(context,RunForecastAnimationEvent(false));
+                      _sendEvent(context,PreviousTimeEvent());
+                    },
                   child: IncrDecrIconWidget.getIncIconWidget('<'),
                 )),
             Expanded(
                 flex: 6,
                 child: BlocConsumer<RaspDataBloc, RaspDataState>(
-                    listener: (BuildContext context,RaspDataState state) {
-                  if (state is RaspTimeState) {
-                    _localTime = state.forecastTime;
-                  }
+                    listener: (BuildContext context, RaspDataState state) {
                 }, buildWhen: (previous, current) {
                   return current is RaspTimeState;
                 }, builder: (context, state) {
                   //debugPrint('creating/updating ForecastTime value');
                   if (state is RaspTimeState) {
-                      var forecastTime = state.forecastTime.startsWith("old ")
-                          ? state.forecastTime.substring(4)
-                          : state.forecastTime;
+                    var forecastTime = state.forecastTime.startsWith("old ")
+                        ? state.forecastTime.substring(4)
+                        : state.forecastTime;
                     return Text(
-                    forecastTime + " (Local)",
+                      forecastTime + " (Local)",
                       style: CustomStyle.bold18(context),
                     );
                   } else {
@@ -86,34 +64,50 @@ class _ForecastTimeDisplayState extends State<ForecastTimeDisplay> {
                 flex: 1,
                 child: GestureDetector(
                   onTap: () {
-                    setState(() {
-                      _startImageAnimation = false;
-                      widget.runAnimation(_startImageAnimation);
-                      _sendEvent(NextTimeEvent());
-                    });
+                    _sendEvent(context,RunForecastAnimationEvent(false));
+                      _sendEvent(context,NextTimeEvent());
                   },
                   child: IncrDecrIconWidget.getIncIconWidget('>'),
                 )),
           ]),
         ),
-        Expanded(
-            flex: 3,
-            child: GestureDetector(
-              onTap: () {
-                setState(() {
-                  _startImageAnimation = !_startImageAnimation;
-                  widget.runAnimation(_startImageAnimation);
-                });
-              },
-              child: Text(
-                (_startImageAnimation
-                    ? StandardLiterals.PAUSE_LABEL
-                    : StandardLiterals.LOOP_LABEL),
-                textAlign: TextAlign.end,
-                style: CustomStyle.bold18(context),
-              ),
-            )),
+        ForecastLoopPauseText(),
       ],
     );
+  }
+}
+
+class ForecastLoopPauseText extends StatelessWidget {
+
+  void _sendEvent(BuildContext context, RaspDataEvent event) {
+    BlocProvider.of<RaspDataBloc>(context).add(event);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    bool runAnimation = false;
+    return Expanded(
+        flex: 3,
+        child: BlocConsumer<RaspDataBloc, RaspDataState>(
+            listener: (BuildContext context, RaspDataState state) {
+          if (state is RunForecastAnimationState) {
+            runAnimation = state.runAnimation;
+          }
+        }, buildWhen: (previous, current) {
+          return current is RunForecastAnimationState;
+        }, builder: (context, state) {
+          return GestureDetector(
+            onTap: () {
+                _sendEvent(context, RunForecastAnimationEvent(!runAnimation));
+              },
+            child: Text(
+              (runAnimation
+                  ? StandardLiterals.PAUSE_LABEL
+                  : StandardLiterals.LOOP_LABEL),
+              textAlign: TextAlign.end,
+              style: CustomStyle.bold18(context),
+            ),
+          );
+        }));
   }
 }

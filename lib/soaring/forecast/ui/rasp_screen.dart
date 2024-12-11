@@ -94,15 +94,11 @@ class _RaspScreenState extends State<RaspScreen>
           Column(
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              ModelDatesDisplay(stopAnimation: stopAnimation),
+              ModelDatesDisplay(),
               SelectedForecastDisplay(),
               _getDividerWidget(),
-              ForecastTimeDisplay(
-                runAnimation: runAnimation,
-                timeIndexChangeFunction: _timeIndexChangedFunction,
-              ),
+              ForecastTimeDisplay(),
               _getForecastWindow(),
-              _widgetForSnackBarMessages(),
               _miscRaspStatesHandler(),
               _miscRegionModelStatesHandler()
             ],
@@ -122,28 +118,13 @@ class _RaspScreenState extends State<RaspScreen>
         color: Colors.black12);
   }
 
-  Widget _widgetForSnackBarMessages() {
-    return BlocConsumer<RaspDataBloc, RaspDataState>(
-        listener: (context, state) {
-      if (state is RaspErrorState) {
-        CommonWidgets.showErrorDialog(
-            context, StandardLiterals.UH_OH, state.error);
-      }
-      if (state is TurnpointFoundState) {
-        displayTurnpointView(context, state);
-      }
-    }, builder: (context, state) {
-      if (state is RaspErrorState) {
-        return SizedBox.shrink();
-      } else {
-        return SizedBox.shrink();
-      }
-    });
-  }
 
   Widget _miscRaspStatesHandler() {
     return BlocListener<RaspDataBloc, RaspDataState>(
       listener: (context, state) {
+        if (state is RunForecastAnimationState){
+          runAnimation(state.runAnimation);
+        }
         if (state is RaspTaskTurnpoints) {
           taskSelected = state.taskTurnpoints.isNotEmpty;
           return;
@@ -153,10 +134,16 @@ class _RaspScreenState extends State<RaspScreen>
           _raspDisplayOptions = state.displayOptions;
           return;
         }
-
         if (state is DisplayLocalForecastGraphState) {
           stopAnimation();
           return;
+        }
+        if (state is RaspErrorState) {
+          CommonWidgets.showErrorDialog(
+              context, StandardLiterals.UH_OH, state.error);
+        }
+        if (state is TurnpointFoundState) {
+          displayTurnpointView(context, state);
         }
       },
       child: SizedBox.shrink(),
@@ -168,6 +155,7 @@ class _RaspScreenState extends State<RaspScreen>
         listener: (context, state) {
       if (state is ForecastModelsAndDates) {
         _beginnerMode = state.beginnerMode;
+        // pass RegionModel info to RASP
         SelectedRegionModelDetailEvent selectedRegionModelDetailEvent =
             SelectedRegionModelDetailEvent(
                 region: state.regionName,
@@ -427,7 +415,7 @@ class _RaspScreenState extends State<RaspScreen>
         arguments: request);
   }
 
-  _timeIndexChangedFunction(int indexChange) {
+  void _timeIndexChangedFunction(int indexChange) {
     print("Time Index change: ${indexChange}");
   }
 }

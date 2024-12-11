@@ -12,9 +12,6 @@ import '../bloc/region_model_bloc.dart';
 import '../bloc/region_model_state.dart';
 
 class ModelDatesDisplay extends StatefulWidget {
-  final Function? stopAnimation;
-
-  ModelDatesDisplay({Function? this.stopAnimation});
 
   @override
   State<ModelDatesDisplay> createState() => _ModelDatesDisplayState();
@@ -58,7 +55,6 @@ class _ModelDatesDisplayState extends State<ModelDatesDisplay> {
             context: context,
             selectedModelName: _modelNameIndex >= 0 ? _modelNames[_modelNameIndex] : "",
             selectedForecastDOW: _selectedForecastDOW,
-            stopAnimation: widget.stopAnimation,
             sendEvent: sendEvent);
         } else {
       // if first time called just display 'empty' models/dates
@@ -69,11 +65,10 @@ class _ModelDatesDisplayState extends State<ModelDatesDisplay> {
           forecastDates: _forecastDates,
           selectedForecastDOW: _selectedForecastDOW,
           shortDOWs: _shortDOWs,
-          stopAnimation: widget.stopAnimation,
           sendEvent: sendEvent);
     }}
         else {
-          return SizedBox.shrink();
+          return Text("Getting models and dates");
       }
     });
   }
@@ -83,21 +78,14 @@ Widget _getBeginnerForecast(
     {required BuildContext context,
     required String selectedModelName,
     required String selectedForecastDOW,
-    required Function? stopAnimation,
     required Function(BuildContext context, RegionModelEvent) sendEvent}) {
   return BeginnerForecast(
       context: context,
       leftArrowOnTap: (() {
-        if (stopAnimation != null) {
-          stopAnimation();
-        }
         sendEvent(
             context, BeginnerDateSwitchEvent(ForecastDateChange.previous));
       }),
       rightArrowOnTap: (() {
-        if (stopAnimation != null) {
-          stopAnimation();
-        }
         sendEvent(context, BeginnerDateSwitchEvent(ForecastDateChange.next));
       }),
       displayText: "(${selectedModelName.toUpperCase()}) $selectedForecastDOW");
@@ -110,7 +98,6 @@ Widget _getForecastModelsAndDates(
     required List<String> forecastDates,
     required String selectedForecastDOW,
     required List<String> shortDOWs,
-    required Function? stopAnimation,
     required Function(BuildContext context, RegionModelEvent) sendEvent}) {
   //debugPrint('creating/updating main ForecastModelsAndDates');
   return Row(
@@ -122,9 +109,6 @@ Widget _getForecastModelsAndDates(
           selectedModelName: selectedModelName,
           modelNames: modelNames,
           onModelChange: (String value) {
-            if (stopAnimation != null) {
-              stopAnimation();
-            }
             sendEvent(context, ModelChangeEvent(value));
           },
         ),
@@ -137,9 +121,6 @@ Widget _getForecastModelsAndDates(
               selectedForecastDate: selectedForecastDOW,
               forecastDates: shortDOWs,
               onForecastDateChange: (String value) {
-                if (stopAnimation != null) {
-                  stopAnimation();
-                }
                 final selectedForecastDate =
                     forecastDates[shortDOWs.indexOf(value)];
                 sendEvent(

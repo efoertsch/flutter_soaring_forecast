@@ -164,11 +164,15 @@ class ReturnedFromLocalForecastEvent extends RaspDataEvent {
 }
 
 
-
-
 class ForecastBoundsEvent extends RaspDataEvent {
   final LatLngBounds latLngBounds;
 
   ForecastBoundsEvent(this.latLngBounds);
+}
+
+class RunForecastAnimationEvent extends RaspDataEvent{
+  final bool runAnimation;
+
+  RunForecastAnimationEvent(this.runAnimation);
 }
 

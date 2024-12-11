@@ -139,6 +139,11 @@ class RaspWorkingState extends RaspDataState {
 }
 
 
+class RunForecastAnimationState extends RaspDataState{
+  final bool runAnimation;
+
+  RunForecastAnimationState(this.runAnimation);
+}
 
 class BeginnerForecastDateModelState extends RaspDataState {
   final String date;

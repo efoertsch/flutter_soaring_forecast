@@ -70,9 +70,10 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     on<RefreshForecastEvent>(_refreshForecast);
     on<CheckIfForecastRefreshNeededEvent>(_checkIfForecastRefreshNeeded);
     on<GetEstimatedFlightAvgEvent>(_getEstimatedFlightAvg);
+    on<RunForecastAnimationEvent>(_processRunAnimationEvent);
   }
 
-  void _processInitialRaspRegionEvent(
+ Future<void> _processInitialRaspRegionEvent(
       InitialRaspRegionEvent event, Emitter<RaspDataState> emit) async {
    await _emitTypesOfForecasts(emit);
   }
@@ -85,6 +86,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     _forecastTimes = event.localTimes;
     _selectedForecastTime = event.localTime;
     _emitForecastSoundingImageSets(emit);
+    emit (RunForecastAnimationState(false));
   }
 
   void _emitForecastSoundingImageSets(Emitter<RaspDataState> emit) {
@@ -628,5 +630,11 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     if (event.date != _selectedForecastDate) {
       await _processSelectedDateChange(event.date, emit);
     }
+  }
+
+
+  // Just inform any other widgets dependent on the state of the forecast animation
+  FutureOr<void> _processRunAnimationEvent(RunForecastAnimationEvent event, Emitter<RaspDataState> emit) {
+    emit (RunForecastAnimationState(event.runAnimation));
   }
 }
