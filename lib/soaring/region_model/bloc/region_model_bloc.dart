@@ -46,6 +46,7 @@ class RegionModelBloc extends Bloc<RegionModelEvent, RegionModelState> {
     on<ModelChangeEvent>(_processModelChangeEvent);
     on<DateChangeEvent>(_processDateChangeEvent);
     on<BeginnerModeEvent>(_processBeginnerModeEvent);
+    on<LocalForecastStartupEvent>(_processLocalForecastStartupEvent);
   }
 
   Future<void> _processInitialRegionModelEvent(_,
@@ -58,7 +59,7 @@ class RegionModelBloc extends Bloc<RegionModelEvent, RegionModelState> {
       if (_regions != null) {
         await _loadSelectRegionInfo();
         // Now get the model (gfs/etc)
-        await _loadForecastInfoForRegion();
+        //await _loadForecastInfoForRegion();
         await _getSelectedModelDates();
         // need to get all dates before you can generate the list of models
         _setRegionModelNames();
@@ -136,9 +137,9 @@ class RegionModelBloc extends Bloc<RegionModelEvent, RegionModelState> {
     _updateForecastDates();
   }
 
-  Future<Region> _loadForecastInfoForRegion() async {
-    return await this.repository.loadForecastModelsByDateForRegion(_region!);
-  }
+  // Future<Region> _loadForecastInfoForRegion() async {
+  //   return await this.repository.loadForecastModelsByDateForRegion(_region!);
+  // }
 
   Future<void> _getSelectedModelDates() async {
     _region = await repository.loadForecastModelsByDateForRegion(_region!);
@@ -403,5 +404,12 @@ class RegionModelBloc extends Bloc<RegionModelEvent, RegionModelState> {
           break;
       }
     }
+  }
+
+  // This is called when the bloc is added for Local Forcast. Local Forecast was passed the same bloc as
+  // used on RASP screen, so already have the region/model/...
+  // So just need to send existing data to populate whatever the region/model widgets there are
+  FutureOr<void> _processLocalForecastStartupEvent(LocalForecastStartupEvent event, Emitter<RegionModelState> emit) {
+    _emitRaspModelsAndDates(emit);
   }
 }

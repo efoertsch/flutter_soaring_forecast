@@ -100,8 +100,8 @@ void main() async {
     Workmanager().initialize(
         callbackDispatcher, // The top level function, aka callbackDispatcher
         isInDebugMode:
-            !kReleaseMode // If enabled it will post a notification whenever the task is running. Handy for debugging tasks
-        );
+        !kReleaseMode // If enabled it will post a notification whenever the task is running. Handy for debugging tasks
+    );
     Workmanager()
         .registerOneOffTask("oneTimeDownload", "workmanager.background.task");
   }
@@ -112,7 +112,7 @@ void main() async {
   // https://stackoverflow.com/questions/54285172/how-to-solve-flutter-certificate-verify-failed-error-while-performing-a-post-req
   // https://flutter-developer.medium.com/flutter-android-7-certificate-verify-failed-with-letsencrypt-ssl-cert-after-sept-30-2021-9cb5f672c090
   ByteData data =
-      await PlatformAssetBundle().load('assets/ca/lets-encrypt-r3.pem');
+  await PlatformAssetBundle().load('assets/ca/lets-encrypt-r3.pem');
   SecurityContext.defaultContext
       .setTrustedCertificatesBytes(data.buffer.asUint8List());
   // End of Lets Encrypt SSL stuff
@@ -158,7 +158,7 @@ class SoaringForecastApp extends StatelessWidget {
           }
           if (settings.name == TurnpointViewRouteBuilder.routeName) {
             final turnpointOverheadArgs =
-                settings.arguments as TurnpointOverHeadArgs;
+            settings.arguments as TurnpointOverHeadArgs;
             return CustomMaterialPageRoute(
               builder: (context) {
                 return TurnpointViewRouteBuilder(
@@ -170,7 +170,7 @@ class SoaringForecastApp extends StatelessWidget {
 
           if (settings.name == TurnpointEditRouteBuilder.routeName) {
             int? turnpointId =
-                (settings.arguments == null ? null : settings.arguments as int);
+            (settings.arguments == null ? null : settings.arguments as int);
             return CustomMaterialPageRoute(
               builder: (context) {
                 return TurnpointEditRouteBuilder(turnpointId: turnpointId);
@@ -377,11 +377,13 @@ class SoaringForecastRouteBuilder extends StatelessWidget {
     return MultiBlocProvider(
       providers: [
         BlocProvider<RaspDataBloc>(
-          create: (BuildContext context) => RaspDataBloc(
-              repository: RepositoryProvider.of<Repository>(context)),
+          create: (BuildContext context) =>
+              RaspDataBloc(
+                  repository: RepositoryProvider.of<Repository>(context)),
         ),
         BlocProvider<RegionModelBloc>(
-          create: (BuildContext context) => RegionModelBloc(
+          create: (BuildContext context) =>
+          RegionModelBloc(
               repository: RepositoryProvider.of<Repository>(context))
             ..add(InitialRegionModelEvent()),
         ),
@@ -461,8 +463,9 @@ class TurnpointViewRouteBuilder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider<TurnpointBloc>(
-        create: (BuildContext context) => TurnpointBloc(
-            repository: RepositoryProvider.of<Repository>(context)),
+        create: (BuildContext context) =>
+            TurnpointBloc(
+                repository: RepositoryProvider.of<Repository>(context)),
         child: TurnpointOverheadView(
             turnpointOverHeadArgs: turnpointOverHeadArgs));
   }
@@ -477,8 +480,9 @@ class TurnpointEditRouteBuilder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider<TurnpointBloc>(
-        create: (BuildContext context) => TurnpointBloc(
-            repository: RepositoryProvider.of<Repository>(context)),
+        create: (BuildContext context) =>
+            TurnpointBloc(
+                repository: RepositoryProvider.of<Repository>(context)),
         child: TurnpointEditView(turnpointId: turnpointId));
   }
 }
@@ -544,8 +548,9 @@ class RegionListRouteBuilder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider<RegionDataBloc>(
-      create: (BuildContext context) => RegionDataBloc(
-          repository: RepositoryProvider.of<Repository>(context)),
+      create: (BuildContext context) =>
+          RegionDataBloc(
+              repository: RepositoryProvider.of<Repository>(context)),
       child: RegionListScreen(selectedRegionName: selectedRegion),
     );
   }
@@ -675,14 +680,25 @@ class LocalForecastGraphRouteBuilder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<LocalForecastBloc>(
-      create: (BuildContext context) => LocalForecastBloc(
-          repository: RepositoryProvider.of<Repository>(context))
-        ..add(LocalForecastGraphEvent(localForecastGraphData: graphData)),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<LocalForecastBloc>(
+            create: (BuildContext context) =>
+            LocalForecastBloc(
+                repository: RepositoryProvider.of<Repository>(context))
+              ..add(
+                  LocalForecastGraphEvent(localForecastGraphData: graphData))),
+        BlocProvider.value(value: (context.read<RegionModelBloc>())..add(LocalForecastStartupEvent()),
+          // create: (BuildContext context) =>
+          // RegionModelBloc(
+          //     repository: RepositoryProvider.of<Repository>(context)),
+        ),
+      ],
       child: LocalForecastGraphDisplay(),
     );
   }
 }
+
 
 class SettingsRouteBuilder extends StatelessWidget {
   static const routeName = '/Settings';

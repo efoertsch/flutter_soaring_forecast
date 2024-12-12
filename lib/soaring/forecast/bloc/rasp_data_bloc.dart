@@ -156,11 +156,10 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
   }
 
   void _processSelectedForecastEvent(
-      SelectedRaspForecastEvent event, Emitter<RaspDataState> emit,
-      {bool resendForecasts = false}) async {
+      SelectedRaspForecastEvent event, Emitter<RaspDataState> emit) async {
     _selectedForecast = event.forecast;
     await repository.saveSelectedForecast(_selectedForecast!);
-    if (resendForecasts) {
+    if (event.resendForecasts) {
       _emitForecasts(emit);
     }
     _getForecastImages();

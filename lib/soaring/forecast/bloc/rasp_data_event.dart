@@ -39,6 +39,7 @@ class SelectedRegionModelDetailEvent extends RaspDataEvent {
       required this.localTime});
 }
 
+
 class SelectedRaspForecastEvent extends RaspDataEvent {
   final Forecast forecast;
   final bool resendForecasts;

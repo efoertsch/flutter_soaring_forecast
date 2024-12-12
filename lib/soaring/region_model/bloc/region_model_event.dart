@@ -46,3 +46,8 @@ class RegionChangedEvent extends RegionModelEvent {
 class CheckIfForecastRefreshNeededEvent extends RegionModelEvent {
   CheckIfForecastRefreshNeededEvent();
 }
+
+
+class LocalForecastStartupEvent extends RegionModelEvent {
+}
+

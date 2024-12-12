@@ -160,7 +160,7 @@ class _LocalForecastGraphDisplayState extends State<LocalForecastGraphDisplay>
     }
   }
 
-  Widget _miscStatesHandlerWidget() {
+  Widget _miscRaspStatesHandlerWidget() {
     return BlocListener<RegionModelBloc, RegionModelState>(
       listener: (context, state) {
         if (state is ForecastModelsAndDates) {
@@ -185,7 +185,7 @@ class _LocalForecastGraphDisplayState extends State<LocalForecastGraphDisplay>
             padding: EdgeInsets.all(8.0),
           ),
           _getLocalForecastWidget(),
-          _miscStatesHandlerWidget(),
+          _miscRaspStatesHandlerWidget(),
         ]),
         //RaspProgressIndicator<LocalForecastBloc>(),
       ],
@@ -196,7 +196,6 @@ class _LocalForecastGraphDisplayState extends State<LocalForecastGraphDisplay>
     return BlocConsumer<LocalForecastBloc, LocalForecastState>(
         listener: (context, state) {
       if (state is GraphDataState) {
-        //
       }
     }, buildWhen: (previous, current) {
       return current is GraphDataState;

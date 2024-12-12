@@ -130,12 +130,12 @@ Future<void> displayForecastList(
     if (result is ReturnedForecastArgs) {
       if (result.reorderedForecasts) {
         // the list was reordered so send the list in the new order
-        sendEvent(LoadForecastTypesEvents());
+        sendEvent(context,LoadForecastTypesEvents());
       }
       if (result.forecast != null) {
-        // a new forecast was selected from the list. New to store the forecast
+        // a new forecast was selected from the list. Store the forecast
         // selected and then request resend of state
-        sendEvent(SelectedRaspForecastEvent(result.forecast!,resendForecasts: true));
+        sendEvent(context,SelectedRaspForecastEvent(result.forecast!,resendForecasts: true));
       }
     }
   }
