@@ -465,6 +465,10 @@ class PolarMenu {
 
 }
 
+class TaskEstimateLiterals {
+  static const String TASK_ESTIMATE = "Task Estimate";
+}
+
 // Turnpoint icon colors for type of runway
 const Color grassRunway = Color(0xFF3CB043);
 const Color asphaltRunway = Colors.black;

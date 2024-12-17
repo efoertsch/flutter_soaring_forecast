@@ -2,22 +2,24 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/gliders.dart';
 
-abstract class GliderState {
-  const GliderState();
+import '../../repository/rasp/estimated_flight_avg_summary.dart';
+
+abstract class GliderCubitState {
+  const GliderCubitState();
 }
 
-class GliderPolarInitialState extends GliderState {
-  const GliderPolarInitialState();
+class GliderCubitInitialState extends GliderCubitState {
+  const GliderCubitInitialState();
 }
 
-class GliderListState extends GliderState {
+class GliderListState extends GliderCubitState {
   final List<String> gliderNameList;
   final String selectedGliderName;
 
   GliderListState(this.gliderNameList, this.selectedGliderName);
 }
 
-class GliderPolarState extends GliderState {
+class GliderPolarState extends GliderCubitState {
   final Glider defaultPolar;
   final Glider customPolar;
   final DisplayUnits displayUnits;
@@ -38,22 +40,29 @@ class GliderPolarState extends GliderState {
       required this.displayXCSoarValues});
 }
 
-class GliderPolarIsWorkingState extends GliderState {
-  final bool isWorking;
+class GliderCubitWorkingState extends GliderCubitState {
+  final bool working;
 
-  GliderPolarIsWorkingState(this.isWorking);
+  GliderCubitWorkingState(this.working);
 }
 
-class GliderPolarErrorState extends GliderState {
+
+class GliderCubitErrorState extends GliderCubitState {
   final String errorMsg;
 
-  GliderPolarErrorState(this.errorMsg);
+  GliderCubitErrorState(this.errorMsg);
 }
 
-class CalcEstimatedFlightState extends GliderState {
+class EstimatedFlightSummaryState extends GliderCubitState {
+  final EstimatedFlightSummary? estimatedFlightSummary;
+
+  EstimatedFlightSummaryState(this.estimatedFlightSummary);
+}
+
+class CalcEstimatedFlightState extends GliderCubitState {
   final Glider glider;
 
   CalcEstimatedFlightState(this.glider);
 }
 
-class DisplayEstimatedFlightText extends GliderState {}
+class DisplayEstimatedFlightText extends GliderCubitState {}

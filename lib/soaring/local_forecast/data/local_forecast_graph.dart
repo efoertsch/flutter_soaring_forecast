@@ -17,14 +17,6 @@ class LocalForecastInputData {
       this.startIndex = -1});
 }
 
-class LocalModelDateChange {
-  final String regionName;
-  final String model;
-  final String date;
-  final List<String> times;
-
-  LocalModelDateChange(this.regionName, this.model, this.date, this.times);
-}
 
 class LocalForecastPoint {
   final double lat;
@@ -90,11 +82,11 @@ class PointForecastGraphData {
       this.lng});
 }
 
-class LocalForecastOutputData {
+class LocalForecastUpdateData {
   final String modelName;
   final String date;
 
-  LocalForecastOutputData({
+  LocalForecastUpdateData({
     required this.modelName,
     required this.date,
   });

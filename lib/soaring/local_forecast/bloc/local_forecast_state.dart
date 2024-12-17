@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'local_forecast_graph.dart';
+import '../data/local_forecast_graph.dart';
 
 @immutable
 abstract class LocalForecastState {}

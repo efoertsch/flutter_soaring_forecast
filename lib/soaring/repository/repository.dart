@@ -53,7 +53,7 @@ import 'package:retrofit/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
 
-import '../local_forecast/bloc/local_forecast_favorite.dart';
+import '../local_forecast/data/local_forecast_favorite.dart';
 import 'dio_interceptor.dart';
 import 'rasp/forecast_models.dart';
 import 'rasp/forecast_types.dart';
@@ -394,21 +394,21 @@ class Repository {
         key: _FORECAST_OVERLAY_OPACITY, value: forecastOverlayOpacity);
   }
 
-  Future<void> saveViewBounds(ViewBounds mapBoundsAndZoom) async {
-    Map json = mapBoundsAndZoom.toJson();
-    var stringBounds = jsonEncode(json);
-    await saveGenericString(key: _VIEW_MAP_BOUNDS, value: stringBounds);
-  }
-
-  Future<ViewBounds?> getViewBoundsAndZoom() async {
-    String stringBounds =
-        await getGenericString(key: _VIEW_MAP_BOUNDS, defaultValue: "");
-    if (stringBounds.isEmpty) {
-      return null;
-    }
-    var mapBoundsAndZoom = ViewBounds.fromJson(jsonDecode(stringBounds));
-    return mapBoundsAndZoom;
-  }
+  // Future<void> saveViewBounds(ViewBounds mapBoundsAndZoom) async {
+  //   Map json = mapBoundsAndZoom.toJson();
+  //   var stringBounds = jsonEncode(json);
+  //   await saveGenericString(key: _VIEW_MAP_BOUNDS, value: stringBounds);
+  // }
+  //
+  // Future<ViewBounds?> getViewBoundsAndZoom() async {
+  //   String stringBounds =
+  //       await getGenericString(key: _VIEW_MAP_BOUNDS, defaultValue: "");
+  //   if (stringBounds.isEmpty) {
+  //     return null;
+  //   }
+  //   var mapBoundsAndZoom = ViewBounds.fromJson(jsonDecode(stringBounds));
+  //   return mapBoundsAndZoom;
+  //}
 
   Future<void> saveLastForecastTime(int timeInMillSecs) async {
     saveGenericInt(key: _LAST_FORECAST_TIME, value: timeInMillSecs);

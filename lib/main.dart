@@ -16,13 +16,15 @@ import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     show WxBriefBriefingRequest;
 import 'package:flutter_soaring_forecast/soaring/app/custom_material_page_route.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_data_bloc.dart';
-import 'package:flutter_soaring_forecast/soaring/forecast/cubit/glider_cubit.dart';
-import 'package:flutter_soaring_forecast/soaring/forecast/ui/glider_polar_list.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast_hour/forecast_hour_cubit.dart';
+import 'package:flutter_soaring_forecast/soaring/task_estimate/cubit/glider_cubit.dart';
+import 'package:flutter_soaring_forecast/soaring/task_estimate/ui/glider_polar_list.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/ui/rasp_screen.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast_types/bloc/forecast_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast_types/ui/forecast_list.dart';
 import 'package:flutter_soaring_forecast/soaring/local_forecast/bloc/local_forecast_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/pdfviewer/pdf_view_screen.dart';
+import 'package:flutter_soaring_forecast/soaring/rasp_options/rasp_display_options_cubit.dart';
 import 'package:flutter_soaring_forecast/soaring/region/bloc/region_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/region/ui/region_list_screen.dart';
 import 'package:flutter_soaring_forecast/soaring/region_model/bloc/region_model_bloc.dart';
@@ -50,7 +52,7 @@ import 'package:workmanager/workmanager.dart';
 
 import 'firebase_options.dart';
 import 'soaring/local_forecast/bloc/local_forecast_event.dart';
-import 'soaring/local_forecast/bloc/local_forecast_graph.dart';
+import 'soaring/local_forecast/data/local_forecast_graph.dart';
 import 'soaring/local_forecast/ui/local_forecast_graph_display.dart';
 
 // https://github.com/fluttercommunity/flutter_workmanager#customisation-android-only
@@ -100,8 +102,8 @@ void main() async {
     Workmanager().initialize(
         callbackDispatcher, // The top level function, aka callbackDispatcher
         isInDebugMode:
-        !kReleaseMode // If enabled it will post a notification whenever the task is running. Handy for debugging tasks
-    );
+            !kReleaseMode // If enabled it will post a notification whenever the task is running. Handy for debugging tasks
+        );
     Workmanager()
         .registerOneOffTask("oneTimeDownload", "workmanager.background.task");
   }
@@ -112,7 +114,7 @@ void main() async {
   // https://stackoverflow.com/questions/54285172/how-to-solve-flutter-certificate-verify-failed-error-while-performing-a-post-req
   // https://flutter-developer.medium.com/flutter-android-7-certificate-verify-failed-with-letsencrypt-ssl-cert-after-sept-30-2021-9cb5f672c090
   ByteData data =
-  await PlatformAssetBundle().load('assets/ca/lets-encrypt-r3.pem');
+      await PlatformAssetBundle().load('assets/ca/lets-encrypt-r3.pem');
   SecurityContext.defaultContext
       .setTrustedCertificatesBytes(data.buffer.asUint8List());
   // End of Lets Encrypt SSL stuff
@@ -132,263 +134,336 @@ class RepositorySetup extends StatelessWidget {
 
 class SoaringForecastApp extends StatelessWidget {
   // This widget is the root of your application.
+  late final BuildContext appContext;
+  late final RegionModelBloc regionModelBloc;
 
   @override
   Widget build(BuildContext context) {
+    regionModelBloc =
+        RegionModelBloc(repository: RepositoryProvider.of<Repository>(context));
     return MaterialApp(
         theme: ThemeData(
           useMaterial3: false,
         ),
         debugShowCheckedModeBanner: false,
         title: Strings.appTitle,
-        home: SoaringForecastRouteBuilder(),
+        home: SoaringForecastRouteBuilder(regionModelBloc: regionModelBloc),
         initialRoute: SoaringForecastRouteBuilder.routeName,
         onGenerateRoute: (settings) {
-          if (settings.name == TaskListRouteBuilder.routeName) {
-            var option = null;
-            if (settings.arguments != null) {
-              option = settings.arguments as String;
-            }
-            return CustomMaterialPageRoute(
-              builder: (context) {
-                return TaskListRouteBuilder(viewOption: option);
-              },
-              settings: settings,
-            );
-          }
-          if (settings.name == TurnpointViewRouteBuilder.routeName) {
-            final turnpointOverheadArgs =
-            settings.arguments as TurnpointOverHeadArgs;
-            return CustomMaterialPageRoute(
-              builder: (context) {
-                return TurnpointViewRouteBuilder(
-                    turnpointOverHeadArgs: turnpointOverheadArgs);
-              },
-              settings: settings,
-            );
-          }
-
-          if (settings.name == TurnpointEditRouteBuilder.routeName) {
-            int? turnpointId =
-            (settings.arguments == null ? null : settings.arguments as int);
-            return CustomMaterialPageRoute(
-              builder: (context) {
-                return TurnpointEditRouteBuilder(turnpointId: turnpointId);
-              },
-              settings: settings,
-            );
-          }
-
-          if (settings.name == TaskDetailRouteBuilder.routeName) {
-            final taskId = settings.arguments as int;
-            return CustomMaterialPageRoute(
-              builder: (context) {
-                return TaskDetailRouteBuilder(taskId: taskId);
-              },
-              settings: settings,
-            );
-          }
-          if (settings.name == TurnpointsForTaskRouteBuilder.routeName) {
-            final viewOption = settings.arguments as String;
-            return CustomMaterialPageRoute(
-              builder: (context) {
-                return TurnpointsForTaskRouteBuilder(viewOption: viewOption);
-              },
-              settings: settings,
-            );
-          }
-
-          if (settings.name == TurnpointListRouteBuilder.routeName) {
-            return CustomMaterialPageRoute(
-              builder: (context) {
-                return TurnpointListRouteBuilder();
-              },
-              settings: settings,
-            );
-          }
-
-          if (settings.name == TurnpointFileImportRouteBuilder.routeName) {
-            return CustomMaterialPageRoute(
-              builder: (context) {
-                return TurnpointFileImportRouteBuilder();
-              },
-              settings: settings,
-            );
-          }
-
-          if (settings.name ==
-              CustomTurnpointFileImportRouteBuilder.routeName) {
-            return CustomMaterialPageRoute(
-              builder: (context) {
-                return CustomTurnpointFileImportRouteBuilder();
-              },
-              settings: settings,
-            );
-          }
-          if (settings.name == ForecastListRouteBuilder.routeName) {
-            final forecastArgs = settings.arguments as ForecastListArgs;
-            return CustomMaterialPageRoute(
-              builder: (context) {
-                return ForecastListRouteBuilder(forecastArgs: forecastArgs);
-              },
-              settings: settings,
-            );
-          }
-          if (settings.name == RegionListRouteBuilder.routeName) {
-            final selectedForecast = settings.arguments as String;
-            return CustomMaterialPageRoute(
-              builder: (context) {
-                return RegionListRouteBuilder(selectedRegion: selectedForecast);
-              },
-              settings: settings,
-            );
-          }
-
-          if (settings.name == GeosRouteBuilder.routeName) {
-            return CustomMaterialPageRoute(
-              builder: (context) {
-                return GeosScreen();
-              },
-              settings: settings,
-            );
-          }
-
-          if (settings.name == AboutInfoRouteBuilder.routeName) {
-            return CustomMaterialPageRoute(
-              builder: (context) {
-                return AboutInfoRouteBuilder();
-              },
-              settings: settings,
-            );
-          }
-
-          if (settings.name == WindyRouteBuilder.routeName) {
-            return CustomMaterialPageRoute(
-              builder: (context) {
-                return WindyRouteBuilder();
-              },
-              settings: settings,
-            );
-          }
-
-          if (settings.name == AirportMetarTafRouteBuilder.routeName) {
-            return CustomMaterialPageRoute(
-              builder: (context) {
-                return AirportMetarTafRouteBuilder();
-              },
-              settings: settings,
-            );
-          }
-
-          if (settings.name == AirportsSearchRouteBuilder.routeName) {
-            String? option = null;
-            if (settings.arguments != null) {
-              option = settings.arguments as String;
-            }
-            return CustomMaterialPageRoute(
-              builder: (context) {
-                return AirportsSearchRouteBuilder(option: option);
-              },
-              settings: settings,
-            );
-          }
-
-          if (settings.name == SelectedAirportsRouteBuilder.routeName) {
-            return CustomMaterialPageRoute(
-              builder: (context) {
-                return SelectedAirportsRouteBuilder();
-              },
-              settings: settings,
-            );
-          }
-
-          if (settings.name == WxBriefAuthBuilder.routeName) {
-            return CustomMaterialPageRoute(
-              builder: (context) {
-                return WxBriefAuthBuilder();
-              },
-              settings: settings,
-            );
-          }
-
-          if (settings.name == WxBriefRequestBuilder.routeName) {
-            final request = settings.arguments as WxBriefBriefingRequest;
-            return CustomMaterialPageRoute(
-              builder: (context) {
-                return WxBriefRequestBuilder(request: request);
-              },
-              settings: settings,
-            );
-          }
-
-          if (settings.name == PdfViewRouteBuilder.routeName) {
-            final fileName = settings.arguments as String;
-            return CustomMaterialPageRoute(
-              builder: (context) {
-                return PdfViewRouteBuilder(
-                  fileName: fileName,
-                );
-              },
-              settings: settings,
-            );
-          }
-
-          if (settings.name == LocalForecastGraphRouteBuilder.routeName) {
-            final graphData = settings.arguments as LocalForecastInputData;
-            return CustomMaterialPageRoute(
-              builder: (context) {
-                return LocalForecastGraphRouteBuilder(
-                  graphData: graphData,
-                );
-              },
-              settings: settings,
-            );
-          }
-
-          if (settings.name == SettingsRouteBuilder.routeName) {
-            return CustomMaterialPageRoute(
-              builder: (context) {
-                return SettingsRouteBuilder();
-              },
-              settings: settings,
-            );
-          }
-
-          if (settings.name == GliderPolarListBuilder.routeName) {
-            return CustomMaterialPageRoute(
-              builder: (context) {
-                return GliderPolarListBuilder();
-              },
-              settings: settings,
-            );
-          }
-
-          assert(false, 'Need to implement ${settings.name}');
-          return null;
+          return _buildRoute(settings, regionModelBloc);
         });
+  }
+
+  CustomMaterialPageRoute? _buildRoute(
+      RouteSettings settings, RegionModelBloc regionModelBloc) {
+    if (settings.name == TaskListRouteBuilder.routeName) {
+      var option = null;
+      if (settings.arguments != null) {
+        option = settings.arguments as String;
+      }
+      return CustomMaterialPageRoute(
+        builder: (context) {
+          return TaskListRouteBuilder(viewOption: option);
+        },
+        settings: settings,
+      );
+    }
+    if (settings.name == TurnpointViewRouteBuilder.routeName) {
+      final turnpointOverheadArgs = settings.arguments as TurnpointOverHeadArgs;
+      return CustomMaterialPageRoute(
+        builder: (context) {
+          return TurnpointViewRouteBuilder(
+              turnpointOverHeadArgs: turnpointOverheadArgs);
+        },
+        settings: settings,
+      );
+    }
+
+    if (settings.name == TurnpointEditRouteBuilder.routeName) {
+      int? turnpointId =
+          (settings.arguments == null ? null : settings.arguments as int);
+      return CustomMaterialPageRoute(
+        builder: (context) {
+          return TurnpointEditRouteBuilder(turnpointId: turnpointId);
+        },
+        settings: settings,
+      );
+    }
+
+    if (settings.name == TaskDetailRouteBuilder.routeName) {
+      final taskId = settings.arguments as int;
+      return CustomMaterialPageRoute(
+        builder: (context) {
+          return TaskDetailRouteBuilder(taskId: taskId);
+        },
+        settings: settings,
+      );
+    }
+    if (settings.name == TurnpointsForTaskRouteBuilder.routeName) {
+      final viewOption = settings.arguments as String;
+      return CustomMaterialPageRoute(
+        builder: (context) {
+          return TurnpointsForTaskRouteBuilder(viewOption: viewOption);
+        },
+        settings: settings,
+      );
+    }
+
+    if (settings.name == TurnpointListRouteBuilder.routeName) {
+      return CustomMaterialPageRoute(
+        builder: (context) {
+          return TurnpointListRouteBuilder();
+        },
+        settings: settings,
+      );
+    }
+
+    if (settings.name == TurnpointFileImportRouteBuilder.routeName) {
+      return CustomMaterialPageRoute(
+        builder: (context) {
+          return TurnpointFileImportRouteBuilder();
+        },
+        settings: settings,
+      );
+    }
+
+    if (settings.name == CustomTurnpointFileImportRouteBuilder.routeName) {
+      return CustomMaterialPageRoute(
+        builder: (context) {
+          return CustomTurnpointFileImportRouteBuilder();
+        },
+        settings: settings,
+      );
+    }
+    if (settings.name == ForecastListRouteBuilder.routeName) {
+      final forecastArgs = settings.arguments as ForecastListArgs;
+      return CustomMaterialPageRoute(
+        builder: (context) {
+          return ForecastListRouteBuilder(forecastArgs: forecastArgs);
+        },
+        settings: settings,
+      );
+    }
+    if (settings.name == RegionListRouteBuilder.routeName) {
+      final selectedForecast = settings.arguments as String;
+      return CustomMaterialPageRoute(
+        builder: (context) {
+          return RegionListRouteBuilder(selectedRegion: selectedForecast);
+        },
+        settings: settings,
+      );
+    }
+
+    if (settings.name == GeosRouteBuilder.routeName) {
+      return CustomMaterialPageRoute(
+        builder: (context) {
+          return GeosScreen();
+        },
+        settings: settings,
+      );
+    }
+
+    if (settings.name == AboutInfoRouteBuilder.routeName) {
+      return CustomMaterialPageRoute(
+        builder: (context) {
+          return AboutInfoRouteBuilder();
+        },
+        settings: settings,
+      );
+    }
+
+    if (settings.name == WindyRouteBuilder.routeName) {
+      return CustomMaterialPageRoute(
+        builder: (context) {
+          return WindyRouteBuilder();
+        },
+        settings: settings,
+      );
+    }
+
+    if (settings.name == AirportMetarTafRouteBuilder.routeName) {
+      return CustomMaterialPageRoute(
+        builder: (context) {
+          return AirportMetarTafRouteBuilder();
+        },
+        settings: settings,
+      );
+    }
+
+    if (settings.name == AirportsSearchRouteBuilder.routeName) {
+      String? option = null;
+      if (settings.arguments != null) {
+        option = settings.arguments as String;
+      }
+      return CustomMaterialPageRoute(
+        builder: (context) {
+          return AirportsSearchRouteBuilder(option: option);
+        },
+        settings: settings,
+      );
+    }
+
+    if (settings.name == SelectedAirportsRouteBuilder.routeName) {
+      return CustomMaterialPageRoute(
+        builder: (context) {
+          return SelectedAirportsRouteBuilder();
+        },
+        settings: settings,
+      );
+    }
+
+    if (settings.name == WxBriefAuthBuilder.routeName) {
+      return CustomMaterialPageRoute(
+        builder: (context) {
+          return WxBriefAuthBuilder();
+        },
+        settings: settings,
+      );
+    }
+
+    if (settings.name == WxBriefRequestBuilder.routeName) {
+      final request = settings.arguments as WxBriefBriefingRequest;
+      return CustomMaterialPageRoute(
+        builder: (context) {
+          return WxBriefRequestBuilder(request: request);
+        },
+        settings: settings,
+      );
+    }
+
+    if (settings.name == PdfViewRouteBuilder.routeName) {
+      final fileName = settings.arguments as String;
+      return CustomMaterialPageRoute(
+        builder: (context) {
+          return PdfViewRouteBuilder(
+            fileName: fileName,
+          );
+        },
+        settings: settings,
+      );
+    }
+
+    if (settings.name == LocalForecastGraphRouteBuilder.routeName) {
+      final graphData = settings.arguments as LocalForecastInputData;
+      return CustomMaterialPageRoute(
+        builder: (context) {
+          return LocalForecastGraphRouteBuilder(
+            regionModelBloc: regionModelBloc,
+            graphData: graphData,
+          );
+        },
+        settings: settings,
+      );
+    }
+
+    if (settings.name == EstimatedTaskRouteBuilder.routeName) {
+      return CustomMaterialPageRoute(
+        builder: (context) {
+          return EstimatedTaskRouteBuilder(
+            regionModelBloc: regionModelBloc,
+          );
+        },
+        settings: settings,
+      );
+
+    }
+
+
+    if (settings.name == SettingsRouteBuilder.routeName) {
+      return CustomMaterialPageRoute(
+        builder: (context) {
+          return SettingsRouteBuilder();
+        },
+        settings: settings,
+      );
+    }
+
+    if (settings.name == GliderPolarListBuilder.routeName) {
+      return CustomMaterialPageRoute(
+        builder: (context) {
+          return GliderPolarListBuilder();
+        },
+        settings: settings,
+      );
+    }
+
+    assert(false, 'Need to implement ${settings.name}');
+    return null;
   }
 }
 
 class SoaringForecastRouteBuilder extends StatelessWidget {
   static const routeName = '/';
+  final RegionModelBloc regionModelBloc;
+
+  SoaringForecastRouteBuilder({required this.regionModelBloc});
 
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
+        BlocProvider.value(
+          value: regionModelBloc..add(InitialRegionModelEvent()),
+        ),
+        BlocProvider<ForecastHourCubit>(
+          create: (BuildContext context) => ForecastHourCubit(),
+        ),
         BlocProvider<RaspDataBloc>(
-          create: (BuildContext context) =>
-              RaspDataBloc(
-                  repository: RepositoryProvider.of<Repository>(context)),
+          create: (BuildContext context) => RaspDataBloc(
+              repository: RepositoryProvider.of<Repository>(context)),
         ),
-        BlocProvider<RegionModelBloc>(
-          create: (BuildContext context) =>
-          RegionModelBloc(
-              repository: RepositoryProvider.of<Repository>(context))
-            ..add(InitialRegionModelEvent()),
-        ),
+        BlocProvider(
+            create: (BuildContext context) => RaspDisplayOptionsCubit(
+                repository: RepositoryProvider.of<Repository>(context)))
       ],
       child: RaspScreen(),
+    );
+  }
+}
+
+class LocalForecastGraphRouteBuilder extends StatelessWidget {
+  static const routeName = '/ForecastGraph';
+  final LocalForecastInputData graphData;
+  final RegionModelBloc regionModelBloc;
+
+  LocalForecastGraphRouteBuilder(
+      {required this.regionModelBloc, required this.graphData});
+
+  @override
+  Widget build(BuildContext context) {
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<LocalForecastBloc>(
+            create: (BuildContext context) => LocalForecastBloc(
+                repository: RepositoryProvider.of<Repository>(context))
+              ..add(
+                  LocalForecastGraphEvent(localForecastGraphData: graphData))),
+        BlocProvider.value(
+            value: regionModelBloc..add(LocalForecastStartupEvent()))
+      ],
+      child: LocalForecastGraphDisplay(),
+    );
+  }
+}
+
+class EstimatedTaskRouteBuilder extends StatelessWidget {
+  static const routeName = '/EstimatedTask';
+  final RegionModelBloc regionModelBloc;
+
+  EstimatedTaskRouteBuilder(
+      {required this.regionModelBloc,});
+
+  @override
+  Widget build(BuildContext context) {
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<GliderCubit>(
+            create: (BuildContext context) => GliderCubit(
+                repository: RepositoryProvider.of<Repository>(context))),
+        BlocProvider.value(
+            value: regionModelBloc..add(EstimatedTaskStartupEvent())),
+      ],
+      child: LocalForecastGraphDisplay(),
     );
   }
 }
@@ -463,9 +538,8 @@ class TurnpointViewRouteBuilder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider<TurnpointBloc>(
-        create: (BuildContext context) =>
-            TurnpointBloc(
-                repository: RepositoryProvider.of<Repository>(context)),
+        create: (BuildContext context) => TurnpointBloc(
+            repository: RepositoryProvider.of<Repository>(context)),
         child: TurnpointOverheadView(
             turnpointOverHeadArgs: turnpointOverHeadArgs));
   }
@@ -480,9 +554,8 @@ class TurnpointEditRouteBuilder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider<TurnpointBloc>(
-        create: (BuildContext context) =>
-            TurnpointBloc(
-                repository: RepositoryProvider.of<Repository>(context)),
+        create: (BuildContext context) => TurnpointBloc(
+            repository: RepositoryProvider.of<Repository>(context)),
         child: TurnpointEditView(turnpointId: turnpointId));
   }
 }
@@ -548,9 +621,8 @@ class RegionListRouteBuilder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider<RegionDataBloc>(
-      create: (BuildContext context) =>
-          RegionDataBloc(
-              repository: RepositoryProvider.of<Repository>(context)),
+      create: (BuildContext context) => RegionDataBloc(
+          repository: RepositoryProvider.of<Repository>(context)),
       child: RegionListScreen(selectedRegionName: selectedRegion),
     );
   }
@@ -671,34 +743,6 @@ class PdfViewRouteBuilder extends StatelessWidget {
     return PdfViewScreen(fileName: fileName);
   }
 }
-
-class LocalForecastGraphRouteBuilder extends StatelessWidget {
-  static const routeName = '/ForecastGraph';
-  final LocalForecastInputData graphData;
-
-  LocalForecastGraphRouteBuilder({required this.graphData});
-
-  @override
-  Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider<LocalForecastBloc>(
-            create: (BuildContext context) =>
-            LocalForecastBloc(
-                repository: RepositoryProvider.of<Repository>(context))
-              ..add(
-                  LocalForecastGraphEvent(localForecastGraphData: graphData))),
-        BlocProvider.value(value: (context.read<RegionModelBloc>())..add(LocalForecastStartupEvent()),
-          // create: (BuildContext context) =>
-          // RegionModelBloc(
-          //     repository: RepositoryProvider.of<Repository>(context)),
-        ),
-      ],
-      child: LocalForecastGraphDisplay(),
-    );
-  }
-}
-
 
 class SettingsRouteBuilder extends StatelessWidget {
   static const routeName = '/Settings';

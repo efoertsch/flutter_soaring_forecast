@@ -8,10 +8,10 @@ import 'package:flutter_map_animations/flutter_map_animations.dart';
 import 'package:flutter_soaring_forecast/main.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     show
-    NewEnglandMapCenter,
-    NewEnglandMapLatLngBounds,
-    RASP_BASE_URL,
-    SUAColor;
+        NewEnglandMapCenter,
+        NewEnglandMapLatLngBounds,
+        RASP_BASE_URL,
+        SUAColor;
 import 'package:flutter_soaring_forecast/soaring/app/custom_styles.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/taskturnpoint/task_turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
@@ -27,7 +27,6 @@ import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_overhea
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:latlong2/latlong.dart';
 
-import '../../local_forecast/bloc/local_forecast_graph.dart';
 import '../../region_model/bloc/region_model_bloc.dart';
 import '../../region_model/bloc/region_model_state.dart';
 
@@ -78,7 +77,7 @@ class ForecastMapState extends State<ForecastMap>
   double _mapZoom = 7;
   double _previousZoom = 7;
   bool _displayOptTaskAvg = false;
-  EstimatedFlightSummary? _estimatedFlightSummary;
+  bool _mapReady = false;
 
   final suaColors = SUAColor.values;
 
@@ -88,6 +87,8 @@ class ForecastMapState extends State<ForecastMap>
 
   String? suaSelected;
   bool _showEstimatedFlightButton = false;
+
+
 
   @override
   void initState() {
@@ -119,8 +120,7 @@ class ForecastMapState extends State<ForecastMap>
 
   void _printMapBounds(String msg, LatLngBounds latLngBounds) {
     debugPrint(msg +
-        " latLngBounds: ${latLngBounds.southWest!.toString()}  ${latLngBounds
-            .northEast!.toString()}");
+        " latLngBounds: ${latLngBounds.southWest!.toString()}  ${latLngBounds.northEast!.toString()}");
   }
 
   var _overlayImages = <OverlayImage>[];
@@ -148,7 +148,6 @@ class ForecastMapState extends State<ForecastMap>
       ),
       _getOpacitySlider(),
       _getOptimalFlightIcon(),
-      _showOptimalFlightAvgTable(),
       _regionModelListener()
     ]);
   }
@@ -179,51 +178,46 @@ class ForecastMapState extends State<ForecastMap>
   Widget _forecastMap() {
     return BlocConsumer<RaspDataBloc, RaspDataState>(
         listener: (context, state) {
-          if (state is RaspForecastImageSet) {
-            // print('Received RaspForecastImageSet in ForecastMap');
-            soaringForecastImageSet = state.soaringForecastImageSet;
-            updateForecastOverlay();
-            return;
-          }
-          if (state is RaspTaskTurnpoints) {
-            _updateTaskTurnpoints(state.taskTurnpoints);
-            return;
-          }
-          // if (state is OptimizedTaskRouteState && state.optimizedTaskRoute != null) {
-          //   _plotOptimizedRoute(state.optimizedTaskRoute!);
-          // }
-          if (state is LocalForecastState) {
-            _placeLocalForecastMarker(state.latLngForecast);
-            return;
-          }
+      if (state is RaspForecastImageSet) {
+        // print('Received RaspForecastImageSet in ForecastMap');
+        soaringForecastImageSet = state.soaringForecastImageSet;
+        updateForecastOverlay();
+        return;
+      }
+      if (state is RaspTaskTurnpoints) {
+        _updateTaskTurnpoints(state.taskTurnpoints);
+        return;
+      }
+      // if (state is OptimizedTaskRouteState && state.optimizedTaskRoute != null) {
+      //   _plotOptimizedRoute(state.optimizedTaskRoute!);
+      // }
+      if (state is LocalForecastState) {
+        _placeLocalForecastMarker(state.latLngForecast);
+        return;
+      }
 
-          if (state is TurnpointsInBoundsState) {
-            //print('Received TurnpointsInBoundsState in ForecastMap');
-            _updateTurnpointMarkers(state.turnpoints);
-            // save for when zooming map and want to resize icons;
-            _turnpoints.clear();
-            _turnpoints.addAll(state.turnpoints);
-            _updateTurnpointMarkers(state.turnpoints);
-            return;
-          }
-          if (state is SuaDetailsState) {
-            _updateGeoJsonSuaDetails(state.suaDetails);
-            return;
-          }
-          if (state is ForecastOverlayOpacityState) {
-            _forecastOverlayOpacity = state.opacity;
-            updateForecastOverlay();
-            return;
-          }
-        }, buildWhen: (previous, current) {
+      if (state is TurnpointsInBoundsState) {
+        //print('Received TurnpointsInBoundsState in ForecastMap');
+        _updateTurnpointMarkers(state.turnpoints);
+        // save for when zooming map and want to resize icons;
+        _turnpoints.clear();
+        _turnpoints.addAll(state.turnpoints);
+        _updateTurnpointMarkers(state.turnpoints);
+        return;
+      }
+
+      if (state is ForecastOverlayOpacityState) {
+        _forecastOverlayOpacity = state.opacity;
+        updateForecastOverlay();
+        return;
+      }
+    }, buildWhen: (previous, current) {
       return current is RaspInitialState ||
-          current is CenterOfMapState ||
           current is RaspForecastImageSet ||
           current is RaspTaskTurnpoints ||
           current is LocalForecastState ||
           current is TurnpointsInBoundsState ||
           current is RedisplayMarkersState ||
-          current is SuaDetailsState ||
           current is ForecastOverlayOpacityState ||
           current is ForecastBoundsState;
     }, builder: (context, state) {
@@ -236,10 +230,11 @@ class ForecastMapState extends State<ForecastMap>
             initialCenter: _mapCenter,
             interactionOptions: const InteractionOptions(
               flags: InteractiveFlag.drag |
-              InteractiveFlag.pinchMove |
-              InteractiveFlag.pinchZoom,
+                  InteractiveFlag.pinchMove |
+                  InteractiveFlag.pinchZoom,
             ),
             onMapReady: (() {
+              _mapReady = true;
               _sendEvent(MapReadyEvent());
               _mapController.animatedFitCamera(
                   cameraFit: CameraFit.bounds(bounds: _forecastLatLngBounds));
@@ -366,9 +361,6 @@ class ForecastMapState extends State<ForecastMap>
   Widget _miscStatesHandlerWidget() {
     return BlocListener<RaspDataBloc, RaspDataState>(
       listener: (context, state) {
-        if (state is DisplayLocalForecastGraphState) {
-          _displayLocalForecastGraph(context, state.localForecastGraphData);
-        }
         if (state is RaspTaskTurnpoints) {
           _routeIconIsVisible = state.taskTurnpoints.length > 0;
           _routeSummaryIsVisible = false;
@@ -382,20 +374,7 @@ class ForecastMapState extends State<ForecastMap>
     );
   }
 
-  void _displayLocalForecastGraph(BuildContext context,
-      LocalForecastInputData inputParms) async {
-    var result = await Navigator.pushNamed(
-      context,
-      LocalForecastGraphRouteBuilder.routeName,
-      arguments: inputParms,
-    );
-    if (result is LocalForecastOutputData) {
-      // There was a model/date change on the local forecast screen so
-      _sendEvent(ReturnedFromLocalForecastEvent(
-          modelName: result.modelName,
-          date: result.date));
-    }
-  }
+
 
   void _updateTaskTurnpoints(List<TaskTurnpoint> taskTurnpoints) {
     print('number of task turnpoints ${taskTurnpoints.length.toString()} ');
@@ -409,7 +388,7 @@ class ForecastMapState extends State<ForecastMap>
       for (var taskTurnpoint in taskTurnpoints) {
         // print('adding taskturnpoint: ${taskTurnpoint.title}');
         var turnpointLatLng =
-        LatLng(taskTurnpoint.latitudeDeg, taskTurnpoint.longitudeDeg);
+            LatLng(taskTurnpoint.latitudeDeg, taskTurnpoint.longitudeDeg);
         points.add(turnpointLatLng);
         _taskMarkers.add(Marker(
           width: 80.0,
@@ -451,7 +430,7 @@ class ForecastMapState extends State<ForecastMap>
           cameraFit: CameraFit.bounds(bounds: _forecastLatLngBounds));
     } else {
       for (var routePoint
-      in estimatedFlightRoute.routeSummary!.routeTurnpoints!) {
+          in estimatedFlightRoute.routeSummary!.routeTurnpoints!) {
         // print('adding taskturnpoint: ${taskTurnpoint.title}');
         var latLngPoint = LatLng(
             double.parse(routePoint.lat!), double.parse(routePoint.lon!));
@@ -483,7 +462,7 @@ class ForecastMapState extends State<ForecastMap>
       onLongPress: () {
         _getLocalForecast(
             latLng:
-            LatLng(taskTurnpoint.latitudeDeg, taskTurnpoint.longitudeDeg),
+                LatLng(taskTurnpoint.latitudeDeg, taskTurnpoint.longitudeDeg),
             turnpointName: taskTurnpoint.title,
             turnpointCode: taskTurnpoint.code,
             forTask: true);
@@ -501,16 +480,14 @@ class ForecastMapState extends State<ForecastMap>
               Expanded(
                 flex: 2,
                 child: Text(
-                    '${taskTurnpoint.distanceFromPriorTurnpoint.toStringAsFixed(
-                        0)} '
-                        '/ ${taskTurnpoint.distanceFromStartingPoint
-                        .toStringAsFixed(0)} km',
+                    '${taskTurnpoint.distanceFromPriorTurnpoint.toStringAsFixed(0)} '
+                    '/ ${taskTurnpoint.distanceFromStartingPoint.toStringAsFixed(0)} km',
                     textAlign: TextAlign.center),
               ),
               Expanded(
                 flex: 1,
                 child:
-                Icon(Icons.arrow_drop_down_outlined, color: Colors.white),
+                    Icon(Icons.arrow_drop_down_outlined, color: Colors.white),
               )
             ],
           )),
@@ -524,7 +501,7 @@ class ForecastMapState extends State<ForecastMap>
     for (var turnpoint in turnpoints) {
       // print('adding turnpoint: ${turnpoint.title}');
       var turnpointLatLng =
-      LatLng(turnpoint.latitudeDeg, turnpoint.longitudeDeg);
+          LatLng(turnpoint.latitudeDeg, turnpoint.longitudeDeg);
       _turnpointMarkers.add(Marker(
           width: markerSize,
           height: markerSize,
@@ -539,8 +516,8 @@ class ForecastMapState extends State<ForecastMap>
     return (_mapZoom < 8.0)
         ? 12
         : (_mapZoom < 9.0)
-        ? 24
-        : 48;
+            ? 24
+            : 48;
   }
 
   Widget _getTurnpointMarker(final Turnpoint turnpoint) {
@@ -600,7 +577,9 @@ class ForecastMapState extends State<ForecastMap>
           child: _getSoundingMarker(sounding)));
       // anchorPos: AnchorPos.align(AnchorAlign.top)));
     }
-    _rebuildMarkerArray();
+    setState(() {
+      _rebuildMarkerArray();
+    });
   }
 
   Widget _getSoundingMarker(Soundings sounding) {
@@ -737,10 +716,11 @@ class ForecastMapState extends State<ForecastMap>
     }
   }
 
-  _getLocalForecast({required LatLng latLng,
-    String? turnpointName = null,
-    String? turnpointCode,
-    bool forTask = false}) {
+  _getLocalForecast(
+      {required LatLng latLng,
+      String? turnpointName = null,
+      String? turnpointCode,
+      bool forTask = false}) {
     widget.runAnimation(false);
     // debugPrint('Local forecast requested at : ${latLng.latitude.toString()}  :'
     //     '  ${latLng.longitude.toString()}');
@@ -784,6 +764,8 @@ class ForecastMapState extends State<ForecastMap>
     _mapMarkers.addAll(_soundingMarkers);
     _mapMarkers.addAll(_taskMarkers);
     _mapMarkers.addAll(_latLngMarkers);
+    setState(() {
+    });
   }
 
   void _rebuildTaskLinesArray() {
@@ -805,9 +787,11 @@ class ForecastMapState extends State<ForecastMap>
   }
 
   void _updateGeoJsonSuaDetails(String suaDetail) async {
-    _suaPolygons.clear();
-    suaGeoJsonParser.parseGeoJsonAsString(suaDetail);
-    _suaPolygons.addAll(suaGeoJsonParser.getGeoJasonPolygons());
+    setState(() {
+      _suaPolygons.clear();
+      suaGeoJsonParser.parseGeoJsonAsString(suaDetail);
+      _suaPolygons.addAll(suaGeoJsonParser.getGeoJasonPolygons());
+    });
   }
 
 //Widget _getGeoJsonWidget() {
@@ -961,335 +945,61 @@ class ForecastMapState extends State<ForecastMap>
   Widget _getOptimalFlightIcon() {
     return (_routeIconIsVisible && _showEstimatedFlightButton)
         ? Positioned(
-      bottom: 0,
-      left: 0,
-      child: ElevatedButton(
-        style: const ButtonStyle(
-          backgroundColor: MaterialStatePropertyAll<Color>(Colors.white),
-        ),
-        onPressed: () async {
-          widget.runAnimation(false);
-          var maybeGlider = await Navigator.pushNamed(
-              context, GliderPolarListBuilder.routeName);
-          if (maybeGlider != null && maybeGlider is Glider) {
-            _sendEvent(GetEstimatedFlightAvgEvent(maybeGlider));
-          }
-        },
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            SvgPicture.asset(
-              'assets/svg/task_route.svg',
-              height: 40,
-              width: 40,
+            bottom: 0,
+            left: 0,
+            child: ElevatedButton(
+              style: const ButtonStyle(
+                backgroundColor: MaterialStatePropertyAll<Color>(Colors.white),
+              ),
+              onPressed: () async {
+                widget.runAnimation(false);
+                await Navigator.pushNamed(
+                    context, EstimatedTaskRouteBuilder.routeName);
+              },
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  SvgPicture.asset(
+                    'assets/svg/task_route.svg',
+                    height: 40,
+                    width: 40,
+                  ),
+                  Text(
+                    "Estimated\nFlight",
+                    style: textStyleBoldBlackFontSize14,
+                  ),
+                ],
+              ),
             ),
-            Text(
-              "Estimated\nFlight",
-              style: textStyleBoldBlackFontSize14,
-            ),
-          ],
-        ),
-      ),
-    )
+          )
         : SizedBox.shrink();
   }
 
-  Widget _showOptimalFlightAvgTable() {
-    return BlocConsumer<RaspDataBloc, RaspDataState>(
-      listener: (context, state) {
-        if (state is EstimatedFlightSummaryState) {
-          _estimatedFlightSummary = state.estimatedFlightSummary;
-        }
-      },
-      buildWhen: (previous, current) {
-        return current is EstimatedFlightSummaryState;
-      },
-      builder: (context, state) {
-        if (_estimatedFlightSummary != null) {
-          return _getOptimalFlightSummary(_estimatedFlightSummary!);
-        }
-        return SizedBox.shrink();
-      },
-    );
-  }
 
-  Widget _getOptimalFlightSummary(EstimatedFlightSummary optimalTaskSummary) {
-    return Container(
-      color: Colors.white,
-      padding: EdgeInsets.only(right: 8),
-      child: Column(children: [
-        Expanded(
-          child: ListView(
-            //crossAxisAlignment: CrossAxisAlignment.start,
-            scrollDirection: Axis.vertical,
-            children: [
-              _getOptimalFlightParms(optimalTaskSummary),
-              //_getTurnpointsTableHeader(),
-              //_getTaskTurnpointsTable(optimalTaskSummary),
-              _getLegTableHeader(),
-              _getLegDetailsTable(optimalTaskSummary),
-              _getWarningMsgDisplay(optimalTaskSummary),
-            ],
-          ),
-        ),
-        _getOptimalFlightCloseButton(),
-      ]),
-    );
-  }
-
-  RenderObjectWidget _getOptimalFlightParms(
-      EstimatedFlightSummary optimalTaskSummary) {
-    if (optimalTaskSummary.routeSummary?.header != null) {
-      var header = optimalTaskSummary.routeSummary?.header;
-      var headerTable = Table(
-        columnWidths: {0: IntrinsicColumnWidth(), 1: IntrinsicColumnWidth()},
-        border: TableBorder.all(),
-        defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-        children: <TableRow>[
-          TableRow(
-            children: [
-              _formattedTextCell("Glider " + (header!.glider ?? "")),
-              _formattedTextCell("L/D= " +
-                  double.parse(header.maxLd ?? "0").toStringAsFixed(1)),
-            ],
-          ),
-          TableRow(
-            children: [
-              _formattedTextCell("Polar Speed Adjustment"),
-              _formattedTextCell(
-                  double.parse(header.polarSpeedAdjustment ?? "0")
-                      .toStringAsFixed(1)),
-            ],
-          ),
-          TableRow(
-            children: [
-              _formattedTextCell("Thermaling Sink \nRate (ft/min)"),
-              _formattedTextCell(double.parse(header.thermalingSinkRate ?? "0")
-                  .toStringAsFixed(1)),
-            ],
-          ),
-        ],
-      );
-      return Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: headerTable,
-      );
-    }
-    return SizedBox.shrink();
-  }
-
-  Widget _formattedTextCell(String text) {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Text(text,
-          style: textStyleBoldBlackFontSize18, textAlign: TextAlign.center),
-    );
-  }
-
-  Widget _getTaskTurnpointsTable(EstimatedFlightSummary optimalTaskSummary) {
-    if (optimalTaskSummary.routeSummary?.routeTurnpoints != null) {
-      var routeTurnPoints = optimalTaskSummary.routeSummary!.routeTurnpoints;
-      var turnpointRows = _getTaskTurnpointTableRows(routeTurnPoints!);
-      var headerTable = Table(
-        columnWidths: {
-          0: IntrinsicColumnWidth(),
-          1: IntrinsicColumnWidth(),
-          2: IntrinsicColumnWidth(),
-          3: IntrinsicColumnWidth(),
-        },
-        border: TableBorder.all(),
-        defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-        children: turnpointRows,
-      );
-      return headerTable;
-    }
-    return SizedBox.shrink();
-  }
-
-  List<TableRow> _getTaskTurnpointTableRows(List<RouteTurnpoint> turnpoints) {
-    var routePointTableRows = <TableRow>[];
-    for (var routePoint in turnpoints) {
-      var tableRow = TableRow(
-        children: [
-          _formattedTextCell(routePoint.number ?? " "),
-          _formattedTextCell(routePoint.name ?? " "),
-          _formattedTextCell(
-              double.parse(routePoint.lat ?? "0").toStringAsFixed(5)),
-          _formattedTextCell(
-              double.parse(routePoint.lon ?? "0").toStringAsFixed(5)),
-        ],
-      );
-      routePointTableRows.add(tableRow);
-    }
-    return routePointTableRows;
-  }
-
-  Widget _getLegDetailsTable(EstimatedFlightSummary optimalTaskSummary) {
-    var legDetailRows = _getLegTableRows(
-        optimalTaskSummary.routeSummary!.legDetails!,
-        optimalTaskSummary.routeSummary!.routeTurnpoints!);
-    var legDetailTable = Table(
-      columnWidths: {
-        0: IntrinsicColumnWidth(),
-        1: IntrinsicColumnWidth(),
-        2: IntrinsicColumnWidth(),
-        3: IntrinsicColumnWidth(),
-        4: IntrinsicColumnWidth(),
-        5: IntrinsicColumnWidth(),
-        6: IntrinsicColumnWidth(),
-        7: IntrinsicColumnWidth(),
-        8: IntrinsicColumnWidth(),
-        9: IntrinsicColumnWidth(),
-        10: IntrinsicColumnWidth(),
-        11: IntrinsicColumnWidth(),
-      },
-      border: TableBorder.all(),
-      defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-      children: legDetailRows,
-    );
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child:
-      Container(margin: EdgeInsets.only(right: 8), child: legDetailTable),
-    );
-  }
-
-//  routeTurnpoints.length must be legDetails.length -1
-  List<TableRow> _getLegTableRows(List<LegDetail> legDetails,
-      List<RouteTurnpoint> routeTurnPoints) {
-    var legDetailTableRows = <TableRow>[];
-    legDetailTableRows.add(_getLegDetailLabels());
-    for (int i = 0; i < legDetails.length; ++i) {
-      var tableRow = TableRow(
-        children: [
-          (i < legDetails.length - 1) ?
-          (_formattedTextCell((routeTurnPoints[i].name ?? "") +
-              " - " +
-              (routeTurnPoints[i + 1].name ?? " "))) :
-          _formattedTextCell(legDetails[i].leg ?? " "),
-          _formattedTextCell(legDetails[i].clockTime ??
-              (legDetails[i].message != null ? legDetails[i].message! : "")),
-          _formattedTextCell(double.parse(legDetails[i].optFlightTimeMin ?? "0")
-              .toStringAsFixed(0)),
-          _formattedTextCell(double.parse(legDetails[i].sptlAvgDistKm ?? "0")
-              .toStringAsFixed(1)),
-          //  convert tailwind to headwind
-          // _formattedTextCell(
-          //    (double.parse(legDetail.sptlAvgTailWind ?? "0") * -1)
-          //        .toStringAsFixed(0)),
-          //  _formattedTextCell(double.parse(legDetail.sptlAvgClimbRate ?? "0")
-          //      .toStringAsFixed(0)),
-          //  convert tailwind to headwind
-          _formattedTextCell(
-              (double.parse(legDetails[i].optAvgTailWind ?? "0") * -1)
-                  .toStringAsFixed(0)),
-          _formattedTextCell(double.parse(legDetails[i].optAvgClimbRate ?? "0")
-              .toStringAsFixed(0)),
-          _formattedTextCell(
-              double.parse(legDetails[i].optFlightGrndSpeedKt ?? "0")
-                  .toStringAsFixed(0)),
-          _formattedTextCell(
-              double.parse(legDetails[i].optFlightGrndSpeedKmh ?? "0")
-                  .toStringAsFixed(0)),
-          _formattedTextCell(
-              double.parse(legDetails[i].optFlightAirSpeedKt ?? "0")
-                  .toStringAsFixed(0)),
-          _formattedTextCell(
-              double.parse(legDetails[i].optFlightThermalPct ?? "0")
-                  .toStringAsFixed(0)),
-        ],
-      );
-      legDetailTableRows.add(tableRow);
-    }
-    return legDetailTableRows;
-  }
-
-  TableRow _getLegDetailLabels() {
-    var legDetailLabels = <TableRow>[];
-    return TableRow(
-      children: [
-        _formattedTextCell("LEG"),
-        _formattedTextCell("ClockTime"),
-        _formattedTextCell("Time\nMin"),
-        _formattedTextCell("Dist\nkm"),
-        //_formattedTextCell("Head\nWind\nkt"),
-        //_formattedTextCell("Climb\nRate\nkt"),
-        _formattedTextCell("Head\nWind\nkt"),
-        _formattedTextCell("Clmb\nRate\nkt"),
-        _formattedTextCell("Gnd\nSpd\nkt"),
-        _formattedTextCell("Gnd\nSpd\nkm/h"),
-        _formattedTextCell("Air\nSpd\nkt"),
-        _formattedTextCell("Thermaling\nPct\n%"),
-      ],
-    );
-  }
-
-  Widget _getTurnpointsTableHeader() {
-    return Center(
-      child: Padding(
-          padding: const EdgeInsets.only(top: 16),
-          child: Text("Task Turnpoints", style: textStyleBoldBlackFontSize18)),
-    );
-  }
-
-  Widget _getLegTableHeader() {
-    return Center(
-      child: Padding(
-          padding: const EdgeInsets.only(top: 16),
-          child: Text(
-            "Leg Details\nUsing wind-adjusted speed-to-fly",
-            style: textStyleBoldBlackFontSize18,
-            textAlign: TextAlign.center,
-          )),
-    );
-  }
-
-  Widget _getWarningMsgDisplay(EstimatedFlightSummary optimalTaskSummary) {
-    List<Footer> footers =
-        optimalTaskSummary.routeSummary?.footers ?? <Footer>[];
-    List<Widget> warnings = [];
-
-    footers.forEach((footer) {
-      warnings.add(_formattedTextCell(footer.message ?? ""));
-    });
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.start,
-      children: warnings,
-    );
-  }
-
-  Widget _getOptimalFlightCloseButton() {
-    return ElevatedButton(
-      style: ElevatedButton.styleFrom(
-        minimumSize: Size(double.infinity,
-            40), // double.infinity is the width and 30 is the height
-        foregroundColor: Colors.white,
-        backgroundColor: Theme
-            .of(context)
-            .colorScheme
-            .primary,
-      ),
-      child: Text("Close"),
-      onPressed: () {
-        setState(() {
-          _estimatedFlightSummary = null;
-        });
-      },
-    );
-  }
 
 
   _regionModelListener() {
     return BlocListener<RegionModelBloc, RegionModelState>(
         listener: (context, state) {
+          if (state is CenterOfMapState) {
+            setState(() {
+              _mapCenter = state.latLng;
+            });
+          }
+          if (state is SuaDetailsState) {
+            _updateGeoJsonSuaDetails(state.suaDetails);
+            return;
+          }
           if (state is RegionSoundingsState) {
             _placeSoundingMarkers(state.soundings);
           }
-          if (state is CenterOfMapState) {
-            _mapCenter = state.latLng;
-          }
           if (state is RegionLatLngBoundsState) {
             _forecastLatLngBounds = state.latLngBounds;
+            _sendEvent(ViewBoundsEvent(_forecastLatLngBounds));
+            if (_mapReady) {
+              _mapController.animatedFitCamera(
+                  cameraFit: CameraFit.bounds(bounds: _forecastLatLngBounds));
+            }
             return;
           }
         },

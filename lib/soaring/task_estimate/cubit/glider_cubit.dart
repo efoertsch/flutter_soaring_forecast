@@ -2,13 +2,17 @@ import 'dart:math';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
-import 'package:flutter_soaring_forecast/soaring/forecast/cubit/glider_state.dart';
+import 'package:flutter_soaring_forecast/soaring/task_estimate/cubit/glider_state.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/gliders.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 import 'package:vector_math/vector_math_64.dart';
-import 'package:flutter_soaring_forecast/soaring/forecast/cubit/glider_enums.dart';
 
-class GliderCubit extends Cubit<GliderState> {
+import '../../floor/taskturnpoint/task_turnpoint.dart';
+import '../../region_model/data/rasp_model_date_change.dart';
+import 'glider_enums.dart';
+
+
+class GliderCubit extends Cubit<GliderCubitState> {
   late final Repository _repository;
 
   late DisplayUnits _displayUnits;
@@ -25,6 +29,14 @@ class GliderCubit extends Cubit<GliderState> {
   String _distanceUnits = "";
   bool _displayXCSoarValues = false;
 
+  String _regionName = "";
+  String _selectedModelName = ""; // nam
+  String _selectedForecastDate = ""; // selected date  2019-12-19
+  List<String> _forecastTimes = [];
+  int _selectedForecastTimeIndex = 4;
+
+  int _taskId = -1;
+
   // double angleInDegrees = 30;
   // double speed = 40; // mph
 
@@ -39,10 +51,10 @@ class GliderCubit extends Cubit<GliderState> {
 
   GliderCubit({required Repository repository})
       : _repository = repository,
-        super(GliderPolarInitialState()) {}
+        super(GliderCubitInitialState()) {}
 
   void _indicateWorking(bool isWorking) {
-    emit(GliderPolarIsWorkingState(isWorking));
+    emit(GliderCubitWorkingState(isWorking));
   }
 
   void checkToDisplayExperimentalText() async {
@@ -139,7 +151,7 @@ class GliderCubit extends Cubit<GliderState> {
     } else if (toUnits == DisplayUnits.Imperial_mph) {
       velocityConversion = VELOCITY_CONVERSION.kph2mph;
     } else {
-      emit(GliderPolarErrorState(
+      emit(GliderCubitErrorState(
           "Invalid displayUnits.  Conversion: ${toUnits.toString()}"));
       return glider;
     }
@@ -210,7 +222,7 @@ class GliderCubit extends Cubit<GliderState> {
     } else if (velocityConversion == VELOCITY_CONVERSION.kph2mph) {
       return velocity * 0.621371; // 1 kph = 0.621371 mph
     }
-    emit(GliderPolarErrorState(
+    emit(GliderCubitErrorState(
         "Invalid velocity conversion: ${velocityConversion.toString()}"));
     return 0;
   }
@@ -242,7 +254,7 @@ class GliderCubit extends Cubit<GliderState> {
         _customGlider!.v3 = newValue;
         break;
       default:
-        emit(GliderPolarErrorState(
+        emit(GliderCubitErrorState(
             "Missing update logic for sink rate parm ${sinkRateParm}"));
     }
     storeCustomGlider();
@@ -272,7 +284,7 @@ class GliderCubit extends Cubit<GliderState> {
         _customGlider!.maxBallast = newValue;
         break;
       default:
-        emit(GliderPolarErrorState(
+        emit(GliderCubitErrorState(
             "Missing update logic for glider mass ${massParm}"));
         return;
     }
@@ -313,7 +325,7 @@ class GliderCubit extends Cubit<GliderState> {
         _customGlider!.updatedVW = true;
         break;
       default:
-        emit(GliderPolarErrorState(
+        emit(GliderCubitErrorState(
             "Missing update logic for polar sink rate parm ${velocityParm}"));
         return;
     }
@@ -418,7 +430,7 @@ class GliderCubit extends Cubit<GliderState> {
         speed = glider.minSinkSpeedAtBankAngle * mphToFtperSec;
         funkyNumber = gravityFtPerSec2 * tangent;
       default:
-        emit(GliderPolarErrorState(
+        emit(GliderCubitErrorState(
             "Missing thermaling logic for ${displayUnits}"));
         speed = 0;
         funkyNumber = 1;
@@ -483,4 +495,62 @@ class GliderCubit extends Cubit<GliderState> {
 // minSinkSpeed = b / (2 * a);
 // minSinkRate = (minSinkSpeed * a * a) + (b * minSinkSpeed) + c;
 //
+  Future<void> _getEstimatedFlightAvg({required Glider glider}) async {
+    emit(GliderCubitWorkingState( true));
+    _taskId = await _repository.getCurrentTaskId();
+    List<TaskTurnpoint> taskTurnpoints = [];
+    if (_taskId > -1) {
+      taskTurnpoints.addAll(await _repository.getTaskTurnpoints(_taskId));
+      // print('emitting taskturnpoints');
+    }
+    StringBuffer turnpointLatLons = StringBuffer();
+    String latLonString = "";
+    int index = 1;
+    for (var taskTurnpoints in taskTurnpoints) {
+      turnpointLatLons.write(index.toString());
+      turnpointLatLons.write(",");
+      turnpointLatLons.write(taskTurnpoints.latitudeDeg.toString());
+      turnpointLatLons.write(",");
+      turnpointLatLons.write(taskTurnpoints.longitudeDeg.toString());
+      turnpointLatLons.write(",");
+      turnpointLatLons.write(taskTurnpoints.title.substring(0,
+          taskTurnpoints.title.length > 4 ? 4 : taskTurnpoints.title.length));
+      turnpointLatLons.write(",");
+      index++;
+    }
+    if (turnpointLatLons.length > 0) {
+      latLonString =
+          turnpointLatLons.toString().substring(0, turnpointLatLons.length - 1);
+    }
+
+    //Note per Dr Jack. thermalMultiplier was a fudge factor that could be added if you want to bump up or down
+    // wstar value used in sink rate calc. For now just use 1
+    var optimizedTaskRoute = await _repository.getEstimatedFlightSummary(
+        _regionName,
+        _selectedForecastDate,
+        _selectedModelName,
+        'd2',
+        _forecastTimes[_selectedForecastTimeIndex] + 'x',
+        glider.glider,
+         glider.polarWeightAdjustment,
+        glider.getPolarCoefficientsAsString(),
+        // string of a,b,c
+        glider.ballastAdjThermalingSinkRate,
+        1,
+        latLonString);
+    if (optimizedTaskRoute?.routeSummary?.error != null) {
+      emit(GliderCubitErrorState(optimizedTaskRoute!.routeSummary!.error!));
+      emit(GliderCubitWorkingState( false));
+    } else {
+      emit(GliderCubitWorkingState(  false));
+      emit(EstimatedFlightSummaryState(optimizedTaskRoute!));
+    }
+  }
+
+  void processModelDateChange(RaspModelDateChange modelDateChange) {
+    // _regionName,
+    // _selectedForecastDate = modelDateChange.date;
+    // _selectedModelName= modelDateChange.model
+  }
+
 }

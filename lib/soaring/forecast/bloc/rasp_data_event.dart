@@ -39,6 +39,12 @@ class SelectedRegionModelDetailEvent extends RaspDataEvent {
       required this.localTime});
 }
 
+class IncrDecrRaspForecastHourEvent extends RaspDataEvent{
+  final int incrDecrIndex;
+
+  IncrDecrRaspForecastHourEvent(this.incrDecrIndex);
+}
+
 
 class SelectedRaspForecastEvent extends RaspDataEvent {
   final Forecast forecast;
@@ -53,16 +59,6 @@ class SetRaspForecastType extends RaspDataEvent {
   SetRaspForecastType(this.forecastType);
 }
 
-// Used to flip through forecasts based on the time
-class NextTimeEvent extends RaspDataEvent {
-  NextTimeEvent();
-}
-
-// Go back to previous time
-class PreviousTimeEvent extends RaspDataEvent {
-  PreviousTimeEvent();
-}
-
 /// Tell bloc to load all forecast types
 class LoadForecastTypesEvents extends RaspDataEvent {
   LoadForecastTypesEvents();
@@ -75,11 +71,6 @@ class GetTaskTurnpointsEvent extends RaspDataEvent {
   GetTaskTurnpointsEvent(this.taskId);
 }
 
-class GetEstimatedFlightAvgEvent extends RaspDataEvent {
-  Glider glider;
-
-  GetEstimatedFlightAvgEvent(this.glider);
-}
 
 // clear task/turnpoints from map
 class ClearTaskEvent extends RaspDataEvent {
@@ -113,10 +104,16 @@ class RedisplayMarkersEvent extends RaspDataEvent {
   RedisplayMarkersEvent();
 }
 
-class SaveRaspDisplayOptionsEvent extends RaspDataEvent {
+class RaspDisplayOptionsEvent extends RaspDataEvent {
+  final List<PreferenceOption> displayOptions;
+
+  RaspDisplayOptionsEvent(this.displayOptions);
+}
+
+class RaspDisplayOptionEvent extends RaspDataEvent {
   final PreferenceOption displayOption;
 
-  SaveRaspDisplayOptionsEvent(this.displayOption);
+  RaspDisplayOptionEvent(this.displayOption);
 }
 
 class ViewBoundsEvent extends RaspDataEvent {
@@ -148,8 +145,8 @@ class SetForecastOverlayOpacityEvent extends RaspDataEvent {
 
 class RefreshTaskEvent extends RaspDataEvent {}
 
-class RefreshForecastEvent extends RaspDataEvent {
-  RefreshForecastEvent();
+class ListTypesOfForecastsEvent extends RaspDataEvent {
+  ListTypesOfForecastsEvent();
 }
 
 class CheckIfForecastRefreshNeededEvent extends RaspDataEvent {
@@ -157,13 +154,6 @@ class CheckIfForecastRefreshNeededEvent extends RaspDataEvent {
 }
 
 //
-class ReturnedFromLocalForecastEvent extends RaspDataEvent {
-  final String modelName;
-  final String date;
-
-  ReturnedFromLocalForecastEvent({required this.modelName, required this.date});
-}
-
 
 class ForecastBoundsEvent extends RaspDataEvent {
   final LatLngBounds latLngBounds;
@@ -171,9 +161,5 @@ class ForecastBoundsEvent extends RaspDataEvent {
   ForecastBoundsEvent(this.latLngBounds);
 }
 
-class RunForecastAnimationEvent extends RaspDataEvent{
-  final bool runAnimation;
 
-  RunForecastAnimationEvent(this.runAnimation);
-}
 

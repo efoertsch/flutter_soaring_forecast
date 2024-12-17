@@ -18,13 +18,10 @@ class ModelDatesDisplay extends StatefulWidget {
 }
 
 class _ModelDatesDisplayState extends State<ModelDatesDisplay> {
-  String regionName = "";
   List<String> _modelNames = [];
   int _modelNameIndex = 0;
   List<String> _forecastDates =[];// array of dates like  2019-12-19
   int _forecastDateIndex = 0;
-  List<String> _localTimes = [];
-  int _localTimeIndex = 0;
   List<String> _shortDOWs = [];
   String _selectedForecastDOW = '';
 
@@ -41,8 +38,6 @@ class _ModelDatesDisplayState extends State<ModelDatesDisplay> {
         _modelNameIndex = state.modelNameIndex;
         _forecastDates = state.forecastDates;
         _forecastDateIndex = state.forecastDateIndex;
-        _localTimes = state.localTimes;
-        _localTimeIndex = state.localTimeIndex;
         _shortDOWs = reformatDatesToDOW(_forecastDates);
        _selectedForecastDOW =  _forecastDateIndex >= 0? _shortDOWs[_forecastDateIndex]: "";
       };

@@ -7,10 +7,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
 import 'package:flutter_soaring_forecast/soaring/app/custom_styles.dart';
-import 'package:flutter_soaring_forecast/soaring/forecast/cubit/glider_cubit.dart';
-import 'package:flutter_soaring_forecast/soaring/forecast/cubit/glider_enums.dart';
-import 'package:flutter_soaring_forecast/soaring/forecast/cubit/glider_state.dart';
+import 'package:flutter_soaring_forecast/soaring/task_estimate/cubit/glider_cubit.dart';
+import 'package:flutter_soaring_forecast/soaring/task_estimate/cubit/glider_state.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/gliders.dart';
+
+import '../cubit/glider_enums.dart';
 
 class GliderPolarListScreen extends StatefulWidget {
   GliderPolarListScreen({
@@ -311,7 +312,7 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
   }
 
   Widget _getGliderList() {
-    return BlocConsumer<GliderCubit, GliderState>(listener: (context, state) {
+    return BlocConsumer<GliderCubit, GliderCubitState>(listener: (context, state) {
       if (state is GliderListState) {
         _selectedGlider = state.selectedGliderName.isNotEmpty
             ? state.selectedGliderName
@@ -390,7 +391,7 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
   }
 
   Widget _displayGliderDetail() {
-    return BlocConsumer<GliderCubit, GliderState>(listener: (context, state) {
+    return BlocConsumer<GliderCubit, GliderCubitState>(listener: (context, state) {
       if (state is GliderPolarState) {
         _defaultGlider = state.defaultPolar;
         _customGlider = state.customPolar;
@@ -1176,7 +1177,7 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
   }
 
   Widget _getMiscStatesHandlerWidget() {
-    return BlocListener<GliderCubit, GliderState>(
+    return BlocListener<GliderCubit, GliderCubitState>(
       listener: (context, state) {
         if (state is CalcEstimatedFlightState) {
           Navigator.pop(context, state.glider);
@@ -1206,21 +1207,21 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
   }
 
   Widget _getIsWorkingIndicator() {
-    return BlocConsumer<GliderCubit, GliderState>(listener: (context, state) {
-      if (state is GliderPolarIsWorkingState) ;
+    return BlocConsumer<GliderCubit, GliderCubitState>(listener: (context, state) {
+      if (state is GliderCubitWorkingState) ;
     }, buildWhen: (previous, current) {
-      return current is GliderPolarIsWorkingState;
+      return current is GliderCubitWorkingState;
     }, builder: (context, state) {
-      return (state is GliderPolarIsWorkingState && state.isWorking)
+      return (state is GliderCubitWorkingState && state.working)
           ? CommonWidgets.buildLoading()
           : SizedBox.shrink();
     });
   }
 
   Widget _getErrorMessagesWidget() {
-    return BlocListener<GliderCubit, GliderState>(
+    return BlocListener<GliderCubit, GliderCubitState>(
       listener: (context, state) {
-        if (state is GliderPolarErrorState) {
+        if (state is GliderCubitErrorState) {
           CommonWidgets.showErrorDialog(context, 'Polar Error', state.errorMsg);
         }
       },

@@ -15,7 +15,7 @@ import 'package:latlong2/latlong.dart';
 
 import '../bloc/rasp_bloc.dart';
 import '../../app/web_launcher.dart';
-import '../../local_forecast/bloc/local_forecast_favorite.dart';
+import '../../local_forecast/data/local_forecast_favorite.dart';
 
 class AppDrawerWidget extends StatefulWidget {
   final Function? refreshTaskDisplayFunction;

@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../../app/constants.dart';
+import '../../repository/rasp/regions.dart';
 
 @immutable
 abstract class RegionModelEvent {}
@@ -31,23 +32,43 @@ class BeginnerDateSwitchEvent extends RegionModelEvent {
   BeginnerDateSwitchEvent(this.forecastDateSwitch);
 }
 
+class RegionChangeEvent extends RegionModelEvent {}
+
 class BeginnerModeEvent extends RegionModelEvent {
   final bool beginnerMode;
 
   BeginnerModeEvent(this.beginnerMode);
 }
 
-
 class RegionChangedEvent extends RegionModelEvent {
-  RegionChangedEvent();
 }
-
 
 class CheckIfForecastRefreshNeededEvent extends RegionModelEvent {
   CheckIfForecastRefreshNeededEvent();
 }
 
+class LocalForecastStartupEvent extends RegionModelEvent {}
 
-class LocalForecastStartupEvent extends RegionModelEvent {
+class LocalForecastUpdateEvent extends RegionModelEvent {}
+
+class DisplaySoundingsEvent extends RegionModelEvent {
+  final Soundings sounding;
+
+  DisplaySoundingsEvent(this.sounding);
 }
 
+class EstimatedTaskStartupEvent extends RegionModelEvent {}
+
+
+class RegionDisplayOptionEvent extends RegionModelEvent {
+  final PreferenceOption displayOption;
+
+  RegionDisplayOptionEvent(this.displayOption);
+}
+
+
+class RegionDisplayOptionsEvent extends RegionModelEvent {
+  final List<PreferenceOption> displayOptions;
+
+  RegionDisplayOptionsEvent(this.displayOptions);
+}

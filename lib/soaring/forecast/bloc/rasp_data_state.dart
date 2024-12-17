@@ -1,16 +1,13 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/taskturnpoint/task_turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/LatLngForecast.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image_set.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/estimated_flight_avg_summary.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
-import 'package:latlong2/latlong.dart';
 
-import '../../local_forecast/bloc/local_forecast_graph.dart';
-import '../../repository/rasp/regions.dart';
+import '../../local_forecast/data/local_forecast_graph.dart';
 
 
 @immutable
@@ -106,20 +103,6 @@ class TurnpointsInBoundsState extends RaspDataState {
   TurnpointsInBoundsState(this.turnpoints);
 }
 
-class RaspDisplayOptionsState extends RaspDataState {
-  final List<PreferenceOption> displayOptions;
-
-  RaspDisplayOptionsState(this.displayOptions);
-}
-
-class SuaDetailsState extends RaspDataState {
-  //final SUA suaDetails;
-  final String suaDetails;
-
-  //SuaDetailsState(this.suaDetails);
-  SuaDetailsState(this.suaDetails);
-}
-
 class ForecastOverlayOpacityState extends RaspDataState {
   final double opacity;
 
@@ -139,23 +122,11 @@ class RaspWorkingState extends RaspDataState {
 }
 
 
-class RunForecastAnimationState extends RaspDataState{
-  final bool runAnimation;
-
-  RunForecastAnimationState(this.runAnimation);
-}
-
 class BeginnerForecastDateModelState extends RaspDataState {
   final String date;
   final String model;
 
   BeginnerForecastDateModelState(this.date, this.model);
-}
-
-class EstimatedFlightSummaryState extends RaspDataState {
-  final EstimatedFlightSummary? estimatedFlightSummary;
-
-  EstimatedFlightSummaryState(this.estimatedFlightSummary);
 }
 
 class ShowEstimatedFlightButton extends RaspDataState {

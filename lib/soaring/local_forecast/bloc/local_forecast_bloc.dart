@@ -5,9 +5,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 
-import 'local_forecast_graph.dart';
+import '../../region_model/data/rasp_model_date_change.dart';
+import '../data/local_forecast_graph.dart';
 import 'local_forecast_event.dart';
-import 'local_forecast_favorite.dart';
+import '../data/local_forecast_favorite.dart';
 import 'local_forecast_state.dart';
 
 //  For following forecasts, you actually need to combine values from 2 other forecasts to determine display
@@ -79,6 +80,7 @@ class LocalForecastBloc extends Bloc<LocalForecastEvent, LocalForecastState> {
     emit(LocalForecastWorkingState(working: true));
     _assignInitialForecastFields(event.localForecastGraphData);
     _composeRequestParamsString();
+    await _getForecastList();
     await _generateGraphDataAndEmit(emit);
     emit(LocalForecastWorkingState(working: false));
   }
@@ -90,6 +92,7 @@ class LocalForecastBloc extends Bloc<LocalForecastEvent, LocalForecastState> {
     _localForecastPoints = inputData.localForecastPoints;
     _startIndex = inputData.startIndex;
     _currentLocationIndex = _startIndex;
+    _forecastTimes = inputData.times;
   }
 
   Future<void> _generateGraphDataAndEmit(Emitter<LocalForecastState> emit) async {
@@ -449,7 +452,7 @@ class LocalForecastBloc extends Bloc<LocalForecastEvent, LocalForecastState> {
   // switch of model and/or date - generate new graphs
   FutureOr<void> _processModelDateChange(
       LocalModelDateChangeEvent event, Emitter<LocalForecastState> emit) async {
-    LocalModelDateChange localModelDateChange = event.localModelDateChange;
+    RaspModelDateChange localModelDateChange = event.localModelDateChange;
     _regionName = localModelDateChange.regionName;
     _selectedModelName = localModelDateChange.model;
     _selectedForecastDate = localModelDateChange.date;

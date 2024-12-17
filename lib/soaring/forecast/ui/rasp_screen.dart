@@ -7,18 +7,23 @@ import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_data_state.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/ui/app_drawer.dart';
-import 'package:flutter_soaring_forecast/soaring/region_model/ui/model_date_display.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/ui/display_ticker.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/ui/forecast_map.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast_hour/forecast_hour_cubit.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast_hour/forecast_hour_state.dart';
+import 'package:flutter_soaring_forecast/soaring/rasp_options/rasp_display_options_cubit.dart';
+import 'package:flutter_soaring_forecast/soaring/region_model/ui/model_date_display.dart';
 import 'package:flutter_soaring_forecast/soaring/tasks/ui/task_list.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_overhead_view.dart';
 
+import '../../forecast_hour/forecast_hour_widget.dart';
+import '../../local_forecast/data/local_forecast_graph.dart';
+import '../../rasp_options/rasp_display_option_state.dart';
 import '../../region_model/bloc/region_model_bloc.dart';
 import '../../region_model/bloc/region_model_event.dart';
 import '../../region_model/bloc/region_model_state.dart';
 import '../bloc/rasp_data_bloc.dart';
 import '../bloc/rasp_data_event.dart';
-import 'forecast_time_display.dart';
 import 'common/forecast_types_display.dart';
 import 'common/rasp_progress_indicator.dart';
 
@@ -48,6 +53,9 @@ class _RaspScreenState extends State<RaspScreen>
 
   FixedExtentScrollController forecastScrollController =
       new FixedExtentScrollController();
+
+  RaspDisplayOptionsCubit _getRaspDisplayOptionsCubit() =>
+      BlocProvider.of<RaspDisplayOptionsCubit>(context);
 
   // Executed only when class created
   @override
@@ -97,13 +105,15 @@ class _RaspScreenState extends State<RaspScreen>
               ModelDatesDisplay(),
               SelectedForecastDisplay(),
               _getDividerWidget(),
-              ForecastTimeDisplay(),
+              ForecastHourDisplay(),
               _getForecastWindow(),
-              _miscRaspStatesHandler(),
-              _miscRegionModelStatesHandler()
+              _raspStatesHandler(),
+              _regionModelHandler(),
+              _raspDisplayOptionsHandler(),
+              _forecastHourHandler()
             ],
           ),
-          RaspProgressIndicator<RaspDataBloc>(),
+          RaspProgressIndicator(),
         ],
       ),
     );
@@ -118,20 +128,46 @@ class _RaspScreenState extends State<RaspScreen>
         color: Colors.black12);
   }
 
+  Widget _raspDisplayOptionsHandler() {
+    return BlocListener<RaspDisplayOptionsCubit, RaspPreferenceOptionState>(
+      listener: (context, state) {
+        if (state is RaspPreferenceOptionsState) {
+          _raspDisplayOptions = state.preferenceOptions;
+          _sendEvent(RaspDisplayOptionsEvent(_raspDisplayOptions));
+          _sendEvent(RegionDisplayOptionsEvent(_raspDisplayOptions));
+        }
+        ;
+      },
+      child: SizedBox.shrink(),
+    );
+  }
 
-  Widget _miscRaspStatesHandler() {
+  Widget _forecastHourHandler() {
+    return BlocListener<ForecastHourCubit, ForecastHourState>(
+      listener: (context, state) {
+        if (state is RunHourAnimationState) {
+          runAnimation(state.runAnimation);
+          return;
+        }
+        if (state is IncrDecrHourIndexState) {
+          _sendEvent(IncrDecrRaspForecastHourEvent(state.incrDecrIndex));
+        }
+      },
+      child: SizedBox.shrink(),
+    );
+  }
+
+  Widget _raspStatesHandler() {
     return BlocListener<RaspDataBloc, RaspDataState>(
       listener: (context, state) {
-        if (state is RunForecastAnimationState){
-          runAnimation(state.runAnimation);
+        if (state is DisplayLocalForecastGraphState) {
+          _displayLocalForecastGraph(context, state.localForecastGraphData);
+        }
+        if (state is RaspTimeState) {
+          getForecastHourCubit(context).setForecastHour(state.forecastTime);
         }
         if (state is RaspTaskTurnpoints) {
           taskSelected = state.taskTurnpoints.isNotEmpty;
-          return;
-        }
-        if (state is RaspDisplayOptionsState) {
-          // debugPrint("Received RaspDisplayOptionsState");
-          _raspDisplayOptions = state.displayOptions;
           return;
         }
         if (state is DisplayLocalForecastGraphState) {
@@ -150,27 +186,34 @@ class _RaspScreenState extends State<RaspScreen>
     );
   }
 
-  Widget _miscRegionModelStatesHandler() {
+  Widget _regionModelHandler() {
     return BlocListener<RegionModelBloc, RegionModelState>(
-        listener: (context, state) {
-      if (state is ForecastModelsAndDates) {
-        _beginnerMode = state.beginnerMode;
-        // pass RegionModel info to RASP
-        SelectedRegionModelDetailEvent selectedRegionModelDetailEvent =
-            SelectedRegionModelDetailEvent(
-                region: state.regionName,
-                modelName: state.modelNameIndex >= 0
-                    ? state.modelNames[state.modelNameIndex]
-                    : "",
-                modelDate: state.forecastDateIndex >= 0
-                    ? state.forecastDates[state.forecastDateIndex]
-                    : "",
-                localTimes: state.localTimes,
-                localTime: state.localTimeIndex >=0 ? state.localTimes[state.localTimeIndex] :"");
-        _sendEvent(selectedRegionModelDetailEvent);
-      }
-    },
-      child: SizedBox.shrink(),);
+      listener: (context, state) {
+        if (state is ForecastModelsAndDates) {
+          _beginnerMode = state.beginnerMode;
+          // pass RegionModel info to RASP
+          SelectedRegionModelDetailEvent selectedRegionModelDetailEvent =
+              SelectedRegionModelDetailEvent(
+                  region: state.regionName,
+                  modelName: state.modelNameIndex >= 0
+                      ? state.modelNames[state.modelNameIndex]
+                      : "",
+                  modelDate: state.forecastDateIndex >= 0
+                      ? state.forecastDates[state.forecastDateIndex]
+                      : "",
+                  localTimes: state.localTimes,
+                  localTime:
+                      (state.localTimes.length > 0 && state.localTimeIndex >= 0)
+                          ? state.localTimes[state.localTimeIndex]
+                          : "");
+          _sendEvent(selectedRegionModelDetailEvent);
+          // have to wait till find out what region you are working with before
+          // getting display options that depend on region
+          _getRaspDisplayOptionsCubit()..getRaspPreferenceOptions();
+        }
+      },
+      child: SizedBox.shrink(),
+    );
   }
 
   // runAnimation = true - run the animation of course!
@@ -181,7 +224,7 @@ class _RaspScreenState extends State<RaspScreen>
       _displayTimer = DisplayTimer(Duration(seconds: 3));
       _overlayPositionCounter = _displayTimer!.stream;
       _tickerSubscription = _overlayPositionCounter!.listen((int counter) {
-        _sendEvent(NextTimeEvent());
+        _sendEvent(IncrDecrRaspForecastHourEvent(1));
       });
       _displayTimer!.setStartAndLimit(_currentImageIndex, _lastImageIndex);
       _displayTimer!.startTimer();
@@ -328,7 +371,8 @@ class _RaspScreenState extends State<RaspScreen>
         });
         break;
       case RaspMenu.refreshForecast:
-        _sendEvent(RefreshForecastEvent());
+        _sendEvent(ListTypesOfForecastsEvent());
+        _sendEvent(InitialRegionModelEvent());
         break;
     }
   }
@@ -382,6 +426,7 @@ class _RaspScreenState extends State<RaspScreen>
       // user switched to another region
       if (result != _selectedRegionName) ;
       _sendEvent(SwitchedRegionEvent());
+      _sendEvent(RegionChangedEvent());
     }
   }
 
@@ -394,7 +439,10 @@ class _RaspScreenState extends State<RaspScreen>
       if (newOption.isChecked != oldOption.selected) {
         // some change in checked status
         oldOption.selected = newOption.isChecked;
-        _sendEvent(SaveRaspDisplayOptionsEvent(oldOption));
+        // Don't know who is interested in it so sending it to both blocs.
+        _getRaspDisplayOptionsCubit().saveRaspPreferenceOption(oldOption);
+        _sendEvent(RaspDisplayOptionEvent(oldOption));
+        _sendEvent(RegionDisplayOptionEvent(oldOption));
       }
       ;
     });
@@ -415,7 +463,15 @@ class _RaspScreenState extends State<RaspScreen>
         arguments: request);
   }
 
-  void _timeIndexChangedFunction(int indexChange) {
-    print("Time Index change: ${indexChange}");
+  void _displayLocalForecastGraph(
+      BuildContext context, LocalForecastInputData inputParms) async {
+    var result = await Navigator.pushNamed(
+      context,
+      LocalForecastGraphRouteBuilder.routeName,
+      arguments: inputParms,
+    );
+    if (result is LocalForecastUpdateData) {
+      _sendEvent(LocalForecastUpdateEvent());
+    }
   }
 }

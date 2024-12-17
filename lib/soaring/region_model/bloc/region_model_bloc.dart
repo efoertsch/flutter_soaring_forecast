@@ -19,12 +19,12 @@ class RegionModelBloc extends Bloc<RegionModelEvent, RegionModelState> {
   String _regionName = "";
   List<String> _modelNames = []; // gfs, nam, rap, hrr
   String? _selectedModelName; // nam
+  Model? _selectedModel;
   ModelDates? _selectedModelDates; // all dates/times for the selected model
   List<String> _forecastDates = []; // array of dates like  2019-12-19
   String? _selectedForecastDate; // selected date  2019-12-19
   List<String> _forecastTimes = [];
   int _selectedForecastTimeIndex = 4; // 1300?
-  String? _selectedTime;
 
   // region determines lat/lng bounds
   LatLngBounds? _regionLatLngBounds;
@@ -35,8 +35,9 @@ class RegionModelBloc extends Bloc<RegionModelEvent, RegionModelState> {
   // Models selected should be in order of hrrr, rap, nam, gfs
   bool _beginnerMode = true;
   ModelDateDetail? _beginnerModeModelDataDetail;
-
   List<ModelDateDetail> _beginnerModelDateDetailList = [];
+  bool _displaySoundings = false;
+  bool _displaySua = false;
 
   RegionModelBloc({required this.repository})
       : super(RegionModelInitialState()) {
@@ -47,10 +48,15 @@ class RegionModelBloc extends Bloc<RegionModelEvent, RegionModelState> {
     on<DateChangeEvent>(_processDateChangeEvent);
     on<BeginnerModeEvent>(_processBeginnerModeEvent);
     on<LocalForecastStartupEvent>(_processLocalForecastStartupEvent);
+    on<LocalForecastUpdateEvent>(_processLocalForecastUpdateEvent);
+    on<RegionDisplayOptionEvent>(_processRegionDisplayOptionEvent);
+    on<RegionDisplayOptionsEvent>(_processRegionDisplayOptionsEvent);
   }
 
-  Future<void> _processInitialRegionModelEvent(_,
-      Emitter<RegionModelState> emit) async {
+  // I am sure this logic to find the appropriate model/dates/times/center/bounds etc.
+  // can be simplified
+  Future<void> _processInitialRegionModelEvent(
+      _, Emitter<RegionModelState> emit) async {
     emit(WorkingState(working: true));
     try {
       if (_regions == null) {
@@ -58,70 +64,51 @@ class RegionModelBloc extends Bloc<RegionModelEvent, RegionModelState> {
       }
       if (_regions != null) {
         await _loadSelectRegionInfo();
-        // Now get the model (gfs/etc)
-        //await _loadForecastInfoForRegion();
+        // Now get the models (gfs/etc)
+        await _loadForecastInfoForRegion();
         await _getSelectedModelDates();
-        // need to get all dates before you can generate the list of models
-        _setRegionModelNames();
-        // on startup default mode is first on list
-        _selectedModelName = _selectedModelDates!.modelName!;
-        // get default time to start displaying forecast
-        await _getDefaultForecastTime();
         _beginnerMode = await repository.isBeginnerForecastMode();
-        if (_beginnerMode){
+        if (_beginnerMode) {
           _selectedForecastDate = _region?.dates?.first;
           _getBeginnerModeDateDetails();
+          _getSelectedModelBasedOnForecastDate();
+          _setForecastTimesBasedOnSelectedModel();
           if (_beginnerModeModelDataDetail == null) {
-            emit( WorkingState(working: false));
+            emit(WorkingState(working: false));
             emit(ErrorState(
                 "Hmmm. No forecast models available! Please check main RASP site to see if issue there also"));
             return;
           }
+        } else {
+
+          _getSelectedModelBasedOnForecastDate();
+          _setForecastTimesBasedOnSelectedModel();
         }
+        await _getDefaultForecastTime();
+        _setSelectedTimeIndex();
         _emitRaspModelsAndDates(emit);
+        _setLatLngAndCenter();
         _emitCenterOfRegion(emit);
+        _emitRegionBounds(emit);
         emit(WorkingState(working: false));
-        repository.saveLastForecastTime(DateTime
-            .now()
-            .millisecondsSinceEpoch);
+        repository.saveLastForecastTime(DateTime.now().millisecondsSinceEpoch);
       }
     } catch (e, stackTrace) {
       print("Error:  ${e.toString()} \n${stackTrace.toString()}");
       emit(WorkingState(working: false));
       emit(ErrorState(
-          "Unexpected error occurred executing to get forecast model/date/time data :\n${e
-              .toString()}"));
+          "Unexpected error occurred executing to get forecast model/date/time data :\n${e.toString()}"));
     }
   }
+
+  void _emitRegionBounds(Emitter<RegionModelState> emit) =>
+      emit(RegionLatLngBoundsState(_regionLatLngBounds!));
 
   Future<void> _loadSelectRegionInfo() async {
     final selectedRegionName = await repository.getSelectedRegionName();
     _region = _regions!.regions!
         .firstWhereOrNull((region) => (region.name == selectedRegionName))!;
     _regionName = _region?.name ?? "";
-  }
-
-  void _processDateEvent(DateChangeEvent event,
-      Emitter<RegionModelState> emit) async {
-    if (_forecastDates.contains(event.forecastDate) &&
-        event.forecastDate != _selectedForecastDate) {
-      _selectedForecastDate = event.forecastDate;
-      _emitRaspModelsAndDates(emit);
-      // update times and images for new date
-      _setForecastTimesForDate();
-      _emitRaspModelsAndDates(emit);
-    }
-  }
-
-  Future<void> _processModelChange(String modelName,
-      Emitter<RegionModelState> emit) async {
-    if (_modelNames.contains(modelName) && modelName != _selectedModelName) {
-      _selectedModelName = modelName;
-      // print('Selected model: $_selectedModelname');
-      // emits same list of models with new selected model
-      _getDatesForSelectedModel();
-      _emitRaspModelsAndDates(emit);
-    }
   }
 
   // A new model (e.g. nam) has been selected OR switched from beginner to expert
@@ -137,13 +124,14 @@ class RegionModelBloc extends Bloc<RegionModelEvent, RegionModelState> {
     _updateForecastDates();
   }
 
-  // Future<Region> _loadForecastInfoForRegion() async {
-  //   return await this.repository.loadForecastModelsByDateForRegion(_region!);
-  // }
+  Future<void> _loadForecastInfoForRegion() async {
+    _region = await this.repository.loadForecastModelsByDateForRegion(_region!);
+    _setRegionModelNames();
+  }
 
   Future<void> _getSelectedModelDates() async {
     _region = await repository.loadForecastModelsByDateForRegion(_region!);
-    // TODO - get last model (gfs, name) from repository and display
+    // Get the first model on the list
     _selectedModelDates = _region!.getModelDates().first;
     _updateForecastDates();
   }
@@ -160,8 +148,8 @@ class RegionModelBloc extends Bloc<RegionModelEvent, RegionModelState> {
     String defaultTime = await repository.getDefaultForecastTime();
     _selectedForecastTimeIndex = _forecastTimes.isNotEmpty
         ? (_forecastTimes.contains(defaultTime)
-        ? _forecastTimes.indexOf(defaultTime)
-        : 0)
+            ? _forecastTimes.indexOf(defaultTime)
+            : 0)
         : 0;
   }
 
@@ -173,71 +161,63 @@ class RegionModelBloc extends Bloc<RegionModelEvent, RegionModelState> {
         !_forecastDates.contains(_selectedForecastDate)) {
       _selectedForecastDate = _forecastDates.first;
     }
-    _updateForecastTimesList();
   }
 
 // A new date has been selected, so get the times for that date
 // Set the time for the new date the same as the previous date if possible
-  void _setForecastTimesForDate() {
-    var modelDateDetail = _selectedModelDates!
-        .getModelDateDetailList()
-        .firstWhere((modelDateDetails) =>
-    modelDateDetails.date == _selectedForecastDate);
-    _forecastTimes = modelDateDetail.model!.times;
-    _setSelectedTimeIndex();
-  }
+//   void _setForecastTimesForDate() {
+//     var modelDateDetail = _selectedModelDates!
+//         .getModelDateDetailList()
+//         .firstWhere((modelDateDetails) =>
+//             modelDateDetails.date == _selectedForecastDate);
+//     _forecastTimes = modelDateDetail.model!.times;
+//     _setSelectedTimeIndex();
+//   }
 
-  /// Get a list of both display dates (printDates November 12, 2019)
-  /// and dates for constructing calls to rasp (dates 2019-11-12)
+  /// Get a list of dates for constructing calls to rasp (dates 2019-11-12)
   void _setForecastDates() {
     List<ModelDateDetail> modelDateDetails =
-    _selectedModelDates!.getModelDateDetailList();
+        _selectedModelDates!.getModelDateDetailList();
     _forecastDates.clear();
     _forecastDates.addAll(modelDateDetails
         .map((modelDateDetails) => modelDateDetails.date!)
         .toList());
   }
 
-  Future<void> _processDateChangeEvent(event,
-      Emitter<RegionModelState> emit) async {
+  Future<void> _processDateChangeEvent(
+      event, Emitter<RegionModelState> emit) async {
     if (_forecastDates.contains(event.forecastDate) &&
         event.forecastDate != _selectedForecastDate) {
       _selectedForecastDate = event.forecastDate;
       _emitRaspModelsAndDates(emit);
-      // update times and images for new date
-      _setForecastTimesForDate();
-      _emitRaspModelsAndDates(emit);
     }
   }
 
-  void _updateForecastTimesList() {
-    var modelDateDetail = _selectedModelDates!
+  // Dependent on having selectedModel assigned
+  void _setForecastTimesBasedOnSelectedModel() {
+    _forecastTimes = _selectedModel!.times;
+  }
+
+  // This assigns the first model based for the selected date, in other places the
+  // selectedModel is assigned based on some other criteria
+  void _getSelectedModelBasedOnForecastDate() {
+    ModelDateDetail? modelDateDetail = _selectedModelDates!
         .getModelDateDetailList()
-        .firstWhere((modelDateDetails) =>
-    modelDateDetails.date == _selectedForecastDate)
-        .model;
-    _forecastTimes = modelDateDetail!.times;
-    // Stay on same time if new forecastTimes has same time as previous
-    // Making reasonable assumption that times in same order across models/dates
-    _setSelectedTimeIndex();
-    // While we are here
-    _setLatLngAndCenter(modelDateDetail);
+        .firstWhereOrNull((modelDateDetails) =>
+            modelDateDetails.date == _selectedForecastDate);
+    _selectedModel = modelDateDetail != null ? modelDateDetail.model : null;
+    _selectedModelName = _selectedModel != null ? _selectedModel!.name : "";
   }
 
   void _setSelectedTimeIndex() {
-    if (_selectedForecastTimeIndex > _forecastTimes!.length - 1) {
+    if (_selectedForecastTimeIndex > _forecastTimes.length - 1) {
       _selectedForecastTimeIndex = 0;
-    }
-    if (_forecastTimes.length != 0) {
-      _selectedTime = _forecastTimes[_selectedForecastTimeIndex];
-    } else {
-      _selectedTime = "";
     }
   }
 
   // Go to either previous or next model/date for beginner mode
-  FutureOr<void> _processBeginnerDateSwitch(BeginnerDateSwitchEvent event,
-      Emitter<RegionModelState> emit) async {
+  FutureOr<void> _processBeginnerDateSwitch(
+      BeginnerDateSwitchEvent event, Emitter<RegionModelState> emit) async {
     int? dateIndex = _region?.dates?.indexOf(_selectedForecastDate!);
     if (dateIndex != null) {
       if (event.forecastDateSwitch == ForecastDateChange.previous) {
@@ -253,6 +233,8 @@ class RegionModelBloc extends Bloc<RegionModelEvent, RegionModelState> {
     _getBeginnerModeDateDetails();
     _selectedModelName = _beginnerModeModelDataDetail?.model?.name ?? "Unknown";
     if (_beginnerModeModelDataDetail != null) {
+      _emitCenterOfRegion(emit);
+      _emitRegionBounds(emit);
       _emitRaspModelsAndDates(emit);
     }
     // we need to keep values in sync for 'expert' mode if user switches to that mode
@@ -268,22 +250,13 @@ class RegionModelBloc extends Bloc<RegionModelEvent, RegionModelState> {
       modelDateDetails =
           _region?.doModelDateDetailsExist(model.name, _selectedForecastDate!);
       if (modelDateDetails != null) {
-        // okay the 'best' model for that date has been found
-        // get the times available for that model
-        _forecastTimes = modelDateDetails.model!.times;
-        _setSelectedTimeIndex();
-        // While we are here
-        _setLatLngAndCenter(modelDateDetails.model!);
+        _selectedModel = modelDateDetails.model!;
+        _selectedModelName = _selectedModel!.name;
+        _beginnerModeModelDataDetail = modelDateDetails;
         break;
       }
     }
-    _beginnerModeModelDataDetail = modelDateDetails;
-    _selectedModelName = modelDateDetails?.model?.name;
-    if (_modelNames.isEmpty) {
-      _setRegionModelNames();
-    }
   }
-
 
   // Implement if you want a horizontal scrollable list of 'beginner' models/dates
   // Untested - likely needing some debugging.
@@ -311,7 +284,7 @@ class RegionModelBloc extends Bloc<RegionModelEvent, RegionModelState> {
             .firstWhereOrNull((modeldate) => modeldate.modelName == model)
             ?.modelDateDetailList
             .firstWhereOrNull((modelDateDetail) =>
-        modelDateDetail.printDate == gfsModelDateDetail.printDate);
+                modelDateDetail.printDate == gfsModelDateDetail.printDate);
         if (modelDateDetail != null) {
           _beginnerModelDateDetailList.add(modelDateDetail);
           break;
@@ -320,11 +293,16 @@ class RegionModelBloc extends Bloc<RegionModelEvent, RegionModelState> {
     }
   }
 
-  void _setLatLngAndCenter(Model modelDateDetail) {
-    _regionLatLngBounds = modelDateDetail.latLngBounds;
-    _centerOfRegion =
-        LatLng(modelDateDetail.center[0], modelDateDetail.center[1]);
-    emit(RegionLatLngBoundsState(_regionLatLngBounds!));
+  // selectedModel must of course be assigned first
+  void _setLatLngAndCenter() {
+    if (_selectedModel == null) {
+      _centerOfRegion = LatLng(43.1394043, -72.0759888);
+      _regionLatLngBounds = NewEnglandMapLatLngBounds;
+    } else {
+      _regionLatLngBounds = _selectedModel!.latLngBounds;
+      _centerOfRegion =
+          LatLng(_selectedModel!.center[0], _selectedModel!.center[1]);
+    }
   }
 
   void _emitRaspModelsAndDates(Emitter<RegionModelState> emit) {
@@ -342,74 +320,133 @@ class RegionModelBloc extends Bloc<RegionModelEvent, RegionModelState> {
         localTimeIndex: _selectedForecastTimeIndex));
   }
 
-
   void _emitCenterOfRegion(Emitter<RegionModelState> emit) {
     emit(CenterOfMapState(_centerOfRegion!));
   }
 
-
-  FutureOr<void> _processRegionChangedEvent(RegionChangedEvent event,
-      Emitter<RegionModelState> emit) async {
-    repository.setCurrentTaskId(-1);
-    await _refreshForecast(event, emit);
+  FutureOr<void> _processRegionChangedEvent(
+      RegionChangedEvent event, Emitter<RegionModelState> emit) async {
+    await _processInitialRegionModelEvent(event, emit);
   }
 
-  FutureOr<void> _processModelChangeEvent(ModelChangeEvent event,
-      Emitter<RegionModelState> emit) async {
+  FutureOr<void> _processModelChangeEvent(
+      ModelChangeEvent event, Emitter<RegionModelState> emit) async {
     if (_modelNames.contains(event.modelName) &&
         event.modelName != _selectedModelName) {
       _selectedModelName = event.modelName;
       // print('Selected model: $_selectedModelname');
       // emits same list of models with new selected model
       _getDatesForSelectedModel();
+      _selectedModel = _selectedModelDates?.modelDateDetailList
+          .firstWhereOrNull((modelDateDetail) =>
+              modelDateDetail.model?.name == event.modelName)
+          ?.model;
+      _setForecastTimesBasedOnSelectedModel();
+      _setLatLngAndCenter();
       _emitRaspModelsAndDates(emit);
     }
   }
 
-  FutureOr<void> _processBeginnerModeEvent(BeginnerModeEvent event,
-      Emitter<RegionModelState> emit) async {
+  FutureOr<void> _processBeginnerModeEvent(
+      BeginnerModeEvent event, Emitter<RegionModelState> emit) async {
     _beginnerMode = event.beginnerMode;
     await repository.setBeginnerForecastMode(_beginnerMode);
     if (_beginnerMode) {
       //  switched from expert to beginner
       // keep same date but might need to change the model
       _getBeginnerModeDateDetails();
+      _emitCenterOfRegion(emit);
+      _emitRegionBounds(emit);
     } else {
       //  switched from beginner to expert
       // stay on same model and date so just send info to update ui
       // Still need to update available dates/times for the model that you are on
       _getDatesForSelectedModel();
-
     }
     _emitRaspModelsAndDates(emit);
   }
 
-
-  Future<void> _refreshForecast(RegionChangedEvent event,
-      Emitter<RegionModelState> emit) async {
+  Future<void> _refreshForecast(
+      RegionChangedEvent event, Emitter<RegionModelState> emit) async {
     await _processInitialRegionModelEvent(event, emit);
-  }
-
-  void _emitSoundings(Emitter<RegionModelState> emit) async {
-    final preferenceOptions = await repository.getRaspDisplayOptions();
-    for (var option in preferenceOptions) {
-      switch (option.key) {
-        case (soundingsDisplayOption):
-          if (option.selected) {
-            emit(RegionSoundingsState(_region?.soundings ?? <Soundings>[]));
-          } else {
-            emit(RegionSoundingsState(<Soundings>[]));
-          }
-          print('emitted RaspSoundingsState');
-          break;
-      }
-    }
   }
 
   // This is called when the bloc is added for Local Forcast. Local Forecast was passed the same bloc as
   // used on RASP screen, so already have the region/model/...
   // So just need to send existing data to populate whatever the region/model widgets there are
-  FutureOr<void> _processLocalForecastStartupEvent(LocalForecastStartupEvent event, Emitter<RegionModelState> emit) {
+  FutureOr<void> _processLocalForecastStartupEvent(
+      LocalForecastStartupEvent event, Emitter<RegionModelState> emit) {
     _emitRaspModelsAndDates(emit);
+  }
+
+  //Event set after coming back from Local Forecast. Resend model/date/etc to make sure to sync RASP display.
+  FutureOr<void> _processLocalForecastUpdateEvent(
+      LocalForecastUpdateEvent event, Emitter<RegionModelState> emit) {
+    _emitRaspModelsAndDates(emit);
+  }
+
+  // When you get a list of display options
+  FutureOr<void> _processRegionDisplayOptionsEvent(
+      RegionDisplayOptionsEvent event,
+      Emitter<RegionModelState> emit) async {
+    await Future.forEach(event.displayOptions, (preferenceOption)  async {
+      switch (preferenceOption.key) {
+        case (soundingsDisplayOption):
+          {
+            _emitSoundings(preferenceOption.selected, emit);
+            break;
+          }
+        case (suaDisplayOption):
+          {
+            await _emitSuaDetails(preferenceOption.selected, emit);
+            break;
+          }
+      }
+    });
+  }
+
+  Future<void> _emitSuaDetails(
+      bool display, Emitter<RegionModelState> emit) async {
+    _displaySua = display;
+    if (_displaySua) {
+      String? sua = await repository.getGeoJsonSUAForRegion(_regionName);
+      if (sua != null) {
+        // print("repository returned sua so emitting");
+        emit(SuaDetailsState(sua));
+      } else {
+        emit(SuaDetailsState("{}"));
+      }
+    } else {
+      emit(SuaDetailsState("{}"));
+    }
+  }
+
+  void _emitSoundings(bool display, Emitter<RegionModelState> emit) {
+    _displaySoundings = display;
+    if (_displaySoundings) {
+      if (_region!.soundings != null) {
+        emit(RegionSoundingsState(
+            _region!.soundings != null ? _region!.soundings! : <Soundings>[]));
+      }
+    } else {
+      emit(RegionSoundingsState((<Soundings>[])));
+    }
+  }
+
+  // When you get an update to a display option
+  FutureOr<void> _processRegionDisplayOptionEvent(
+      RegionDisplayOptionEvent event, Emitter<RegionModelState> emit) async {
+    switch (event.displayOption.key) {
+      case (soundingsDisplayOption):
+        {
+          _emitSoundings(event.displayOption.selected, emit);
+          break;
+        }
+      case (suaDisplayOption):
+        {
+          await _emitSuaDetails(event.displayOption.selected, emit);
+          break;
+        }
+    }
   }
 }

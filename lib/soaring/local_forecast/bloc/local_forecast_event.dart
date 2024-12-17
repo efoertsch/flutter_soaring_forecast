@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
-import 'local_forecast_graph.dart';
+import '../../region_model/data/rasp_model_date_change.dart';
+import '../data/local_forecast_graph.dart';
 
 @immutable
 abstract class LocalForecastEvent {}
@@ -14,7 +15,7 @@ class LocalForecastGraphEvent extends LocalForecastEvent {
 }
 
 class LocalModelDateChangeEvent extends LocalForecastEvent{
-  final LocalModelDateChange localModelDateChange;
+  final RaspModelDateChange localModelDateChange;
 
   LocalModelDateChangeEvent(this.localModelDateChange);
 }
