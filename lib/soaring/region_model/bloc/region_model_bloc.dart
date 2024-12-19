@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:collection/collection.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_soaring_forecast/soaring/region_model/data/region_model_data.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../app/constants.dart';
@@ -51,6 +52,8 @@ class RegionModelBloc extends Bloc<RegionModelEvent, RegionModelState> {
     on<LocalForecastUpdateEvent>(_processLocalForecastUpdateEvent);
     on<RegionDisplayOptionEvent>(_processRegionDisplayOptionEvent);
     on<RegionDisplayOptionsEvent>(_processRegionDisplayOptionsEvent);
+    on<EstimatedTaskStartupEvent>(_processEstimatedTaskStartupEvent);
+    on<ForecastHourSyncEvent>(_processForecastHourSyncEvent);
   }
 
   // I am sure this logic to find the appropriate model/dates/times/center/bounds etc.
@@ -80,7 +83,6 @@ class RegionModelBloc extends Bloc<RegionModelEvent, RegionModelState> {
             return;
           }
         } else {
-
           _getSelectedModelBasedOnForecastDate();
           _setForecastTimesBasedOnSelectedModel();
         }
@@ -387,9 +389,8 @@ class RegionModelBloc extends Bloc<RegionModelEvent, RegionModelState> {
 
   // When you get a list of display options
   FutureOr<void> _processRegionDisplayOptionsEvent(
-      RegionDisplayOptionsEvent event,
-      Emitter<RegionModelState> emit) async {
-    await Future.forEach(event.displayOptions, (preferenceOption)  async {
+      RegionDisplayOptionsEvent event, Emitter<RegionModelState> emit) async {
+    await Future.forEach(event.displayOptions, (preferenceOption) async {
       switch (preferenceOption.key) {
         case (soundingsDisplayOption):
           {
@@ -448,5 +449,23 @@ class RegionModelBloc extends Bloc<RegionModelEvent, RegionModelState> {
           break;
         }
     }
+  }
+
+  // Send Rasp parms needed for estimated task
+  FutureOr<void> _processEstimatedTaskStartupEvent(
+      EstimatedTaskStartupEvent event, Emitter<RegionModelState> emit) {
+    EstimatedTaskRegionModel estimatedTaskRegionModel =
+        EstimatedTaskRegionModel(
+            regionName: _regionName,
+            selectedModelName: _selectedModelName ?? "",
+            selectedDate: _selectedForecastDate ?? "",
+            selectedHour: _forecastTimes[_selectedForecastTimeIndex],
+        );
+    emit(EstimatedTaskRegionModelState(estimatedTaskRegionModel));
+  }
+
+  FutureOr<void> _processForecastHourSyncEvent(
+      ForecastHourSyncEvent event, Emitter<RegionModelState> emit) {
+    _selectedForecastTimeIndex = event.selectedTimeIndex;
   }
 }

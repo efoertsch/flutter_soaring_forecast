@@ -57,6 +57,12 @@ class DisplaySoundingsEvent extends RegionModelEvent {
   DisplaySoundingsEvent(this.sounding);
 }
 
+class ForecastHourSyncEvent extends RegionModelEvent{
+  final int selectedTimeIndex;
+
+  ForecastHourSyncEvent(this.selectedTimeIndex);
+}
+
 class EstimatedTaskStartupEvent extends RegionModelEvent {}
 
 

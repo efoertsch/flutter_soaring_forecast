@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:after_layout/after_layout.dart';
+import 'package:cupertino_will_pop_scope/cupertino_will_pop_scope.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
@@ -27,7 +28,7 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
   String? _selectedGlider = null;
   List<String> gliders = [];
   late Glider _defaultGlider;
-  late Glider _customGlider;
+  late Glider? _customGlider = null;
   late DisplayUnits _displayUnits;
   String _velocityUnits = "";
   String _sinkRateUnits = "";
@@ -39,7 +40,6 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
   static const String _DISPLAY_XCSOAR_VALUES = "Display XCSoar Values";
   static const String _HIDE_XCSOAR_VALUES = "Hide XCSoar Values";
   static const String _RESET_TO_DEFAULT = "Reset To Default";
-  static const String _DISPLAY_EXPERIMENTAL_TEXT = "Experimental Disclaimer";
   static const String _REGEX_TO_999 = "^([0-9]{0,3})\$";
   static const String _REGEX_TO_999_9 = "^([0-9]{0,3})((\.[0-9])?)\$";
   static const String _REGEX_TO_999_99 = "^([0-9]{0,3})((\.[0-9]{1,2})?)\$";
@@ -60,21 +60,8 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
   static const String _BANK_ANGLE_10_TO_60 = "Bank Angle - 10 to 60 degrees";
   static const String _ENTER_BANK_ANGLE = "Favorite Thermaling Bank Angle";
   static const String _POLAR_HELP = "HELP";
-  static const String _EXPERIMENTAL_ESTIMATED_FLIGHT_TEXT =
-      "This is a feature based on Dr. Jack logic that calculates a task's estimated flight time"
-      " and flight information based on the forecast and a glider's min sink rate and polar."
-      "\n\nThe values displayed on the underlying screen are based or calculated from XCSOAR glider data."
-      "\n\nHighlighted values under the 'Your Glider' column can be updated. Tap on the particular cell to update."
-      "\n\nConsult your glider POH or other sources to enter min sink rate and speed based on the weight of your glider and you."
-      " Also enter your favorite thermaling bank angle."
-      "\n\nThe specific forecast values used in the estimated flight time calculations are:"
-      "\n1. Thermal Updraft Velocity (W*)"
-      "\n2. Wind speed (Boundary Layer average)"
-      "\n3. Wind direction (Boundary Layer average)"
-      "\n\nNote that thermal height is not used so you may be gliding at treetop height!"
-      "\n\nTask time, headwind, and related estimates are based on a straight line"
-      " course between turnpoints. (Yeah - how often does that happen.) "
-      "\n\nFeedback is most welcome. ";
+  static const String _SAVE = "SAVE";
+
   static const String _GLIDER_POLAR_DATA =
       "The glider mass, sink rate, and polar values (Vx/Wx) on this screen are "
       "used to determine your gliders estimated climb rate in a thermal and wind adjusted speed to fly. \n"
@@ -110,7 +97,6 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
   static const String POLAR_VALUES = "Polar Values";
   static const String NOT_APPLICABLE = 'N/A';
 
-  bool _showExperimentalDialog = false;
   bool _displayXCSoarValues = false;
 
   @override
@@ -123,70 +109,77 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
   @override
   Widget build(BuildContext context) {
     if (Platform.isAndroid) {
-      return _buildScaffold(context);
+      return ConditionalWillPopScope(
+        onWillPop: _onWillPop,
+        shouldAddCallback: true,
+        child: _buildSafeArea(context),
+      );
     } else {
       //iOS
       return GestureDetector(
-        behavior: HitTestBehavior.deferToChild,
         onHorizontalDragUpdate: (details) {
           if (details.delta.direction >= 0) {
-            Navigator.of(context).pop();
+            _onWillPop();
           }
         },
-        child: _buildScaffold(context),
+        child: _buildSafeArea(context),
       );
     }
   }
 
-  SafeArea _buildScaffold(BuildContext context) {
+  SafeArea _buildSafeArea(BuildContext context) {
     return SafeArea(
       child: Scaffold(
         appBar: _getAppBar(context),
         body: _getBody(),
         bottomNavigationBar: SafeArea(
-          child: BottomAppBar(
-            child: Row(
-              mainAxisSize: MainAxisSize.max,
-              children: [
-                Flexible(
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        minimumSize: Size(double.infinity, 40),
-                        // double.infinity is the width and 30 is the height
-                        foregroundColor: Colors.white,
-                        backgroundColor: Theme.of(context).colorScheme.primary,
-                      ),
-                      child: Text(StandardLiterals.OK),
-                      onPressed: () {
-                        _getGliderCubit().calcEstimatedTaskTime();
-                        //Navigator.pop(context, polar);
-                      },
-                    ),
-                  ),
+          child: _getBottomAppBar(context),
+        ),
+      ),
+    );
+  }
+
+  BottomAppBar _getBottomAppBar(BuildContext context) {
+    return BottomAppBar(
+      child: Row(
+        mainAxisSize: MainAxisSize.max,
+        children: [
+          Flexible(
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  minimumSize: Size(double.infinity, 40),
+                  // double.infinity is the width and 30 is the height
+                  foregroundColor: Colors.white,
+                  backgroundColor: Theme.of(context).colorScheme.primary,
                 ),
-                Flexible(
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        minimumSize: Size(double.infinity, 40),
-                        // double.infinity is the width and 30 is the height
-                        foregroundColor: Colors.white,
-                        backgroundColor: Theme.of(context).colorScheme.primary,
-                      ),
-                      child: Text(StandardLiterals.CANCEL),
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                    ),
-                  ),
-                ),
-              ],
+                child: Text(StandardLiterals.OK),
+                onPressed: () {
+                  Navigator.pop(context,
+                      _customGlider != null ? _customGlider!.glider : "");
+                },
+              ),
             ),
           ),
-        ),
+          Flexible(
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  minimumSize: Size(double.infinity, 40),
+                  // double.infinity is the width and 30 is the height
+                  foregroundColor: Colors.white,
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                ),
+                child: Text(StandardLiterals.CANCEL),
+                onPressed: () {
+                  Navigator.pop(context, "");
+                },
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -223,7 +216,6 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
                   ? _HIDE_XCSOAR_VALUES
                   : _DISPLAY_XCSOAR_VALUES,
               _RESET_TO_DEFAULT,
-              _DISPLAY_EXPERIMENTAL_TEXT,
             }.map((String choice) {
               if (choice == _DISPLAY_UNITS) {
                 return PopupMenuItem<String>(
@@ -280,9 +272,6 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
       case _RESET_TO_DEFAULT:
         resetGliderToDefaultValues();
         break;
-      case _DISPLAY_EXPERIMENTAL_TEXT:
-        resetDisplayExperimentalText();
-        break;
     }
   }
 
@@ -303,7 +292,7 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
             _getGliderList(),
             _displayGliderDetail(),
             _getErrorMessagesWidget(),
-            _getMiscStatesHandlerWidget(),
+            _getGliderStatesHandler(),
           ],
         ),
       ),
@@ -312,7 +301,8 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
   }
 
   Widget _getGliderList() {
-    return BlocConsumer<GliderCubit, GliderCubitState>(listener: (context, state) {
+    return BlocConsumer<GliderCubit, GliderCubitState>(
+        listener: (context, state) {
       if (state is GliderListState) {
         _selectedGlider = state.selectedGliderName.isNotEmpty
             ? state.selectedGliderName
@@ -391,7 +381,8 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
   }
 
   Widget _displayGliderDetail() {
-    return BlocConsumer<GliderCubit, GliderCubitState>(listener: (context, state) {
+    return BlocConsumer<GliderCubit, GliderCubitState>(
+        listener: (context, state) {
       if (state is GliderPolarState) {
         _defaultGlider = state.defaultPolar;
         _customGlider = state.customPolar;
@@ -422,7 +413,7 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
               infoTitle: GLIDER_MASS,
               tableInfo: _GLIDER_MASS_INFO),
           _getGliderWeightDisplay(
-              customGlider: _customGlider,
+              customGlider: _customGlider!,
               defaultGlider: _defaultGlider,
               displayXCSoarValues: _displayXCSoarValues,
               massUnits: _massUnits),
@@ -431,7 +422,7 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
               infoTitle: SINK_RATE,
               tableInfo: _SINK_RATE_INFO),
           _getThermalingValues(
-              customGlider: _customGlider,
+              customGlider: _customGlider!,
               defaultGlider: _defaultGlider,
               displayUnits: _displayUnits,
               velocityUnits: _velocityUnits,
@@ -443,7 +434,7 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
               infoTitle: GLIDER_POLAR,
               tableInfo: _GLIDER_POLAR_INFO),
           _getPolarTable(
-              customGlider: _customGlider,
+              customGlider: _customGlider!,
               defaultGlider: _defaultGlider,
               displayUnits: _displayUnits,
               sinkRateUnits: _sinkRateUnits,
@@ -1176,14 +1167,11 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
     );
   }
 
-  Widget _getMiscStatesHandlerWidget() {
+  Widget _getGliderStatesHandler() {
     return BlocListener<GliderCubit, GliderCubitState>(
       listener: (context, state) {
         if (state is CalcEstimatedFlightState) {
           Navigator.pop(context, state.glider);
-        }
-        if (state is DisplayEstimatedFlightText) {
-          _displayEstimatedFlightText();
         }
       },
       child: SizedBox.shrink(),
@@ -1207,7 +1195,8 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
   }
 
   Widget _getIsWorkingIndicator() {
-    return BlocConsumer<GliderCubit, GliderCubitState>(listener: (context, state) {
+    return BlocConsumer<GliderCubit, GliderCubitState>(
+        listener: (context, state) {
       if (state is GliderCubitWorkingState) ;
     }, buildWhen: (previous, current) {
       return current is GliderCubitWorkingState;
@@ -1295,8 +1284,13 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
     );
   }
 
+  Future<bool> _onWillPop() async {
+    Navigator.pop(context);
+    return true;
+  }
+
   void _showXCSoarValues(bool displayXCSoarValues) {
-    _getGliderCubit().displayXCSoarValues(displayXCSoarValues);
+    _getGliderCubit().saveDisplayXCSoarValues(displayXCSoarValues);
     setState(() {
       _displayXCSoarValues = displayXCSoarValues;
     });
@@ -1308,9 +1302,6 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
     });
   }
 
-  void resetDisplayExperimentalText() async {
-    _getGliderCubit().resetExperimentalTextDisplay();
-  }
 
   // Value must be proper numeric
   // Dart throws error if you try to convert an integer text string to double
@@ -1334,45 +1325,5 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen>
     } catch (e) {
       return 0;
     }
-  }
-
-  void _displayEstimatedFlightText() async {
-    _showExperimentalDialog = true;
-    CommonWidgets.showTextAndCheckboxDialogBuilder(
-      context: context,
-      title: "TASK FLIGHT ESTIMATES\n(EXPERIMENTAL)",
-      child: _getExperimentalFlightTextWidget(),
-      button1Text: StandardLiterals.OK,
-      button1Function: (() => Navigator.pop(context)),
-    );
-  }
-
-  Widget _getExperimentalFlightTextWidget() {
-    return SingleChildScrollView(
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 4.0, bottom: 8.0),
-            child: Text(_EXPERIMENTAL_ESTIMATED_FLIGHT_TEXT),
-          ),
-          StatefulBuilder(
-              builder: (BuildContext context, StateSetter setState) {
-            return CheckboxListTile(
-              title: Text("Do not show this again"),
-              controlAffinity: ListTileControlAffinity.leading,
-              value: !_showExperimentalDialog,
-              onChanged: (newValue) async {
-                _showExperimentalDialog = newValue != null ? !newValue : true;
-                await _getGliderCubit()
-                    .displayExperimentalText(_showExperimentalDialog);
-                setState(() {
-                  // if checked then DO NOT display experimental text, hence save as false
-                });
-              },
-            );
-          })
-        ],
-      ),
-    );
   }
 }

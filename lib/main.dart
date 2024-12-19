@@ -17,7 +17,9 @@ import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
 import 'package:flutter_soaring_forecast/soaring/app/custom_material_page_route.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_data_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast_hour/forecast_hour_cubit.dart';
+import 'package:flutter_soaring_forecast/soaring/region_model/data/region_model_data.dart';
 import 'package:flutter_soaring_forecast/soaring/task_estimate/cubit/glider_cubit.dart';
+import 'package:flutter_soaring_forecast/soaring/task_estimate/cubit/task_estimate_cubit.dart';
 import 'package:flutter_soaring_forecast/soaring/task_estimate/ui/glider_polar_list.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/ui/rasp_screen.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast_types/bloc/forecast_bloc.dart';
@@ -54,6 +56,7 @@ import 'firebase_options.dart';
 import 'soaring/local_forecast/bloc/local_forecast_event.dart';
 import 'soaring/local_forecast/data/local_forecast_graph.dart';
 import 'soaring/local_forecast/ui/local_forecast_graph_display.dart';
+import 'soaring/task_estimate/ui/task_estimate_display.dart';
 
 // https://github.com/fluttercommunity/flutter_workmanager#customisation-android-only
 @pragma(
@@ -357,17 +360,18 @@ class SoaringForecastApp extends StatelessWidget {
     }
 
     if (settings.name == EstimatedTaskRouteBuilder.routeName) {
+      EstimatedTaskRegionModel estimatedTaskRegionModel =
+          settings.arguments as EstimatedTaskRegionModel;
       return CustomMaterialPageRoute(
         builder: (context) {
           return EstimatedTaskRouteBuilder(
             regionModelBloc: regionModelBloc,
+            estimatedTaskRegionModel: estimatedTaskRegionModel,
           );
         },
         settings: settings,
       );
-
     }
-
 
     if (settings.name == SettingsRouteBuilder.routeName) {
       return CustomMaterialPageRoute(
@@ -448,22 +452,37 @@ class LocalForecastGraphRouteBuilder extends StatelessWidget {
 
 class EstimatedTaskRouteBuilder extends StatelessWidget {
   static const routeName = '/EstimatedTask';
+  final EstimatedTaskRegionModel estimatedTaskRegionModel;
   final RegionModelBloc regionModelBloc;
 
   EstimatedTaskRouteBuilder(
-      {required this.regionModelBloc,});
+      {required this.regionModelBloc, required this.estimatedTaskRegionModel});
 
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        BlocProvider<GliderCubit>(
-            create: (BuildContext context) => GliderCubit(
-                repository: RepositoryProvider.of<Repository>(context))),
+        BlocProvider<TaskEstimateCubit>(
+            create: (BuildContext context) => TaskEstimateCubit(
+                repository: RepositoryProvider.of<Repository>(context))
+              ..doCalc(estimatedTaskRegionModel)),
         BlocProvider.value(
             value: regionModelBloc..add(EstimatedTaskStartupEvent())),
       ],
-      child: LocalForecastGraphDisplay(),
+      child: TaskEstimateDisplay(),
+    );
+  }
+}
+
+
+class GliderPolarListBuilder extends StatelessWidget {
+  static const routeName = '/GliderPolarList';
+
+  Widget build(BuildContext context) {
+    return BlocProvider<GliderCubit>(
+      create: (BuildContext context) =>
+          GliderCubit(repository: RepositoryProvider.of<Repository>(context)),
+      child: GliderPolarListScreen(),
     );
   }
 }
@@ -756,14 +775,4 @@ class SettingsRouteBuilder extends StatelessWidget {
   }
 }
 
-class GliderPolarListBuilder extends StatelessWidget {
-  static const routeName = '/GliderPolarList';
 
-  Widget build(BuildContext context) {
-    return BlocProvider<GliderCubit>(
-      create: (BuildContext context) =>
-          GliderCubit(repository: RepositoryProvider.of<Repository>(context)),
-      child: GliderPolarListScreen(),
-    );
-  }
-}

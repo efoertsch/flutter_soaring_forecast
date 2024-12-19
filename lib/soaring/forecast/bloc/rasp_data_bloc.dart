@@ -57,7 +57,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     on<RedisplayMarkersEvent>(_redisplayMarkers);
     on<RaspDisplayOptionEvent>(_processRaspDisplayOptionEvent);
     on<ViewBoundsEvent>(_processViewBounds);
-    on<DisplaySoundingsEvent>(_processSoundingsEvent);
+    on<DisplayRaspSoundingsEvent>(_processSoundingsEvent);
     on<SetForecastOverlayOpacityEvent>(_setForecastOverlayOpacity);
     on<LoadForecastTypesEvents>(_reloadForecastTypes);
     on<RefreshTaskEvent>(_refreshTask);
@@ -159,7 +159,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     emit(RaspForecastImageSet(_forecastImageSets[_selectedForecastTimeIndex],
         _selectedForecastTimeIndex, _forecastImageSets.length));
     emit(RaspTimeState(
-        _forecastImageSets[_selectedForecastTimeIndex].localTime));
+        _forecastImageSets[_selectedForecastTimeIndex].localTime, _selectedForecastTimeIndex));
   }
 
   /// wstar_bsratio, wstar, ...
@@ -295,22 +295,27 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     //emit(ViewBoundsState(_viewMapBoundsAndZoom!));
   }
 
+  // If just starting up, see if task was previously saved
   Future<void> _emitCurrentTask(Emitter<RaspDataState> emit) async {
     _taskId = await repository.getCurrentTaskId();
     await _emitTaskTurnpoints(emit, _taskId);
+    await _emitEstimatedFlightButtonVisibility(emit);
+  }
+
+  Future<void> _emitEstimatedFlightButtonVisibility(Emitter<RaspDataState> emit) async {
     bool showEstimatedFlightButton =
         await repository.getDisplayEstimatedFlightButton();
     emit(ShowEstimatedFlightButton(showEstimatedFlightButton));
   }
 
+  //new task selected
   void _getTurnpointsForTaskId(
       GetTaskTurnpointsEvent event, Emitter<RaspDataState> emit) async {
     _taskId = event.taskId;
     repository.setCurrentTaskId(_taskId);
     await _emitTaskTurnpoints(emit, _taskId);
+    await _emitEstimatedFlightButtonVisibility(emit);
   }
-
-
 
   FutureOr<void> _emitTaskTurnpoints(
       Emitter<RaspDataState> emit, int taskId) async {
@@ -433,7 +438,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
   }
 
   FutureOr<void> _processSoundingsEvent(
-      DisplaySoundingsEvent event, Emitter<RaspDataState> emit) {
+      DisplayRaspSoundingsEvent event, Emitter<RaspDataState> emit) {
     _displayType = _DisplayType.sounding;
     _soundingPosition = event.sounding.position!;
     _getSoundingImages(_soundingPosition);
@@ -446,7 +451,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
         _selectedForecastTimeIndex,
         _soundingsImageSets.length));
     emit(RaspTimeState(
-        _soundingsImageSets[_selectedForecastTimeIndex].localTime));
+        _soundingsImageSets[_selectedForecastTimeIndex].localTime,_selectedForecastTimeIndex));
   }
 
   FutureOr<void> _processDisplayCurrentForecast(

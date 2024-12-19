@@ -8,21 +8,20 @@ import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     show GraphLiterals, StandardLiterals;
 import 'package:flutter_soaring_forecast/soaring/app/custom_styles.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast/ui/grid_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/local_forecast/bloc/local_forecast_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/local_forecast/shapes/custom_shapes.dart';
 import 'package:flutter_soaring_forecast/soaring/local_forecast/ui/local_forecast_progress_indicator.dart';
+import 'package:flutter_soaring_forecast/soaring/region_model/data/region_model_data.dart';
 import 'package:flutter_soaring_forecast/soaring/region_model/ui/model_date_display.dart';
-import 'package:flutter_soaring_forecast/soaring/forecast/ui/grid_widgets.dart';
 import 'package:graphic/graphic.dart';
 
-import '../../region_model/data/rasp_model_date_change.dart';
-import '../../forecast/ui/common/rasp_progress_indicator.dart';
 import '../../region_model/bloc/region_model_bloc.dart';
 import '../../region_model/bloc/region_model_event.dart';
 import '../../region_model/bloc/region_model_state.dart';
 import '../bloc/local_forecast_event.dart';
-import '../data/local_forecast_graph.dart';
 import '../bloc/local_forecast_state.dart';
+import '../data/local_forecast_graph.dart';
 
 class LocalForecastGraphDisplay extends StatefulWidget {
   LocalForecastGraphDisplay({Key? key}) : super(key: key);

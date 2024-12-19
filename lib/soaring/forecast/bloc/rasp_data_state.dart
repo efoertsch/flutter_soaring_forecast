@@ -31,8 +31,9 @@ class RaspForecasts extends RaspDataState {
 
 class RaspTimeState extends RaspDataState {
   final String forecastTime;
+  final int forecastTimeIndex;
 
-  RaspTimeState(this.forecastTime);
+  RaspTimeState(this.forecastTime, this.forecastTimeIndex);
 }
 
 

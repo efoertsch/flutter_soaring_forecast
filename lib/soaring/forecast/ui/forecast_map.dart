@@ -19,8 +19,8 @@ import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/LatLngForecast.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image_set.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/ui/sua_layer.dart';
+import 'package:flutter_soaring_forecast/soaring/region_model/bloc/region_model_event.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/estimated_flight_avg_summary.dart';
-import 'package:flutter_soaring_forecast/soaring/repository/rasp/gliders.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/regions.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoint_utils.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_overhead_view.dart';
@@ -137,7 +137,7 @@ class ForecastMapState extends State<ForecastMap>
 
   Stack _getMapAndLegendWidget() {
     return Stack(children: [
-      _miscStatesHandlerWidget(),
+
       Container(
         alignment: Alignment.center,
         child: _forecastMap(),
@@ -148,7 +148,8 @@ class ForecastMapState extends State<ForecastMap>
       ),
       _getOpacitySlider(),
       _getOptimalFlightIcon(),
-      _regionModelListener()
+      _regionModelListener(),
+      _raspHandlerWidget(),
     ]);
   }
 
@@ -186,6 +187,7 @@ class ForecastMapState extends State<ForecastMap>
       }
       if (state is RaspTaskTurnpoints) {
         _updateTaskTurnpoints(state.taskTurnpoints);
+        _routeIconIsVisible = state.taskTurnpoints.length > 0;
         return;
       }
       // if (state is OptimizedTaskRouteState && state.optimizedTaskRoute != null) {
@@ -358,14 +360,9 @@ class ForecastMapState extends State<ForecastMap>
         });
   }
 
-  Widget _miscStatesHandlerWidget() {
+  Widget _raspHandlerWidget() {
     return BlocListener<RaspDataBloc, RaspDataState>(
       listener: (context, state) {
-        if (state is RaspTaskTurnpoints) {
-          _routeIconIsVisible = state.taskTurnpoints.length > 0;
-          _routeSummaryIsVisible = false;
-        }
-
         if (state is ShowEstimatedFlightButton) {
           _showEstimatedFlightButton = state.showEstimatedFlightButton;
         }
@@ -633,7 +630,7 @@ class ForecastMapState extends State<ForecastMap>
   }
 
   void _displaySoundingsView(Soundings sounding) {
-    _sendEvent(DisplaySoundingsEvent(sounding));
+    _sendEvent(DisplayRaspSoundingsEvent(sounding));
     setState(() {
       _soundingsAreVisible = true;
     });
@@ -731,8 +728,12 @@ class ForecastMapState extends State<ForecastMap>
         forTask: forTask));
   }
 
-  void _sendEvent(RaspDataEvent event) {
-    BlocProvider.of<RaspDataBloc>(context).add(event);
+  void _sendEvent(dynamic event) {
+    if (event is RegionModelEvent) {
+      BlocProvider.of<RegionModelBloc>(context).add(event);
+    } else if (event is RaspDataEvent) {
+      BlocProvider.of<RaspDataBloc>(context).add(event);
+    }
   }
 
   void updateMapLatLngCorner(LatLng latLng) {
@@ -953,8 +954,7 @@ class ForecastMapState extends State<ForecastMap>
               ),
               onPressed: () async {
                 widget.runAnimation(false);
-                await Navigator.pushNamed(
-                    context, EstimatedTaskRouteBuilder.routeName);
+                _sendEvent(EstimatedTaskStartupEvent());
               },
               child: Stack(
                 alignment: Alignment.center,
@@ -978,9 +978,9 @@ class ForecastMapState extends State<ForecastMap>
 
 
 
-  _regionModelListener() {
+  _regionModelListener()  {
     return BlocListener<RegionModelBloc, RegionModelState>(
-        listener: (context, state) {
+        listener: (context, state) async {
           if (state is CenterOfMapState) {
             setState(() {
               _mapCenter = state.latLng;
@@ -1001,6 +1001,10 @@ class ForecastMapState extends State<ForecastMap>
                   cameraFit: CameraFit.bounds(bounds: _forecastLatLngBounds));
             }
             return;
+          }
+          if (state is EstimatedTaskRegionModelState ) {
+            await Navigator.pushNamed(
+                context, EstimatedTaskRouteBuilder.routeName, arguments:state.estimatedTaskRegionModel);
           }
         },
         child: SizedBox.shrink());

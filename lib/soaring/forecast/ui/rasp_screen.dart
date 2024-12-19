@@ -142,20 +142,7 @@ class _RaspScreenState extends State<RaspScreen>
     );
   }
 
-  Widget _forecastHourHandler() {
-    return BlocListener<ForecastHourCubit, ForecastHourState>(
-      listener: (context, state) {
-        if (state is RunHourAnimationState) {
-          runAnimation(state.runAnimation);
-          return;
-        }
-        if (state is IncrDecrHourIndexState) {
-          _sendEvent(IncrDecrRaspForecastHourEvent(state.incrDecrIndex));
-        }
-      },
-      child: SizedBox.shrink(),
-    );
-  }
+
 
   Widget _raspStatesHandler() {
     return BlocListener<RaspDataBloc, RaspDataState>(
@@ -165,6 +152,7 @@ class _RaspScreenState extends State<RaspScreen>
         }
         if (state is RaspTimeState) {
           getForecastHourCubit(context).setForecastHour(state.forecastTime);
+          _sendEvent(ForecastHourSyncEvent(state.forecastTimeIndex));
         }
         if (state is RaspTaskTurnpoints) {
           taskSelected = state.taskTurnpoints.isNotEmpty;
@@ -210,6 +198,21 @@ class _RaspScreenState extends State<RaspScreen>
           // have to wait till find out what region you are working with before
           // getting display options that depend on region
           _getRaspDisplayOptionsCubit()..getRaspPreferenceOptions();
+        }
+      },
+      child: SizedBox.shrink(),
+    );
+  }
+
+  Widget _forecastHourHandler() {
+    return BlocListener<ForecastHourCubit, ForecastHourState>(
+      listener: (context, state) {
+        if (state is RunHourAnimationState) {
+          runAnimation(state.runAnimation);
+          return;
+        }
+        if (state is IncrDecrHourIndexState) {
+          _sendEvent(IncrDecrRaspForecastHourEvent(state.incrDecrIndex));
         }
       },
       child: SizedBox.shrink(),

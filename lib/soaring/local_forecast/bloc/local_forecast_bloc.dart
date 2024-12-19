@@ -2,10 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_soaring_forecast/soaring/region_model/data/region_model_data.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 
-import '../../region_model/data/rasp_model_date_change.dart';
 import '../data/local_forecast_graph.dart';
 import 'local_forecast_event.dart';
 import '../data/local_forecast_favorite.dart';

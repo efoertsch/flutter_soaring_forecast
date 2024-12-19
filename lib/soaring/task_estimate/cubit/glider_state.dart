@@ -53,11 +53,7 @@ class GliderCubitErrorState extends GliderCubitState {
   GliderCubitErrorState(this.errorMsg);
 }
 
-class EstimatedFlightSummaryState extends GliderCubitState {
-  final EstimatedFlightSummary? estimatedFlightSummary;
 
-  EstimatedFlightSummaryState(this.estimatedFlightSummary);
-}
 
 class CalcEstimatedFlightState extends GliderCubitState {
   final Glider glider;

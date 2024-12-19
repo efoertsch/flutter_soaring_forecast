@@ -339,7 +339,7 @@ class Repository {
     String date,
     String model,
     String grid,
-    String times,
+    String time,
     String glider,
     double polarFactor,
     String polarCoefficients,
@@ -356,7 +356,7 @@ class Repository {
             date,
             model,
             grid,
-            times,
+            time,
             glider,
             polarFactor,
             polarCoefficients,
@@ -1393,6 +1393,15 @@ class Repository {
     }
     await saveGenericString(
         key: _MY_GLIDERS, value: Gliders.glidersToJsonString(_customGliders!));
+  }
+
+  Future<Glider?> getCustomGliderPolar(String gliderName) async {
+    await _loadCustomGliders();
+    if (_customGliders!.gliders != null) {
+      return   _customGliders!.gliders
+          ?.firstWhereOrNull((polar) => polar.glider == gliderName);
+    }
+    return null;
   }
 
   Future<({Glider? defaultGlider, Glider? customGlider})> getDefaultAndCustomGliderDetails(

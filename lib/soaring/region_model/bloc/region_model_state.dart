@@ -5,6 +5,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:flutter_map/flutter_map.dart';
 
 import '../../repository/rasp/regions.dart';
+import '../data/region_model_data.dart';
 
 @immutable
 abstract class RegionModelState extends Equatable {}
@@ -102,5 +103,15 @@ class SuaDetailsState extends RegionModelState {
   @override
   // TODO: implement props
   List<Object?> get props => [suaDetails];
+
 }
 
+class EstimatedTaskRegionModelState extends RegionModelState {
+  final EstimatedTaskRegionModel estimatedTaskRegionModel;
+
+  EstimatedTaskRegionModelState(this.estimatedTaskRegionModel);
+
+  @override
+  List<Object?> get props => [estimatedTaskRegionModel];
+
+}

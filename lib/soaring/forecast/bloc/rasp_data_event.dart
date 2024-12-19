@@ -122,10 +122,10 @@ class ViewBoundsEvent extends RaspDataEvent {
   ViewBoundsEvent(this.latLngBounds);
 }
 
-class DisplaySoundingsEvent extends RaspDataEvent {
+class DisplayRaspSoundingsEvent extends RaspDataEvent {
   final Soundings sounding;
 
-  DisplaySoundingsEvent(this.sounding);
+  DisplayRaspSoundingsEvent(this.sounding);
 }
 
 // Used when closing soundings display and go back to displaying forecast images
