@@ -50,6 +50,7 @@ class RegionModelBloc extends Bloc<RegionModelEvent, RegionModelState> {
     on<BeginnerModeEvent>(_processBeginnerModeEvent);
     on<LocalForecastStartupEvent>(_processLocalForecastStartupEvent);
     on<LocalForecastUpdateEvent>(_processLocalForecastUpdateEvent);
+    // this is call
     on<RegionDisplayOptionEvent>(_processRegionDisplayOptionEvent);
     on<RegionDisplayOptionsEvent>(_processRegionDisplayOptionsEvent);
     on<EstimatedTaskStartupEvent>(_processEstimatedTaskStartupEvent);
@@ -459,9 +460,11 @@ class RegionModelBloc extends Bloc<RegionModelEvent, RegionModelState> {
             regionName: _regionName,
             selectedModelName: _selectedModelName ?? "",
             selectedDate: _selectedForecastDate ?? "",
-            selectedHour: _forecastTimes[_selectedForecastTimeIndex],
+            forecastHours: _forecastTimes,
+           selectedHourIndex: _selectedForecastTimeIndex
         );
     emit(EstimatedTaskRegionModelState(estimatedTaskRegionModel));
+    _emitRaspModelsAndDates(emit);
   }
 
   FutureOr<void> _processForecastHourSyncEvent(

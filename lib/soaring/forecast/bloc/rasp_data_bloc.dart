@@ -108,7 +108,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
 
   void _processMapReadyEvent(
       MapReadyEvent event, Emitter<RaspDataState> emit) async {
-   // await _emitForecastMapInfo(emit);
+     await _emitForecastMapInfo(emit);
     await _sendInitialForecastOverlayOpacity(emit);
   }
 
@@ -133,7 +133,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
 
   Future<void> _listTypesOfForecasts(_, Emitter<RaspDataState> emit) async {
     await _emitTypesOfForecasts(emit);
-    await _emitForecastMapInfo(emit);
+
   }
 
   void _processSelectedForecastEvent(

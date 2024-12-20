@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../cubit/glider_cubit.dart';
-import '../cubit/glider_state.dart';
+import '../cubit/task_estimate_cubit.dart';
+import '../cubit/task_estimate_state.dart';
+
+
 
 
 class TaskEstimateProgressIndicator extends StatelessWidget {
@@ -10,13 +12,13 @@ class TaskEstimateProgressIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<GliderCubit, GliderCubitState>(
+    return BlocConsumer<TaskEstimateCubit, TaskEstimateState>(
       listener: (context, state) {},
       buildWhen: (previous, current) {
-        return current is GliderCubitWorkingState;
+        return current is TaskEstimateWorkingState;
       },
       builder: (context, state) {
-        if (state is GliderCubitWorkingState) {
+        if (state is TaskEstimateWorkingState) {
           if (state.working) {
             return Container(
               child: AbsorbPointer(

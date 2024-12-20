@@ -18,6 +18,8 @@ class TaskEstimateCubit extends Cubit<TaskEstimateState> {
   String _taskLatLonString = "";
   String _gliderName = "";
   Glider? _gliderPolar;
+  int _selectedForecastTimeIndex = 0;
+  List<String> _forecastHours = [];
 
   TaskEstimateCubit({required Repository repository})
       : _repository = repository,
@@ -27,31 +29,41 @@ class TaskEstimateCubit extends Cubit<TaskEstimateState> {
     emit(TaskEstimateWorkingState(isWorking));
   }
 
-  Future<void> doCalc (EstimatedTaskRegionModel estimatedTaskRegionModel) async {
+  Future<void> setRegionModelDateParms(EstimatedTaskRegionModel estimatedTaskRegionModel ) async {
+    _indicateWorking(true);
     EstimatedTaskRegionModel info = estimatedTaskRegionModel;
-     _regionName = info.regionName;
-     _selectedModelName = info.selectedModelName; // nam
-      _selectedForecastDate = info.selectedDate; // selected date  2019-12-19
-      _selectedHour = info.selectedHour;
-     _getTaskDetails();
-     _getGliderPolar();
-     _calculateTaskEstimates();
+    _regionName = info.regionName;
+    _selectedModelName = info.selectedModelName; // nam
+    _selectedForecastDate = info.selectedDate; // selected date  2019-12-19
+    _forecastHours = info.forecastHours;
+    _selectedHour = info.forecastHours[info.selectedHourIndex]; // 1300
+    doCalc();
+    _indicateWorking(false);
   }
 
+  Future<void> doCalc() async {
+    await _getTaskDetails();
+    await _getGliderPolar();
+    if (_gliderPolar != null) {
+      _calculateTaskEstimates();
+    }
+  }
 
-  Future<Glider?> _getGliderPolar() async{
-    String gliderName = await _repository.getLastSelectedGliderName();
-    if (gliderName == ""){
+  Future<Glider?> _getGliderPolar() async {
+    _gliderName = await _repository.getLastSelectedGliderName();
+    if (_gliderName == "") {
       emit(DisplayGlidersState());
       return null;
     }
-    _gliderPolar  = await _repository.getCustomGliderPolar(_gliderName);
+    // Since a glider was previously selected, it *should* be in custom glider
+    // list;
+    _gliderPolar = await _repository.getCustomGliderPolar(_gliderName);
     return _gliderPolar;
   }
 
   Future<bool> checkToDisplayExperimentalText() async {
     var displayText =
-    await _repository.getShowEstimatedFlightExperimentalText();
+        await _repository.getShowEstimatedFlightExperimentalText();
     if (displayText) {
       emit(DisplayEstimatedFlightText());
     }
@@ -60,18 +72,18 @@ class TaskEstimateCubit extends Cubit<TaskEstimateState> {
 
   // User selected new glider or maybe changed glider polar
   Future<void> calcEstimatedTaskWithNewGlider() async {
-    _getGliderPolar();
-    _calculateTaskEstimates();
+    await _getGliderPolar();
+    await _calculateTaskEstimates();
   }
 
-  void _calculateTaskEstimates() {
-     if (_gliderPolar != null && _taskLatLonString.isNotEmpty){
+  Future<void> _calculateTaskEstimates()async {
+    if (_gliderPolar != null && _taskLatLonString.isNotEmpty) {
       _getEstimatedFlightAvg();
     }
   }
 
   Future<void> _getEstimatedFlightAvg() async {
-    emit(TaskEstimateWorkingState( true));
+    emit(TaskEstimateWorkingState(true));
 
     //Note per Dr Jack. thermalMultiplier was a fudge factor that could be added if you want to bump up or down
     // wstar value used in sink rate calc. For now just use 1
@@ -90,14 +102,17 @@ class TaskEstimateCubit extends Cubit<TaskEstimateState> {
         _taskLatLonString);
     if (optimizedTaskRoute?.routeSummary?.error != null) {
       emit(TaskEstimateErrorState(optimizedTaskRoute!.routeSummary!.error!));
-      emit(TaskEstimateWorkingState( false));
+      emit(TaskEstimateWorkingState(false));
     } else {
-      emit(TaskEstimateWorkingState(  false));
+      emit(TaskEstimateWorkingState(false));
       emit(EstimatedFlightSummaryState(optimizedTaskRoute!));
     }
   }
 
   Future<void> _getTaskDetails() async {
+    if (_taskId >= 0){
+      return;  // got task already
+    }
     _taskId = await _repository.getCurrentTaskId();
     List<TaskTurnpoint> taskTurnpoints = [];
     if (_taskId > -1) {
@@ -125,16 +140,21 @@ class TaskEstimateCubit extends Cubit<TaskEstimateState> {
     }
   }
 
-  void processModelDateChange(RaspModelDateChange modelDateChange) {
-    _regionName  = modelDateChange.regionName;
-    _selectedModelName = modelDateChange.model;
-    _selectedForecastDate = modelDateChange.date;
-    // maybe bad, but assume same hour
+  void processModelDateChange( {required  regionName,
+    required selectedModelName,
+    required  selectedDate,
+    required  forecastHours,
+    required  selectedHourIndex}) {
+    _regionName = regionName;
+    _selectedModelName = selectedModelName;
+    _selectedForecastDate = selectedDate;
+    _forecastHours = _forecastHours;
+    _selectedForecastTimeIndex = selectedHourIndex;
+     _selectedHour = _forecastHours[_selectedForecastTimeIndex];
     _calculateTaskEstimates();
-
   }
 
-  void processTimeChange(String  forecastHour) {
+  void processTimeChange(String forecastHour) {
     _selectedHour = forecastHour;
     _calculateTaskEstimates();
   }
@@ -148,19 +168,30 @@ class TaskEstimateCubit extends Cubit<TaskEstimateState> {
     emit(DisplayEstimatedFlightText());
   }
 
-
+  void updateTimeIndex(int incOrDec) {
+    // print('Current _selectedForecastTimeIndex $_selectedForecastTimeIndex'
+    //     '  incOrDec $incOrDec');
+    if (incOrDec > 0) {
+      _selectedForecastTimeIndex =
+          (_selectedForecastTimeIndex == _forecastHours.length - 1)
+              ? 0
+              : _selectedForecastTimeIndex + incOrDec;
+    } else {
+      _selectedForecastTimeIndex = (_selectedForecastTimeIndex == 0)
+          ? _forecastHours.length - 1
+          : _selectedForecastTimeIndex + incOrDec;
+      emit(CurrentHourState(_forecastHours[_selectedForecastTimeIndex]));
+    }
+  }
 
   Future<void> closedExperimentalDisclaimer() async {
     if (_startup) {
       String gliderName = await _repository.getLastSelectedGliderName();
-      if (gliderName.isNotEmpty){
+      if (gliderName.isNotEmpty) {
         // get glider info and calc task estimates
-
       } else {
         // display glider polar
       }
     }
   }
-
-
 }

@@ -50,9 +50,12 @@ class _RaspScreenState extends State<RaspScreen>
 
   bool taskSelected = false;
   bool _beginnerMode = true;
+  String _currentRegionName = "";
 
   FixedExtentScrollController forecastScrollController =
       new FixedExtentScrollController();
+
+
 
   RaspDisplayOptionsCubit _getRaspDisplayOptionsCubit() =>
       BlocProvider.of<RaspDisplayOptionsCubit>(context);
@@ -133,7 +136,9 @@ class _RaspScreenState extends State<RaspScreen>
       listener: (context, state) {
         if (state is RaspPreferenceOptionsState) {
           _raspDisplayOptions = state.preferenceOptions;
+          // see if need to display turnpoints
           _sendEvent(RaspDisplayOptionsEvent(_raspDisplayOptions));
+          // see if to display soundings and sua
           _sendEvent(RegionDisplayOptionsEvent(_raspDisplayOptions));
         }
         ;
@@ -195,9 +200,14 @@ class _RaspScreenState extends State<RaspScreen>
                           ? state.localTimes[state.localTimeIndex]
                           : "");
           _sendEvent(selectedRegionModelDetailEvent);
-          // have to wait till find out what region you are working with before
-          // getting display options that depend on region
-          _getRaspDisplayOptionsCubit()..getRaspPreferenceOptions();
+          // Only need to do this once unless region changes
+          if (_currentRegionName != state.regionName) {
+            _currentRegionName = state.regionName;
+            // have to wait till find out what region you are working with before
+            // getting display options that depend on region
+            _getRaspDisplayOptionsCubit()
+              ..getRaspPreferenceOptions();
+          }
         }
       },
       child: SizedBox.shrink(),
@@ -444,7 +454,9 @@ class _RaspScreenState extends State<RaspScreen>
         oldOption.selected = newOption.isChecked;
         // Don't know who is interested in it so sending it to both blocs.
         _getRaspDisplayOptionsCubit().saveRaspPreferenceOption(oldOption);
+        // update if turnpoints to be displayed
         _sendEvent(RaspDisplayOptionEvent(oldOption));
+        // see if to update display of soundings or sua
         _sendEvent(RegionDisplayOptionEvent(oldOption));
       }
       ;

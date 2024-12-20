@@ -24,10 +24,7 @@ class ForecastModelsAndDates extends RegionModelState {
   final List<String> modelNames;
   final int modelNameIndex;
   final List<String> forecastDates; // array of dates like  2019-12-19
-  // dates for the selected modelName
   final int forecastDateIndex;
-
-  // time for the selected modelName/date
   final List<String> localTimes;
   final int localTimeIndex;
 
@@ -42,7 +39,7 @@ class ForecastModelsAndDates extends RegionModelState {
       required this.localTimeIndex});
 
   @override
-  List<Object?> get props => [beginnerMode, regionName, modelNames.toString(), modelNameIndex,forecastDates.toString(), forecastDateIndex, localTimes.toString(), localTimeIndex];
+  List<Object?> get props => [this, beginnerMode, regionName, modelNames.toString(), modelNameIndex,forecastDates.toString(), forecastDateIndex, localTimes.toString(), localTimeIndex];
 }
 
 class RegionLatLngBoundsState extends RegionModelState {

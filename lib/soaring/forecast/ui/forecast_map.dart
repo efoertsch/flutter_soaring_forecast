@@ -27,6 +27,7 @@ import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_overhea
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../rasp_options/rasp_display_options_cubit.dart';
 import '../../region_model/bloc/region_model_bloc.dart';
 import '../../region_model/bloc/region_model_state.dart';
 
@@ -89,7 +90,6 @@ class ForecastMapState extends State<ForecastMap>
   bool _showEstimatedFlightButton = false;
 
 
-
   @override
   void initState() {
     super.initState();
@@ -147,7 +147,7 @@ class ForecastMapState extends State<ForecastMap>
         child: _forecastLegend(),
       ),
       _getOpacitySlider(),
-      _getOptimalFlightIcon(),
+      _getEstimatedTasktIcon(),
       _regionModelListener(),
       _raspHandlerWidget(),
     ]);
@@ -197,7 +197,6 @@ class ForecastMapState extends State<ForecastMap>
         _placeLocalForecastMarker(state.latLngForecast);
         return;
       }
-
       if (state is TurnpointsInBoundsState) {
         //print('Received TurnpointsInBoundsState in ForecastMap');
         _updateTurnpointMarkers(state.turnpoints);
@@ -207,7 +206,6 @@ class ForecastMapState extends State<ForecastMap>
         _updateTurnpointMarkers(state.turnpoints);
         return;
       }
-
       if (state is ForecastOverlayOpacityState) {
         _forecastOverlayOpacity = state.opacity;
         updateForecastOverlay();
@@ -943,7 +941,7 @@ class ForecastMapState extends State<ForecastMap>
     });
   }
 
-  Widget _getOptimalFlightIcon() {
+  Widget _getEstimatedTasktIcon() {
     return (_routeIconIsVisible && _showEstimatedFlightButton)
         ? Positioned(
             bottom: 0,
@@ -954,7 +952,9 @@ class ForecastMapState extends State<ForecastMap>
               ),
               onPressed: () async {
                 widget.runAnimation(false);
-                _sendEvent(EstimatedTaskStartupEvent());
+                  await Navigator.pushNamed(
+                      context, EstimatedTaskRouteBuilder.routeName);
+
               },
               child: Stack(
                 alignment: Alignment.center,
@@ -974,9 +974,6 @@ class ForecastMapState extends State<ForecastMap>
           )
         : SizedBox.shrink();
   }
-
-
-
 
   _regionModelListener()  {
     return BlocListener<RegionModelBloc, RegionModelState>(
@@ -1001,10 +998,6 @@ class ForecastMapState extends State<ForecastMap>
                   cameraFit: CameraFit.bounds(bounds: _forecastLatLngBounds));
             }
             return;
-          }
-          if (state is EstimatedTaskRegionModelState ) {
-            await Navigator.pushNamed(
-                context, EstimatedTaskRouteBuilder.routeName, arguments:state.estimatedTaskRegionModel);
           }
         },
         child: SizedBox.shrink());

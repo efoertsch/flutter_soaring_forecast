@@ -1,3 +1,5 @@
+import 'package:flutter_soaring_forecast/soaring/floor/task/task.dart';
+
 import '../../repository/rasp/estimated_flight_avg_summary.dart';
 import '../../repository/rasp/gliders.dart';
 
@@ -36,4 +38,10 @@ class TaskEstimateErrorState extends TaskEstimateState {
 }
 
 class DisplayGlidersState extends TaskEstimateState{
+}
+
+class CurrentHourState extends TaskEstimateState{
+  String hour ;
+
+  CurrentHourState(this.hour);
 }

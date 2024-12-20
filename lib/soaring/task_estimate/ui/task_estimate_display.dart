@@ -8,9 +8,8 @@ import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     show StandardLiterals, TaskEstimateLiterals;
 import 'package:flutter_soaring_forecast/soaring/app/custom_styles.dart';
-import 'package:flutter_soaring_forecast/soaring/local_forecast/ui/local_forecast_progress_indicator.dart';
-import 'package:flutter_soaring_forecast/soaring/region_model/data/region_model_data.dart';
 import 'package:flutter_soaring_forecast/soaring/region_model/ui/model_date_display.dart';
+import 'package:flutter_soaring_forecast/soaring/task_estimate/ui/task_estimate_progress_indicator.dart';
 
 import '../../../main.dart';
 import '../../forecast_hour/forecast_hour_cubit.dart';
@@ -47,11 +46,14 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
       " course between turnpoints. (Yeah - how often does that happen.) "
       "\n\nFeedback is most welcome. ";
 
-  static const String _SELECT_GLIDER = "SELECT GLIDER";
+  static const String _SELECT_GLIDER = "Select Glider";
   static const String _DISPLAY_EXPERIMENTAL_TEXT = "Experimental Disclaimer";
 
   TaskEstimateCubit _getTaskEstimateCubit() =>
       BlocProvider.of<TaskEstimateCubit>(context);
+
+  ForecastHourCubit _getForecastHourCubit() =>
+      BlocProvider.of<ForecastHourCubit>(context);
 
   bool _showExperimentalDialog = false;
 
@@ -109,7 +111,7 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
       TextButton(
           child: const Text(_HELP, style: TextStyle(color: Colors.white)),
           onPressed: () {
-            _displayEstimatedFlightText();
+            _displayEstimatedFlightHelp();
           }),
       PopupMenuButton<String>(
           onSelected: _handleClick,
@@ -117,7 +119,7 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
           itemBuilder: (BuildContext context) {
             return {
               _SELECT_GLIDER,
-              _DISPLAY_EXPERIMENTAL_TEXT,
+             // _DISPLAY_EXPERIMENTAL_TEXT,
             }.map((String choice) {
               // only one choice
               return PopupMenuItem<String>(
@@ -132,15 +134,19 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
   void _handleClick(String value) async {
     switch (value) {
       case _SELECT_GLIDER:
-        Object? glider = await Navigator.pushNamed(
-            context, GliderPolarListBuilder.routeName);
-        if (glider is String && glider.isNotEmpty) {
-          _getTaskEstimateCubit().calcEstimatedTaskWithNewGlider();
-        }
+        await _getGlider();
         break;
-      case _DISPLAY_EXPERIMENTAL_TEXT:
-          resetDisplayExperimentalText();
-        break;
+      // case _DISPLAY_EXPERIMENTAL_TEXT:
+      //   resetDisplayExperimentalText();
+      //   break;
+    }
+  }
+
+  Future<void> _getGlider() async {
+    Object? glider =
+        await Navigator.pushNamed(context, GliderPolarListBuilder.routeName);
+    if (glider is String && glider.isNotEmpty) {
+      _getTaskEstimateCubit().calcEstimatedTaskWithNewGlider();
     }
   }
 
@@ -151,18 +157,20 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
   Widget _getBody() {
     return Stack(
       children: [
-        Column(children: [
-          Padding(
-            padding: EdgeInsets.all(8.0),
-            child: ModelDatesDisplay(),
-          ),
-          ForecastHourDisplay(),
-          _showOptimalFlightAvgTable(),
-          _regionModelStatesHandler(),
-          _taskEstimateStatesHandler(),
-          _forecastHourHandler(),
-        ]),
-        LocalForecastProgressIndicator(),
+        Container(
+          child: Column(children: [
+            Padding(
+              padding: EdgeInsets.all(8.0),
+              child: ModelDatesDisplay(),
+            ),
+            ForecastHourDisplay(displayPauseLoop: false),
+            _showOptimalFlightAvgTable(),
+            _regionModelStatesHandler(),
+            _taskEstimateStatesHandler(),
+            _forecastHourHandler(),
+          ]),
+        ),
+        TaskEstimateProgressIndicator(),
       ],
     );
   }
@@ -170,15 +178,20 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
   Widget _regionModelStatesHandler() {
     return BlocListener<RegionModelBloc, RegionModelState>(
       listener: (context, state) {
+        if (state is EstimatedTaskRegionModelState) {
+          _getTaskEstimateCubit()
+              .setRegionModelDateParms(state.estimatedTaskRegionModel);
+        }
         if (state is ForecastModelsAndDates) {
           // the model or date changed, send the info on so get new estimate
-          RaspModelDateChange taskEstimateModelDateChange = RaspModelDateChange(
-              state.regionName,
-              state.modelNames[state.modelNameIndex],
-              state.forecastDates[state.forecastDateIndex],
-              state.localTimes);
-          _getTaskEstimateCubit()
-              .processModelDateChange(taskEstimateModelDateChange);
+          _getTaskEstimateCubit().processModelDateChange(
+              regionName: state.regionName,
+              selectedModelName: state.modelNames[state.modelNameIndex],
+              selectedDate: state.forecastDates[state.forecastDateIndex],
+              forecastHours: state.localTimes,
+              selectedHourIndex: state.localTimeIndex);
+          _getForecastHourCubit()
+              .setForecastHour(state.localTimes[state.localTimeIndex]);
         }
       },
       child: SizedBox.shrink(),
@@ -189,11 +202,10 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
     return BlocListener<TaskEstimateCubit, TaskEstimateState>(
       listener: (context, state) async {
         if (state is DisplayGlidersState) {
-          Object? glider = await Navigator.pushNamed(
-              context, GliderPolarListBuilder.routeName);
-          if (glider is String && glider.isNotEmpty) {
-            _getTaskEstimateCubit().calcEstimatedTaskWithNewGlider();
-          }
+          _getGlider();
+        }
+        if (state is CurrentHourState) {
+          _getForecastHourCubit().setForecastHour(state.hour);
         }
       },
       child: SizedBox.shrink(),
@@ -203,8 +215,8 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
   Widget _forecastHourHandler() {
     return BlocListener<ForecastHourCubit, ForecastHourState>(
       listener: (context, state) async {
-        if (state is CurrentForecastHourState) {
-          _getTaskEstimateCubit().processTimeChange(state.forecastHour);
+        if (state is IncrDecrHourIndexState) {
+          _getTaskEstimateCubit().updateTimeIndex(state.incrDecrIndex);
         }
       },
       child: SizedBox.shrink(),
@@ -230,24 +242,14 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
   }
 
   Widget _getOptimalFlightSummary(EstimatedFlightSummary optimalTaskSummary) {
-    return Container(
-      color: Colors.white,
-      padding: EdgeInsets.only(right: 8),
+    return SingleChildScrollView(
       child: Column(children: [
-        Expanded(
-          child: ListView(
-            //crossAxisAlignment: CrossAxisAlignment.start,
-            scrollDirection: Axis.vertical,
-            children: [
-              _getOptimalFlightParms(optimalTaskSummary),
-              //_getTurnpointsTableHeader(),
-              //_getTaskTurnpointsTable(optimalTaskSummary),
-              _getLegTableHeader(),
-              _getLegDetailsTable(optimalTaskSummary),
-              _getWarningMsgDisplay(optimalTaskSummary),
-            ],
-          ),
-        ),
+        _getOptimalFlightParms(optimalTaskSummary),
+        //_getTurnpointsTableHeader(),
+        //_getTaskTurnpointsTable(optimalTaskSummary),
+        _getLegTableHeader(),
+        _getLegDetailsTable(optimalTaskSummary),
+        _getWarningMsgDisplay(optimalTaskSummary),
         _getOptimalFlightCloseButton(),
       ]),
     );
@@ -364,10 +366,13 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
       defaultVerticalAlignment: TableCellVerticalAlignment.middle,
       children: legDetailRows,
     );
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child:
-          Container(margin: EdgeInsets.only(right: 8), child: legDetailTable),
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Container(
+          margin: EdgeInsets.only(right: 8),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+              child: legDetailTable)),
     );
   }
 
@@ -488,7 +493,7 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
     );
   }
 
-  void _displayEstimatedFlightText() async {
+  void _displayEstimatedFlightHelp() async {
     _showExperimentalDialog = true;
     CommonWidgets.showTextAndCheckboxDialogBuilder(
         context: context,
