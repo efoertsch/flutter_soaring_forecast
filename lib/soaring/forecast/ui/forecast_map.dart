@@ -952,9 +952,9 @@ class ForecastMapState extends State<ForecastMap>
               ),
               onPressed: () async {
                 widget.runAnimation(false);
-                  await Navigator.pushNamed(
+                await Navigator.pushNamed(
                       context, EstimatedTaskRouteBuilder.routeName);
-
+              _sendEvent(RefreshModelDateEvent());
               },
               child: Stack(
                 alignment: Alignment.center,

@@ -55,8 +55,6 @@ class _RaspScreenState extends State<RaspScreen>
   FixedExtentScrollController forecastScrollController =
       new FixedExtentScrollController();
 
-
-
   RaspDisplayOptionsCubit _getRaspDisplayOptionsCubit() =>
       BlocProvider.of<RaspDisplayOptionsCubit>(context);
 
@@ -147,12 +145,11 @@ class _RaspScreenState extends State<RaspScreen>
     );
   }
 
-
-
   Widget _raspStatesHandler() {
     return BlocListener<RaspDataBloc, RaspDataState>(
       listener: (context, state) {
         if (state is DisplayLocalForecastGraphState) {
+          stopAnimation();
           _displayLocalForecastGraph(context, state.localForecastGraphData);
         }
         if (state is RaspTimeState) {
@@ -161,10 +158,6 @@ class _RaspScreenState extends State<RaspScreen>
         }
         if (state is RaspTaskTurnpoints) {
           taskSelected = state.taskTurnpoints.isNotEmpty;
-          return;
-        }
-        if (state is DisplayLocalForecastGraphState) {
-          stopAnimation();
           return;
         }
         if (state is RaspErrorState) {
@@ -205,8 +198,7 @@ class _RaspScreenState extends State<RaspScreen>
             _currentRegionName = state.regionName;
             // have to wait till find out what region you are working with before
             // getting display options that depend on region
-            _getRaspDisplayOptionsCubit()
-              ..getRaspPreferenceOptions();
+            _getRaspDisplayOptionsCubit()..getRaspPreferenceOptions();
           }
         }
       },
@@ -379,9 +371,9 @@ class _RaspScreenState extends State<RaspScreen>
       case StandardLiterals.EXPERT_MODE:
       case StandardLiterals.BEGINNER_MODE:
         // toggle flag
-        setState(() {
-          _sendEvent(BeginnerModeEvent(!_beginnerMode));
-        });
+        //setState(() {
+        _sendEvent(BeginnerModeEvent(!_beginnerMode));
+        //});
         break;
       case RaspMenu.refreshForecast:
         _sendEvent(ListTypesOfForecastsEvent());
@@ -480,13 +472,11 @@ class _RaspScreenState extends State<RaspScreen>
 
   void _displayLocalForecastGraph(
       BuildContext context, LocalForecastInputData inputParms) async {
-    var result = await Navigator.pushNamed(
+    await Navigator.pushNamed(
       context,
       LocalForecastGraphRouteBuilder.routeName,
       arguments: inputParms,
     );
-    if (result is LocalForecastUpdateData) {
-      _sendEvent(LocalForecastUpdateEvent());
-    }
+    _sendEvent(RefreshModelDateEvent());
   }
 }

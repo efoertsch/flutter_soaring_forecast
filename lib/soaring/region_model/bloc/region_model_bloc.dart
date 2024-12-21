@@ -43,13 +43,13 @@ class RegionModelBloc extends Bloc<RegionModelEvent, RegionModelState> {
   RegionModelBloc({required this.repository})
       : super(RegionModelInitialState()) {
     on<InitialRegionModelEvent>(_processInitialRegionModelEvent);
-    on<BeginnerDateSwitchEvent>(_processBeginnerDateSwitch);
+    on<PreviousNextDateSwitchEvent>(_processBeginnerDateSwitch);
     on<RegionChangedEvent>(_processRegionChangedEvent);
     on<ModelChangeEvent>(_processModelChangeEvent);
     on<DateChangeEvent>(_processDateChangeEvent);
     on<BeginnerModeEvent>(_processBeginnerModeEvent);
     on<LocalForecastStartupEvent>(_processLocalForecastStartupEvent);
-    on<LocalForecastUpdateEvent>(_processLocalForecastUpdateEvent);
+    on<RefreshModelDateEvent>(_processRefreshModelDateEvent);
     // this is call
     on<RegionDisplayOptionEvent>(_processRegionDisplayOptionEvent);
     on<RegionDisplayOptionsEvent>(_processRegionDisplayOptionsEvent);
@@ -75,7 +75,6 @@ class RegionModelBloc extends Bloc<RegionModelEvent, RegionModelState> {
         if (_beginnerMode) {
           _selectedForecastDate = _region?.dates?.first;
           _getBeginnerModeDateDetails();
-          _getSelectedModelBasedOnForecastDate();
           _setForecastTimesBasedOnSelectedModel();
           if (_beginnerModeModelDataDetail == null) {
             emit(WorkingState(working: false));
@@ -220,10 +219,10 @@ class RegionModelBloc extends Bloc<RegionModelEvent, RegionModelState> {
 
   // Go to either previous or next model/date for beginner mode
   FutureOr<void> _processBeginnerDateSwitch(
-      BeginnerDateSwitchEvent event, Emitter<RegionModelState> emit) async {
+      PreviousNextDateSwitchEvent event, Emitter<RegionModelState> emit) async {
     int? dateIndex = _region?.dates?.indexOf(_selectedForecastDate!);
     if (dateIndex != null) {
-      if (event.forecastDateSwitch == ForecastDateChange.previous) {
+      if (event.incrDecr == -1) {  // go back to prior date or loop around
         _selectedForecastDate = (dateIndex - 1 >= 0)
             ? _region!.dates![dateIndex - 1]
             : _region!.dates!.last;
@@ -235,13 +234,14 @@ class RegionModelBloc extends Bloc<RegionModelEvent, RegionModelState> {
     }
     _getBeginnerModeDateDetails();
     _selectedModelName = _beginnerModeModelDataDetail?.model?.name ?? "Unknown";
+    // get all the dates for the selected model
+    _getDatesForSelectedModel();
     if (_beginnerModeModelDataDetail != null) {
       _emitCenterOfRegion(emit);
       _emitRegionBounds(emit);
       _emitRaspModelsAndDates(emit);
     }
-    // we need to keep values in sync for 'expert' mode if user switches to that mode
-    _getDatesForSelectedModel();
+
   }
 
   // Set the forecast date (yyyy-mm-dd)
@@ -383,8 +383,8 @@ class RegionModelBloc extends Bloc<RegionModelEvent, RegionModelState> {
   }
 
   //Event set after coming back from Local Forecast. Resend model/date/etc to make sure to sync RASP display.
-  FutureOr<void> _processLocalForecastUpdateEvent(
-      LocalForecastUpdateEvent event, Emitter<RegionModelState> emit) {
+  FutureOr<void> _processRefreshModelDateEvent(
+      RefreshModelDateEvent event, Emitter<RegionModelState> emit) {
     _emitRaspModelsAndDates(emit);
   }
 

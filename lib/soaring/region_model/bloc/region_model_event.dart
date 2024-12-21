@@ -26,10 +26,9 @@ class DateChangeEvent extends RegionModelEvent {
 }
 
 // for beginner mode, go to next or previous model/date
-class BeginnerDateSwitchEvent extends RegionModelEvent {
-  final ForecastDateChange forecastDateSwitch;
-
-  BeginnerDateSwitchEvent(this.forecastDateSwitch);
+class PreviousNextDateSwitchEvent extends RegionModelEvent {
+  final int incrDecr ;  // 1 to go to next date -1 to go to previous
+  PreviousNextDateSwitchEvent(this.incrDecr);
 }
 
 class RegionChangeEvent extends RegionModelEvent {}
@@ -43,13 +42,10 @@ class BeginnerModeEvent extends RegionModelEvent {
 class RegionChangedEvent extends RegionModelEvent {
 }
 
-class CheckIfForecastRefreshNeededEvent extends RegionModelEvent {
-  CheckIfForecastRefreshNeededEvent();
-}
 
 class LocalForecastStartupEvent extends RegionModelEvent {}
 
-class LocalForecastUpdateEvent extends RegionModelEvent {}
+class RefreshModelDateEvent extends RegionModelEvent {}
 
 class DisplaySoundingsEvent extends RegionModelEvent {
   final Soundings sounding;

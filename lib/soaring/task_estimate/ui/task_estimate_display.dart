@@ -16,6 +16,7 @@ import '../../forecast_hour/forecast_hour_cubit.dart';
 import '../../forecast_hour/forecast_hour_state.dart';
 import '../../forecast_hour/forecast_hour_widget.dart';
 import '../../region_model/bloc/region_model_bloc.dart';
+import '../../region_model/bloc/region_model_event.dart';
 import '../../region_model/bloc/region_model_state.dart';
 import '../../repository/rasp/estimated_flight_avg_summary.dart';
 import '../cubit/task_estimate_cubit.dart';
@@ -47,7 +48,6 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
       "\n\nFeedback is most welcome. ";
 
   static const String _SELECT_GLIDER = "Select Glider";
-  static const String _DISPLAY_EXPERIMENTAL_TEXT = "Experimental Disclaimer";
 
   TaskEstimateCubit _getTaskEstimateCubit() =>
       BlocProvider.of<TaskEstimateCubit>(context);
@@ -55,7 +55,14 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
   ForecastHourCubit _getForecastHourCubit() =>
       BlocProvider.of<ForecastHourCubit>(context);
 
+  void _sendEvent(dynamic event) {
+    if (event is RegionModelEvent) {
+      BlocProvider.of<RegionModelBloc>(context).add(event);
+    }
+  }
+
   bool _showExperimentalDialog = false;
+  bool _beginnerMode = true;
 
   @override
   void initState() {
@@ -119,6 +126,9 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
           itemBuilder: (BuildContext context) {
             return {
               _SELECT_GLIDER,
+              _beginnerMode
+                  ? StandardLiterals.EXPERT_MODE
+                  : StandardLiterals.BEGINNER_MODE,
              // _DISPLAY_EXPERIMENTAL_TEXT,
             }.map((String choice) {
               // only one choice
@@ -136,6 +146,12 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
       case _SELECT_GLIDER:
         await _getGlider();
         break;
+      case StandardLiterals.EXPERT_MODE:
+      case StandardLiterals.BEGINNER_MODE:
+      // toggle flag
+      //setState(() {
+        _sendEvent(BeginnerModeEvent(!_beginnerMode));
+    //});
       // case _DISPLAY_EXPERIMENTAL_TEXT:
       //   resetDisplayExperimentalText();
       //   break;
@@ -158,17 +174,19 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
     return Stack(
       children: [
         Container(
-          child: Column(children: [
-            Padding(
-              padding: EdgeInsets.all(8.0),
-              child: ModelDatesDisplay(),
-            ),
-            ForecastHourDisplay(displayPauseLoop: false),
-            _showOptimalFlightAvgTable(),
-            _regionModelStatesHandler(),
-            _taskEstimateStatesHandler(),
-            _forecastHourHandler(),
-          ]),
+          child: SingleChildScrollView(
+            child: Column(children: [
+              Padding(
+                padding: EdgeInsets.all(8.0),
+                child: ModelDatesDisplay(),
+              ),
+              ForecastHourDisplay(displayPauseLoop: false),
+              _showEstimatedTaskAvgTable(),
+              _regionModelStatesHandler(),
+              _taskEstimateStatesHandler(),
+              _forecastHourHandler(),
+            ]),
+          ),
         ),
         TaskEstimateProgressIndicator(),
       ],
@@ -183,6 +201,7 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
               .setRegionModelDateParms(state.estimatedTaskRegionModel);
         }
         if (state is ForecastModelsAndDates) {
+          _beginnerMode = state.beginnerMode;
           // the model or date changed, send the info on so get new estimate
           _getTaskEstimateCubit().processModelDateChange(
               regionName: state.regionName,
@@ -217,13 +236,14 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
       listener: (context, state) async {
         if (state is IncrDecrHourIndexState) {
           _getTaskEstimateCubit().updateTimeIndex(state.incrDecrIndex);
+
         }
       },
       child: SizedBox.shrink(),
     );
   }
 
-  Widget _showOptimalFlightAvgTable() {
+  Widget _showEstimatedTaskAvgTable() {
     return BlocConsumer<TaskEstimateCubit, TaskEstimateState>(
       listener: (context, state) {
         if (state is EstimatedFlightSummaryState) {}

@@ -34,17 +34,20 @@ class _ModelDatesDisplayState extends State<ModelDatesDisplay> {
     return BlocConsumer<RegionModelBloc, RegionModelState>(
         listener: (BuildContext context, RegionModelState state) {
       if (state is ForecastModelsAndDates){
-        _modelNames = state.modelNames;
-        _modelNameIndex = state.modelNameIndex;
-        _forecastDates = state.forecastDates;
-        _forecastDateIndex = state.forecastDateIndex;
-        _shortDOWs = reformatDatesToDOW(_forecastDates);
-       _selectedForecastDOW =  _forecastDateIndex >= 0? _shortDOWs[_forecastDateIndex]: "";
+        // doesn't fire after first time when next state is also ForecastModelsAndDates
+        // which can occur if just  switching between beginner and expert
+        // so set the needed values in the builder phase
       };
     }, buildWhen: (previous, current) {
       return current is ForecastModelsAndDates;
     }, builder: (context, state) {
       if (state is ForecastModelsAndDates) {
+        _modelNames = state.modelNames;
+        _modelNameIndex = state.modelNameIndex;
+        _forecastDates = state.forecastDates;
+        _forecastDateIndex = state.forecastDateIndex;
+        _shortDOWs = reformatDatesToDOW(_forecastDates);
+        _selectedForecastDOW =  _forecastDateIndex >= 0? _shortDOWs[_forecastDateIndex]: "";
         if (state.beginnerMode){
         return _getBeginnerForecast(
             context: context,
@@ -78,10 +81,10 @@ Widget _getBeginnerForecast(
       context: context,
       leftArrowOnTap: (() {
         sendEvent(
-            context, BeginnerDateSwitchEvent(ForecastDateChange.previous));
+            context, PreviousNextDateSwitchEvent(-1));
       }),
       rightArrowOnTap: (() {
-        sendEvent(context, BeginnerDateSwitchEvent(ForecastDateChange.next));
+        sendEvent(context, PreviousNextDateSwitchEvent(1));
       }),
       displayText: "(${selectedModelName.toUpperCase()}) $selectedForecastDOW");
 }

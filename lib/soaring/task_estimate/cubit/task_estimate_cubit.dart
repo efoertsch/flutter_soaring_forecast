@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_soaring_forecast/soaring/repository/rasp/estimated_flight_avg_summary.dart';
 import 'package:flutter_soaring_forecast/soaring/task_estimate/cubit/task_estimate_state.dart';
 
 import '../../floor/taskturnpoint/task_turnpoint.dart';
@@ -29,7 +30,8 @@ class TaskEstimateCubit extends Cubit<TaskEstimateState> {
     emit(TaskEstimateWorkingState(isWorking));
   }
 
-  Future<void> setRegionModelDateParms(EstimatedTaskRegionModel estimatedTaskRegionModel ) async {
+  Future<void> setRegionModelDateParms(
+      EstimatedTaskRegionModel estimatedTaskRegionModel) async {
     _indicateWorking(true);
     EstimatedTaskRegionModel info = estimatedTaskRegionModel;
     _regionName = info.regionName;
@@ -76,7 +78,7 @@ class TaskEstimateCubit extends Cubit<TaskEstimateState> {
     await _calculateTaskEstimates();
   }
 
-  Future<void> _calculateTaskEstimates()async {
+  Future<void> _calculateTaskEstimates() async {
     if (_gliderPolar != null && _taskLatLonString.isNotEmpty) {
       _getEstimatedFlightAvg();
     }
@@ -104,14 +106,15 @@ class TaskEstimateCubit extends Cubit<TaskEstimateState> {
       emit(TaskEstimateErrorState(optimizedTaskRoute!.routeSummary!.error!));
       emit(TaskEstimateWorkingState(false));
     } else {
+      _eliminateDuplicateFootingText(optimizedTaskRoute!.routeSummary!.footers);
       emit(TaskEstimateWorkingState(false));
-      emit(EstimatedFlightSummaryState(optimizedTaskRoute!));
+      emit(EstimatedFlightSummaryState(optimizedTaskRoute));
     }
   }
 
   Future<void> _getTaskDetails() async {
-    if (_taskId >= 0){
-      return;  // got task already
+    if (_taskId >= 0) {
+      return; // got task already
     }
     _taskId = await _repository.getCurrentTaskId();
     List<TaskTurnpoint> taskTurnpoints = [];
@@ -140,17 +143,18 @@ class TaskEstimateCubit extends Cubit<TaskEstimateState> {
     }
   }
 
-  void processModelDateChange( {required  regionName,
-    required selectedModelName,
-    required  selectedDate,
-    required  forecastHours,
-    required  selectedHourIndex}) {
+  void processModelDateChange(
+      {required regionName,
+      required selectedModelName,
+      required selectedDate,
+      required forecastHours,
+      required selectedHourIndex}) {
     _regionName = regionName;
     _selectedModelName = selectedModelName;
     _selectedForecastDate = selectedDate;
     _forecastHours = _forecastHours;
     _selectedForecastTimeIndex = selectedHourIndex;
-     _selectedHour = _forecastHours[_selectedForecastTimeIndex];
+    _selectedHour = _forecastHours[_selectedForecastTimeIndex];
     _calculateTaskEstimates();
   }
 
@@ -180,8 +184,10 @@ class TaskEstimateCubit extends Cubit<TaskEstimateState> {
       _selectedForecastTimeIndex = (_selectedForecastTimeIndex == 0)
           ? _forecastHours.length - 1
           : _selectedForecastTimeIndex + incOrDec;
-      emit(CurrentHourState(_forecastHours[_selectedForecastTimeIndex]));
     }
+    _selectedHour = _forecastHours[_selectedForecastTimeIndex];
+    emit(CurrentHourState(_forecastHours[_selectedForecastTimeIndex]));
+    _calculateTaskEstimates();
   }
 
   Future<void> closedExperimentalDisclaimer() async {
@@ -194,4 +200,29 @@ class TaskEstimateCubit extends Cubit<TaskEstimateState> {
       }
     }
   }
+}
+
+// eliminate duplicate text like (this comes across as 1 long string not by line as shown below
+// WARNING: Data unavailable after 1700 so assumed constant conditions after that time.
+// Data unavailable after 1700 so assumed constant conditions after that time.
+// Data unavailable after 1700 so assumed constant conditions after that time.
+// Data unavailable after 1700 so assumed constant conditions after that time.
+_eliminateDuplicateFootingText(List<Footer>? footers) {
+  List<Footer> footerText = [];
+  if (footers == null) {
+    return;
+  }
+  for (Footer footer in footers) {
+    if (footer.message != null) {
+      List<String> pieces = footer.message!.split(RegExp(r'[\.:]'));
+      for (String piece in pieces) {
+        if (footerText.isEmpty || (footerText.last.message!.trim() != piece.trim() && piece.isNotEmpty)) {
+          footerText.add(Footer(message: piece));
+        }
+      }
+    }
+  }
+
+  footers.clear();
+  footers.addAll(footerText);
 }
