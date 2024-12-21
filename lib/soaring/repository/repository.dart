@@ -1448,11 +1448,11 @@ class Repository {
     return _convertDisplayUnitsStringToEnum(displayUnits.toString());
   }
 
-  Future<bool> getDisplayExperimentalOptimalTaskAlertFlag() async {
+  Future<bool> getDisplayExperimentalEstimatedTaskAlertFlag() async {
     return await getGenericBool(key: _EXPERIMENTAL_ESTIMATED_FLIGHT_FLAG, defaultValue: true);
   }
 
-  Future<void> saveDisplayExperimentalOptimalTaskAlertFlag(bool flag) async {
+  Future<void> saveDisplayExperimentalEstimatedTaskAlertFlag(bool flag) async {
      await saveGenericBool(key: _EXPERIMENTAL_ESTIMATED_FLIGHT_FLAG, value: flag);
   }
 

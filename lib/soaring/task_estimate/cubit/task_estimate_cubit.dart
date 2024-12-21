@@ -39,8 +39,13 @@ class TaskEstimateCubit extends Cubit<TaskEstimateState> {
     _selectedForecastDate = info.selectedDate; // selected date  2019-12-19
     _forecastHours = info.forecastHours;
     _selectedHour = info.forecastHours[info.selectedHourIndex]; // 1300
-    doCalc();
-    _indicateWorking(false);
+    var showExperimental = await _repository.getDisplayExperimentalEstimatedTaskAlertFlag();
+    if (showExperimental){
+        emit(DisplayExperimentalHelpText(showExperimental,true));
+    } else {
+      doCalc();
+    }
+
   }
 
   Future<void> doCalc() async {
@@ -164,7 +169,7 @@ class TaskEstimateCubit extends Cubit<TaskEstimateState> {
   }
 
   Future<void> displayExperimentalText(bool value) async {
-    _repository.saveDisplayExperimentalOptimalTaskAlertFlag(value);
+    _repository.saveDisplayExperimentalEstimatedTaskAlertFlag(value);
   }
 
   Future<void> resetExperimentalTextDisplay() async {
@@ -190,15 +195,12 @@ class TaskEstimateCubit extends Cubit<TaskEstimateState> {
     _calculateTaskEstimates();
   }
 
-  Future<void> closedExperimentalDisclaimer() async {
-    if (_startup) {
-      String gliderName = await _repository.getLastSelectedGliderName();
-      if (gliderName.isNotEmpty) {
-        // get glider info and calc task estimates
-      } else {
-        // display glider polar
-      }
-    }
+
+  // This is used for when user hits help button
+  Future<void> showExperimentalTextHelp() async {
+    var showExperimentalText = await _repository.getDisplayExperimentalEstimatedTaskAlertFlag();
+    emit(DisplayExperimentalHelpText(showExperimentalText, false));
+
   }
 }
 

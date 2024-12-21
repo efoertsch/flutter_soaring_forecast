@@ -118,7 +118,8 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
       TextButton(
           child: const Text(_HELP, style: TextStyle(color: Colors.white)),
           onPressed: () {
-            _displayEstimatedFlightHelp();
+            _getTaskEstimateCubit().showExperimentalTextHelp();
+
           }),
       PopupMenuButton<String>(
           onSelected: _handleClick,
@@ -227,6 +228,9 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
         }
         if (state is CurrentHourState) {
           _getForecastHourCubit().setForecastHour(state.hour);
+        }
+        if (state is DisplayExperimentalHelpText) {
+          _displayEstimatedFlightHelp(state.showExperimentalText,state.calcAfterShow);
         }
       },
       child: SizedBox.shrink(),
@@ -522,20 +526,22 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
     );
   }
 
-  void _displayEstimatedFlightHelp() async {
-    _showExperimentalDialog = true;
+  void _displayEstimatedFlightHelp(bool showExperimentalText, bool calcAfterShow) async {
     CommonWidgets.showTextAndCheckboxDialogBuilder(
         context: context,
         title: "TASK FLIGHT ESTIMATES\n(EXPERIMENTAL)",
-        child: _getExperimentalFlightTextWidget(),
+        child: _getExperimentalFlightTextWidget(showExperimentalText),
         button1Text: StandardLiterals.OK,
         button1Function: (() {
           Navigator.pop(context);
-          _getTaskEstimateCubit().closedExperimentalDisclaimer();
+          if(calcAfterShow){
+            _getTaskEstimateCubit().doCalc();
+          }
         }));
   }
 
-  Widget _getExperimentalFlightTextWidget() {
+  Widget _getExperimentalFlightTextWidget(bool showExperimentalText) {
+    _showExperimentalDialog = showExperimentalText;
     return SingleChildScrollView(
       child: Column(
         children: [
@@ -546,14 +552,15 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
           StatefulBuilder(
               builder: (BuildContext context, StateSetter setState) {
             return CheckboxListTile(
-              title: Text("Do not show this again"),
+              title: Text("Do not display on start. (Will always display via HELP"),
               controlAffinity: ListTileControlAffinity.leading,
               value: !_showExperimentalDialog,
               onChanged: (newValue) async {
                 _showExperimentalDialog = newValue != null ? !newValue : true;
                 await _getTaskEstimateCubit()
                     .displayExperimentalText(_showExperimentalDialog);
-                setState(() {
+                setState(()   {
+                  // Seems like flutter wants async task out of setstate
                   // if checked then DO NOT display experimental text, hence save as false
                 });
               },

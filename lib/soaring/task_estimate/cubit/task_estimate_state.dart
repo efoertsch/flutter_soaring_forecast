@@ -45,3 +45,10 @@ class CurrentHourState extends TaskEstimateState{
 
   CurrentHourState(this.hour);
 }
+
+class DisplayExperimentalHelpText extends TaskEstimateState {
+  final bool showExperimentalText;
+  final bool calcAfterShow;
+
+  DisplayExperimentalHelpText(this.showExperimentalText, this.calcAfterShow);
+}
