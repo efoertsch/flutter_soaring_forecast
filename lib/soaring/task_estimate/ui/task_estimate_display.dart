@@ -171,23 +171,25 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
   }
 
   Widget _getBody() {
-    return Stack(
+    return  Stack(
       children: [
+        Column(children: [
+          Padding(
+            padding: EdgeInsets.all(8.0),
+            child: ModelDatesDisplay(),
+          ),
+        ForecastHourDisplay(displayPauseLoop: false),
         Container(
           child: SingleChildScrollView(
-            child: Column(children: [
-              Padding(
-                padding: EdgeInsets.all(8.0),
-                child: ModelDatesDisplay(),
-              ),
-              ForecastHourDisplay(displayPauseLoop: false),
-              _showEstimatedTaskAvgTable(),
-              _regionModelStatesHandler(),
-              _taskEstimateStatesHandler(),
-              _forecastHourHandler(),
-            ]),
+            child: _showEstimatedTaskAvgTable(),
           ),
         ),
+       
+        ],),
+        _getOptimalFlightCloseButton(),
+        _regionModelStatesHandler(),
+        _taskEstimateStatesHandler(),
+        _forecastHourHandler(),
         TaskEstimateProgressIndicator(),
       ],
     );
@@ -270,7 +272,6 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
         _getLegTableHeader(),
         _getLegDetailsTable(optimalTaskSummary),
         _getWarningMsgDisplay(optimalTaskSummary),
-        _getOptimalFlightCloseButton(),
       ]),
     );
   }
@@ -499,17 +500,25 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
   }
 
   Widget _getOptimalFlightCloseButton() {
-    return ElevatedButton(
-      style: ElevatedButton.styleFrom(
-        minimumSize: Size(double.infinity,
-            40), // double.infinity is the width and 30 is the height
-        foregroundColor: Colors.white,
-        backgroundColor: Theme.of(context).colorScheme.primary,
+    return Positioned.fill(
+      child: Align(
+          alignment: Alignment.bottomCenter,
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              minimumSize: Size(double.infinity,
+                  40), // double.infinity is the width and 30 is the height
+              foregroundColor: Colors.white,
+              backgroundColor: Theme.of(context).colorScheme.primary,
+            ),
+            child: Text("Close"),
+            onPressed: () {
+              _onWillPop();
+            },
+          ),
+        ),
       ),
-      child: Text("Close"),
-      onPressed: () {
-        _onWillPop();
-      },
     );
   }
 

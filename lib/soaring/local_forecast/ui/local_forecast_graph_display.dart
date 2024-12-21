@@ -164,6 +164,7 @@ class _LocalForecastGraphDisplayState extends State<LocalForecastGraphDisplay>
     return BlocListener<RegionModelBloc, RegionModelState>(
       listener: (context, state) {
         if (state is ForecastModelsAndDates) {
+          _beginnerMode = state.beginnerMode;
           // the model or date changed, send the info on so new graphs created
           RaspModelDateChange localForecastModelDateChange =
               RaspModelDateChange(

@@ -172,6 +172,8 @@ class _RaspScreenState extends State<RaspScreen>
     );
   }
 
+  // Note this handler is called even when you update dates/models on the Local Forecast or
+  // Estimate Task screen
   Widget _regionModelHandler() {
     return BlocListener<RegionModelBloc, RegionModelState>(
       listener: (context, state) {
