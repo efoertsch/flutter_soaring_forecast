@@ -39,20 +39,20 @@ class TaskEstimateCubit extends Cubit<TaskEstimateState> {
     _selectedForecastDate = info.selectedDate; // selected date  2019-12-19
     _forecastHours = info.forecastHours;
     _selectedHour = info.forecastHours[info.selectedHourIndex]; // 1300
-    var showExperimental = await _repository.getDisplayExperimentalEstimatedTaskAlertFlag();
-    if (showExperimental){
-        emit(DisplayExperimentalHelpText(showExperimental,true));
+    var showExperimental =
+        await _repository.getDisplayExperimentalEstimatedTaskAlertFlag();
+    if (showExperimental) {
+      emit(DisplayExperimentalHelpText(showExperimental, true));
     } else {
       doCalc();
     }
-
   }
 
   Future<void> doCalc() async {
     await _getTaskDetails();
     await _getGliderPolar();
     if (_gliderPolar != null) {
-      _calculateTaskEstimates();
+      await _calculateTaskEstimates();
     }
   }
 
@@ -85,7 +85,7 @@ class TaskEstimateCubit extends Cubit<TaskEstimateState> {
 
   Future<void> _calculateTaskEstimates() async {
     if (_gliderPolar != null && _taskLatLonString.isNotEmpty) {
-      _getEstimatedFlightAvg();
+      await _getEstimatedFlightAvg();
     }
   }
 
@@ -153,19 +153,19 @@ class TaskEstimateCubit extends Cubit<TaskEstimateState> {
       required selectedModelName,
       required selectedDate,
       required forecastHours,
-      required selectedHourIndex}) {
+      required selectedHourIndex}) async {
     _regionName = regionName;
     _selectedModelName = selectedModelName;
     _selectedForecastDate = selectedDate;
     _forecastHours = _forecastHours;
     _selectedForecastTimeIndex = selectedHourIndex;
     _selectedHour = _forecastHours[_selectedForecastTimeIndex];
-    _calculateTaskEstimates();
+    await _calculateTaskEstimates();
   }
 
-  void processTimeChange(String forecastHour) {
+  void processTimeChange(String forecastHour) async {
     _selectedHour = forecastHour;
-    _calculateTaskEstimates();
+    await _calculateTaskEstimates();
   }
 
   Future<void> displayExperimentalText(bool value) async {
@@ -177,7 +177,7 @@ class TaskEstimateCubit extends Cubit<TaskEstimateState> {
     emit(DisplayEstimatedFlightText());
   }
 
-  void updateTimeIndex(int incOrDec) {
+  void updateTimeIndex(int incOrDec) async {
     // print('Current _selectedForecastTimeIndex $_selectedForecastTimeIndex'
     //     '  incOrDec $incOrDec');
     if (incOrDec > 0) {
@@ -192,15 +192,14 @@ class TaskEstimateCubit extends Cubit<TaskEstimateState> {
     }
     _selectedHour = _forecastHours[_selectedForecastTimeIndex];
     emit(CurrentHourState(_forecastHours[_selectedForecastTimeIndex]));
-    _calculateTaskEstimates();
+    await _calculateTaskEstimates();
   }
-
 
   // This is used for when user hits help button
   Future<void> showExperimentalTextHelp() async {
-    var showExperimentalText = await _repository.getDisplayExperimentalEstimatedTaskAlertFlag();
+    var showExperimentalText =
+        await _repository.getDisplayExperimentalEstimatedTaskAlertFlag();
     emit(DisplayExperimentalHelpText(showExperimentalText, false));
-
   }
 }
 
@@ -218,7 +217,9 @@ _eliminateDuplicateFootingText(List<Footer>? footers) {
     if (footer.message != null) {
       List<String> pieces = footer.message!.split(RegExp(r'[\.:]'));
       for (String piece in pieces) {
-        if (footerText.isEmpty || (footerText.last.message!.trim() != piece.trim() && piece.isNotEmpty)) {
+        if (footerText.isEmpty ||
+            (footerText.last.message!.trim() != piece.trim() &&
+                piece.isNotEmpty)) {
           footerText.add(Footer(message: piece));
         }
       }

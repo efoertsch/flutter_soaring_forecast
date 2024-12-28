@@ -123,6 +123,12 @@ class _AppDrawerWidgetState extends State<AppDrawerWidget> {
             ),
           )),
           ListTile(
+            title: Text(DrawerLiterals.GLIDER_POLARS),
+            onTap: () {
+               Navigator.popAndPushNamed(context, GliderPolarListBuilder.routeName);
+            },
+          ),
+          ListTile(
             title: Text(DrawerLiterals.TASK_LIST),
             onTap: () {
               Navigator.popAndPushNamed(

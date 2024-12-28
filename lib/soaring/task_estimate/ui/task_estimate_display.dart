@@ -34,10 +34,6 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
   static const String _EXPERIMENTAL_ESTIMATED_FLIGHT_TEXT =
       "This is a feature based on Dr. Jack logic that calculates a task's estimated flight time"
       " and flight information based on the forecast and a glider's min sink rate and polar."
-      "\n\nThe values displayed on the underlying screen are based or calculated from XCSOAR glider data."
-      "\n\nHighlighted values under the 'Your Glider' column can be updated. Tap on the particular cell to update."
-      "\n\nConsult your glider POH or other sources to enter min sink rate and speed based on the weight of your glider and you."
-      " Also enter your favorite thermaling bank angle."
       "\n\nThe specific forecast values used in the estimated flight time calculations are:"
       "\n1. Thermal Updraft Velocity (W*)"
       "\n2. Wind speed (Boundary Layer average)"
@@ -199,21 +195,30 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
   Widget _regionModelStatesHandler() {
     return BlocListener<RegionModelBloc, RegionModelState>(
       listener: (context, state) {
-        if (state is EstimatedTaskRegionModelState) {
-          _getTaskEstimateCubit()
-              .setRegionModelDateParms(state.estimatedTaskRegionModel);
-        }
-        if (state is ForecastModelsAndDates) {
-          _beginnerMode = state.beginnerMode;
-          // the model or date changed, send the info on so get new estimate
-          _getTaskEstimateCubit().processModelDateChange(
-              regionName: state.regionName,
-              selectedModelName: state.modelNames[state.modelNameIndex],
-              selectedDate: state.forecastDates[state.forecastDateIndex],
-              forecastHours: state.localTimes,
-              selectedHourIndex: state.localTimeIndex);
-          _getForecastHourCubit()
-              .setForecastHour(state.localTimes[state.localTimeIndex]);
+        // This listener fires AFTER the return to the
+        // RASP screen and a refresh fires off a
+        // ForecastModelsAndDates state. Don't know why this
+        // still fires but checking the current route check is
+        // a way to ignore this state. Yes - seems like a hack
+        final route = ModalRoute.of(context);
+        final isCurrentRoute = route?.isCurrent ?? false;
+        if (isCurrentRoute) {
+          if (state is EstimatedTaskRegionModelState) {
+            _getTaskEstimateCubit()
+                .setRegionModelDateParms(state.estimatedTaskRegionModel);
+          }
+          if (state is ForecastModelsAndDates) {
+            _beginnerMode = state.beginnerMode;
+            // the model or date changed, send the info on so get new estimate
+            _getTaskEstimateCubit().processModelDateChange(
+                regionName: state.regionName,
+                selectedModelName: state.modelNames[state.modelNameIndex],
+                selectedDate: state.forecastDates[state.forecastDateIndex],
+                forecastHours: state.localTimes,
+                selectedHourIndex: state.localTimeIndex);
+            _getForecastHourCubit()
+                .setForecastHour(state.localTimes[state.localTimeIndex]);
+          }
         }
       },
       child: SizedBox.shrink(),
@@ -552,7 +557,7 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
           StatefulBuilder(
               builder: (BuildContext context, StateSetter setState) {
             return CheckboxListTile(
-              title: Text("Do not display on start. (Will always display via HELP"),
+              title: Text("Do not display on start. (Will always display via HELP)"),
               controlAffinity: ListTileControlAffinity.leading,
               value: !_showExperimentalDialog,
               onChanged: (newValue) async {

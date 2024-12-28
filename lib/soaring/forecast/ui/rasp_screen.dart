@@ -172,8 +172,6 @@ class _RaspScreenState extends State<RaspScreen>
     );
   }
 
-  // Note this handler is called even when you update dates/models on the Local Forecast or
-  // Estimate Task screen
   Widget _regionModelHandler() {
     return BlocListener<RegionModelBloc, RegionModelState>(
       listener: (context, state) {
@@ -223,8 +221,8 @@ class _RaspScreenState extends State<RaspScreen>
     );
   }
 
-  // runAnimation = true - run the animation of course!
-  //                = false - stop it
+// runAnimation = true - run the animation of course!
+//                = false - stop it
   void runAnimation(bool runAnimation) {
     //TODO timer and subscription too convoluted. Make simpler
     if (runAnimation) {

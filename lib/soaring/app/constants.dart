@@ -456,6 +456,7 @@ class DrawerLiterals {
   static const String SETTINGS = "Settings";
   static const String FEEDBACK = "Feedback";
   static const String ABOUT = "About";
+  static const String GLIDER_POLARS = "Glider Polars";
 }
 
 class PolarMenu {

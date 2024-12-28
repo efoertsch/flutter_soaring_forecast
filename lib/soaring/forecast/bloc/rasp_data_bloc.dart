@@ -357,7 +357,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     int startIndex = 0;
     if (event.forTask && _taskId > -1) {
       // ok - a task is displayed and a local forecast was requested on one of the
-      // task turnpoints so get assemble list of all turnpoints
+      // task turnpoints so get list of all turnpoints
       List<TaskTurnpoint> taskTurnpoints = await _getTaskTurnpoints(_taskId);
       localForecastPoints.addAll(taskTurnpoints
           .map((taskTurnpoint) => LocalForecastPoint(

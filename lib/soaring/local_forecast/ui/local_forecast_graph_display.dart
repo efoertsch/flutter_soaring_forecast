@@ -163,6 +163,14 @@ class _LocalForecastGraphDisplayState extends State<LocalForecastGraphDisplay>
   Widget _miscRegionModelStatesHandler() {
     return BlocListener<RegionModelBloc, RegionModelState>(
       listener: (context, state) {
+        // This listener may fire AFTER the return to the
+        // RASP screen and a refresh fires off a
+        // ForecastModelsAndDates state. Don't know why this
+        // still fires but checking the current route check is
+        // a way to ignore this state. Yes - seems like a hack
+        final route = ModalRoute.of(context);
+        final isCurrentRoute = route?.isCurrent ?? false;
+        if (isCurrentRoute) {
         if (state is ForecastModelsAndDates) {
           _beginnerMode = state.beginnerMode;
           // the model or date changed, send the info on so new graphs created
@@ -176,7 +184,7 @@ class _LocalForecastGraphDisplayState extends State<LocalForecastGraphDisplay>
               .read<LocalForecastBloc>()
               .add(LocalModelDateChangeEvent(localForecastModelDateChange));
         }
-      },
+      }},
       child: SizedBox.shrink(),
     );
   }

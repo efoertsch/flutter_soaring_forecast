@@ -386,9 +386,11 @@ class CommonWidgets {
     final Function? button2Function,}
   ) {
     return showDialog<void>(
+      barrierDismissible: false,
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+
           title: Text(title),
           content: child,
           actions: composeDialogButtons(

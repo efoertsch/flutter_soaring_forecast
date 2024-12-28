@@ -1,8 +1,5 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/gliders.dart';
-
-import '../../repository/rasp/estimated_flight_avg_summary.dart';
 
 abstract class GliderCubitState {
   const GliderCubitState();
@@ -46,14 +43,11 @@ class GliderCubitWorkingState extends GliderCubitState {
   GliderCubitWorkingState(this.working);
 }
 
-
 class GliderCubitErrorState extends GliderCubitState {
   final String errorMsg;
 
   GliderCubitErrorState(this.errorMsg);
 }
-
-
 
 class CalcEstimatedFlightState extends GliderCubitState {
   final Glider glider;
@@ -62,3 +56,10 @@ class CalcEstimatedFlightState extends GliderCubitState {
 }
 
 class DisplayEstimatedFlightText extends GliderCubitState {}
+
+class ShowPolarHelpState extends GliderCubitState {
+  final bool showPolarHelp;
+
+  ShowPolarHelpState(this.showPolarHelp);
+}
+
