@@ -215,7 +215,8 @@ _eliminateDuplicateFootingText(List<Footer>? footers) {
   }
   for (Footer footer in footers) {
     if (footer.message != null) {
-      List<String> pieces = footer.message!.split(RegExp(r'[\.:]'));
+      //List<String> pieces = footer.message!.split(RegExp(r'[\.:]'));
+      List<String> pieces = footer.message!.split("\n");
       for (String piece in pieces) {
         if (footerText.isEmpty ||
             (footerText.last.message!.trim() != piece.trim() &&

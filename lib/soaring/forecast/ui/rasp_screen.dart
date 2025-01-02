@@ -8,7 +8,7 @@ import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_data_state.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/ui/app_drawer.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/ui/display_ticker.dart';
-import 'package:flutter_soaring_forecast/soaring/forecast/ui/forecast_map.dart';
+import 'package:flutter_soaring_forecast/soaring/forecast/ui/rasp_map.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast_hour/forecast_hour_cubit.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast_hour/forecast_hour_state.dart';
 import 'package:flutter_soaring_forecast/soaring/rasp_options/rasp_display_options_cubit.dart';
@@ -37,7 +37,7 @@ class RaspScreen extends StatefulWidget {
 class _RaspScreenState extends State<RaspScreen>
     with TickerProviderStateMixin, WidgetsBindingObserver {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
-  final _forecastMapStateKey = GlobalKey<ForecastMapState>();
+  final _forecastMapStateKey = GlobalKey<RaspMapState>();
   late List<PreferenceOption> _raspDisplayOptions;
   String _selectedRegionName = "";
 
@@ -57,6 +57,9 @@ class _RaspScreenState extends State<RaspScreen>
 
   RaspDisplayOptionsCubit _getRaspDisplayOptionsCubit() =>
       BlocProvider.of<RaspDisplayOptionsCubit>(context);
+
+  ForecastHourCubit _getForecastHourCubit() =>
+      BlocProvider.of<ForecastHourCubit>(context);
 
   // Executed only when class created
   @override
@@ -193,6 +196,9 @@ class _RaspScreenState extends State<RaspScreen>
                           ? state.localTimes[state.localTimeIndex]
                           : "");
           _sendEvent(selectedRegionModelDetailEvent);
+          _getForecastHourCubit().setForecastHour((state.localTimes.length > 0 && state.localTimeIndex >= 0)
+              ? state.localTimes[state.localTimeIndex]
+              : "");
           // Only need to do this once unless region changes
           if (_currentRegionName != state.regionName) {
             _currentRegionName = state.regionName;
@@ -400,7 +406,7 @@ class _RaspScreenState extends State<RaspScreen>
   }
 
   Widget _getForecastWindow() {
-    return ForecastMap(key: _forecastMapStateKey, runAnimation: runAnimation);
+    return RaspMap(key: _forecastMapStateKey, runAnimation: runAnimation);
   }
 
   void _showMapDisplayOptionsDialog() async {
@@ -477,6 +483,8 @@ class _RaspScreenState extends State<RaspScreen>
       LocalForecastGraphRouteBuilder.routeName,
       arguments: inputParms,
     );
-    _sendEvent(RefreshModelDateEvent());
+    // need to wait a frame otherwise refresh goes to Local Forecast
+    WidgetsBinding.instance.addPostFrameCallback((_)=>
+    _sendEvent(RefreshModelDateEvent()));
   }
 }

@@ -138,18 +138,20 @@ class SoaringForecastApp extends StatelessWidget {
   // This widget is the root of your application.
   late final BuildContext appContext;
   late final RegionModelBloc regionModelBloc;
+  late final ForecastHourCubit forecastHourCubit;
 
   @override
   Widget build(BuildContext context) {
     regionModelBloc =
         RegionModelBloc(repository: RepositoryProvider.of<Repository>(context));
+    forecastHourCubit = ForecastHourCubit();
     return MaterialApp(
         theme: ThemeData(
           useMaterial3: false,
         ),
         debugShowCheckedModeBanner: false,
         title: Strings.appTitle,
-        home: SoaringForecastRouteBuilder(regionModelBloc: regionModelBloc),
+        home: SoaringForecastRouteBuilder(regionModelBloc: regionModelBloc ,forecastHourCubit: forecastHourCubit,),
         initialRoute: SoaringForecastRouteBuilder.routeName,
         onGenerateRoute: (settings) {
           return _buildRoute(settings, regionModelBloc);
@@ -362,7 +364,7 @@ class SoaringForecastApp extends StatelessWidget {
       return CustomMaterialPageRoute(
         builder: (context) {
           return EstimatedTaskRouteBuilder(
-            regionModelBloc: regionModelBloc
+            regionModelBloc: regionModelBloc, forecastHourCubit: forecastHourCubit
           );
         },
         settings: settings,
@@ -395,8 +397,9 @@ class SoaringForecastApp extends StatelessWidget {
 class SoaringForecastRouteBuilder extends StatelessWidget {
   static const routeName = '/';
   final RegionModelBloc regionModelBloc;
+  final ForecastHourCubit forecastHourCubit;
 
-  SoaringForecastRouteBuilder({required this.regionModelBloc});
+  SoaringForecastRouteBuilder({required this.regionModelBloc, required this.forecastHourCubit});
 
   @override
   Widget build(BuildContext context) {
@@ -405,9 +408,7 @@ class SoaringForecastRouteBuilder extends StatelessWidget {
         BlocProvider.value(
           value: regionModelBloc..add(InitialRegionModelEvent()),
         ),
-        BlocProvider<ForecastHourCubit>(
-          create: (BuildContext context) => ForecastHourCubit(),
-        ),
+        BlocProvider.value(value: forecastHourCubit),
         BlocProvider<RaspDataBloc>(
           create: (BuildContext context) =>
               RaspDataBloc(
@@ -452,9 +453,10 @@ class LocalForecastGraphRouteBuilder extends StatelessWidget {
 class EstimatedTaskRouteBuilder extends StatelessWidget {
   static const routeName = '/EstimatedTask';
   final RegionModelBloc regionModelBloc;
+  final ForecastHourCubit forecastHourCubit;
 
   EstimatedTaskRouteBuilder(
-      {required this.regionModelBloc});
+      {required this.regionModelBloc, required this.forecastHourCubit});
 
   @override
   Widget build(BuildContext context) {
@@ -464,9 +466,7 @@ class EstimatedTaskRouteBuilder extends StatelessWidget {
             create: (BuildContext context) =>
             TaskEstimateCubit(
                 repository: RepositoryProvider.of<Repository>(context))),
-        BlocProvider<ForecastHourCubit>(
-            create: (BuildContext context) =>
-            ForecastHourCubit()),
+        BlocProvider.value(value: forecastHourCubit),
         BlocProvider.value(
             value: regionModelBloc..add(EstimatedTaskStartupEvent())),
       ],

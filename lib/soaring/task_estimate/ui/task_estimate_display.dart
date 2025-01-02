@@ -115,7 +115,6 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
           child: const Text(_HELP, style: TextStyle(color: Colors.white)),
           onPressed: () {
             _getTaskEstimateCubit().showExperimentalTextHelp();
-
           }),
       PopupMenuButton<String>(
           onSelected: _handleClick,
@@ -126,7 +125,7 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
               _beginnerMode
                   ? StandardLiterals.EXPERT_MODE
                   : StandardLiterals.BEGINNER_MODE,
-             // _DISPLAY_EXPERIMENTAL_TEXT,
+              // _DISPLAY_EXPERIMENTAL_TEXT,
             }.map((String choice) {
               // only one choice
               return PopupMenuItem<String>(
@@ -145,10 +144,10 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
         break;
       case StandardLiterals.EXPERT_MODE:
       case StandardLiterals.BEGINNER_MODE:
-      // toggle flag
-      //setState(() {
+        // toggle flag
+        //setState(() {
         _sendEvent(BeginnerModeEvent(!_beginnerMode));
-    //});
+      //});
       // case _DISPLAY_EXPERIMENTAL_TEXT:
       //   resetDisplayExperimentalText();
       //   break;
@@ -168,26 +167,28 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
   }
 
   Widget _getBody() {
-    return  Stack(
+    return Column(
       children: [
-        Column(children: [
-          Padding(
-            padding: EdgeInsets.all(8.0),
-            child: ModelDatesDisplay(),
-          ),
-        ForecastHourDisplay(displayPauseLoop: false),
-        Container(
-          child: SingleChildScrollView(
-            child: _showEstimatedTaskAvgTable(),
-          ),
+        Padding(
+          padding: EdgeInsets.all(8.0),
+          child: ModelDatesDisplay(),
         ),
-       
-        ],),
+        ForecastHourDisplay(displayPauseLoop: false),
+    Expanded(
+      child: SingleChildScrollView(
+          child:Stack(
+            children: [
+              Container(
+                  child: _showEstimatedTaskAvgTable(),
+                ),
+              TaskEstimateProgressIndicator()
+            ],
+          )),
+    ),
         _getOptimalFlightCloseButton(),
         _regionModelStatesHandler(),
         _taskEstimateStatesHandler(),
         _forecastHourHandler(),
-        TaskEstimateProgressIndicator(),
       ],
     );
   }
@@ -235,7 +236,8 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
           _getForecastHourCubit().setForecastHour(state.hour);
         }
         if (state is DisplayExperimentalHelpText) {
-          _displayEstimatedFlightHelp(state.showExperimentalText,state.calcAfterShow);
+          _displayEstimatedFlightHelp(
+              state.showExperimentalText, state.calcAfterShow);
         }
       },
       child: SizedBox.shrink(),
@@ -247,7 +249,6 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
       listener: (context, state) async {
         if (state is IncrDecrHourIndexState) {
           _getTaskEstimateCubit().updateTimeIndex(state.incrDecrIndex);
-
         }
       },
       child: SizedBox.shrink(),
@@ -401,8 +402,7 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
       child: Container(
           margin: EdgeInsets.only(right: 8),
           child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-              child: legDetailTable)),
+              scrollDirection: Axis.horizontal, child: legDetailTable)),
     );
   }
 
@@ -433,7 +433,8 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
           //      .toStringAsFixed(0)),
           //  convert tailwind to headwind
           _formattedTextCell(
-              (double.parse(legDetails[i].optAvgTailWind ?? "0") * -1)
+              (double.parse(legDetails[i].optAvgTailWind ?? "0") *
+                      ((legDetails[i].optAvgTailWind ?? "0") != "0" ? -1 : 1))
                   .toStringAsFixed(0)),
           _formattedTextCell(double.parse(legDetails[i].optAvgClimbRate ?? "0")
               .toStringAsFixed(0)),
@@ -509,29 +510,28 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
   }
 
   Widget _getOptimalFlightCloseButton() {
-    return Positioned.fill(
-      child: Align(
-          alignment: Alignment.bottomCenter,
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              minimumSize: Size(double.infinity,
-                  40), // double.infinity is the width and 30 is the height
-              foregroundColor: Colors.white,
-              backgroundColor: Theme.of(context).colorScheme.primary,
-            ),
-            child: Text("Close"),
-            onPressed: () {
-              _onWillPop();
-            },
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            minimumSize: Size(double.infinity,
+                40), // double.infinity is the width and 30 is the height
+            foregroundColor: Colors.white,
+            backgroundColor: Theme.of(context).colorScheme.primary,
           ),
+          child: Text("Close"),
+          onPressed: () {
+            _onWillPop();
+          },
         ),
       ),
     );
   }
 
-  void _displayEstimatedFlightHelp(bool showExperimentalText, bool calcAfterShow) async {
+  void _displayEstimatedFlightHelp(
+      bool showExperimentalText, bool calcAfterShow) async {
     CommonWidgets.showTextAndCheckboxDialogBuilder(
         context: context,
         title: "TASK FLIGHT ESTIMATES\n(EXPERIMENTAL)",
@@ -539,7 +539,7 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
         button1Text: StandardLiterals.OK,
         button1Function: (() {
           Navigator.pop(context);
-          if(calcAfterShow){
+          if (calcAfterShow) {
             _getTaskEstimateCubit().doCalc();
           }
         }));
@@ -557,14 +557,15 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
           StatefulBuilder(
               builder: (BuildContext context, StateSetter setState) {
             return CheckboxListTile(
-              title: Text("Do not display on start. (Will always display via HELP)"),
+              title: Text(
+                  "Do not display on start. (Will always display via HELP)"),
               controlAffinity: ListTileControlAffinity.leading,
               value: !_showExperimentalDialog,
               onChanged: (newValue) async {
                 _showExperimentalDialog = newValue != null ? !newValue : true;
                 await _getTaskEstimateCubit()
                     .displayExperimentalText(_showExperimentalDialog);
-                setState(()   {
+                setState(() {
                   // Seems like flutter wants async task out of setstate
                   // if checked then DO NOT display experimental text, hence save as false
                 });

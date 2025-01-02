@@ -23,9 +23,34 @@ There are probably easier ways to do this but...
 8. Open browser and go to http://127.0.0.1/  to ensure server running
 9. To compile app to use local server comment/uncomment lines in Constants file
    Set ip address/port to current laptop address (.11 is likely to change)
-   const String RASP_BASE_URL ='http://192.168.1.11/'
+   const String RASP_BASE_URL ='http://192.168.1.7/'   <<< Final number may change so check
 10. Regen the api's
     dart run build_runner build  --delete-conflicting-outputs
+
+Installing perl visual debugger. 
+1. Found StackOverflow reference to install debugger via 
+   sudo cpan Tk
+   sudo cpan Devel::ptkdb
+2. Looked like Tk install, but ptkdb install kept falling as it couldn't find Tk.pm
+3. Found link to install Tk.pm
+   sudo perl -MCPAN -e shell
+   at prompt did install Tk
+4. Reran sudo cpan Devel::ptkdb
+
+Debugging server side perl scripts
+The perl visual debugger was used to help trace and debug changes in  get_estimated_flight_avg.PL - a
+server side perl script used to get estimated task info (leg/task time, estimated climb rates, etc)
+From the local RASP sever cgi directory, the perl script was executed via:
+   perl -d:ptkdb get_estimated_flight_avg.PL ../NewEngland/2023-08-11/gfs NewEngland  d2 1000x  "LS-4" 1 "-0.00020,0.03500,-2.19000" 0.9092095622654608 1.0 turnpts ",42.42616666666667,-71.79383333333332,Ster,2,43.3705,-72.368,Clar,3,42.100833333333334,-72.03883333333333,Sout,4,42.42616666666667,-71.79383333333332,Ster"
+
+For executing skip to get Local Forecast via get_multirasp_blipspot:
+  curl "http://192.168.1.7/cgi/get_multirasp_blipspot.cgi?region=NewEngland&date=2023-08-11&model=gfs&time=1000%401100%401200%401300%401400%401500%401600%401700%401800&lat=42.805&lon=-72.00283333333333&param=experimental1%40zsfclcldif%40zsfclcl%40zblcldif%40zblcl%40wstar%40sfcwind0spd%40sfcwind0dir%40sfcwindspd%40sfcwinddir%40blwindspd%40blwinddir%40bltopwindspd%40bltopwinddir"
+
+Direct call to extract.blipspot.PL
+perl extract.blipspot.PL /Users/ericfoertsch/Sites/rasp/HTML/NewEngland/2023-08-11/gfs NewEngland 42.805 -72.00283333333333 0 1000 1100 1200 1300 1400 1500 1600 1700 1800 experimental1 zsfclcldif zsfclcl zblcldif zblcl wstar sfcwind0spd sfcwind0dir sfcwindspd sfcwinddir blwindspd blwinddir bltopwindspd bltopwinddir
+
+Apache2 error log on Mac can be listed via:
+    cat /var/log/apache2/error_log
 
 
 TODO: implement flutter_flavorizr - https://pub.dev/packages/flutter_flavorizr

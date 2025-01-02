@@ -31,18 +31,18 @@ import '../../rasp_options/rasp_display_options_cubit.dart';
 import '../../region_model/bloc/region_model_bloc.dart';
 import '../../region_model/bloc/region_model_state.dart';
 
-class ForecastMap extends StatefulWidget {
+class RaspMap extends StatefulWidget {
   final Function runAnimation;
 
-  ForecastMap({Key? key, required Function this.runAnimation})
+  RaspMap({Key? key, required Function this.runAnimation})
       : super(key: key);
 
   @override
-  ForecastMapState createState() => ForecastMapState();
+  RaspMapState createState() => RaspMapState();
 }
 
-class ForecastMapState extends State<ForecastMap>
-    with AfterLayoutMixin<ForecastMap>, TickerProviderStateMixin {
+class RaspMapState extends State<RaspMap>
+    with AfterLayoutMixin<RaspMap>, TickerProviderStateMixin {
   late final AnimatedMapController _mapController;
   bool _firstLayoutComplete = false;
   LatLng _mapCenter = NewEnglandMapCenter;
@@ -788,8 +788,10 @@ class ForecastMapState extends State<ForecastMap>
   void _updateGeoJsonSuaDetails(String suaDetail) async {
     setState(() {
       _suaPolygons.clear();
-      suaGeoJsonParser.parseGeoJsonAsString(suaDetail);
-      _suaPolygons.addAll(suaGeoJsonParser.getGeoJasonPolygons());
+      if (suaDetail != "{}") {
+        suaGeoJsonParser.parseGeoJsonAsString(suaDetail);
+        _suaPolygons.addAll(suaGeoJsonParser.getGeoJasonPolygons());
+      }
     });
   }
 
@@ -954,7 +956,11 @@ class ForecastMapState extends State<ForecastMap>
                 widget.runAnimation(false);
                 await Navigator.pushNamed(
                       context, EstimatedTaskRouteBuilder.routeName);
-              _sendEvent(RefreshModelDateEvent());
+                // Need to wait a frame otherwise resultant refresh goes to
+                // estimated task
+                WidgetsBinding.instance.addPostFrameCallback((_)=>
+                  _sendEvent(RefreshModelDateEvent())
+                );
               },
               child: Stack(
                 alignment: Alignment.center,

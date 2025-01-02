@@ -460,7 +460,7 @@ class GliderCubit extends Cubit<GliderCubitState> {
     emit(ShowPolarHelpState(showPolarHelp));
   }
 
-  void saveCustomGliderDetails() async {
+  Future<void> saveCustomGliderDetails() async {
     await storeCustomGlider();
     await _repository.saveLastSelectedGliderName(_customGlider!.glider);
 
