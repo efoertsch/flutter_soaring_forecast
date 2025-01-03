@@ -104,8 +104,8 @@ void main() async {
     Workmanager().initialize(
         callbackDispatcher, // The top level function, aka callbackDispatcher
         isInDebugMode:
-        !kReleaseMode // If enabled it will post a notification whenever the task is running. Handy for debugging tasks
-    );
+            !kReleaseMode // If enabled it will post a notification whenever the task is running. Handy for debugging tasks
+        );
     Workmanager()
         .registerOneOffTask("oneTimeDownload", "workmanager.background.task");
   }
@@ -116,7 +116,7 @@ void main() async {
   // https://stackoverflow.com/questions/54285172/how-to-solve-flutter-certificate-verify-failed-error-while-performing-a-post-req
   // https://flutter-developer.medium.com/flutter-android-7-certificate-verify-failed-with-letsencrypt-ssl-cert-after-sept-30-2021-9cb5f672c090
   ByteData data =
-  await PlatformAssetBundle().load('assets/ca/lets-encrypt-r3.pem');
+      await PlatformAssetBundle().load('assets/ca/lets-encrypt-r3.pem');
   SecurityContext.defaultContext
       .setTrustedCertificatesBytes(data.buffer.asUint8List());
   // End of Lets Encrypt SSL stuff
@@ -142,24 +142,49 @@ class SoaringForecastApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    regionModelBloc =
-        RegionModelBloc(repository: RepositoryProvider.of<Repository>(context));
-    forecastHourCubit = ForecastHourCubit();
-    return MaterialApp(
-        theme: ThemeData(
-          useMaterial3: false,
-        ),
-        debugShowCheckedModeBanner: false,
-        title: Strings.appTitle,
-        home: SoaringForecastRouteBuilder(regionModelBloc: regionModelBloc ,forecastHourCubit: forecastHourCubit,),
-        initialRoute: SoaringForecastRouteBuilder.routeName,
-        onGenerateRoute: (settings) {
-          return _buildRoute(settings, regionModelBloc);
-        });
+    return MultiBlocProvider(
+        providers: [
+          BlocProvider<RegionModelBloc>(
+            create: (BuildContext context) => RegionModelBloc(
+                repository: RepositoryProvider.of<Repository>(context)),
+          ),
+          BlocProvider<ForecastHourCubit>(
+            create: (BuildContext context) => ForecastHourCubit(),
+          )
+        ],
+        child: MaterialApp(
+            theme: ThemeData(
+              useMaterial3: false,
+            ),
+            debugShowCheckedModeBanner: false,
+            title: Strings.appTitle,
+            home: SoaringForecastRouteBuilder(),
+            initialRoute: SoaringForecastRouteBuilder.routeName,
+            onGenerateRoute: (settings) {
+              return _buildRoute(settings);
+            }));
+
+    // regionModelBloc =
+    //     RegionModelBloc(repository: RepositoryProvider.of<Repository>(context));
+    // forecastHourCubit = ForecastHourCubit();
+    // return MaterialApp(
+    //     theme: ThemeData(
+    //       useMaterial3: false,
+    //     ),
+    //     debugShowCheckedModeBanner: false,
+    //     title: Strings.appTitle,
+    //     home: SoaringForecastRouteBuilder(
+    //       regionModelBloc: regionModelBloc,
+    //       forecastHourCubit: forecastHourCubit,
+    //     ),
+    //     initialRoute: SoaringForecastRouteBuilder.routeName,
+    //     onGenerateRoute: (settings) {
+    //       return _buildRoute(settings, regionModelBloc);
+    //     });
   }
 
-  CustomMaterialPageRoute? _buildRoute(RouteSettings settings,
-      RegionModelBloc regionModelBloc) {
+  CustomMaterialPageRoute? _buildRoute(
+      RouteSettings settings) {
     if (settings.name == TaskListRouteBuilder.routeName) {
       var option = null;
       if (settings.arguments != null) {
@@ -185,7 +210,7 @@ class SoaringForecastApp extends StatelessWidget {
 
     if (settings.name == TurnpointEditRouteBuilder.routeName) {
       int? turnpointId =
-      (settings.arguments == null ? null : settings.arguments as int);
+          (settings.arguments == null ? null : settings.arguments as int);
       return CustomMaterialPageRoute(
         builder: (context) {
           return TurnpointEditRouteBuilder(turnpointId: turnpointId);
@@ -351,10 +376,7 @@ class SoaringForecastApp extends StatelessWidget {
       final graphData = settings.arguments as LocalForecastInputData;
       return CustomMaterialPageRoute(
         builder: (context) {
-          return LocalForecastGraphRouteBuilder(
-            regionModelBloc: regionModelBloc,
-            graphData: graphData,
-          );
+          return LocalForecastGraphRouteBuilder(graphData: graphData);
         },
         settings: settings,
       );
@@ -363,9 +385,7 @@ class SoaringForecastApp extends StatelessWidget {
     if (settings.name == EstimatedTaskRouteBuilder.routeName) {
       return CustomMaterialPageRoute(
         builder: (context) {
-          return EstimatedTaskRouteBuilder(
-            regionModelBloc: regionModelBloc, forecastHourCubit: forecastHourCubit
-          );
+          return EstimatedTaskRouteBuilder();
         },
         settings: settings,
       );
@@ -396,28 +416,24 @@ class SoaringForecastApp extends StatelessWidget {
 
 class SoaringForecastRouteBuilder extends StatelessWidget {
   static const routeName = '/';
-  final RegionModelBloc regionModelBloc;
-  final ForecastHourCubit forecastHourCubit;
 
-  SoaringForecastRouteBuilder({required this.regionModelBloc, required this.forecastHourCubit});
+  SoaringForecastRouteBuilder();
 
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
         BlocProvider.value(
-          value: regionModelBloc..add(InitialRegionModelEvent()),
-        ),
-        BlocProvider.value(value: forecastHourCubit),
+            value: BlocProvider.of<RegionModelBloc>(context)
+              ..add(InitialRegionModelEvent())),
+        BlocProvider.value(value: BlocProvider.of<ForecastHourCubit>(context)),
         BlocProvider<RaspDataBloc>(
-          create: (BuildContext context) =>
-              RaspDataBloc(
-                  repository: RepositoryProvider.of<Repository>(context)),
+          create: (BuildContext context) => RaspDataBloc(
+              repository: RepositoryProvider.of<Repository>(context)),
         ),
         BlocProvider(
-            create: (BuildContext context) =>
-                RaspDisplayOptionsCubit(
-                    repository: RepositoryProvider.of<Repository>(context)))
+            create: (BuildContext context) => RaspDisplayOptionsCubit(
+                repository: RepositoryProvider.of<Repository>(context)))
       ],
       child: RaspScreen(),
     );
@@ -427,23 +443,21 @@ class SoaringForecastRouteBuilder extends StatelessWidget {
 class LocalForecastGraphRouteBuilder extends StatelessWidget {
   static const routeName = '/ForecastGraph';
   final LocalForecastInputData graphData;
-  final RegionModelBloc regionModelBloc;
 
-  LocalForecastGraphRouteBuilder(
-      {required this.regionModelBloc, required this.graphData});
+  LocalForecastGraphRouteBuilder({required this.graphData});
 
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
         BlocProvider<LocalForecastBloc>(
-            create: (BuildContext context) =>
-            LocalForecastBloc(
+            create: (BuildContext context) => LocalForecastBloc(
                 repository: RepositoryProvider.of<Repository>(context))
               ..add(
                   LocalForecastGraphEvent(localForecastGraphData: graphData))),
         BlocProvider.value(
-            value: regionModelBloc..add(LocalForecastStartupEvent()))
+            value: BlocProvider.of<RegionModelBloc>(context)
+              ..add(LocalForecastStartupEvent())),
       ],
       child: LocalForecastGraphDisplay(),
     );
@@ -452,23 +466,20 @@ class LocalForecastGraphRouteBuilder extends StatelessWidget {
 
 class EstimatedTaskRouteBuilder extends StatelessWidget {
   static const routeName = '/EstimatedTask';
-  final RegionModelBloc regionModelBloc;
-  final ForecastHourCubit forecastHourCubit;
 
-  EstimatedTaskRouteBuilder(
-      {required this.regionModelBloc, required this.forecastHourCubit});
+  EstimatedTaskRouteBuilder();
 
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
         BlocProvider<TaskEstimateCubit>(
-            create: (BuildContext context) =>
-            TaskEstimateCubit(
+            create: (BuildContext context) => TaskEstimateCubit(
                 repository: RepositoryProvider.of<Repository>(context))),
-        BlocProvider.value(value: forecastHourCubit),
         BlocProvider.value(
-            value: regionModelBloc..add(EstimatedTaskStartupEvent())),
+            value: BlocProvider.of<RegionModelBloc>(context)
+              ..add(EstimatedTaskStartupEvent())),
+        BlocProvider.value(value: BlocProvider.of<ForecastHourCubit>(context)),
       ],
       child: TaskEstimateDisplay(),
     );
@@ -481,7 +492,8 @@ class GliderPolarListBuilder extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider<GliderCubit>(
       create: (BuildContext context) =>
-          GliderCubit(repository: RepositoryProvider.of<Repository>(context))..getListOfGliders(),
+          GliderCubit(repository: RepositoryProvider.of<Repository>(context))
+            ..getListOfGliders(),
       child: GliderPolarListScreen(),
     );
   }
@@ -557,9 +569,8 @@ class TurnpointViewRouteBuilder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider<TurnpointBloc>(
-        create: (BuildContext context) =>
-            TurnpointBloc(
-                repository: RepositoryProvider.of<Repository>(context)),
+        create: (BuildContext context) => TurnpointBloc(
+            repository: RepositoryProvider.of<Repository>(context)),
         child: TurnpointOverheadView(
             turnpointOverHeadArgs: turnpointOverHeadArgs));
   }
@@ -574,9 +585,8 @@ class TurnpointEditRouteBuilder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider<TurnpointBloc>(
-        create: (BuildContext context) =>
-            TurnpointBloc(
-                repository: RepositoryProvider.of<Repository>(context)),
+        create: (BuildContext context) => TurnpointBloc(
+            repository: RepositoryProvider.of<Repository>(context)),
         child: TurnpointEditView(turnpointId: turnpointId));
   }
 }
@@ -642,9 +652,8 @@ class RegionListRouteBuilder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider<RegionDataBloc>(
-      create: (BuildContext context) =>
-          RegionDataBloc(
-              repository: RepositoryProvider.of<Repository>(context)),
+      create: (BuildContext context) => RegionDataBloc(
+          repository: RepositoryProvider.of<Repository>(context)),
       child: RegionListScreen(selectedRegionName: selectedRegion),
     );
   }

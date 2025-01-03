@@ -185,7 +185,7 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
             ],
           )),
     ),
-        _getOptimalFlightCloseButton(),
+       // _getOptimalFlightCloseButton(),
         _regionModelStatesHandler(),
         _taskEstimateStatesHandler(),
         _forecastHourHandler(),
