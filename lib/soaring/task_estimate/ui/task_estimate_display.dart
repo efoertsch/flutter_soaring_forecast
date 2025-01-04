@@ -239,6 +239,10 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
           _displayEstimatedFlightHelp(
               state.showExperimentalText, state.calcAfterShow);
         }
+        if (state is TaskEstimateErrorState) {
+          CommonWidgets.showErrorDialog(
+              context, StandardLiterals.UH_OH, state.errorMsg);
+        }
       },
       child: SizedBox.shrink(),
     );
@@ -302,19 +306,19 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
                   double.parse(header.maxLd ?? "0").toStringAsFixed(1)),
             ],
           ),
-          TableRow(
-            children: [
-              _formattedTextCell("Polar Speed Adjustment"),
-              _formattedTextCell(
-                  double.parse(header.polarSpeedAdjustment ?? "0")
-                      .toStringAsFixed(1)),
-            ],
-          ),
+          // TableRow(
+          //   children: [
+          //     _formattedTextCell("Polar Speed Adjustment"),
+          //     _formattedTextCell(
+          //         double.parse(header.polarSpeedAdjustment ?? "0")
+          //             .toStringAsFixed(1)),
+          //   ],
+          // ),
           TableRow(
             children: [
               _formattedTextCell("Thermaling Sink \nRate (ft/min)"),
               _formattedTextCell(double.parse(header.thermalingSinkRate ?? "0")
-                  .toStringAsFixed(1)),
+                  .toStringAsFixed(0)),
             ],
           ),
         ],
@@ -431,10 +435,9 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
           //        .toStringAsFixed(0)),
           //  _formattedTextCell(double.parse(legDetail.sptlAvgClimbRate ?? "0")
           //      .toStringAsFixed(0)),
-          //  convert tailwind to headwind
+
           _formattedTextCell(
-              (double.parse(legDetails[i].optAvgTailWind ?? "0") *
-                      ((legDetails[i].optAvgTailWind ?? "0") != "0" ? -1 : 1))
+              (double.parse(legDetails[i].optAvgTailWind ?? "0"))
                   .toStringAsFixed(0)),
           _formattedTextCell(double.parse(legDetails[i].optAvgClimbRate ?? "0")
               .toStringAsFixed(0)),
@@ -464,7 +467,7 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
         _formattedTextCell("ClockTime"),
         _formattedTextCell("Time\nMin"),
         _formattedTextCell("Dist\nkm"),
-        _formattedTextCell("Head\nWind\nkt"),
+        _formattedTextCell("Tail\nWind\nkt"),
         _formattedTextCell("Clmb\nRate\nkt"),
         _formattedTextCell("Gnd\nSpd\nkt"),
         _formattedTextCell("Gnd\nSpd\nkm/h"),

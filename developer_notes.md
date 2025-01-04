@@ -46,7 +46,7 @@ From the local RASP sever cgi directory, the perl script was executed via:
 For executing skip to get Local Forecast via get_multirasp_blipspot:
   curl "http://192.168.1.7/cgi/get_multirasp_blipspot.cgi?region=NewEngland&date=2023-08-11&model=gfs&time=1000%401100%401200%401300%401400%401500%401600%401700%401800&lat=42.805&lon=-72.00283333333333&param=experimental1%40zsfclcldif%40zsfclcl%40zblcldif%40zblcl%40wstar%40sfcwind0spd%40sfcwind0dir%40sfcwindspd%40sfcwinddir%40blwindspd%40blwinddir%40bltopwindspd%40bltopwinddir"
 
-Direct call to extract.blipspot.PL
+Direct call to extract.blipspot.PL (For testing on local server)
 perl extract.blipspot.PL /Users/ericfoertsch/Sites/rasp/HTML/NewEngland/2023-08-11/gfs NewEngland 42.805 -72.00283333333333 0 1000 1100 1200 1300 1400 1500 1600 1700 1800 experimental1 zsfclcldif zsfclcl zblcldif zblcl wstar sfcwind0spd sfcwind0dir sfcwindspd sfcwinddir blwindspd blwinddir bltopwindspd bltopwinddir
 
 Apache2 error log on Mac can be listed via:

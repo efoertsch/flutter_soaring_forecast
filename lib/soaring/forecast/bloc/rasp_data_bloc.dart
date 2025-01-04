@@ -24,7 +24,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
   String _selectedForecastDate = ""; // selected date  2019-12-19
 
   List<String> _forecastTimes = [];
-  int _selectedForecastTimeIndex = 4; // start at   1300 forecast
+  int _selectedForecastTimeIndex = 0;
 
   ///TODO break out forecasts to separate block
   List<Forecast>? _forecasts;
@@ -77,6 +77,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
     _selectedModelName = event.modelName; // nam
     _selectedForecastDate = event.modelDate; // selected date  2019-12-19
     _forecastTimes = event.localTimes;
+    _selectedForecastTimeIndex = event.localTimes.indexOf(event.localTime);
     _emitForecastSoundingImageSets(emit);
   }
 
