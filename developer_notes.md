@@ -57,7 +57,7 @@ TODO: implement flutter_flavorizr - https://pub.dev/packages/flutter_flavorizr
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 Prior to production compile, ensure proper RASP_BASE_URL value is set
-for Production and the API's are regen'ed.  See local_rasp_server.md
+for Production and the API's are regen'ed. 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 Development:
@@ -87,6 +87,10 @@ For any production release:
 1. Update release number in pubspec.yml
 
 iOS release
+
+Apple signing certificates may expire and need to be renewed. Because I don't have an iPhone I need
+to manually manage generating and assigning new certificates. I found instructions via google query
+"update expired provisioning profile for iOS app"
 
 After repeated warnings ' warning: The iOS deployment target 'IPHONEOS_DEPLOYMENT_TARGET' is set to 8.0, but
 the range of supported deployment target versions is 11.0 to 16.1.99.'
