@@ -53,7 +53,7 @@ import 'package:retrofit/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
 
-import '../forecast/forecast_data/local_forecast_favorite.dart';
+import '../local_forecast/data/local_forecast_favorite.dart';
 import 'dio_interceptor.dart';
 import 'rasp/forecast_models.dart';
 import 'rasp/forecast_types.dart';
@@ -101,7 +101,8 @@ class Repository {
   static const String _WXBRIEF_CORRIDOR_WIDTH = "WXBRIEF_CORRIDOR_WIDTH";
   static const String _WXBRIEF_WINDS_ALOFT_WIDTH = "WXBRIEF_WINDS_ALOFT_WIDTH";
   static const String _WX_BRIEF_SHOW_AUTH_SCREEN = "WX_BRIEF_SHOW_DISCLAIMER";
-  static const String _EXPERIMENTAL_ESTIMATED_FLIGHT_FLAG = "EXPERIMENTAL_ESTIMATED_TASK_FLAG";
+  static const String _EXPERIMENTAL_ESTIMATED_FLIGHT_FLAG =
+      "EXPERIMENTAL_ESTIMATED_TASK_FLAG";
 
   static final _fullForecastList = <Forecast>[];
   static final _displayableForecastList = <Forecast>[];
@@ -111,8 +112,11 @@ class Repository {
   static Gliders? _customGliders = null;
 
   // this value must be the same value as that in the settings.json file.
-  static const String _SHOW_ESTIMATED_FLIGHT_BUTTON = "SHOW_ESTIMATED_FLIGHT_BUTTON";
-  static const String _SHOW_ESTIMATED_FLIGHT_EXPERIMENTAL_TEXT = "SHOW_ESTIMATED_FLIGHT_EXPERIMENTAL_TEXT";
+  static const String _SHOW_ESTIMATED_FLIGHT_BUTTON =
+      "SHOW_ESTIMATED_FLIGHT_BUTTON";
+  static const String _SHOW_ESTIMATED_FLIGHT_EXPERIMENTAL_TEXT =
+      "SHOW_ESTIMATED_FLIGHT_EXPERIMENTAL_TEXT";
+  static const String _SHOW_POLAR_HELP = "SHOW_POLAR_HELP";
 
   Repository._();
 
@@ -339,7 +343,7 @@ class Repository {
     String date,
     String model,
     String grid,
-    String times,
+    String time,
     String glider,
     double polarFactor,
     String polarCoefficients,
@@ -356,7 +360,7 @@ class Repository {
             date,
             model,
             grid,
-            times,
+            time,
             glider,
             polarFactor,
             polarCoefficients,
@@ -394,21 +398,21 @@ class Repository {
         key: _FORECAST_OVERLAY_OPACITY, value: forecastOverlayOpacity);
   }
 
-  Future<void> saveViewBounds(ViewBounds mapBoundsAndZoom) async {
-    Map json = mapBoundsAndZoom.toJson();
-    var stringBounds = jsonEncode(json);
-    await saveGenericString(key: _VIEW_MAP_BOUNDS, value: stringBounds);
-  }
-
-  Future<ViewBounds?> getViewBoundsAndZoom() async {
-    String stringBounds =
-        await getGenericString(key: _VIEW_MAP_BOUNDS, defaultValue: "");
-    if (stringBounds.isEmpty) {
-      return null;
-    }
-    var mapBoundsAndZoom = ViewBounds.fromJson(jsonDecode(stringBounds));
-    return mapBoundsAndZoom;
-  }
+  // Future<void> saveViewBounds(ViewBounds mapBoundsAndZoom) async {
+  //   Map json = mapBoundsAndZoom.toJson();
+  //   var stringBounds = jsonEncode(json);
+  //   await saveGenericString(key: _VIEW_MAP_BOUNDS, value: stringBounds);
+  // }
+  //
+  // Future<ViewBounds?> getViewBoundsAndZoom() async {
+  //   String stringBounds =
+  //       await getGenericString(key: _VIEW_MAP_BOUNDS, defaultValue: "");
+  //   if (stringBounds.isEmpty) {
+  //     return null;
+  //   }
+  //   var mapBoundsAndZoom = ViewBounds.fromJson(jsonDecode(stringBounds));
+  //   return mapBoundsAndZoom;
+  //}
 
   Future<void> saveLastForecastTime(int timeInMillSecs) async {
     saveGenericInt(key: _LAST_FORECAST_TIME, value: timeInMillSecs);
@@ -1032,7 +1036,8 @@ class Repository {
 
   //------ 1800wxbrief ---------------------------------
   Future<String> getSavedAirportId() async {
-    return await getGenericString(key: _WXBRIEF_AIRPORT_ID, defaultValue: "3B3");
+    return await getGenericString(
+        key: _WXBRIEF_AIRPORT_ID, defaultValue: "3B3");
   }
 
   Future<bool> saveAirportId(String airportId) async {
@@ -1084,7 +1089,8 @@ class Repository {
   }
 
   Future<bool> setWxBriefCorridorWidth(String corridorWidth) async {
-    return saveGenericString(key: _WXBRIEF_CORRIDOR_WIDTH, value: corridorWidth);
+    return saveGenericString(
+        key: _WXBRIEF_CORRIDOR_WIDTH, value: corridorWidth);
   }
 
   Future<String> getWxBriefWindsAloftWidth() async {
@@ -1192,7 +1198,7 @@ class Repository {
   // ----- Shared preferences --------------------------
   // Make sure keys are unique among calling routines!
 
- Future<void> ensureSharedPreferences() async {
+  Future<void> ensureSharedPreferences() async {
     if (sharedPreferences == null) {
       sharedPreferences = await SharedPreferences.getInstance();
     }
@@ -1249,7 +1255,7 @@ class Repository {
     await ensureSharedPreferences();
     final value = await sharedPreferences!.getBool(key);
     //debugPrint("getGenericBool  key: $key   value: $value");
-    return  value ?? defaultValue;
+    return value ?? defaultValue;
   }
 
   // ----- File access -----------------------------------------------
@@ -1334,13 +1340,14 @@ class Repository {
   }
 
   Future<List<Glider>?> getFullListOfGliders() async {
-   // await _loadFullListOfGliders();
+    // await _loadFullListOfGliders();
     await _downloadListOfGliderPolars();
     return _fullGliderList?.gliders;
   }
 
   Future<void> _downloadListOfGliderPolars() async {
-    if (_fullGliderList == null || _fullGliderList!.gliders == null ||
+    if (_fullGliderList == null ||
+        _fullGliderList!.gliders == null ||
         _fullGliderList!.gliders!.length == 0) {
       var stringJson = await _raspOptionsClient.getGliderPolars();
       if (stringJson != null) {
@@ -1350,7 +1357,6 @@ class Repository {
       }
     }
   }
-
 
   Future<void> _loadCustomGliders() async {
     if (_customGliders == null) {
@@ -1382,12 +1388,11 @@ class Repository {
     await getCustomGliders();
     if (_customGliders!.gliders != null) {
       // remove old entry if there was one
-       _customGliders!.gliders?.removeWhere(
+      _customGliders!.gliders?.removeWhere(
           (savedGlider) => savedGlider.glider == customPolar.glider);
-     // and add updated glider to list
-        _customGliders!.gliders!.add(customPolar);
-      }
-     else {
+      // and add updated glider to list
+      _customGliders!.gliders!.add(customPolar);
+    } else {
       // no custom polars at all create list
       _customGliders!.gliders = <Glider>[customPolar];
     }
@@ -1395,8 +1400,17 @@ class Repository {
         key: _MY_GLIDERS, value: Gliders.glidersToJsonString(_customGliders!));
   }
 
-  Future<({Glider? defaultGlider, Glider? customGlider})> getDefaultAndCustomGliderDetails(
-      String gliderName) async {
+  Future<Glider?> getCustomGliderPolar(String gliderName) async {
+    await _loadCustomGliders();
+    if (_customGliders!.gliders != null) {
+      return _customGliders!.gliders
+          ?.firstWhereOrNull((polar) => polar.glider == gliderName);
+    }
+    return null;
+  }
+
+  Future<({Glider? defaultGlider, Glider? customGlider})>
+      getDefaultAndCustomGliderDetails(String gliderName) async {
     // if master list not loaded yet load it
     await _downloadListOfGliderPolars();
     await _loadCustomGliders();
@@ -1423,47 +1437,63 @@ class Repository {
   }
 
   Future<DisplayUnits> getDisplayUnits() async {
-    String displayUnit =
-        await getGenericString(key: _DISPLAY_UNITS, defaultValue: DisplayUnits.Imperial_kts.toString());
+    String displayUnit = await getGenericString(
+        key: _DISPLAY_UNITS,
+        defaultValue: DisplayUnits.Imperial_kts.toString());
     return _convertDisplayUnitsStringToEnum(displayUnit);
   }
 
   DisplayUnits _convertDisplayUnitsStringToEnum(String displayUnits) {
-    return DisplayUnits.values.firstWhereOrNull(
-            (e) => e.toString() ==  displayUnits) ??
+    return DisplayUnits.values
+            .firstWhereOrNull((e) => e.toString() == displayUnits) ??
         DisplayUnits.Imperial_kts;
   }
 
   Future<DisplayUnits> saveDisplayUnits(DisplayUnits displayUnits) async {
-    await saveGenericString(key: _DISPLAY_UNITS, value: displayUnits.toString());
+    await saveGenericString(
+        key: _DISPLAY_UNITS, value: displayUnits.toString());
     return _convertDisplayUnitsStringToEnum(displayUnits.toString());
   }
 
-  Future<bool> getDisplayExperimentalOptimalTaskAlertFlag() async {
-    return await getGenericBool(key: _EXPERIMENTAL_ESTIMATED_FLIGHT_FLAG, defaultValue: true);
+  Future<bool> getDisplayExperimentalEstimatedTaskAlertFlag() async {
+    return await getGenericBool(
+        key: _EXPERIMENTAL_ESTIMATED_FLIGHT_FLAG, defaultValue: true);
   }
 
-  Future<void> saveDisplayExperimentalOptimalTaskAlertFlag(bool flag) async {
-     await saveGenericBool(key: _EXPERIMENTAL_ESTIMATED_FLIGHT_FLAG, value: flag);
+  Future<void> saveDisplayExperimentalEstimatedTaskAlertFlag(bool flag) async {
+    await saveGenericBool(
+        key: _EXPERIMENTAL_ESTIMATED_FLIGHT_FLAG, value: flag);
   }
 
   Future<bool> getDisplayXCSoarValues() async {
-    return await getGenericBool(key: _DISPLAY_XCSOAR_VALUES, defaultValue: false);
+    return await getGenericBool(
+        key: _DISPLAY_XCSOAR_VALUES, defaultValue: false);
   }
+
   Future<bool> saveDisplayXCSoarValues(bool display) async {
     return await saveGenericBool(key: _DISPLAY_XCSOAR_VALUES, value: display);
   }
 
+  Future<bool> getShowPolarHelp() async {
+    return await getGenericBool(key: _SHOW_POLAR_HELP, defaultValue: false);
+  }
 
-  Future<bool>getDisplayEstimatedFlightButton() async {
-    return await getGenericBool(key: _SHOW_ESTIMATED_FLIGHT_BUTTON, defaultValue: true);
+  Future<bool> saveShowPolarHelp(bool display) async {
+    return await saveGenericBool(key: _SHOW_POLAR_HELP, value: display);
+  }
+
+  Future<bool> getDisplayEstimatedFlightButton() async {
+    return await getGenericBool(
+        key: _SHOW_ESTIMATED_FLIGHT_BUTTON, defaultValue: true);
   }
 
   Future<bool> getShowEstimatedFlightExperimentalText() async {
-    return await getGenericBool(key: _SHOW_ESTIMATED_FLIGHT_EXPERIMENTAL_TEXT, defaultValue: true);
+    return await getGenericBool(
+        key: _SHOW_ESTIMATED_FLIGHT_EXPERIMENTAL_TEXT, defaultValue: true);
   }
 
   Future<bool> saveShowEstimatedFlightExperimentalText(bool show) async {
-    return await saveGenericBool(key: _SHOW_ESTIMATED_FLIGHT_EXPERIMENTAL_TEXT, value: show);
+    return await saveGenericBool(
+        key: _SHOW_ESTIMATED_FLIGHT_EXPERIMENTAL_TEXT, value: show);
   }
 }

@@ -2,13 +2,14 @@ import 'dart:math';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
-import 'package:flutter_soaring_forecast/soaring/forecast/cubit/glider_state.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/gliders.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 import 'package:vector_math/vector_math_64.dart';
-import 'package:flutter_soaring_forecast/soaring/forecast/cubit/glider_enums.dart';
 
-class GliderCubit extends Cubit<GliderState> {
+import '../glider_enums.dart';
+import 'glider_state.dart';
+
+class GliderCubit extends Cubit<GliderCubitState> {
   late final Repository _repository;
 
   late DisplayUnits _displayUnits;
@@ -39,18 +40,10 @@ class GliderCubit extends Cubit<GliderState> {
 
   GliderCubit({required Repository repository})
       : _repository = repository,
-        super(GliderPolarInitialState()) {}
+        super(GliderCubitInitialState()) {}
 
   void _indicateWorking(bool isWorking) {
-    emit(GliderPolarIsWorkingState(isWorking));
-  }
-
-  void checkToDisplayExperimentalText() async {
-    var displayText =
-        await _repository.getShowEstimatedFlightExperimentalText();
-    if (displayText) {
-      emit(DisplayEstimatedFlightText());
-    }
+    emit(GliderCubitWorkingState(isWorking));
   }
 
   Future<void> getListOfGliders() async {
@@ -58,21 +51,25 @@ class GliderCubit extends Cubit<GliderState> {
     List<String> gliders = [];
     List<Glider>? fullGliderList = await _repository.getFullListOfGliders();
     gliders.addAll(fullGliderList?.map((polar) => polar.glider) ?? <String>[]);
-    emit(GliderListState(
-        gliders, await _repository.getLastSelectedGliderName()));
     String selectedGlider = await _repository.getLastSelectedGliderName();
+    emit(GliderListState(
+        gliders, selectedGlider));
+
     if (selectedGlider.isNotEmpty) {
       await getGliderPolar(selectedGlider);
     }
-    if (await _repository.getDisplayExperimentalOptimalTaskAlertFlag()) {
-      emit(DisplayEstimatedFlightText());
+
+    bool showPolarHelp = await _repository.getShowPolarHelp();
+    if (showPolarHelp){
+      emit(ShowPolarHelpState(showPolarHelp));
     }
+
     _indicateWorking(false);
   }
 
   Future<void> getGliderPolar(String gliderName) async {
     _indicateWorking(true);
-    await _repository.saveLastSelectedGliderName(gliderName);
+
     _displayXCSoarValues = await _repository.getDisplayXCSoarValues();
     _displayUnits = await _repository.getDisplayUnits();
     _assignDisplayUnitLabels(_displayUnits);
@@ -139,7 +136,7 @@ class GliderCubit extends Cubit<GliderState> {
     } else if (toUnits == DisplayUnits.Imperial_mph) {
       velocityConversion = VELOCITY_CONVERSION.kph2mph;
     } else {
-      emit(GliderPolarErrorState(
+      emit(GliderCubitErrorState(
           "Invalid displayUnits.  Conversion: ${toUnits.toString()}"));
       return glider;
     }
@@ -210,7 +207,7 @@ class GliderCubit extends Cubit<GliderState> {
     } else if (velocityConversion == VELOCITY_CONVERSION.kph2mph) {
       return velocity * 0.621371; // 1 kph = 0.621371 mph
     }
-    emit(GliderPolarErrorState(
+    emit(GliderCubitErrorState(
         "Invalid velocity conversion: ${velocityConversion.toString()}"));
     return 0;
   }
@@ -242,10 +239,9 @@ class GliderCubit extends Cubit<GliderState> {
         _customGlider!.v3 = newValue;
         break;
       default:
-        emit(GliderPolarErrorState(
+        emit(GliderCubitErrorState(
             "Missing update logic for sink rate parm ${sinkRateParm}"));
     }
-    storeCustomGlider();
     _customGliderLocalUnits =
         _convertAllGliderValues(_customGlider!.copyWith(), _displayUnits);
     _emitGlidersInfo();
@@ -272,12 +268,11 @@ class GliderCubit extends Cubit<GliderState> {
         _customGlider!.maxBallast = newValue;
         break;
       default:
-        emit(GliderPolarErrorState(
+        emit(GliderCubitErrorState(
             "Missing update logic for glider mass ${massParm}"));
         return;
     }
     calculatePolarAdjustmentFactor(_customGlider!, _defaultGlider!);
-    storeCustomGlider();
     _customGliderLocalUnits =
         _convertAllGliderValues(_customGlider!.copyWith(), _displayUnits);
     _emitGlidersInfo();
@@ -313,11 +308,10 @@ class GliderCubit extends Cubit<GliderState> {
         _customGlider!.updatedVW = true;
         break;
       default:
-        emit(GliderPolarErrorState(
+        emit(GliderCubitErrorState(
             "Missing update logic for polar sink rate parm ${velocityParm}"));
         return;
     }
-    storeCustomGlider();
     _customGliderLocalUnits =
         _convertAllGliderValues(_customGlider!.copyWith(), _displayUnits);
     _emitGlidersInfo();
@@ -371,19 +365,9 @@ class GliderCubit extends Cubit<GliderState> {
     await _repository.saveCustomPolar(_customGlider!);
   }
 
-  Future<void> displayExperimentalText(bool value) async {
-    _repository.saveDisplayExperimentalOptimalTaskAlertFlag(value);
-  }
-
-  Future<void> resetExperimentalTextDisplay() async {
-    displayExperimentalText(true);
-    emit(DisplayEstimatedFlightText());
-  }
-
   void updateThermalingBankAngle(int newBankAngle) {
     _customGlider!.bankAngle = newBankAngle;
     calculateThermalingValues(_customGlider!, DisplayUnits.Metric);
-    storeCustomGlider();
     _customGliderLocalUnits =
         _convertAllGliderValues(_customGlider!.copyWith(), _displayUnits);
 
@@ -401,7 +385,8 @@ class GliderCubit extends Cubit<GliderState> {
     double speed = 0;
     double funkyNumber = 0;
     double tangent = tan(twoPi / 360.0 * glider.bankAngle);
-    if (tangent == 0){  // if  bank angle is 0
+    if (tangent == 0) {
+      // if  bank angle is 0
       glider.turnDiameter = 0;
       glider.secondsForTurn = 0;
       return;
@@ -418,7 +403,7 @@ class GliderCubit extends Cubit<GliderState> {
         speed = glider.minSinkSpeedAtBankAngle * mphToFtperSec;
         funkyNumber = gravityFtPerSec2 * tangent;
       default:
-        emit(GliderPolarErrorState(
+        emit(GliderCubitErrorState(
             "Missing thermaling logic for ${displayUnits}"));
         speed = 0;
         funkyNumber = 1;
@@ -462,8 +447,23 @@ class GliderCubit extends Cubit<GliderState> {
     }
   }
 
-  void displayXCSoarValues(bool dislayXCSoarValues) {
-    _repository.saveDisplayXCSoarValues(dislayXCSoarValues);
+  Future<void> saveDisplayXCSoarValues(bool dislayXCSoarValues) async {
+    await _repository.saveDisplayXCSoarValues(dislayXCSoarValues);
+  }
+
+  displayPolarHelp(bool showPolarHelp) async {
+    await _repository.saveShowPolarHelp(showPolarHelp);
+  }
+
+  Future<void> showPolarHelp() async {
+    var showPolarHelp = await _repository.getShowPolarHelp();
+    emit(ShowPolarHelpState(showPolarHelp));
+  }
+
+  Future<void> saveCustomGliderDetails() async {
+    await storeCustomGlider();
+    await _repository.saveLastSelectedGliderName(_customGlider!.glider);
+
   }
 
 // updated XCSoar json input to have a,b,c calculated in spreadsheet and placed in JSON

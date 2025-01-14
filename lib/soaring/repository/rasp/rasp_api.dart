@@ -72,7 +72,7 @@ abstract class RaspClient {
       @Query("date") String date,
       @Query("model") String model,
       @Query("grid") String grid,
-      @Query("time") String times,
+      @Query("time") String time,
       @Query("glider") String glider,
       @Query("polarFactor") double polarFactor,
       @Query("polarCoefficients") String polarCoefficients , // a, b, c

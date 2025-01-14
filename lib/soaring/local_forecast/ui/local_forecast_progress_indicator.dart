@@ -1,20 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../bloc/rasp_bloc.dart';
+import '../bloc/local_forecast_bloc.dart';
+import '../bloc/local_forecast_state.dart';
 
-class RaspProgressIndicator extends StatelessWidget {
-  RaspProgressIndicator();
+
+class LocalForecastProgressIndicator extends StatelessWidget {
+  LocalForecastProgressIndicator();
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<RaspDataBloc, RaspDataState>(
+    return BlocConsumer<LocalForecastBloc, LocalForecastState>(
       listener: (context, state) {},
       buildWhen: (previous, current) {
-        return current is RaspWorkingState;
+        return current is LocalForecastWorkingState;
       },
       builder: (context, state) {
-        if (state is RaspWorkingState) {
+        if (state is LocalForecastWorkingState) {
           if (state.working) {
             return Container(
               child: AbsorbPointer(

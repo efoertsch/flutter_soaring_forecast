@@ -15,7 +15,7 @@ import 'package:latlong2/latlong.dart';
 
 import '../bloc/rasp_bloc.dart';
 import '../../app/web_launcher.dart';
-import '../forecast_data/local_forecast_favorite.dart';
+import '../../local_forecast/data/local_forecast_favorite.dart';
 
 class AppDrawerWidget extends StatefulWidget {
   final Function? refreshTaskDisplayFunction;
@@ -122,6 +122,12 @@ class _AppDrawerWidgetState extends State<AppDrawerWidget> {
               color: Colors.black54,
             ),
           )),
+          ListTile(
+            title: Text(DrawerLiterals.GLIDER_POLARS),
+            onTap: () {
+               Navigator.popAndPushNamed(context, GliderPolarListBuilder.routeName);
+            },
+          ),
           ListTile(
             title: Text(DrawerLiterals.TASK_LIST),
             onTap: () {

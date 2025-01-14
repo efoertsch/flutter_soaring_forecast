@@ -1,20 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../bloc/rasp_bloc.dart';
+import '../cubit/task_estimate_cubit.dart';
+import '../cubit/task_estimate_state.dart';
 
-class RaspProgressIndicator extends StatelessWidget {
-  RaspProgressIndicator();
+
+
+
+class TaskEstimateProgressIndicator extends StatelessWidget {
+  TaskEstimateProgressIndicator();
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<RaspDataBloc, RaspDataState>(
+    return BlocConsumer<TaskEstimateCubit, TaskEstimateState>(
       listener: (context, state) {},
       buildWhen: (previous, current) {
-        return current is RaspWorkingState;
+        return current is TaskEstimateWorkingState;
       },
       builder: (context, state) {
-        if (state is RaspWorkingState) {
+        if (state is TaskEstimateWorkingState) {
           if (state.working) {
             return Container(
               child: AbsorbPointer(

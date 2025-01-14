@@ -456,6 +456,7 @@ class DrawerLiterals {
   static const String SETTINGS = "Settings";
   static const String FEEDBACK = "Feedback";
   static const String ABOUT = "About";
+  static const String GLIDER_POLARS = "Glider Polars";
 }
 
 class PolarMenu {
@@ -463,6 +464,10 @@ class PolarMenu {
   static const String METRIC = "Metric";
   static const String AMERICAN = "American";
 
+}
+
+class TaskEstimateLiterals {
+  static const String TASK_ESTIMATE = "Task Estimate";
 }
 
 // Turnpoint icon colors for type of runway

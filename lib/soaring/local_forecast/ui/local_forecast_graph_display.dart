@@ -8,22 +8,27 @@ import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     show GraphLiterals, StandardLiterals;
 import 'package:flutter_soaring_forecast/soaring/app/custom_styles.dart';
-import 'package:flutter_soaring_forecast/soaring/forecast/bloc/local_forecast_bloc.dart';
-import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/forecast_graph_data.dart';
-import 'package:flutter_soaring_forecast/soaring/forecast/shapes/custom_shapes.dart';
-import 'package:flutter_soaring_forecast/soaring/forecast/ui/common/model_date_display.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/ui/grid_widgets.dart';
+import 'package:flutter_soaring_forecast/soaring/local_forecast/bloc/local_forecast_bloc.dart';
+import 'package:flutter_soaring_forecast/soaring/local_forecast/shapes/custom_shapes.dart';
+import 'package:flutter_soaring_forecast/soaring/local_forecast/ui/local_forecast_progress_indicator.dart';
+import 'package:flutter_soaring_forecast/soaring/region_model/data/region_model_data.dart';
+import 'package:flutter_soaring_forecast/soaring/region_model/ui/model_date_display.dart';
 import 'package:graphic/graphic.dart';
 
-import '../bloc/rasp_data_event.dart';
-import '../bloc/rasp_data_state.dart';
-import 'common/rasp_progress_indicator.dart';
+import '../../region_model/bloc/region_model_bloc.dart';
+import '../../region_model/bloc/region_model_event.dart';
+import '../../region_model/bloc/region_model_state.dart';
+import '../bloc/local_forecast_event.dart';
+import '../bloc/local_forecast_state.dart';
+import '../data/local_forecast_graph.dart';
 
-class LocalForecastGraphic extends StatefulWidget {
-  LocalForecastGraphic({Key? key}) : super(key: key);
+class LocalForecastGraphDisplay extends StatefulWidget {
+  LocalForecastGraphDisplay({Key? key}) : super(key: key);
 
   @override
-  State<LocalForecastGraphic> createState() => _LocalForecastGraphicState();
+  State<LocalForecastGraphDisplay> createState() =>
+      _LocalForecastGraphDisplayState();
 }
 
 class TabsConfig {
@@ -41,7 +46,7 @@ class DataPointsConfig {
   final annotationsOfPoints = <Annotation>[];
 }
 
-class _LocalForecastGraphicState extends State<LocalForecastGraphic>
+class _LocalForecastGraphDisplayState extends State<LocalForecastGraphDisplay>
     with TickerProviderStateMixin {
   final forecastChannel = StreamController<GestureEvent>.broadcast();
   late TabController _tabController;
@@ -59,8 +64,6 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
   ForecastGraphData? forecastGraphData;
 
   bool _beginnerMode = true;
-  String _selectedModelName = '';
-  String _selectedForecastDate = '';
 
   late Object _graphKey;
 
@@ -149,29 +152,39 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
         // toggle flag
         setState(() {
           _beginnerMode = !_beginnerMode;
-          _sendEvent(BeginnerModeEvent(_beginnerMode));
+          context.read<RegionModelBloc>().add(BeginnerModeEvent(_beginnerMode));
         });
         break;
       case GraphLiterals.SET_AS_FAVORITE:
-        _sendEvent(SetLocationAsFavoriteEvent());
+        context.read<LocalForecastBloc>().add(SetLocationAsFavoriteEvent());
     }
   }
 
-  Widget _miscStatesHandlerWidget() {
-    return BlocListener<LocalForecastBloc, RaspDataState>(
+  Widget _miscRegionModelStatesHandler() {
+    return BlocListener<RegionModelBloc, RegionModelState>(
       listener: (context, state) {
-        if (state is BeginnerModeState) {
+        // This listener may fire AFTER the return to the
+        // RASP screen and a refresh fires off a
+        // ForecastModelsAndDates state. Don't know why this
+        // still fires but checking the current route check is
+        // a way to ignore this state. Yes - seems like a hack
+        final route = ModalRoute.of(context);
+        final isCurrentRoute = route?.isCurrent ?? false;
+        if (isCurrentRoute) {
+        if (state is ForecastModelsAndDates) {
           _beginnerMode = state.beginnerMode;
+          // the model or date changed, send the info on so new graphs created
+          RaspModelDateChange localForecastModelDateChange =
+              RaspModelDateChange(
+                  state.regionName,
+                  state.modelNames[state.modelNameIndex],
+                  state.forecastDates[state.forecastDateIndex],
+                  state.localTimes);
+          context
+              .read<LocalForecastBloc>()
+              .add(LocalModelDateChangeEvent(localForecastModelDateChange));
         }
-        if (state is RaspForecastModelsAndDates){
-          _selectedModelName = state.selectedModelName;
-          _selectedForecastDate = state.selectedForecastDate;
-        }
-        if (state is BeginnerForecastDateModelState){
-          _selectedModelName = state.model;
-          _selectedForecastDate = state.date;
-        }
-      },
+      }},
       child: SizedBox.shrink(),
     );
   }
@@ -182,25 +195,22 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
         Column(children: [
           _widgetForMessages(),
           Padding(
-            child: ModelDatesDisplay<LocalForecastBloc>(
-              sendEvent: _sendEvent,
-            ),
+            child: ModelDatesDisplay(),
             padding: EdgeInsets.all(8.0),
           ),
           _getLocalForecastWidget(),
-          _miscStatesHandlerWidget(),
+          _miscRegionModelStatesHandler(),
         ]),
-        RaspProgressIndicator<LocalForecastBloc>(),
+        LocalForecastProgressIndicator(),
+
       ],
     );
   }
 
   Widget _getLocalForecastWidget() {
-    return BlocConsumer<LocalForecastBloc, RaspDataState>(
+    return BlocConsumer<LocalForecastBloc, LocalForecastState>(
         listener: (context, state) {
-      if (state is GraphDataState) {
-        //
-      }
+      if (state is GraphDataState) {}
     }, buildWhen: (previous, current) {
       return current is GraphDataState;
     }, builder: (context, state) {
@@ -216,7 +226,9 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
             vsync: this,
             initialIndex: state.forecastData.startIndex);
         _tabController.addListener(() {
-          _sendEvent(SetLocationTabIndex(_tabController.index));
+          context
+              .read<LocalForecastBloc>()
+              .add(LocationTabIndexEvent(_tabController.index));
         });
 
         return Expanded(
@@ -588,14 +600,14 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
     );
   }
 
-  _sendEvent(RaspDataEvent event) {
+  _sendLocalForecastEvent(LocalForecastEvent event) {
     BlocProvider.of<LocalForecastBloc>(context).add(event);
   }
 
   Widget _widgetForMessages() {
-    return BlocListener<LocalForecastBloc, RaspDataState>(
+    return BlocListener<LocalForecastBloc, LocalForecastState>(
       listener: (context, state) async {
-        if (state is RaspErrorState) {
+        if (state is LocalForecastErrorState) {
           CommonWidgets.showErrorDialog(context, "Error", state.error);
         }
       },
@@ -629,11 +641,11 @@ class _LocalForecastGraphicState extends State<LocalForecastGraphic>
 
   Future<bool> _onWillPop() async {
     Navigator.pop(
-        context,
-        LocalForecastOutputData(
-            modelName: _selectedModelName,
-            date: _selectedForecastDate,
-            beginnerMode: _beginnerMode));
+      context,
+      // LocalForecastUpdateData(
+      //     modelName: _selectedModelName,
+      //     date: _selectedForecastDate,)
+    );
     return true;
   }
 }

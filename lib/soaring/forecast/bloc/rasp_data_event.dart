@@ -7,8 +7,6 @@ import 'package:flutter_soaring_forecast/soaring/repository/rasp/gliders.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/regions.dart';
 import 'package:latlong2/latlong.dart';
 
-import '../forecast_data/forecast_graph_data.dart';
-
 /// https://medium.com/flutter-community/flutter-bloc-pattern-for-dummies-like-me-c22d40f05a56
 /// Event In - State Out
 ///
@@ -26,29 +24,27 @@ class SwitchedRegionEvent extends RaspDataEvent {
   SwitchedRegionEvent();
 }
 
-class SelectedModelEvent extends RaspDataEvent {
+class SelectedRegionModelDetailEvent extends RaspDataEvent {
+  final String region;
   final String modelName;
+  final String modelDate;
+  final List<String> localTimes;
+  final String localTime;
 
-  SelectedModelEvent(this.modelName);
+  SelectedRegionModelDetailEvent(
+      {required this.region,
+      required this.modelName,
+      required this.modelDate,
+      required this.localTimes,
+      required this.localTime});
 }
 
-class SelectedRaspRegion extends RaspDataEvent {
-  final Region region;
+class IncrDecrRaspForecastHourEvent extends RaspDataEvent{
+  final int incrDecrIndex;
 
-  SelectedRaspRegion(this.region);
+  IncrDecrRaspForecastHourEvent(this.incrDecrIndex);
 }
 
-class SelectForecastDateEvent extends RaspDataEvent {
-  final String forecastDate;
-
-  SelectForecastDateEvent(this.forecastDate);
-}
-
-class SetRaspForecastTimeEvent extends RaspDataEvent {
-  final String forecastTime;
-
-  SetRaspForecastTimeEvent(this.forecastTime);
-}
 
 class SelectedRaspForecastEvent extends RaspDataEvent {
   final Forecast forecast;
@@ -63,25 +59,9 @@ class SetRaspForecastType extends RaspDataEvent {
   SetRaspForecastType(this.forecastType);
 }
 
-// Used to flip through forecasts based on the time
-class NextTimeEvent extends RaspDataEvent {
-  NextTimeEvent();
-}
-
-// Go back to previous time
-class PreviousTimeEvent extends RaspDataEvent {
-  PreviousTimeEvent();
-}
-
 /// Tell bloc to load all forecast types
 class LoadForecastTypesEvents extends RaspDataEvent {
   LoadForecastTypesEvents();
-}
-
-class RunAnimationEvent extends RaspDataEvent {
-  final bool runAnimation;
-
-  RunAnimationEvent(this.runAnimation);
 }
 
 // Ask bloc to get the task turnpoints for plotting on map
@@ -91,11 +71,6 @@ class GetTaskTurnpointsEvent extends RaspDataEvent {
   GetTaskTurnpointsEvent(this.taskId);
 }
 
-class GetEstimatedFlightAvgEvent extends RaspDataEvent {
-  Glider glider;
-
-  GetEstimatedFlightAvgEvent(this.glider);
-}
 
 // clear task/turnpoints from map
 class ClearTaskEvent extends RaspDataEvent {
@@ -129,10 +104,16 @@ class RedisplayMarkersEvent extends RaspDataEvent {
   RedisplayMarkersEvent();
 }
 
-class SaveRaspDisplayOptionsEvent extends RaspDataEvent {
+class RaspDisplayOptionsEvent extends RaspDataEvent {
+  final List<PreferenceOption> displayOptions;
+
+  RaspDisplayOptionsEvent(this.displayOptions);
+}
+
+class RaspDisplayOptionEvent extends RaspDataEvent {
   final PreferenceOption displayOption;
 
-  SaveRaspDisplayOptionsEvent(this.displayOption);
+  RaspDisplayOptionEvent(this.displayOption);
 }
 
 class ViewBoundsEvent extends RaspDataEvent {
@@ -141,16 +122,10 @@ class ViewBoundsEvent extends RaspDataEvent {
   ViewBoundsEvent(this.latLngBounds);
 }
 
-class DisplayTurnointsEvent extends RaspDataEvent {
-  final LatLngBounds latLngBounds;
-
-  DisplayTurnointsEvent(this.latLngBounds);
-}
-
-class DisplaySoundingsEvent extends RaspDataEvent {
+class DisplayRaspSoundingsEvent extends RaspDataEvent {
   final Soundings sounding;
 
-  DisplaySoundingsEvent(this.sounding);
+  DisplayRaspSoundingsEvent(this.sounding);
 }
 
 // Used when closing soundings display and go back to displaying forecast images
@@ -170,47 +145,21 @@ class SetForecastOverlayOpacityEvent extends RaspDataEvent {
 
 class RefreshTaskEvent extends RaspDataEvent {}
 
-class ForecastDateSwitchEvent extends RaspDataEvent {
-  final ForecastDateChange forecastDateSwitch;
-
-  ForecastDateSwitchEvent(this.forecastDateSwitch);
-}
-
-class BeginnerModeEvent extends RaspDataEvent {
-  final bool beginnerMode;
-
-  BeginnerModeEvent(this.beginnerMode);
-}
-
-class RefreshForecastEvent extends RaspDataEvent {
-  RefreshForecastEvent();
+class ListTypesOfForecastsEvent extends RaspDataEvent {
+  ListTypesOfForecastsEvent();
 }
 
 class CheckIfForecastRefreshNeededEvent extends RaspDataEvent {
   CheckIfForecastRefreshNeededEvent();
 }
 
-//------------ Specific to forecast graphics ----------------
-class LocalForecastGraphDataEvent extends RaspDataEvent {
-  final LocalForecastInputData localForecastGraphData;
+//
 
-  LocalForecastGraphDataEvent({
-    required this.localForecastGraphData,
-  });
+class ForecastBoundsEvent extends RaspDataEvent {
+  final LatLngBounds latLngBounds;
+
+  ForecastBoundsEvent(this.latLngBounds);
 }
 
-class LocalForecastOutputDataEvent extends RaspDataEvent {
-  final LocalForecastOutputData localForecastOutputData;
 
-  LocalForecastOutputDataEvent({
-    required this.localForecastOutputData,
-  });
-}
 
-class SetLocationAsFavoriteEvent extends RaspDataEvent {}
-
-class SetLocationTabIndex extends RaspDataEvent {
-  final int index;
-
-  SetLocationTabIndex(this.index);
-}
