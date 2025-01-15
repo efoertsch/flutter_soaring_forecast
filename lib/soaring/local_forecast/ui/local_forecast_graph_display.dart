@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:cupertino_will_pop_scope/cupertino_will_pop_scope.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_soaring_forecast/main.dart';
 import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     show GraphLiterals, StandardLiterals;
@@ -48,8 +49,10 @@ class DataPointsConfig {
 
 class _LocalForecastGraphDisplayState extends State<LocalForecastGraphDisplay>
     with TickerProviderStateMixin {
+  static const String ESTIMATED_FLIGHT = "Estimated Flight";
   final forecastChannel = StreamController<GestureEvent>.broadcast();
   late TabController _tabController;
+  bool _haveTask = false;
 
   double _screenWidth = 0;
   double _chartWidthMargin = 30;
@@ -66,6 +69,15 @@ class _LocalForecastGraphDisplayState extends State<LocalForecastGraphDisplay>
   bool _beginnerMode = true;
 
   late Object _graphKey;
+
+  void _sendEvent(dynamic event) {
+    if (event is RegionModelEvent) {
+      BlocProvider.of<RegionModelBloc>(context).add(event);
+    } else if (event is LocalForecastEvent) {
+      BlocProvider.of<LocalForecastBloc>(context).add(event);
+    }
+  }
+
 
   @override
   void initState() {
@@ -130,12 +142,14 @@ class _LocalForecastGraphDisplayState extends State<LocalForecastGraphDisplay>
         icon: Icon(Icons.more_vert),
         itemBuilder: (BuildContext context) {
           return {
+            ESTIMATED_FLIGHT,
             _beginnerMode
                 ? StandardLiterals.EXPERT_MODE
                 : StandardLiterals.BEGINNER_MODE,
             GraphLiterals.SET_AS_FAVORITE
           }.map((String choice) {
             return PopupMenuItem<String>(
+              enabled: (choice != ESTIMATED_FLIGHT || choice == ESTIMATED_FLIGHT && _haveTask),
               value: choice,
               child: Text(choice),
             );
@@ -147,16 +161,26 @@ class _LocalForecastGraphDisplayState extends State<LocalForecastGraphDisplay>
 
   void handleClick(String value) async {
     switch (value) {
+      case ESTIMATED_FLIGHT:
+        await Navigator.pushNamed(
+            context, EstimatedTaskRouteBuilder.routeName);
+        // Need to wait a frame otherwise resultant refresh goes to
+        // estimated task
+        WidgetsBinding.instance.addPostFrameCallback((_)=>
+         _sendEvent(RefreshModelDateEvent())
+        );
+        break;
+
       case StandardLiterals.EXPERT_MODE:
       case StandardLiterals.BEGINNER_MODE:
         // toggle flag
         setState(() {
           _beginnerMode = !_beginnerMode;
-          context.read<RegionModelBloc>().add(BeginnerModeEvent(_beginnerMode));
+          _sendEvent(BeginnerModeEvent(_beginnerMode));
         });
         break;
       case GraphLiterals.SET_AS_FAVORITE:
-        context.read<LocalForecastBloc>().add(SetLocationAsFavoriteEvent());
+        _sendEvent(SetLocationAsFavoriteEvent());
     }
   }
 
@@ -180,9 +204,7 @@ class _LocalForecastGraphDisplayState extends State<LocalForecastGraphDisplay>
                   state.modelNames[state.modelNameIndex],
                   state.forecastDates[state.forecastDateIndex],
                   state.localTimes);
-          context
-              .read<LocalForecastBloc>()
-              .add(LocalModelDateChangeEvent(localForecastModelDateChange));
+          _sendEvent(LocalModelDateChangeEvent(localForecastModelDateChange));
         }
       }},
       child: SizedBox.shrink(),
@@ -215,6 +237,7 @@ class _LocalForecastGraphDisplayState extends State<LocalForecastGraphDisplay>
       return current is GraphDataState;
     }, builder: (context, state) {
       if (state is GraphDataState) {
+        _haveTask = state.forecastData.pointForecastsGraphData.length > 1;
         List<Tab> forecastTabs =
             _getLocalForecastTabs(state.forecastData.pointForecastsGraphData);
         List<Widget> tabBarWidgets = _getLocalForecastTabView(
@@ -226,9 +249,7 @@ class _LocalForecastGraphDisplayState extends State<LocalForecastGraphDisplay>
             vsync: this,
             initialIndex: state.forecastData.startIndex);
         _tabController.addListener(() {
-          context
-              .read<LocalForecastBloc>()
-              .add(LocationTabIndexEvent(_tabController.index));
+          _sendEvent(LocationTabIndexEvent(_tabController.index));
         });
 
         return Expanded(
@@ -598,10 +619,6 @@ class _LocalForecastGraphDisplayState extends State<LocalForecastGraphDisplay>
           initialOffset + (xPosIndex == 0 ? 0 : (size.width / 2) * xPosIndex),
           yOffset + 12 * yPosIndex),
     );
-  }
-
-  _sendLocalForecastEvent(LocalForecastEvent event) {
-    BlocProvider.of<LocalForecastBloc>(context).add(event);
   }
 
   Widget _widgetForMessages() {

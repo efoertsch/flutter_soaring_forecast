@@ -1,4 +1,5 @@
 import 'package:flutter_soaring_forecast/soaring/floor/task/task.dart';
+import 'package:flutter_soaring_forecast/soaring/local_forecast/data/local_forecast_graph.dart';
 
 import '../../repository/rasp/estimated_flight_avg_summary.dart';
 import '../../repository/rasp/gliders.dart';
@@ -37,11 +38,10 @@ class TaskEstimateErrorState extends TaskEstimateState {
   TaskEstimateErrorState(this.errorMsg);
 }
 
-class DisplayGlidersState extends TaskEstimateState{
-}
+class DisplayGlidersState extends TaskEstimateState {}
 
-class CurrentHourState extends TaskEstimateState{
-  String hour ;
+class CurrentHourState extends TaskEstimateState {
+  String hour;
 
   CurrentHourState(this.hour);
 }
@@ -51,4 +51,10 @@ class DisplayExperimentalHelpText extends TaskEstimateState {
   final bool calcAfterShow;
 
   DisplayExperimentalHelpText(this.showExperimentalText, this.calcAfterShow);
+}
+
+class LocalForecastDisplayState extends TaskEstimateState {
+  final LocalForecastInputData localForecastGraphData;
+
+  LocalForecastDisplayState(this.localForecastGraphData);
 }

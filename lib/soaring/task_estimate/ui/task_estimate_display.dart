@@ -44,6 +44,7 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
       "\n\nFeedback is most welcome. ";
 
   static const String _SELECT_GLIDER = "Select Glider";
+  static const String _LOCAL_FORECASTS = "Local Forecasts";
 
   TaskEstimateCubit _getTaskEstimateCubit() =>
       BlocProvider.of<TaskEstimateCubit>(context);
@@ -121,6 +122,7 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
           icon: Icon(Icons.more_vert),
           itemBuilder: (BuildContext context) {
             return {
+              _LOCAL_FORECASTS,
               _SELECT_GLIDER,
               _beginnerMode
                   ? StandardLiterals.EXPERT_MODE
@@ -139,6 +141,9 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
 
   void _handleClick(String value) async {
     switch (value) {
+      case _LOCAL_FORECASTS:
+        _getTaskEstimateCubit().createLocalForecastData();
+        break;
       case _SELECT_GLIDER:
         await _getGlider();
         break;
@@ -174,18 +179,18 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
           child: ModelDatesDisplay(),
         ),
         ForecastHourDisplay(displayPauseLoop: false),
-    Expanded(
-      child: SingleChildScrollView(
-          child:Stack(
+        Expanded(
+          child: SingleChildScrollView(
+              child: Stack(
             children: [
               Container(
-                  child: _showEstimatedTaskAvgTable(),
-                ),
+                child: _showEstimatedTaskAvgTable(),
+              ),
               TaskEstimateProgressIndicator()
             ],
           )),
-    ),
-       // _getOptimalFlightCloseButton(),
+        ),
+        // _getOptimalFlightCloseButton(),
         _regionModelStatesHandler(),
         _taskEstimateStatesHandler(),
         _forecastHourHandler(),
@@ -242,6 +247,16 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
         if (state is TaskEstimateErrorState) {
           CommonWidgets.showErrorDialog(
               context, StandardLiterals.UH_OH, state.errorMsg);
+        }
+        if (state is LocalForecastDisplayState) {
+          await Navigator.pushNamed(
+            context,
+            LocalForecastGraphRouteBuilder.routeName,
+            arguments: state.localForecastGraphData,
+          );
+          // need to wait a frame otherwise refresh goes to Local Forecast
+          WidgetsBinding.instance
+              .addPostFrameCallback((_) => _sendEvent(RefreshModelDateEvent()));
         }
       },
       child: SizedBox.shrink(),
@@ -339,7 +354,7 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
     );
   }
 
-  // Keeping code in case want to display it again
+// Keeping code in case want to display it again
   Widget _getTaskTurnpointsTable(EstimatedFlightSummary optimalTaskSummary) {
     if (optimalTaskSummary.routeSummary?.routeTurnpoints != null) {
       var routeTurnPoints = optimalTaskSummary.routeSummary!.routeTurnpoints;
@@ -436,9 +451,8 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
           //  _formattedTextCell(double.parse(legDetail.sptlAvgClimbRate ?? "0")
           //      .toStringAsFixed(0)),
 
-          _formattedTextCell(
-              (double.parse(legDetails[i].optAvgTailWind ?? "0"))
-                  .toStringAsFixed(0)),
+          _formattedTextCell((double.parse(legDetails[i].optAvgTailWind ?? "0"))
+              .toStringAsFixed(0)),
           _formattedTextCell(double.parse(legDetails[i].optAvgClimbRate ?? "0")
               .toStringAsFixed(0)),
           _formattedTextCell(
@@ -477,7 +491,7 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
     );
   }
 
-  // Keeping in case want to display this info again
+// Keeping in case want to display this info again
   Widget _getTurnpointsTableHeader() {
     return Center(
       child: Padding(
