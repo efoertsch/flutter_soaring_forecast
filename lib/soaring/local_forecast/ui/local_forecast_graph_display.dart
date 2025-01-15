@@ -7,7 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/main.dart';
 import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
-    show GraphLiterals, StandardLiterals;
+    show GraphLiterals, StandardLiterals, TaskEstimateLiterals;
 import 'package:flutter_soaring_forecast/soaring/app/custom_styles.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/ui/grid_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/local_forecast/bloc/local_forecast_bloc.dart';
@@ -49,7 +49,6 @@ class DataPointsConfig {
 
 class _LocalForecastGraphDisplayState extends State<LocalForecastGraphDisplay>
     with TickerProviderStateMixin {
-  static const String ESTIMATED_FLIGHT = "Estimated Flight";
   final forecastChannel = StreamController<GestureEvent>.broadcast();
   late TabController _tabController;
   bool _haveTask = false;
@@ -142,14 +141,15 @@ class _LocalForecastGraphDisplayState extends State<LocalForecastGraphDisplay>
         icon: Icon(Icons.more_vert),
         itemBuilder: (BuildContext context) {
           return {
-            ESTIMATED_FLIGHT,
+            TaskEstimateLiterals.TASK_ESTIMATES,
             _beginnerMode
                 ? StandardLiterals.EXPERT_MODE
                 : StandardLiterals.BEGINNER_MODE,
             GraphLiterals.SET_AS_FAVORITE
           }.map((String choice) {
             return PopupMenuItem<String>(
-              enabled: (choice != ESTIMATED_FLIGHT || choice == ESTIMATED_FLIGHT && _haveTask),
+              enabled: (choice != TaskEstimateLiterals.TASK_ESTIMATES
+                  || choice == TaskEstimateLiterals.TASK_ESTIMATES && _haveTask),
               value: choice,
               child: Text(choice),
             );
@@ -161,7 +161,7 @@ class _LocalForecastGraphDisplayState extends State<LocalForecastGraphDisplay>
 
   void handleClick(String value) async {
     switch (value) {
-      case ESTIMATED_FLIGHT:
+      case TaskEstimateLiterals.TASK_ESTIMATES:
         await Navigator.pushNamed(
             context, EstimatedTaskRouteBuilder.routeName);
         // Need to wait a frame otherwise resultant refresh goes to

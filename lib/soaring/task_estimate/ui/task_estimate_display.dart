@@ -103,7 +103,7 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
 
   AppBar getAppBar(BuildContext context) {
     return AppBar(
-      title: Text(TaskEstimateLiterals.TASK_ESTIMATE),
+      title: Text(TaskEstimateLiterals.TASK_ESTIMATES),
       leading: BackButton(onPressed: () => _onWillPop()),
       actions: _getMenu(),
       //  actions: _getAppBarMenu(),

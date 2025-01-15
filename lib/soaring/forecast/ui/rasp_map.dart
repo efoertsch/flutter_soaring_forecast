@@ -971,7 +971,7 @@ class RaspMapState extends State<RaspMap>
                     width: 40,
                   ),
                   Text(
-                    "Estimated\nFlight",
+                    "Task\nEstimates",
                     style: textStyleBoldBlackFontSize14,
                   ),
                 ],
