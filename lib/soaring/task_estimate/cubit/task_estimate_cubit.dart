@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_soaring_forecast/soaring/local_forecast/data/local_forecast_graph.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/estimated_flight_avg_summary.dart';
 import 'package:flutter_soaring_forecast/soaring/task_estimate/cubit/task_estimate_state.dart';
 
@@ -21,6 +22,7 @@ class TaskEstimateCubit extends Cubit<TaskEstimateState> {
   Glider? _gliderPolar;
   int _selectedForecastTimeIndex = 0;
   List<String> _forecastHours = [];
+  List<TaskTurnpoint> _taskTurnpoints = [];
 
   TaskEstimateCubit({required Repository repository})
       : _repository = repository,
@@ -40,7 +42,7 @@ class TaskEstimateCubit extends Cubit<TaskEstimateState> {
     _forecastHours = info.forecastHours;
     _selectedHour = info.forecastHours[info.selectedHourIndex]; // 1300
     var showExperimental =
-        await _repository.getDisplayExperimentalEstimatedTaskAlertFlag();
+    await _repository.getDisplayExperimentalEstimatedTaskAlertFlag();
     if (showExperimental) {
       emit(DisplayExperimentalHelpText(showExperimental, true));
     } else {
@@ -70,7 +72,7 @@ class TaskEstimateCubit extends Cubit<TaskEstimateState> {
 
   Future<bool> checkToDisplayExperimentalText() async {
     var displayText =
-        await _repository.getShowEstimatedFlightExperimentalText();
+    await _repository.getShowEstimatedFlightExperimentalText();
     if (displayText) {
       emit(DisplayEstimatedFlightText());
     }
@@ -122,15 +124,15 @@ class TaskEstimateCubit extends Cubit<TaskEstimateState> {
       return; // got task already
     }
     _taskId = await _repository.getCurrentTaskId();
-    List<TaskTurnpoint> taskTurnpoints = [];
+
     if (_taskId > -1) {
-      taskTurnpoints.addAll(await _repository.getTaskTurnpoints(_taskId));
+      _taskTurnpoints.addAll(await _repository.getTaskTurnpoints(_taskId));
       // print('emitting taskturnpoints');
     }
     StringBuffer turnpointLatLons = StringBuffer();
     _taskLatLonString = "";
     int index = 1;
-    for (var taskTurnpoints in taskTurnpoints) {
+    for (var taskTurnpoints in _taskTurnpoints) {
       turnpointLatLons.write(index.toString());
       turnpointLatLons.write(",");
       turnpointLatLons.write(taskTurnpoints.latitudeDeg.toString());
@@ -148,12 +150,11 @@ class TaskEstimateCubit extends Cubit<TaskEstimateState> {
     }
   }
 
-  void processModelDateChange(
-      {required regionName,
-      required selectedModelName,
-      required selectedDate,
-      required forecastHours,
-      required selectedHourIndex}) async {
+  void processModelDateChange({required regionName,
+    required selectedModelName,
+    required selectedDate,
+    required forecastHours,
+    required selectedHourIndex}) async {
     _regionName = regionName;
     _selectedModelName = selectedModelName;
     _selectedForecastDate = selectedDate;
@@ -182,9 +183,9 @@ class TaskEstimateCubit extends Cubit<TaskEstimateState> {
     //     '  incOrDec $incOrDec');
     if (incOrDec > 0) {
       _selectedForecastTimeIndex =
-          (_selectedForecastTimeIndex == _forecastHours.length - 1)
-              ? 0
-              : _selectedForecastTimeIndex + incOrDec;
+      (_selectedForecastTimeIndex == _forecastHours.length - 1)
+          ? 0
+          : _selectedForecastTimeIndex + incOrDec;
     } else {
       _selectedForecastTimeIndex = (_selectedForecastTimeIndex == 0)
           ? _forecastHours.length - 1
@@ -198,35 +199,55 @@ class TaskEstimateCubit extends Cubit<TaskEstimateState> {
   // This is used for when user hits help button
   Future<void> showExperimentalTextHelp() async {
     var showExperimentalText =
-        await _repository.getDisplayExperimentalEstimatedTaskAlertFlag();
+    await _repository.getDisplayExperimentalEstimatedTaskAlertFlag();
     emit(DisplayExperimentalHelpText(showExperimentalText, false));
   }
-}
 
 // eliminate duplicate text like (this comes across as 1 long string not by line as shown below
 // WARNING: Data unavailable after 1700 so assumed constant conditions after that time.
 // Data unavailable after 1700 so assumed constant conditions after that time.
 // Data unavailable after 1700 so assumed constant conditions after that time.
 // Data unavailable after 1700 so assumed constant conditions after that time.
-_eliminateDuplicateFootingText(List<Footer>? footers) {
-  List<Footer> footerText = [];
-  if (footers == null) {
-    return;
-  }
-  for (Footer footer in footers) {
-    if (footer.message != null) {
-      //List<String> pieces = footer.message!.split(RegExp(r'[\.:]'));
-      List<String> pieces = footer.message!.split("\n");
-      for (String piece in pieces) {
-        if (footerText.isEmpty ||
-            (footerText.last.message!.trim() != piece.trim() &&
-                piece.isNotEmpty)) {
-          footerText.add(Footer(message: piece));
+  _eliminateDuplicateFootingText(List<Footer>? footers) {
+    List<Footer> footerText = [];
+    if (footers == null) {
+      return;
+    }
+    for (Footer footer in footers) {
+      if (footer.message != null) {
+        //List<String> pieces = footer.message!.split(RegExp(r'[\.:]'));
+        List<String> pieces = footer.message!.split("\n");
+        for (String piece in pieces) {
+          if (footerText.isEmpty ||
+              (footerText.last.message!.trim() != piece.trim() &&
+                  piece.isNotEmpty)) {
+            footerText.add(Footer(message: piece));
+          }
         }
       }
     }
+
+    footers.clear();
+    footers.addAll(footerText);
   }
 
-  footers.clear();
-  footers.addAll(footerText);
+
+  Future<void> createLocalForecastData() async {
+    List<LocalForecastPoint> localForecastPoints = [];
+    localForecastPoints.addAll(_taskTurnpoints
+        .map((taskTurnpoint) => LocalForecastPoint(
+        lat: taskTurnpoint.latitudeDeg,
+        lng: taskTurnpoint.longitudeDeg,
+        turnpointName: taskTurnpoint.title,
+        turnpointCode: taskTurnpoint.code))
+        .toList());
+    final localForecastGraphData = LocalForecastInputData(
+        regionName: _regionName,
+        date: _selectedForecastDate,
+        model: _selectedModelName,
+        times: _forecastHours,
+        localForecastPoints: localForecastPoints,
+        startIndex: 0);
+    emit(LocalForecastDisplayState(localForecastGraphData));
+  }
 }
