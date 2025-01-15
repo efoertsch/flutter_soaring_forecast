@@ -467,7 +467,7 @@ class PolarMenu {
 }
 
 class TaskEstimateLiterals {
-  static const String TASK_ESTIMATE = "Task Estimate";
+  static const String TASK_ESTIMATES = "Task Estimates";
 }
 
 // Turnpoint icon colors for type of runway
