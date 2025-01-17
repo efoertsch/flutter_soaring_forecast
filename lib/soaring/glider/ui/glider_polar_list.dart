@@ -158,7 +158,7 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen> {
                   backgroundColor: Theme.of(context).colorScheme.primary,
                 ),
                 child: Text(StandardLiterals.OK),
-                onPressed: () async {
+                onPressed:  (_selectedGlider == null) ?  null : () async {
                   await _getGliderCubit().saveCustomGliderDetails();
                   Navigator.pop(context,
                       _customGliderLocalUnits != null ? _customGliderLocalUnits!.glider : "");

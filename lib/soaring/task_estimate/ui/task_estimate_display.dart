@@ -162,8 +162,10 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
   Future<void> _getGlider() async {
     Object? glider =
         await Navigator.pushNamed(context, GliderPolarListBuilder.routeName);
-    if (glider is String && glider.isNotEmpty) {
+    if (glider != null && glider is String && glider.isNotEmpty) {
       _getTaskEstimateCubit().calcEstimatedTaskWithNewGlider();
+    } else {
+      _onWillPop();
     }
   }
 
