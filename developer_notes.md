@@ -134,6 +134,10 @@ Reference obfuscate process at https://docs.flutter.dev/deployment/obfuscate
 6. Upload symbols file to play store:
    Files to upload: https://stackoverflow.com/questions/62568757/playstore-error-app-bundle-contains-native-code-and-youve-not-uploaded-debug/68778908#68778908
    How to upload: https://docs.unity3d.com/ru/2021.1/Manual/android-symbols.html#:~:text=To%20do%20this%2C%20click%20the,zip).&text=After%20you%20upload%20the%20symbols,information%20on%20what%20went%20wrong.
-7. After testing upload or move test version on play store to production
+   If get upload error about the zip file having Mac symbols
+      https://stackoverflow.com/questions/76621039/flutter-the-native-debug-symbols-contain-an-invalid-directory-macosx-when-up
+
+   zip -d Archive.zip "__MACOSX*" 
+
 
 

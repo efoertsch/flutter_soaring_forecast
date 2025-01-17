@@ -244,8 +244,12 @@ class TaskLiterals {
   static const String ADD_TURNPOINTS = "Add Turnpoints";
   static const String ADD_TASK = "ADD";
   static const String SAVE_TASK = "SAVE";
-  static var LEAVE_BLANK_FOR_DEFAULT_NAME =
+  static const String LEAVE_BLANK_FOR_DEFAULT_NAME =
       "Leave blank for default name when saved";
+  static const String INVALID_TASK = "Invalid Task";
+  static const String INVALID_TASK_CAN_NOT_BE_SAVED = "The invalid task can not be saved.";
+  static const String UPDATE_TASK = "Update Task";
+  static const String CANCEL_TASK = "Cancel Task";
 }
 
 class TurnpointMenu {
