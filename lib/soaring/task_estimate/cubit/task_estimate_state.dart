@@ -24,8 +24,6 @@ class CalcEstimatedFlightState extends TaskEstimateState {
   CalcEstimatedFlightState(this.glider);
 }
 
-class DisplayEstimatedFlightText extends TaskEstimateState {}
-
 class TaskEstimateWorkingState extends TaskEstimateState {
   final bool working;
 
@@ -47,10 +45,9 @@ class CurrentHourState extends TaskEstimateState {
 }
 
 class DisplayExperimentalHelpText extends TaskEstimateState {
-  final bool showExperimentalText;
   final bool calcAfterShow;
 
-  DisplayExperimentalHelpText(this.showExperimentalText, this.calcAfterShow);
+  DisplayExperimentalHelpText(this.calcAfterShow);
 }
 
 class LocalForecastDisplayState extends TaskEstimateState {

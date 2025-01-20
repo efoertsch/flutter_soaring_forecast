@@ -57,9 +57,11 @@ class CalcEstimatedFlightState extends GliderCubitState {
 
 class DisplayEstimatedFlightText extends GliderCubitState {}
 
-class ShowPolarHelpState extends GliderCubitState {
-  final bool showPolarHelp;
+class ShowPolarHelpState extends GliderCubitState {}
 
-  ShowPolarHelpState(this.showPolarHelp);
+class PolarUnitsState extends GliderCubitState{
+  DisplayUnits displayUnits;
+
+  PolarUnitsState(this.displayUnits);
 }
 

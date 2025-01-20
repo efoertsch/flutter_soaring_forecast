@@ -35,6 +35,7 @@ class TaskEstimateCubit extends Cubit<TaskEstimateState> {
   Future<void> setRegionModelDateParms(
       EstimatedTaskRegionModel estimatedTaskRegionModel) async {
     _indicateWorking(true);
+    //_repository.saveDisplayExperimentalEstimatedTaskAlertFlag(true);
     EstimatedTaskRegionModel info = estimatedTaskRegionModel;
     _regionName = info.regionName;
     _selectedModelName = info.selectedModelName; // nam
@@ -42,9 +43,9 @@ class TaskEstimateCubit extends Cubit<TaskEstimateState> {
     _forecastHours = info.forecastHours;
     _selectedHour = info.forecastHours[info.selectedHourIndex]; // 1300
     var showExperimental =
-    await _repository.getDisplayExperimentalEstimatedTaskAlertFlag();
+      await _repository.getDisplayExperimentalEstimatedTaskAlertFlag();
     if (showExperimental) {
-      emit(DisplayExperimentalHelpText(showExperimental, true));
+      emit(DisplayExperimentalHelpText( true));
     } else {
       doCalc();
     }
@@ -70,14 +71,14 @@ class TaskEstimateCubit extends Cubit<TaskEstimateState> {
     return _gliderPolar;
   }
 
-  Future<bool> checkToDisplayExperimentalText() async {
-    var displayText =
-    await _repository.getShowEstimatedFlightExperimentalText();
-    if (displayText) {
-      emit(DisplayEstimatedFlightText());
-    }
-    return displayText;
-  }
+  // Future<bool> checkToDisplayExperimentalText() async {
+  //   var displayText =
+  //   await _repository.getShowEstimatedFlightExperimentalText();
+  //   if (displayText) {
+  //     emit(DisplayEstimatedFlightText());
+  //   }
+  //   return displayText;
+  // }
 
   // User selected new glider or maybe changed glider polar
   Future<void> calcEstimatedTaskWithNewGlider() async {
@@ -173,10 +174,6 @@ class TaskEstimateCubit extends Cubit<TaskEstimateState> {
     _repository.saveDisplayExperimentalEstimatedTaskAlertFlag(value);
   }
 
-  Future<void> resetExperimentalTextDisplay() async {
-    displayExperimentalText(true);
-    emit(DisplayEstimatedFlightText());
-  }
 
   void updateTimeIndex(int incOrDec) async {
     // print('Current _selectedForecastTimeIndex $_selectedForecastTimeIndex'
@@ -198,9 +195,7 @@ class TaskEstimateCubit extends Cubit<TaskEstimateState> {
 
   // This is used for when user hits help button
   Future<void> showExperimentalTextHelp() async {
-    var showExperimentalText =
-    await _repository.getDisplayExperimentalEstimatedTaskAlertFlag();
-    emit(DisplayExperimentalHelpText(showExperimentalText, false));
+    emit(DisplayExperimentalHelpText(false));
   }
 
 // eliminate duplicate text like (this comes across as 1 long string not by line as shown below

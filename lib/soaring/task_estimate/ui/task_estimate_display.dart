@@ -58,7 +58,6 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
     }
   }
 
-  bool _showExperimentalDialog = false;
   bool _beginnerMode = true;
 
   @override
@@ -169,10 +168,6 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
     }
   }
 
-  void resetDisplayExperimentalText() async {
-    _getTaskEstimateCubit().resetExperimentalTextDisplay();
-  }
-
   Widget _getBody() {
     return Column(
       children: [
@@ -243,8 +238,7 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
           _getForecastHourCubit().setForecastHour(state.hour);
         }
         if (state is DisplayExperimentalHelpText) {
-          _displayEstimatedFlightHelp(
-              state.showExperimentalText, state.calcAfterShow);
+          _displayEstimatedFlightHelp(state.calcAfterShow);
         }
         if (state is TaskEstimateErrorState) {
           CommonWidgets.showErrorDialog(
@@ -549,12 +543,11 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
     );
   }
 
-  void _displayEstimatedFlightHelp(
-      bool showExperimentalText, bool calcAfterShow) async {
+  void _displayEstimatedFlightHelp(bool calcAfterShow) async {
     CommonWidgets.showTextAndCheckboxDialogBuilder(
         context: context,
         title: "TASK FLIGHT ESTIMATES\n(EXPERIMENTAL)",
-        child: _getExperimentalFlightTextWidget(showExperimentalText),
+        child: _getExperimentalFlightTextWidget(),
         button1Text: StandardLiterals.OK,
         button1Function: (() {
           Navigator.pop(context);
@@ -564,8 +557,7 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
         }));
   }
 
-  Widget _getExperimentalFlightTextWidget(bool showExperimentalText) {
-    _showExperimentalDialog = showExperimentalText;
+  Widget _getExperimentalFlightTextWidget() {
     return SingleChildScrollView(
       child: Column(
         children: [
@@ -577,17 +569,21 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
               builder: (BuildContext context, StateSetter setState) {
             return CheckboxListTile(
               title: Text(
-                  "Do not display on start. (Will always display via HELP)"),
+                  "Do not display again. (But can always display via HELP on Task Estimates screen)"),
               controlAffinity: ListTileControlAffinity.leading,
-              value: !_showExperimentalDialog,
+              value: false,    // box always unchecked if showing the help
+              // (ie. always show again unless user checks box not to show again
               onChanged: (newValue) async {
-                _showExperimentalDialog = newValue != null ? !newValue : true;
-                await _getTaskEstimateCubit()
-                    .displayExperimentalText(_showExperimentalDialog);
-                setState(() {
-                  // Seems like flutter wants async task out of setstate
-                  // if checked then DO NOT display experimental text, hence save as false
-                });
+                 if (newValue != null) {
+                   // if true then do not show help when coming to this screen
+                   // which perversely means need to send false so don't show help next time
+                   await _getTaskEstimateCubit()
+                       .displayExperimentalText(!newValue);
+                   setState(() {
+                     // Seems like flutter wants async task out of setstate
+                     // if checked then DO NOT display experimental text, hence save as false
+                   });
+                 }
               },
             );
           })

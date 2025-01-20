@@ -54,6 +54,8 @@ class GliderCubit extends Cubit<GliderCubitState> {
     String selectedGlider = await _repository.getLastSelectedGliderName();
     emit(GliderListState(
         gliders, selectedGlider));
+    DisplayUnits displayUnits = await _repository.getPolarDisplayUnits();
+    emit (PolarUnitsState(displayUnits));
 
     if (selectedGlider.isNotEmpty) {
       await getGliderPolar(selectedGlider);
@@ -61,9 +63,8 @@ class GliderCubit extends Cubit<GliderCubitState> {
 
     bool showPolarHelp = await _repository.getShowPolarHelp();
     if (showPolarHelp){
-      emit(ShowPolarHelpState(showPolarHelp));
+      emit(ShowPolarHelpState());
     }
-
     _indicateWorking(false);
   }
 
@@ -71,7 +72,7 @@ class GliderCubit extends Cubit<GliderCubitState> {
     _indicateWorking(true);
 
     _displayXCSoarValues = await _repository.getDisplayXCSoarValues();
-    _displayUnits = await _repository.getDisplayUnits();
+    _displayUnits = await _repository.getPolarDisplayUnits();
     _assignDisplayUnitLabels(_displayUnits);
     var gliderRecord =
         await _repository.getDefaultAndCustomGliderDetails(gliderName);
@@ -92,7 +93,7 @@ class GliderCubit extends Cubit<GliderCubitState> {
     _indicateWorking(true);
     if (_displayUnits == newDisplayUnits) return;
     _displayUnits = newDisplayUnits;
-    await _repository.saveDisplayUnits(newDisplayUnits);
+    await _repository.savePolarDisplayUnits(newDisplayUnits);
     _assignDisplayUnitLabels(newDisplayUnits);
     _convertGliderInfoToPreferredUnits();
     _emitGlidersInfo();
@@ -456,8 +457,8 @@ class GliderCubit extends Cubit<GliderCubitState> {
   }
 
   Future<void> showPolarHelp() async {
-    var showPolarHelp = await _repository.getShowPolarHelp();
-    emit(ShowPolarHelpState(showPolarHelp));
+    await _repository.saveShowPolarHelp(true);
+    emit(ShowPolarHelpState());
   }
 
   Future<void> saveCustomGliderDetails() async {
