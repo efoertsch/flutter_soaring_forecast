@@ -130,6 +130,7 @@ class RaspDataBloc extends Bloc<RaspDataEvent, RaspDataState> {
   Future<void> _processSwitchedRegion(
       SwitchedRegionEvent event, Emitter<RaspDataState> emit) async {
     repository.setCurrentTaskId(-1);
+    emit(ShowEstimatedFlightButton(false));
   }
 
   Future<void> _listTypesOfForecasts(_, Emitter<RaspDataState> emit) async {

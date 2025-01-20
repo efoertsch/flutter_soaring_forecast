@@ -111,7 +111,7 @@ class Repository {
   static Gliders? _fullGliderList = null;
   static Gliders? _customGliders = null;
 
-  // this value must be the same value as that in the settings.json file.
+  // these values MUST be the same value as that in the settings.json file.
   static const String _SHOW_ESTIMATED_FLIGHT_BUTTON =
       "SHOW_ESTIMATED_FLIGHT_BUTTON";
   static const String _SHOW_ESTIMATED_FLIGHT_EXPERIMENTAL_TEXT =
