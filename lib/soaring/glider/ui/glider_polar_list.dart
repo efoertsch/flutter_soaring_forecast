@@ -1212,6 +1212,12 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen> {
   Widget _getGliderStatesHandler() {
     return BlocListener<GliderCubit, GliderCubitState>(
       listener: (context, state) {
+        if (state is GliderListState) {
+          // this is to enable on 'OK' button
+          if (state.selectedGliderName.isNotEmpty )
+            setState(() {
+            });
+        }
         if (state is CalcEstimatedFlightState) {
           Navigator.pop(context, state.glider);
         }
