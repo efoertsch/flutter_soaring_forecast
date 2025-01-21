@@ -40,7 +40,7 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
       "\n3. Wind direction (Boundary Layer average)"
       "\n\nNote that thermal height is not used so you may be gliding at treetop height!"
       "\n\nTask time, headwind, and related estimates are based on a straight line"
-      " course between turnpoints. (Yeah - how often does that happen.) "
+      " course between turnpoints."
       "\n\nFeedback is most welcome. ";
 
   static const String _SELECT_GLIDER = "Select Glider";
@@ -58,6 +58,7 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
     }
   }
 
+  bool _doNotShowExperimentalDialog = false;
   bool _beginnerMode = true;
 
   @override
@@ -488,13 +489,13 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
   }
 
 // Keeping in case want to display this info again
-  Widget _getTurnpointsTableHeader() {
-    return Center(
-      child: Padding(
-          padding: const EdgeInsets.only(top: 16),
-          child: Text("Task Turnpoints", style: textStyleBoldBlackFontSize18)),
-    );
-  }
+//   Widget _getTurnpointsTableHeader() {
+//     return Center(
+//       child: Padding(
+//           padding: const EdgeInsets.only(top: 16),
+//           child: Text("Task Turnpoints", style: textStyleBoldBlackFontSize18)),
+//     );
+//   }
 
   Widget _getLegTableHeader() {
     return Center(
@@ -522,26 +523,26 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
     );
   }
 
-  Widget _getOptimalFlightCloseButton() {
-    return Align(
-      alignment: Alignment.bottomCenter,
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            minimumSize: Size(double.infinity,
-                40), // double.infinity is the width and 30 is the height
-            foregroundColor: Colors.white,
-            backgroundColor: Theme.of(context).colorScheme.primary,
-          ),
-          child: Text("Close"),
-          onPressed: () {
-            _onWillPop();
-          },
-        ),
-      ),
-    );
-  }
+  // Widget _getOptimalFlightCloseButton() {
+  //   return Align(
+  //     alignment: Alignment.bottomCenter,
+  //     child: Padding(
+  //       padding: const EdgeInsets.all(8.0),
+  //       child: ElevatedButton(
+  //         style: ElevatedButton.styleFrom(
+  //           minimumSize: Size(double.infinity,
+  //               40), // double.infinity is the width and 30 is the height
+  //           foregroundColor: Colors.white,
+  //           backgroundColor: Theme.of(context).colorScheme.primary,
+  //         ),
+  //         child: Text("Close"),
+  //         onPressed: () {
+  //           _onWillPop();
+  //         },
+  //       ),
+  //     ),
+  //   );
+  // }
 
   void _displayEstimatedFlightHelp(bool calcAfterShow) async {
     CommonWidgets.showTextAndCheckboxDialogBuilder(
@@ -571,19 +572,15 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
               title: Text(
                   "Do not display again. (But can always display via HELP on Task Estimates screen)"),
               controlAffinity: ListTileControlAffinity.leading,
-              value: false,    // box always unchecked if showing the help
-              // (ie. always show again unless user checks box not to show again
+              value: _doNotShowExperimentalDialog,
               onChanged: (newValue) async {
-                 if (newValue != null) {
-                   // if true then do not show help when coming to this screen
-                   // which perversely means need to send false so don't show help next time
-                   await _getTaskEstimateCubit()
-                       .displayExperimentalText(!newValue);
-                   setState(() {
-                     // Seems like flutter wants async task out of setstate
-                     // if checked then DO NOT display experimental text, hence save as false
-                   });
-                 }
+                _doNotShowExperimentalDialog = newValue != null ? newValue : false;
+                await _getTaskEstimateCubit()
+                    .displayExperimentalText(_doNotShowExperimentalDialog);
+                setState(() {
+                  // Seems like flutter wants async task out of setstate
+                  // if checked then DO NOT display experimental text, hence save as false
+                });
               },
             );
           })

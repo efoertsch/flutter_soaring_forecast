@@ -1461,7 +1461,7 @@ class Repository {
         key: _EXPERIMENTAL_ESTIMATED_FLIGHT_FLAG, defaultValue: true);
   }
 
-  Future<void> saveDisplayExperimentalEstimatedTaskAlertFlag(bool flag) async {
+  Future<void> saveDisplayExperimentalEstimatedTaskFlag(bool flag) async {
     await saveGenericBool(
         key: _EXPERIMENTAL_ESTIMATED_FLIGHT_FLAG, value: flag);
   }
@@ -1475,11 +1475,11 @@ class Repository {
     return await saveGenericBool(key: _DISPLAY_XCSOAR_VALUES, value: display);
   }
 
-  Future<bool> getShowPolarHelp() async {
+  Future<bool> getDoNotShowPolarHelp() async {
     return await getGenericBool(key: _SHOW_POLAR_HELP, defaultValue: false);
   }
 
-  Future<bool> saveShowPolarHelp(bool display) async {
+  Future<bool> saveDoNotShowPolarHelp(bool display) async {
     return await saveGenericBool(key: _SHOW_POLAR_HELP, value: display);
   }
 

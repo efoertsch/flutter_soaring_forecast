@@ -61,8 +61,8 @@ class GliderCubit extends Cubit<GliderCubitState> {
       await getGliderPolar(selectedGlider);
     }
 
-    bool showPolarHelp = await _repository.getShowPolarHelp();
-    if (showPolarHelp){
+    bool doNotshowPolarHelp = await _repository.getDoNotShowPolarHelp();
+    if (!doNotshowPolarHelp){
       emit(ShowPolarHelpState());
     }
     _indicateWorking(false);
@@ -453,11 +453,11 @@ class GliderCubit extends Cubit<GliderCubitState> {
   }
 
   displayPolarHelp(bool showPolarHelp) async {
-    await _repository.saveShowPolarHelp(showPolarHelp);
+    await _repository.saveDoNotShowPolarHelp(showPolarHelp);
   }
 
   Future<void> showPolarHelp() async {
-    await _repository.saveShowPolarHelp(true);
+    await _repository.saveDoNotShowPolarHelp(true);
     emit(ShowPolarHelpState());
   }
 

@@ -42,9 +42,9 @@ class TaskEstimateCubit extends Cubit<TaskEstimateState> {
     _selectedForecastDate = info.selectedDate; // selected date  2019-12-19
     _forecastHours = info.forecastHours;
     _selectedHour = info.forecastHours[info.selectedHourIndex]; // 1300
-    var showExperimental =
+    var doNotShowExperimentalText =
       await _repository.getDisplayExperimentalEstimatedTaskAlertFlag();
-    if (showExperimental) {
+    if (!doNotShowExperimentalText) {
       emit(DisplayExperimentalHelpText( true));
     } else {
       doCalc();
@@ -114,7 +114,8 @@ class TaskEstimateCubit extends Cubit<TaskEstimateState> {
       emit(TaskEstimateErrorState(optimizedTaskRoute!.routeSummary!.error!));
       emit(TaskEstimateWorkingState(false));
     } else {
-      _eliminateDuplicateFootingText(optimizedTaskRoute!.routeSummary!.footers);
+      // Updated server code, won't get duplicate lines
+     // _eliminateDuplicateFootingText(optimizedTaskRoute!.routeSummary!.footers);
       emit(TaskEstimateWorkingState(false));
       emit(EstimatedFlightSummaryState(optimizedTaskRoute));
     }
@@ -171,7 +172,7 @@ class TaskEstimateCubit extends Cubit<TaskEstimateState> {
   }
 
   Future<void> displayExperimentalText(bool value) async {
-    _repository.saveDisplayExperimentalEstimatedTaskAlertFlag(value);
+    _repository.saveDisplayExperimentalEstimatedTaskFlag(value);
   }
 
 

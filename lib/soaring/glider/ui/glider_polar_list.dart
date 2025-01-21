@@ -99,6 +99,7 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen> {
   static const String HELP = "HELP";
 
   bool _displayXCSoarValues = false;
+  bool _doNotShowPolarHelp = false;
 
   // @override
   // FutureOr<void> afterFirstLayout(BuildContext context) async {
@@ -309,15 +310,14 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen> {
             return CheckboxListTile(
               title: Text("Do not display again. (Can display via HELP)"),
               controlAffinity: ListTileControlAffinity.leading,
-              value: false, // unchecked
+              value: _doNotShowPolarHelp,
               onChanged: (newValue) async {
-                if (newValue != null) {
-                  await _getGliderCubit().displayPolarHelp(!newValue);
-                  setState(() {
-                    // Seems like flutter wants async task out of setstate
-                    // if checked then DO NOT display experimental text, hence save as false
-                  });
-                }
+                _doNotShowPolarHelp = newValue != null ? newValue : false;
+                await _getGliderCubit().displayPolarHelp(_doNotShowPolarHelp);
+                setState(() {
+                  // Seems like flutter wants async task out of setstate
+                  // if checked then DO NOT display experimental text, hence save as false
+                });
               },
             );
           })
