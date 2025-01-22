@@ -197,6 +197,7 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
     emit(TasksTurnpointsLoadedState(
         task: _currentTask, taskTurnpoints: _taskTurnpoints));
     emit(TaskModifiedState());
+    _seeIfValidTask(emit);
   }
 
   void _calculateDistances() {
@@ -316,5 +317,18 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
       });
       _currentTask.taskName = defaultTaskName.toString();
     }
+  }
+
+  void _seeIfValidTask(Emitter<TaskState> emit) {
+    bool validTask = false;
+    if (_taskTurnpoints.length < 2 ) {
+        emit(ValidTaskState(validTask, invalidTaskMsg: "Need more than 1 turnpoint"));
+        return;
+      }
+      if   (_taskTurnpoints.length == 2 && _taskTurnpoints[0].code == _taskTurnpoints[1].code){
+        emit(ValidTaskState(validTask, invalidTaskMsg: "Can't have task with only identical start and finish"));
+        return;
+    }
+    (emit(ValidTaskState(true)));
   }
 }

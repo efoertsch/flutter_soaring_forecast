@@ -40,7 +40,7 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
       "\n3. Wind direction (Boundary Layer average)"
       "\n\nNote that thermal height is not used so you may be gliding at treetop height!"
       "\n\nTask time, headwind, and related estimates are based on a straight line"
-      " course between turnpoints. (Yeah - how often does that happen.) "
+      " course between turnpoints."
       "\n\nFeedback is most welcome. ";
 
   static const String _SELECT_GLIDER = "Select Glider";
@@ -58,7 +58,7 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
     }
   }
 
-  bool _showExperimentalDialog = false;
+  bool _doNotShowExperimentalDialog = false;
   bool _beginnerMode = true;
 
   @override
@@ -162,13 +162,11 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
   Future<void> _getGlider() async {
     Object? glider =
         await Navigator.pushNamed(context, GliderPolarListBuilder.routeName);
-    if (glider is String && glider.isNotEmpty) {
+    if (glider != null && glider is String && glider.isNotEmpty) {
       _getTaskEstimateCubit().calcEstimatedTaskWithNewGlider();
+    } else {
+      _onWillPop();
     }
-  }
-
-  void resetDisplayExperimentalText() async {
-    _getTaskEstimateCubit().resetExperimentalTextDisplay();
   }
 
   Widget _getBody() {
@@ -241,8 +239,7 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
           _getForecastHourCubit().setForecastHour(state.hour);
         }
         if (state is DisplayExperimentalHelpText) {
-          _displayEstimatedFlightHelp(
-              state.showExperimentalText, state.calcAfterShow);
+          _displayEstimatedFlightHelp(state.calcAfterShow);
         }
         if (state is TaskEstimateErrorState) {
           CommonWidgets.showErrorDialog(
@@ -492,13 +489,13 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
   }
 
 // Keeping in case want to display this info again
-  Widget _getTurnpointsTableHeader() {
-    return Center(
-      child: Padding(
-          padding: const EdgeInsets.only(top: 16),
-          child: Text("Task Turnpoints", style: textStyleBoldBlackFontSize18)),
-    );
-  }
+//   Widget _getTurnpointsTableHeader() {
+//     return Center(
+//       child: Padding(
+//           padding: const EdgeInsets.only(top: 16),
+//           child: Text("Task Turnpoints", style: textStyleBoldBlackFontSize18)),
+//     );
+//   }
 
   Widget _getLegTableHeader() {
     return Center(
@@ -526,33 +523,32 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
     );
   }
 
-  Widget _getOptimalFlightCloseButton() {
-    return Align(
-      alignment: Alignment.bottomCenter,
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            minimumSize: Size(double.infinity,
-                40), // double.infinity is the width and 30 is the height
-            foregroundColor: Colors.white,
-            backgroundColor: Theme.of(context).colorScheme.primary,
-          ),
-          child: Text("Close"),
-          onPressed: () {
-            _onWillPop();
-          },
-        ),
-      ),
-    );
-  }
+  // Widget _getOptimalFlightCloseButton() {
+  //   return Align(
+  //     alignment: Alignment.bottomCenter,
+  //     child: Padding(
+  //       padding: const EdgeInsets.all(8.0),
+  //       child: ElevatedButton(
+  //         style: ElevatedButton.styleFrom(
+  //           minimumSize: Size(double.infinity,
+  //               40), // double.infinity is the width and 30 is the height
+  //           foregroundColor: Colors.white,
+  //           backgroundColor: Theme.of(context).colorScheme.primary,
+  //         ),
+  //         child: Text("Close"),
+  //         onPressed: () {
+  //           _onWillPop();
+  //         },
+  //       ),
+  //     ),
+  //   );
+  // }
 
-  void _displayEstimatedFlightHelp(
-      bool showExperimentalText, bool calcAfterShow) async {
+  void _displayEstimatedFlightHelp(bool calcAfterShow) async {
     CommonWidgets.showTextAndCheckboxDialogBuilder(
         context: context,
         title: "TASK FLIGHT ESTIMATES\n(EXPERIMENTAL)",
-        child: _getExperimentalFlightTextWidget(showExperimentalText),
+        child: _getExperimentalFlightTextWidget(),
         button1Text: StandardLiterals.OK,
         button1Function: (() {
           Navigator.pop(context);
@@ -562,8 +558,7 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
         }));
   }
 
-  Widget _getExperimentalFlightTextWidget(bool showExperimentalText) {
-    _showExperimentalDialog = showExperimentalText;
+  Widget _getExperimentalFlightTextWidget() {
     return SingleChildScrollView(
       child: Column(
         children: [
@@ -575,13 +570,13 @@ class _TaskEstimateDisplayState extends State<TaskEstimateDisplay> {
               builder: (BuildContext context, StateSetter setState) {
             return CheckboxListTile(
               title: Text(
-                  "Do not display on start. (Will always display via HELP)"),
+                  "Do not display again. (But can always display via HELP on Task Estimates screen)"),
               controlAffinity: ListTileControlAffinity.leading,
-              value: !_showExperimentalDialog,
+              value: _doNotShowExperimentalDialog,
               onChanged: (newValue) async {
-                _showExperimentalDialog = newValue != null ? !newValue : true;
+                _doNotShowExperimentalDialog = newValue != null ? newValue : false;
                 await _getTaskEstimateCubit()
-                    .displayExperimentalText(_showExperimentalDialog);
+                    .displayExperimentalText(_doNotShowExperimentalDialog);
                 setState(() {
                   // Seems like flutter wants async task out of setstate
                   // if checked then DO NOT display experimental text, hence save as false

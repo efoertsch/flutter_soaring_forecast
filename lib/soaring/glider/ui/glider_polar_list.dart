@@ -28,7 +28,7 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen> {
   List<String> gliders = [];
   late Glider _defaultGliderLocalUnits;
   late Glider? _customGliderLocalUnits = null;
-  late DisplayUnits _displayUnits;
+  late DisplayUnits _displayUnits = DisplayUnits.Imperial_kts;
   String _velocityUnits = "";
   String _sinkRateUnits = "";
   String _massUnits = "";
@@ -61,13 +61,12 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen> {
   static const String _POLAR_HELP = "HELP";
 
   static const String _GLIDER_POLAR_HELP =
-      "The values displayed on the glider polar screen are initially based and calculated from XCSOAR glider data."
+      "The values displayed on the glider polar screen are based on XCSOAR glider data."
       "\n\nHighlighted values under the 'Your Glider' column can be updated. Tap on the particular cell to update the value."
-      "\n\nAn initial min sink value is calculated based on speed to fly polar values and is likely quite inaccurate."
-      "\n\nConsult your glider POH or other sources to enter better min sink rate and speed values based on your all up glider mass."
+      "\n\nConsult your glider POH or other sources to enter min sink rate and speed values based on your all up glider mass."
       " Also enter your favorite thermaling bank angle."
       "\n\n\The glider mass, sink rate, and Vx/Wx polar values on this screen are "
-      "used to determine your gliders estimated climb rate in a thermal and wind adjusted speed to fly. These values are in turn used to calculate an estimated task time for each leg of your task. \n"
+      "used to determine your gliders estimated climb rate in a thermal and speed to fly. These values are in turn used to calculate an estimated task time for each leg of your task. \n"
       "\nOnly change Vx/Wx values if you have either measured them in your glider or feel you have a better source than XCSoar data."
       "Toggle between metric and American units or reset your glider values back to "
       "the XCSOAR values using the top right menu dropdown";
@@ -100,7 +99,7 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen> {
   static const String HELP = "HELP";
 
   bool _displayXCSoarValues = false;
-  bool _showPolarHelp = false;
+  bool _doNotShowPolarHelp = false;
 
   // @override
   // FutureOr<void> afterFirstLayout(BuildContext context) async {
@@ -158,11 +157,16 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen> {
                   backgroundColor: Theme.of(context).colorScheme.primary,
                 ),
                 child: Text(StandardLiterals.OK),
-                onPressed: () async {
-                  await _getGliderCubit().saveCustomGliderDetails();
-                  Navigator.pop(context,
-                      _customGliderLocalUnits != null ? _customGliderLocalUnits!.glider : "");
-                },
+                onPressed: (_selectedGlider == null)
+                    ? null
+                    : () async {
+                        await _getGliderCubit().saveCustomGliderDetails();
+                        Navigator.pop(
+                            context,
+                            _customGliderLocalUnits != null
+                                ? _customGliderLocalUnits!.glider
+                                : "");
+                      },
               ),
             ),
           ),
@@ -203,7 +207,6 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen> {
           child: const Text(HELP, style: TextStyle(color: Colors.white)),
           onPressed: () {
             _getGliderCubit().showPolarHelp();
-
           }),
       PopupMenuButton<String>(
           onSelected: _handleClick,
@@ -283,19 +286,18 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen> {
     Navigator.pop(context);
   }
 
-  void _displayPolarHelp(bool showPolarHelp) async {
+  void _displayPolarHelp() async {
     CommonWidgets.showTextAndCheckboxDialogBuilder(
         context: context,
         title: GLIDER_POLAR,
-        child: _getPolarHelpTextWidget(showPolarHelp),
+        child: _getPolarHelpTextWidget(),
         button1Text: StandardLiterals.OK,
         button1Function: (() {
           Navigator.pop(context);
         }));
   }
 
-  Widget _getPolarHelpTextWidget(bool showPolarHelp) {
-    _showPolarHelp = showPolarHelp;
+  Widget _getPolarHelpTextWidget() {
     return SingleChildScrollView(
       child: Column(
         children: [
@@ -308,10 +310,10 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen> {
             return CheckboxListTile(
               title: Text("Do not display again. (Can display via HELP)"),
               controlAffinity: ListTileControlAffinity.leading,
-              value: !_showPolarHelp,
+              value: _doNotShowPolarHelp,
               onChanged: (newValue) async {
-                _showPolarHelp = newValue != null ? !newValue : true;
-                await _getGliderCubit().displayPolarHelp(_showPolarHelp);
+                _doNotShowPolarHelp = newValue != null ? newValue : false;
+                await _getGliderCubit().displayPolarHelp(_doNotShowPolarHelp);
                 setState(() {
                   // Seems like flutter wants async task out of setstate
                   // if checked then DO NOT display experimental text, hence save as false
@@ -1210,11 +1212,20 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen> {
   Widget _getGliderStatesHandler() {
     return BlocListener<GliderCubit, GliderCubitState>(
       listener: (context, state) {
+        if (state is GliderListState) {
+          // this is to enable on 'OK' button
+          if (state.selectedGliderName.isNotEmpty )
+            setState(() {
+            });
+        }
         if (state is CalcEstimatedFlightState) {
           Navigator.pop(context, state.glider);
         }
         if (state is ShowPolarHelpState) {
-          _displayPolarHelp(state.showPolarHelp);
+          _displayPolarHelp();
+        }
+        if (state is PolarUnitsState) {
+          _displayUnits = state.displayUnits;
         }
       },
       child: SizedBox.shrink(),

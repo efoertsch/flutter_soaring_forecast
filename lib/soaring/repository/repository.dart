@@ -111,9 +111,10 @@ class Repository {
   static Gliders? _fullGliderList = null;
   static Gliders? _customGliders = null;
 
-  // this value must be the same value as that in the settings.json file.
+  // this value MUST be the same value as that in the settings.json file.
   static const String _SHOW_ESTIMATED_FLIGHT_BUTTON =
       "SHOW_ESTIMATED_FLIGHT_BUTTON";
+
   static const String _SHOW_ESTIMATED_FLIGHT_EXPERIMENTAL_TEXT =
       "SHOW_ESTIMATED_FLIGHT_EXPERIMENTAL_TEXT";
   static const String _SHOW_POLAR_HELP = "SHOW_POLAR_HELP";
@@ -1436,7 +1437,7 @@ class Repository {
     return Gliders();
   }
 
-  Future<DisplayUnits> getDisplayUnits() async {
+  Future<DisplayUnits> getPolarDisplayUnits() async {
     String displayUnit = await getGenericString(
         key: _DISPLAY_UNITS,
         defaultValue: DisplayUnits.Imperial_kts.toString());
@@ -1449,7 +1450,7 @@ class Repository {
         DisplayUnits.Imperial_kts;
   }
 
-  Future<DisplayUnits> saveDisplayUnits(DisplayUnits displayUnits) async {
+  Future<DisplayUnits> savePolarDisplayUnits(DisplayUnits displayUnits) async {
     await saveGenericString(
         key: _DISPLAY_UNITS, value: displayUnits.toString());
     return _convertDisplayUnitsStringToEnum(displayUnits.toString());
@@ -1460,7 +1461,7 @@ class Repository {
         key: _EXPERIMENTAL_ESTIMATED_FLIGHT_FLAG, defaultValue: true);
   }
 
-  Future<void> saveDisplayExperimentalEstimatedTaskAlertFlag(bool flag) async {
+  Future<void> saveDisplayExperimentalEstimatedTaskFlag(bool flag) async {
     await saveGenericBool(
         key: _EXPERIMENTAL_ESTIMATED_FLIGHT_FLAG, value: flag);
   }
@@ -1474,11 +1475,11 @@ class Repository {
     return await saveGenericBool(key: _DISPLAY_XCSOAR_VALUES, value: display);
   }
 
-  Future<bool> getShowPolarHelp() async {
+  Future<bool> getDoNotShowPolarHelp() async {
     return await getGenericBool(key: _SHOW_POLAR_HELP, defaultValue: false);
   }
 
-  Future<bool> saveShowPolarHelp(bool display) async {
+  Future<bool> saveDoNotShowPolarHelp(bool display) async {
     return await saveGenericBool(key: _SHOW_POLAR_HELP, value: display);
   }
 
