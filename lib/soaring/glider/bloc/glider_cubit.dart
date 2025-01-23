@@ -88,38 +88,48 @@ class GliderCubit extends Cubit<GliderCubitState> {
     _indicateWorking(false);
   }
 
-  bool _checkForValidGliderValues() {
+  void resetGliderToXCSoarValues()  {
+    if (_defaultGlider != null) {
+      _customGlider = _defaultGlider!.copyWith();
+      calculateThermalingValues(_customGlider!, DisplayUnits.Metric);
+      _customGliderLocalUnits =
+          _convertAllGliderValues(_customGlider!.copyWith(), _displayUnits);
+      _emitGlidersInfo();
+    }
+  }
+
+  bool _doesGliderHaveValidValues(Glider? glider) {
     bool validValues = false;
-    if (_customGlider != null) {
-      if ((_customGlider!.gliderEmptyMass ?? 0) <= 0 ||
-          (_customGlider!.pilotMass ?? 0) <= 0 ||
-          (_customGlider!.maxBallast ?? 0) <= 0 ){
+    if (glider != null) {
+      if ((glider.gliderEmptyMass ?? 0) <= 0 ||
+          (glider.pilotMass ?? 0) <= 0 ||
+          (glider.maxBallast ?? 0) <= 0 ){
         emit(GliderInvalidPolarState("Mass values must be greater than 0."));
         return validValues;
       }
-       if   ((_customGlider!.loadedBallast ?? 0) <  0) {
+       if   ((glider.loadedBallast ?? 0) <  0) {
         emit(GliderInvalidPolarState("On board ballast can not be a negative value."));
         return validValues;
       }
-      if ((_customGlider!.minSinkSpeed ?? 0) <= 0 ||
-          (_customGlider!.minSinkRate ?? 0) <= 0 ||
-          (_customGlider!.bankAngle ?? 0) <= 0) {
+      if ((glider.minSinkSpeed ?? 0) <= 0 ||
+          (glider.minSinkRate ?? 0) <= 0 ||
+          (glider.bankAngle ?? 0) <= 0) {
         emit(GliderInvalidPolarState(
             "Thermaling values must be greater than 0."));
         return validValues;
       }
-      if ((_customGlider!.v1 ?? 0) <= 0 ||
-          (_customGlider!.v2 ?? 0) <= 0 ||
-          (_customGlider!.v3 ?? 0) <= 0 ||
-          (_customGlider!.w1 ?? 0) >= 0 ||
-          (_customGlider!.w2 ?? 0) >= 0 ||
-          (_customGlider!.w3 ?? 0) >= 0) {
+      if ((glider.v1 ?? 0) <= 0 ||
+          (glider.v2 ?? 0) <= 0 ||
+          (glider.v3 ?? 0) <= 0 ||
+          (glider.w1 ?? 0) >= 0 ||
+          (glider.w2 ?? 0) >= 0 ||
+          (glider.w3 ?? 0) >= 0) {
         emit(GliderInvalidPolarState(
             "Vx values must be greater than 0. Wx values must be less than 0."));
         return validValues;
       }
     }
-    if (_customGlider == null) {
+    if (glider == null) {
       emit(GliderInvalidPolarState("You must select a glider to contine."));
       return validValues;
     }
@@ -399,8 +409,8 @@ class GliderCubit extends Cubit<GliderCubitState> {
   // Store the customized glider mass/min sink/polar values
   // Note any updates to glider must be done prior to this point and all
   // values must be metric
-  Future<void> storeCustomGlider() async {
-    await _repository.saveCustomPolar(_customGlider!);
+  Future<void> storeCustomGlider(Glider glider) async {
+    await _repository.saveCustomPolar(glider);
   }
 
   void updateThermalingBankAngle(int newBankAngle) {
@@ -499,13 +509,15 @@ class GliderCubit extends Cubit<GliderCubitState> {
   }
 
   Future<bool> saveCustomGliderDetails() async {
-    if (_checkForValidGliderValues()) {
-      await storeCustomGlider();
+    if (_doesGliderHaveValidValues(_customGlider)) {
+      await storeCustomGlider(_customGlider!);
       await _repository.saveLastSelectedGliderName(_customGlider!.glider);
       return (true);
     }
     return false;
   }
+
+
 
 // updated XCSoar json input to have a,b,c calculated in spreadsheet and placed in JSON
 // keeping for future reference

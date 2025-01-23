@@ -1353,9 +1353,7 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen> {
   }
 
   void resetGliderToDefaultValues() {
-    setState(() {
-      _customGliderLocalUnits = _defaultGliderLocalUnits.copyWith();
-    });
+    _getGliderCubit().resetGliderToXCSoarValues();
   }
 
   // Value must be proper numeric

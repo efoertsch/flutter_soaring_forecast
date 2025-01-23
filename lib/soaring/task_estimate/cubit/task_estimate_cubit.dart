@@ -43,9 +43,9 @@ class TaskEstimateCubit extends Cubit<TaskEstimateState> {
     _forecastHours = info.forecastHours;
     _selectedHour = info.forecastHours[info.selectedHourIndex]; // 1300
     var doNotShowExperimentalText =
-      await _repository.getDisplayExperimentalEstimatedTaskAlertFlag();
+        await _repository.getDisplayExperimentalEstimatedTaskAlertFlag();
     if (!doNotShowExperimentalText) {
-      emit(DisplayExperimentalHelpText( true));
+      emit(DisplayExperimentalHelpText(true));
     } else {
       doCalc();
     }
@@ -68,7 +68,38 @@ class TaskEstimateCubit extends Cubit<TaskEstimateState> {
     // Since a glider was previously selected, it *should* be in custom glider
     // list;
     _gliderPolar = await _repository.getCustomGliderPolar(_gliderName);
-    return _gliderPolar;
+    if (_polarIsValid(_gliderPolar)) {
+      return _gliderPolar;
+    } else {
+      emit(DisplayGlidersState());
+      return null;
+    }
+  }
+
+  //Check for glider being saved with incomplete polar data
+  // prior to bug fix put in for that
+  bool _polarIsValid(Glider? glider) {
+    if (glider != null) {
+      if ((glider.gliderEmptyMass ?? 0) <= 0 ||
+          (glider.pilotMass ?? 0) <= 0 ||
+          (glider.maxBallast ?? 0) <= 0 ||
+          (glider.loadedBallast ?? 0) < 0 ||
+          (glider.minSinkSpeed ?? 0) <= 0 ||
+          (glider.minSinkRate ?? 0) <= 0 ||
+          (glider.bankAngle ?? 0) <= 0 ||
+          (glider.v1 ?? 0) <= 0 ||
+          (glider.v2 ?? 0) <= 0 ||
+          (glider.v3 ?? 0) <= 0 ||
+          (glider.w1 ?? 0) >= 0 ||
+          (glider.w2 ?? 0) >= 0 ||
+          (glider.w3 ?? 0) >= 0) {
+        return false;
+      }
+    }
+    if (glider == null) {
+      return false;
+    }
+    return true;
   }
 
   // Future<bool> checkToDisplayExperimentalText() async {
@@ -115,7 +146,7 @@ class TaskEstimateCubit extends Cubit<TaskEstimateState> {
       emit(TaskEstimateWorkingState(false));
     } else {
       // Updated server code, won't get duplicate lines
-     // _eliminateDuplicateFootingText(optimizedTaskRoute!.routeSummary!.footers);
+      // _eliminateDuplicateFootingText(optimizedTaskRoute!.routeSummary!.footers);
       emit(TaskEstimateWorkingState(false));
       emit(EstimatedFlightSummaryState(optimizedTaskRoute));
     }
@@ -152,11 +183,12 @@ class TaskEstimateCubit extends Cubit<TaskEstimateState> {
     }
   }
 
-  void processModelDateChange({required regionName,
-    required selectedModelName,
-    required selectedDate,
-    required forecastHours,
-    required selectedHourIndex}) async {
+  void processModelDateChange(
+      {required regionName,
+      required selectedModelName,
+      required selectedDate,
+      required forecastHours,
+      required selectedHourIndex}) async {
     _regionName = regionName;
     _selectedModelName = selectedModelName;
     _selectedForecastDate = selectedDate;
@@ -175,15 +207,14 @@ class TaskEstimateCubit extends Cubit<TaskEstimateState> {
     _repository.saveDisplayExperimentalEstimatedTaskFlag(value);
   }
 
-
   void updateTimeIndex(int incOrDec) async {
     // print('Current _selectedForecastTimeIndex $_selectedForecastTimeIndex'
     //     '  incOrDec $incOrDec');
     if (incOrDec > 0) {
       _selectedForecastTimeIndex =
-      (_selectedForecastTimeIndex == _forecastHours.length - 1)
-          ? 0
-          : _selectedForecastTimeIndex + incOrDec;
+          (_selectedForecastTimeIndex == _forecastHours.length - 1)
+              ? 0
+              : _selectedForecastTimeIndex + incOrDec;
     } else {
       _selectedForecastTimeIndex = (_selectedForecastTimeIndex == 0)
           ? _forecastHours.length - 1
@@ -227,15 +258,14 @@ class TaskEstimateCubit extends Cubit<TaskEstimateState> {
     footers.addAll(footerText);
   }
 
-
   Future<void> createLocalForecastData() async {
     List<LocalForecastPoint> localForecastPoints = [];
     localForecastPoints.addAll(_taskTurnpoints
         .map((taskTurnpoint) => LocalForecastPoint(
-        lat: taskTurnpoint.latitudeDeg,
-        lng: taskTurnpoint.longitudeDeg,
-        turnpointName: taskTurnpoint.title,
-        turnpointCode: taskTurnpoint.code))
+            lat: taskTurnpoint.latitudeDeg,
+            lng: taskTurnpoint.longitudeDeg,
+            turnpointName: taskTurnpoint.title,
+            turnpointCode: taskTurnpoint.code))
         .toList());
     final localForecastGraphData = LocalForecastInputData(
         regionName: _regionName,
