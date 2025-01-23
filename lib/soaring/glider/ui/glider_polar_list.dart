@@ -160,12 +160,13 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen> {
                 onPressed: (_selectedGlider == null)
                     ? null
                     : () async {
-                        await _getGliderCubit().saveCustomGliderDetails();
-                        Navigator.pop(
-                            context,
-                            _customGliderLocalUnits != null
-                                ? _customGliderLocalUnits!.glider
-                                : "");
+                        if (await _getGliderCubit().saveCustomGliderDetails()) {
+                          Navigator.pop(
+                              context,
+                              _customGliderLocalUnits != null
+                                  ? _customGliderLocalUnits!.glider
+                                  : "");
+                        }
                       },
               ),
             ),
@@ -1214,9 +1215,10 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen> {
       listener: (context, state) {
         if (state is GliderListState) {
           // this is to enable on 'OK' button
-          if (state.selectedGliderName.isNotEmpty )
-            setState(() {
-            });
+          if (state.selectedGliderName.isNotEmpty) setState(() {});
+        }
+        if (state is GliderInvalidPolarState) {
+          CommonWidgets.showErrorDialog(context, 'Polar Error', state.errorMsg);
         }
         if (state is CalcEstimatedFlightState) {
           Navigator.pop(context, state.glider);

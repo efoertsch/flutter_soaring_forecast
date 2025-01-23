@@ -49,6 +49,12 @@ class GliderCubitErrorState extends GliderCubitState {
   GliderCubitErrorState(this.errorMsg);
 }
 
+class GliderInvalidPolarState extends GliderCubitState {
+  final String errorMsg;
+
+  GliderInvalidPolarState(this.errorMsg);
+}
+
 class CalcEstimatedFlightState extends GliderCubitState {
   final Glider glider;
 
@@ -59,9 +65,8 @@ class DisplayEstimatedFlightText extends GliderCubitState {}
 
 class ShowPolarHelpState extends GliderCubitState {}
 
-class PolarUnitsState extends GliderCubitState{
+class PolarUnitsState extends GliderCubitState {
   DisplayUnits displayUnits;
 
   PolarUnitsState(this.displayUnits);
 }
-
