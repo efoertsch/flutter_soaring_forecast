@@ -2,14 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/app/custom_styles.dart';
 
-import '../../app/constants.dart' show ForecastDateChange;
-import '../../forecast/bloc/rasp_data_event.dart';
-import '../../repository/rasp/regions.dart';
-import '../bloc/region_model_event.dart';
-import 'rasp_widgets.dart';
 import '../../forecast/util/rasp_utils.dart';
 import '../bloc/region_model_bloc.dart';
+import '../bloc/region_model_event.dart';
 import '../bloc/region_model_state.dart';
+import 'rasp_widgets.dart';
 
 class ModelDatesDisplay extends StatefulWidget {
 

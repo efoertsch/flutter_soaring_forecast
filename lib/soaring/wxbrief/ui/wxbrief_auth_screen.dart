@@ -110,18 +110,6 @@ class _WxBriefAuthScreenState extends State<WxBriefAuthScreen> {
         .loadString('assets/html/wx_brief_authorization_help.html');
   }
 
-  Widget _getCancelButton() {
-    return TextButton(
-        child: Text("Cancel"),
-        onPressed: () {
-          Navigator.pop(context, "Cancel");
-        });
-  }
-
-  _getCancelContinue(String result) {
-    Navigator.pop(context, result);
-  }
-
   Widget _getContinueButton() {
     return Align(
       alignment: Alignment.bottomCenter,

@@ -167,8 +167,8 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
     return SfPdfViewer.file(
       File(widget.fileName),
       controller: _pdfViewerController,
-      currentSearchTextHighlightColor: Colors.yellow.withOpacity(0.6),
-      otherSearchTextHighlightColor: Colors.yellow.withOpacity(0.3),
+      currentSearchTextHighlightColor: Colors.yellow.withValues(alpha:0.6),
+      otherSearchTextHighlightColor: Colors.yellow.withValues(alpha:0.3),
     );
   }
 

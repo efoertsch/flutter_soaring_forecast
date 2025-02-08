@@ -17,9 +17,9 @@ class ViewBounds {
   }
 
   Map<String, dynamic> toJson() => {
-        'swLat': latLngBounds.southWest!.latitude,
-        'swLng': latLngBounds.southWest!.longitude,
-        'neLat': latLngBounds.northEast!.latitude,
-        'neLng': latLngBounds.northEast!.longitude,
+        'swLat': latLngBounds.southWest.latitude,
+        'swLng': latLngBounds.southWest.longitude,
+        'neLat': latLngBounds.northEast.latitude,
+        'neLng': latLngBounds.northEast.longitude,
       };
 }

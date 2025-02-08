@@ -27,7 +27,6 @@ import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_overhea
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:latlong2/latlong.dart';
 
-import '../../rasp_options/rasp_display_options_cubit.dart';
 import '../../region_model/bloc/region_model_bloc.dart';
 import '../../region_model/bloc/region_model_state.dart';
 
@@ -71,13 +70,11 @@ class RaspMapState extends State<RaspMap>
 
   bool _soundingsAreVisible = false;
   bool _routeIconIsVisible = false;
-  bool _routeSummaryIsVisible = false;
   double _forecastOverlayOpacity = 50;
   bool _forecastOverlaySliderIsVisible = false;
   Timer? _hideOpacityTimer = null;
   double _mapZoom = 7;
   double _previousZoom = 7;
-  bool _displayOptTaskAvg = false;
   bool _mapReady = false;
 
   final suaColors = SUAColor.values;
@@ -116,11 +113,6 @@ class RaspMapState extends State<RaspMap>
         _rebuildMarkerArray();
       });
     }
-  }
-
-  void _printMapBounds(String msg, LatLngBounds latLngBounds) {
-    debugPrint(msg +
-        " latLngBounds: ${latLngBounds.southWest!.toString()}  ${latLngBounds.northEast!.toString()}");
   }
 
   var _overlayImages = <OverlayImage>[];

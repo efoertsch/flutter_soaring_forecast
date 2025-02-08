@@ -212,7 +212,7 @@ class _ForecastListScreenState extends State<ForecastListScreen> {
       Expanded(
         flex: 10,
         child: Material(
-          color: Colors.white.withOpacity(0.0),
+          color: Colors.white.withValues(alpha:0.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

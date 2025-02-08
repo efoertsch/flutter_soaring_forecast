@@ -1,4 +1,3 @@
-import 'package:flutter_soaring_forecast/soaring/floor/task/task.dart';
 import 'package:flutter_soaring_forecast/soaring/local_forecast/data/local_forecast_graph.dart';
 
 import '../../repository/rasp/estimated_flight_avg_summary.dart';

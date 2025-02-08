@@ -17,6 +17,4 @@ class SettingsErrorState extends SettingsState {
 
   SettingsErrorState(this.error);
 
-  @override
-  List<Object?> get props => [error];
 }

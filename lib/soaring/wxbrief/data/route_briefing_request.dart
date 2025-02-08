@@ -390,11 +390,7 @@ class RouteBriefingRequest {
       sb.writeAll([_AMPERSAND, "flightDuration=", _flightDuration]);
       sb.writeAll([_AMPERSAND, "speedKnots=", _speedKnots]);
     }
-    sb.writeAll([
-      _AMPERSAND,
-      "outlookBriefing=",
-      ((_outlookBriefing != null) ? _outlookBriefing : false)
-    ]);
+    sb.writeAll([_AMPERSAND, "outlookBriefing=", _outlookBriefing]);
     sb.writeAll([_AMPERSAND, "departureInstant=", _departureInstant]);
     sb.writeAll([_AMPERSAND, "webUserName=", _webUserName]);
     sb.writeAll([_AMPERSAND, "versionRequested=", "99999999"]);

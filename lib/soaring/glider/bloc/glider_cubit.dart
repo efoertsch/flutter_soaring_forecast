@@ -101,29 +101,29 @@ class GliderCubit extends Cubit<GliderCubitState> {
   bool _doesGliderHaveValidValues(Glider? glider) {
     bool validValues = false;
     if (glider != null) {
-      if ((glider.gliderEmptyMass ?? 0) <= 0 ||
-          (glider.pilotMass ?? 0) <= 0 ||
-          (glider.maxBallast ?? 0) <= 0 ){
+      if (glider.gliderEmptyMass  <= 0 ||
+          glider.pilotMass  <= 0 ||
+          glider.maxBallast  <= 0 ){
         emit(GliderInvalidPolarState("Mass values must be greater than 0."));
         return validValues;
       }
-       if   ((glider.loadedBallast ?? 0) <  0) {
+       if   (glider.loadedBallast  <  0) {
         emit(GliderInvalidPolarState("On board ballast can not be a negative value."));
         return validValues;
       }
-      if ((glider.minSinkSpeed ?? 0) <= 0 ||
-          (glider.minSinkRate ?? 0) <= 0 ||
-          (glider.bankAngle ?? 0) <= 0) {
+      if (glider.minSinkSpeed  <= 0 ||
+          glider.minSinkRate  <= 0 ||
+          glider.bankAngle  <= 0) {
         emit(GliderInvalidPolarState(
             "Thermaling values must be greater than 0."));
         return validValues;
       }
-      if ((glider.v1 ?? 0) <= 0 ||
-          (glider.v2 ?? 0) <= 0 ||
-          (glider.v3 ?? 0) <= 0 ||
-          (glider.w1 ?? 0) >= 0 ||
-          (glider.w2 ?? 0) >= 0 ||
-          (glider.w3 ?? 0) >= 0) {
+      if (glider.v1  <= 0 ||
+          glider.v2  <= 0 ||
+          glider.v3  <= 0 ||
+          glider.w1  >= 0 ||
+          glider.w2  >= 0 ||
+          glider.w3  >= 0) {
         emit(GliderInvalidPolarState(
             "Vx values must be greater than 0. Wx values must be less than 0."));
         return validValues;
@@ -286,9 +286,6 @@ class GliderCubit extends Cubit<GliderCubitState> {
         _customGlider!.updatedVW = true;
         _customGlider!.v3 = newValue;
         break;
-      default:
-        emit(GliderCubitErrorState(
-            "Missing update logic for sink rate parm ${sinkRateParm}"));
     }
     _customGliderLocalUnits =
         _convertAllGliderValues(_customGlider!.copyWith(), _displayUnits);
@@ -315,10 +312,7 @@ class GliderCubit extends Cubit<GliderCubitState> {
       case MASS_PARM.MAX_BALLAST:
         _customGlider!.maxBallast = newValue;
         break;
-      default:
-        emit(GliderCubitErrorState(
-            "Missing update logic for glider mass ${massParm}"));
-        return;
+
     }
     calculatePolarAdjustmentFactor(_customGlider!, _defaultGlider!);
     _customGliderLocalUnits =
@@ -450,11 +444,6 @@ class GliderCubit extends Cubit<GliderCubitState> {
       case DisplayUnits.Imperial_mph:
         speed = glider.minSinkSpeedAtBankAngle * mphToFtperSec;
         funkyNumber = gravityFtPerSec2 * tangent;
-      default:
-        emit(GliderCubitErrorState(
-            "Missing thermaling logic for ${displayUnits}"));
-        speed = 0;
-        funkyNumber = 1;
     }
 
     glider.turnDiameter = 2 * pow(speed, 2) / funkyNumber;

@@ -112,7 +112,7 @@ class TableHead extends StatelessWidget {
             SizedBox(
               width: descriptionColumnWidth,
               child: GridTableCell(
-                color: backgroundColor ?? Colors.yellow.withOpacity(0.3),
+                color: backgroundColor ?? Colors.yellow.withValues(alpha:0.3),
                 value: " ",
               ),
             ),
@@ -128,7 +128,7 @@ class TableHead extends StatelessWidget {
                     return SizedBox(
                       width: cellWidth,
                       child: GridTableCell(
-                        color: Colors.yellow.withOpacity(0.3),
+                        color: Colors.yellow.withValues(alpha:0.3),
                         value: columnHeadings[index],
                       ),
                     );

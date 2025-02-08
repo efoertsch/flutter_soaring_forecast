@@ -217,7 +217,7 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
 
     if (currentLocation.altitude != null && currentLocation.altitude == 0) {
       elevation = await _getUSGSElevationAtLocation(
-          currentLocation.latitude ?? 0, currentLocation.longitude ?? 0);
+          currentLocation.latitude ?? 0, currentLocation.longitude ?? 0, emit);
     } else {
       elevation = currentLocation.altitude;
     }
@@ -230,12 +230,12 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
       GetElevationAtLatLong event, Emitter<TurnpointState> emit) async {
     double elevation;
     elevation =
-        await _getUSGSElevationAtLocation(event.latitude, event.longitude);
+        await _getUSGSElevationAtLocation(event.latitude, event.longitude, emit);
     emit(LatLongElevationState(event.latitude, event.longitude, elevation));
   }
 
   Future<double> _getUSGSElevationAtLocation(
-      double latitude, double longitude) async {
+      double latitude, double longitude, Emitter<TurnpointState> emit) async {
     double elevation = 0;
     try {
       final nationalMap =

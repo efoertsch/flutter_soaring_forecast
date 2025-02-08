@@ -1,8 +1,7 @@
+import 'dart:math';
 import 'dart:ui';
 
-import 'package:flutter/foundation.dart';
 import 'package:graphic/graphic.dart';
-import 'dart:math';
 
 /// A thermal updraft shape.
 class ThermalShape extends PointShape {

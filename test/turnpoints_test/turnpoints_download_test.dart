@@ -34,7 +34,6 @@ void main() {
       print('turnpoint id $id');
     });
     await Future.delayed(Duration(seconds: 1));
-    var numberOfTurnpoints = await repository.getCountOfTurnpoints();
     //print('Number of turnpoints ${numberOfTurnpoints}');
     expect(await repository.getCountOfTurnpoints() > 0, true);
   });

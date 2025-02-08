@@ -37,7 +37,6 @@ import 'package:flutter_soaring_forecast/soaring/repository/options/sua_region_f
 import 'package:flutter_soaring_forecast/soaring/repository/options/turnpoint_regions.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/estimated_flight_avg_summary.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/gliders.dart';
-import 'package:flutter_soaring_forecast/soaring/repository/rasp/view_bounds.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/usgs/national_map.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/cup/cup_styles.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoint_utils.dart';
@@ -73,7 +72,6 @@ class Repository {
   static var logger = DLogger.Logger();
   static SharedPreferences? sharedPreferences;
 
-  // TODO change field names to private
   static const String _SELECTED_REGION = "SELECTED_REGION";
   static const String _DEFAULT_SELECTED_REGION = "NewEngland";
   static const String _FORECAST_LIST = "FORECAST_LIST";
@@ -586,16 +584,16 @@ class Repository {
         key: "DISPLAY_LANDABLE_TURNPOINTS", defaultValue: true);
     if (landableOnly) {
       return _appDatabase!.turnpointDao.getLandableTurnpointsWithinBounds(
-          latLngBounds.southWest!.latitude,
-          latLngBounds.southWest!.longitude,
-          latLngBounds.northEast!.latitude,
-          latLngBounds.northEast!.longitude);
+          latLngBounds.southWest.latitude,
+          latLngBounds.southWest.longitude,
+          latLngBounds.northEast.latitude,
+          latLngBounds.northEast.longitude);
     }
     return _appDatabase!.turnpointDao.getTurnpointsWithinBounds(
-        latLngBounds.southWest!.latitude,
-        latLngBounds.southWest!.longitude,
-        latLngBounds.northEast!.latitude,
-        latLngBounds.northEast!.longitude);
+        latLngBounds.southWest.latitude,
+        latLngBounds.southWest.longitude,
+        latLngBounds.northEast.latitude,
+        latLngBounds.northEast.longitude);
   }
 
   Future<List<Turnpoint>> findTurnpoints(String query) async {
@@ -1305,8 +1303,8 @@ class Repository {
       final settings = settingsFromJson(jsonString);
       // loop through the settings to assign the saved value (or default)
       Future.forEach(settings, (group) async {
-        Future.forEach((group as Group).options!, (option) async {
-          if ((option as Option).dataType == "bool") {
+        Future.forEach(group.options!, (option) async {
+          if (option.dataType == "bool") {
             bool savedValue = await getGenericBool(
                 key: option.key, defaultValue: option.optionDefault);
             option.savedValue = savedValue;
@@ -1385,7 +1383,6 @@ class Repository {
   }
 
   Future<void> saveCustomPolar(Glider customPolar) async {
-    Glider? gliderPolar;
     await getCustomGliders();
     if (_customGliders!.gliders != null) {
       // remove old entry if there was one

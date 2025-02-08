@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:after_layout/after_layout.dart';
 import 'package:cupertino_will_pop_scope/cupertino_will_pop_scope.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -58,7 +57,6 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen> {
 
   static const String _BANK_ANGLE_10_TO_60 = "Bank Angle - 10 to 60 degrees";
   static const String _ENTER_BANK_ANGLE = "Favorite Thermaling Bank Angle";
-  static const String _POLAR_HELP = "HELP";
 
   static const String _GLIDER_POLAR_HELP =
       "The values displayed on the glider polar screen are based on XCSOAR glider data."
@@ -925,8 +923,6 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen> {
         return glider.v2;
       case VELOCITY_PARM.V3:
         return glider.v3;
-      default:
-        return 0;
     }
   }
 
@@ -994,8 +990,6 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen> {
         return glider.w2;
       case SINK_RATE_PARM.W3:
         return glider.w3;
-      default:
-        return 0;
     }
   }
 

@@ -1,6 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/local_forecast/data/local_forecast_graph.dart';
-import 'package:flutter_soaring_forecast/soaring/repository/rasp/estimated_flight_avg_summary.dart';
 import 'package:flutter_soaring_forecast/soaring/task_estimate/cubit/task_estimate_state.dart';
 
 import '../../floor/taskturnpoint/task_turnpoint.dart';
@@ -16,7 +15,6 @@ class TaskEstimateCubit extends Cubit<TaskEstimateState> {
   String _selectedForecastDate = ""; // selected date  2019-12-19
   String _selectedHour = "";
   int _taskId = -1;
-  bool _startup = false;
   String _taskLatLonString = "";
   String _gliderName = "";
   Glider? _gliderPolar;
@@ -80,19 +78,19 @@ class TaskEstimateCubit extends Cubit<TaskEstimateState> {
   // prior to bug fix put in for that
   bool _polarIsValid(Glider? glider) {
     if (glider != null) {
-      if ((glider.gliderEmptyMass ?? 0) <= 0 ||
-          (glider.pilotMass ?? 0) <= 0 ||
-          (glider.maxBallast ?? 0) <= 0 ||
-          (glider.loadedBallast ?? 0) < 0 ||
-          (glider.minSinkSpeed ?? 0) <= 0 ||
-          (glider.minSinkRate ?? 0) <= 0 ||
-          (glider.bankAngle ?? 0) <= 0 ||
-          (glider.v1 ?? 0) <= 0 ||
-          (glider.v2 ?? 0) <= 0 ||
-          (glider.v3 ?? 0) <= 0 ||
-          (glider.w1 ?? 0) >= 0 ||
-          (glider.w2 ?? 0) >= 0 ||
-          (glider.w3 ?? 0) >= 0) {
+      if (glider.gliderEmptyMass <= 0 ||
+          glider.pilotMass <= 0 ||
+          glider.maxBallast <= 0 ||
+          glider.loadedBallast < 0 ||
+          glider.minSinkSpeed <= 0 ||
+          glider.minSinkRate <= 0 ||
+          glider.bankAngle <= 0 ||
+          glider.v1 <= 0 ||
+          glider.v2 <= 0 ||
+          glider.v3 <= 0 ||
+          glider.w1 >= 0 ||
+          glider.w2 >= 0 ||
+          glider.w3 >= 0) {
         return false;
       }
     }
@@ -145,8 +143,6 @@ class TaskEstimateCubit extends Cubit<TaskEstimateState> {
       emit(TaskEstimateErrorState(optimizedTaskRoute!.routeSummary!.error!));
       emit(TaskEstimateWorkingState(false));
     } else {
-      // Updated server code, won't get duplicate lines
-      // _eliminateDuplicateFootingText(optimizedTaskRoute!.routeSummary!.footers);
       emit(TaskEstimateWorkingState(false));
       emit(EstimatedFlightSummaryState(optimizedTaskRoute));
     }
@@ -228,34 +224,6 @@ class TaskEstimateCubit extends Cubit<TaskEstimateState> {
   // This is used for when user hits help button
   Future<void> showExperimentalTextHelp() async {
     emit(DisplayExperimentalHelpText(false));
-  }
-
-// eliminate duplicate text like (this comes across as 1 long string not by line as shown below
-// WARNING: Data unavailable after 1700 so assumed constant conditions after that time.
-// Data unavailable after 1700 so assumed constant conditions after that time.
-// Data unavailable after 1700 so assumed constant conditions after that time.
-// Data unavailable after 1700 so assumed constant conditions after that time.
-  _eliminateDuplicateFootingText(List<Footer>? footers) {
-    List<Footer> footerText = [];
-    if (footers == null) {
-      return;
-    }
-    for (Footer footer in footers) {
-      if (footer.message != null) {
-        //List<String> pieces = footer.message!.split(RegExp(r'[\.:]'));
-        List<String> pieces = footer.message!.split("\n");
-        for (String piece in pieces) {
-          if (footerText.isEmpty ||
-              (footerText.last.message!.trim() != piece.trim() &&
-                  piece.isNotEmpty)) {
-            footerText.add(Footer(message: piece));
-          }
-        }
-      }
-    }
-
-    footers.clear();
-    footers.addAll(footerText);
   }
 
   Future<void> createLocalForecastData() async {

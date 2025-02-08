@@ -369,11 +369,6 @@ class RegionModelBloc extends Bloc<RegionModelEvent, RegionModelState> {
     _emitRaspModelsAndDates(emit);
   }
 
-  Future<void> _refreshForecast(
-      RegionChangedEvent event, Emitter<RegionModelState> emit) async {
-    await _processInitialRegionModelEvent(event, emit);
-  }
-
   // This is called when the bloc is added for Local Forcast. Local Forecast was passed the same bloc as
   // used on RASP screen, so already have the region/model/...
   // So just need to send existing data to populate whatever the region/model widgets there are

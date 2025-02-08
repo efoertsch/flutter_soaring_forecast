@@ -1,8 +1,6 @@
-import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
-import 'package:latlong2/latlong.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 
 import '../../repository/rasp/regions.dart';
 import '../data/region_model_data.dart';
@@ -77,6 +75,4 @@ class EstimatedTaskRegionModelState extends RegionModelState {
 
   EstimatedTaskRegionModelState(this.estimatedTaskRegionModel);
 
-  @override
-  List<Object?> get props => [estimatedTaskRegionModel];
 }

@@ -24,10 +24,10 @@ class WindyStartupParms {
         "long": long,
         "mapLatLngBounds": [
           [
-            toLatLongJson(mapLatLngBounds.southWest!),
+            toLatLongJson(mapLatLngBounds.southWest),
           ],
           [
-            toLatLongJson(mapLatLngBounds.northEast!),
+            toLatLongJson(mapLatLngBounds.northEast),
           ]
         ],
         "zoom": zoom
