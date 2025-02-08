@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:email_launcher/email_launcher.dart';
 import 'package:flutter/material.dart' hide Feedback;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/main.dart';
@@ -12,6 +11,7 @@ import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
         WxBriefBriefingRequest;
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../bloc/rasp_bloc.dart';
 import '../../app/web_launcher.dart';
@@ -125,7 +125,8 @@ class _AppDrawerWidgetState extends State<AppDrawerWidget> {
           ListTile(
             title: Text(DrawerLiterals.GLIDER_POLARS),
             onTap: () {
-               Navigator.popAndPushNamed(context, GliderPolarListBuilder.routeName);
+              Navigator.popAndPushNamed(
+                  context, GliderPolarListBuilder.routeName);
             },
           ),
           ListTile(
@@ -152,13 +153,18 @@ class _AppDrawerWidgetState extends State<AppDrawerWidget> {
           ListTile(
             title: Text(DrawerLiterals.FEEDBACK),
             onTap: () async {
-              Email email = Email(
-                //to: ['flightservice@soaringforecast.org'],
-                to: [FEEDBACK_EMAIL_ADDRESS],
-                subject:
-                    Feedback.FEEDBACK_TITLE + " - " + Platform.operatingSystem,
+              String subject =
+                  Feedback.FEEDBACK_TITLE + ' - ' + Platform.operatingSystem;
+              final Uri emailLaunchUri = Uri(
+                scheme: 'mailto',
+                path: FEEDBACK_EMAIL_ADDRESS,
+                query: 'subject= ${subject}',
               );
-              await EmailLauncher.launch(email);
+              if (await canLaunchUrl(emailLaunchUri)) {
+                await launchUrl(emailLaunchUri);
+              } else {
+                print('Could not launch $emailLaunchUri');
+              }
             },
           ),
           ListTile(

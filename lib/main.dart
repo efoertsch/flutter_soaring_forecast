@@ -45,7 +45,7 @@ import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_overhea
 import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoints_list.dart';
 import 'package:flutter_soaring_forecast/soaring/values/strings.dart';
 import 'package:flutter_soaring_forecast/soaring/windy/bloc/windy_bloc.dart';
-import 'package:flutter_soaring_forecast/soaring/windy/ui/windy.dart';
+import 'package:flutter_soaring_forecast/soaring/windy/ui/windy_forecast.dart';
 import 'package:flutter_soaring_forecast/soaring/wxbrief/bloc/wxbrief_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/wxbrief/ui/wxbrief_auth_screen.dart';
 import 'package:flutter_soaring_forecast/soaring/wxbrief/ui/wxbrief_request_screen.dart';

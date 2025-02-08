@@ -36,9 +36,7 @@ class WindyBloc extends Bloc<WindyEvent, WindyState> {
 
   FutureOr<void> _getWindyInitData(
       WindyInitEvent event, Emitter<WindyState> emit) async {
-    // if (Platform.isAndroid) {
-    //   await AndroidInAppWebViewController.setWebContentsDebuggingEnabled(true);
-    // }
+
     _models = await repository.getWindyModels();
     emit(WindyModelListState(_models));
     _layers = await repository.getWindyLayers();

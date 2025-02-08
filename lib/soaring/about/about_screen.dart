@@ -1,13 +1,13 @@
 import 'dart:io';
 
 import 'package:cupertino_will_pop_scope/cupertino_will_pop_scope.dart';
-import 'package:email_launcher/email_launcher.dart';
 import 'package:flutter/material.dart' hide Feedback;
 import 'package:flutter/services.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     show FEEDBACK_EMAIL_ADDRESS, Feedback;
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../app/web_launcher.dart';
 
@@ -123,14 +123,21 @@ class _AboutScreenState extends State<AboutScreen> {
                       // yeah - hack just to use this launcher
                       launchWebBrowser("soaringforecast.org","privacy-policy");
                     } else if (url.startsWith("mailto")) {
-                      Email email = Email(
-                        //to: ['flightservice@soaringforecast.org'],
-                        to: [FEEDBACK_EMAIL_ADDRESS],
-                        subject: Feedback.FEEDBACK_TITLE +
-                            " - " +
-                            Platform.operatingSystem,
+                      String subject = Feedback.FEEDBACK_TITLE +
+                          ' - ' +
+                          Platform.operatingSystem;
+                      final Uri emailLaunchUri = Uri(
+                        scheme: 'mailto',
+                        path: FEEDBACK_EMAIL_ADDRESS,
+                        query:
+                          'subject= ${subject}',
                       );
-                      await EmailLauncher.launch(email);
+
+                      if (await canLaunchUrl(emailLaunchUri)) {
+                        await launchUrl(emailLaunchUri);
+                      } else {
+                        print('Could not launch $emailLaunchUri');
+                      }
                     }
                   };
                 },
