@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:after_layout/after_layout.dart';
 import 'package:flutter/foundation.dart';
@@ -17,6 +16,9 @@ import 'package:flutter_soaring_forecast/soaring/windy/data/windy_altitude.dart'
 import 'package:flutter_soaring_forecast/soaring/windy/data/windy_layer.dart';
 import 'package:flutter_soaring_forecast/soaring/windy/data/windy_model.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+// Import for Android features.
+import 'package:webview_flutter_android/webview_flutter_android.dart';
+// #enddocregion platform_imports
 
 class WindyForecast extends StatefulWidget {
   WindyForecast({Key? key}) : super(key: key);
@@ -27,7 +29,7 @@ class WindyForecast extends StatefulWidget {
 
 class WindyForecastState extends State<WindyForecast>
     with AfterLayoutMixin<WindyForecast> {
-  WebViewController? _webViewController;
+  late final WebViewController _webViewController;
 
   int _modelIndex = 0;
   int _layerIndex = 0;
@@ -43,8 +45,46 @@ class WindyForecastState extends State<WindyForecast>
   @override
   void initState() {
     super.initState();
-    if (Platform.isAndroid) {
-      WebView.platform = SurfaceAndroidWebView();
+    late final PlatformWebViewControllerCreationParams params;
+    params = const PlatformWebViewControllerCreationParams();
+    _webViewController = WebViewController.fromPlatformCreationParams(params);
+    _webViewController
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setNavigationDelegate(NavigationDelegate(
+        onProgress: (int progress) {
+          debugPrint('WebView is loading (progress : $progress%)');
+        },
+        onPageStarted: (String url) {
+          debugPrint('Page started loading: $url');
+        },
+        onPageFinished: (String url) {
+          debugPrint('Page finished loading: $url');
+        },
+        onWebResourceError: (WebResourceError error) {
+          debugPrint('''
+Page resource error:
+  code: ${error.errorCode}
+  description: ${error.description}
+  errorType: ${error.errorType}
+  isForMainFrame: ${error.isForMainFrame}
+          ''');
+        },
+        onNavigationRequest: (NavigationRequest request) {
+            var url = request.url.toString();
+            if (url.startsWith("https://www.windy.com")) {
+              launchWebBrowser("www.windy.com", "");
+              return NavigationDecision.prevent;
+            }
+            if (url.startsWith("file:") ||
+                url.contains("windy.com")) {
+              return NavigationDecision.navigate;
+            }
+            return NavigationDecision.prevent;
+        },
+      ));
+    _addJavascriptChannels(_webViewController);
+    if (_webViewController.platform is AndroidWebViewController) {
+      AndroidWebViewController.enableDebugging(!kReleaseMode);
     }
   }
 
@@ -56,6 +96,8 @@ class WindyForecastState extends State<WindyForecast>
   @override
   void afterFirstLayout(BuildContext context) {
     _sendEvent(WindyInitEvent());
+      _sendWindyWidgetHeight(
+          _webViewController, _windyWidgetHeight);
   }
 
   @override
@@ -87,7 +129,7 @@ class WindyForecastState extends State<WindyForecast>
     ]);
   }
 
-  _getDropDownOptions() {
+  Widget _getDropDownOptions() {
     return Padding(
       padding: const EdgeInsets.only(left: 8.0, right: 8.0),
       child: Row(
@@ -131,22 +173,22 @@ class WindyForecastState extends State<WindyForecast>
     ];
   }
 
-  void _toggleBaseMap(bool isChecked) {
-    topoMapChecked = isChecked;
-    debugPrint("ToggleBaseMap: " + isChecked.toString());
-    _sendEvent(DisplayTopoMapTypeEvent(isChecked));
-  }
+  // void _toggleBaseMap(bool isChecked) {
+  //   topoMapChecked = isChecked;
+  //   debugPrint("ToggleBaseMap: " + isChecked.toString());
+  //   _sendEvent(DisplayTopoMapTypeEvent(isChecked));
+  // }
 
-  bool displayTopoMap(bool checked) {
-    if (checked) {
-      //TODO return to base windy map
-      //  setCommand(JAVASCRIPT_START + "setBaseLayerToDefault()");
-      return false;
-    } else {
-      //  setCommand(JAVASCRIPT_START + "setBaseLayerToArcGisMap()");
-      return true;
-    }
-  }
+  // bool displayTopoMap(bool checked) {
+  //   if (checked) {
+  //     //TODO return to base windy map
+  //     //  setCommand(JAVASCRIPT_START + "setBaseLayerToDefault()");
+  //     return false;
+  //   } else {
+  //     //  setCommand(JAVASCRIPT_START + "setBaseLayerToArcGisMap()");
+  //     return true;
+  //   }
+  // }
 
   Widget _getWindyModelDropDown() {
     return BlocBuilder<WindyBloc, WindyState>(buildWhen: (previous, current) {
@@ -293,10 +335,9 @@ class WindyForecastState extends State<WindyForecast>
     );
   }
 
-  // Don't execute until webview created and webcontroller ready
   void loadWindyHtml(String html) async {
     if (!_windyHtmlLoaded) {
-      await _webViewController!.loadHtmlString(html, baseUrl: "www.windy.com");
+      await _webViewController.loadHtmlString(html, baseUrl: "www.windy.com");
       _windyHtmlLoaded = true;
     }
   }
@@ -324,40 +365,11 @@ class WindyForecastState extends State<WindyForecast>
                 },
                 child: Container(
                   height: _windyWidgetHeight.toDouble(),
-                  child: WebView(
-                    javascriptChannels: _getJavascriptChannels(),
-                    debuggingEnabled: !kReleaseMode,
-                    javascriptMode: JavascriptMode.unrestricted,
-                    // For some reason using onPageFinished to trigger startup
-                    // does not work when windy displayed, then goback, then display
-                    // windy screen 2nd time
-                    // onPageFinished: (url) {
-                    //   debugPrint(
-                    //       "Finished loading page. url:" + url.toString());
-                    //   _sendEvent(AssignWindyStartupParms());
-                    // },
-                    onWebViewCreated: (WebViewController webViewController) {
-                      _webViewController = webViewController;
-                      _sendWindyWidgetHeight(
-                          webViewController, _windyWidgetHeight);
-                    },
-                    navigationDelegate: (NavigationRequest request) {
-                      var url = request.url.toString();
-                      if (url.startsWith("https://www.windy.com")) {
-                        launchWebBrowser("www.windy.com", "");
-                        return NavigationDecision.prevent;
-                      }
-                      if (url.startsWith("file:") ||
-                          url.contains("windy.com")) {
-                        return NavigationDecision.navigate;
-                      }
-                      return NavigationDecision.prevent;
-                    },
+                  child: WebViewWidget(controller: _webViewController),
                   ),
                 ),
               ),
-            ),
-          );
+            );
         });
   }
 
@@ -383,7 +395,7 @@ class WindyForecastState extends State<WindyForecast>
   }
 
   Future<void> runJavaScript(String javaScript) async {
-    await _webViewController!.runJavascript(javaScript);
+    await _webViewController.runJavaScript(javaScript);
   }
 
   void _selectTask() async {
@@ -409,29 +421,24 @@ class WindyForecastState extends State<WindyForecast>
     BlocProvider.of<WindyBloc>(context).add(event);
   }
 
-  Set<JavascriptChannel> _getJavascriptChannels() {
-    return Set.from([
-      JavascriptChannel(
-          name: "print",
-          onMessageReceived: (JavascriptMessage message) {
-            debugPrint("debug from webview:" + message.message);
-          }),
-      JavascriptChannel(
-          name: "htmlLoaded",
-          onMessageReceived: (JavascriptMessage message) {
-            debugPrint("htmlLoaded callback:" + message.message);
-            _sendEvent(AssignWindyStartupParms());
-          }),
-      JavascriptChannel(
-          name: "redrawCompleted",
-          onMessageReceived: (JavascriptMessage message) {
-            debugPrint("redrawCompleted");
-          }),
-      JavascriptChannel(
-          name: "getTaskTurnpointsForMap",
-          onMessageReceived: (JavascriptMessage message) {
-            _sendEvent(DisplayTaskIfAnyEvent());
-          }),
-    ]);
+  void _addJavascriptChannels(WebViewController webViewController) {
+    webViewController
+      ..addJavaScriptChannel("print",
+          onMessageReceived: (JavaScriptMessage message) {
+        debugPrint("debug from webview:" + message.message);
+      })
+      ..addJavaScriptChannel("htmlLoaded",
+          onMessageReceived: (JavaScriptMessage message) {
+        debugPrint("htmlLoaded callback:" + message.message);
+        _sendEvent(AssignWindyStartupParms());
+      })
+      ..addJavaScriptChannel("redrawCompleted",
+          onMessageReceived: (JavaScriptMessage message) {
+        debugPrint("redrawCompleted");
+      })
+      ..addJavaScriptChannel("getTaskTurnpointsForMap",
+          onMessageReceived: (JavaScriptMessage message) {
+        _sendEvent(DisplayTaskIfAnyEvent());
+      });
   }
 }

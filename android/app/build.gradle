@@ -1,14 +1,24 @@
+plugins {
+    id "com.android.application"
+    id "kotlin-android"
+    id "dev.flutter.flutter-gradle-plugin"
+
+
+// START: FlutterFire Configuration
+    id "com.google.gms.google-services"
+    id "com.google.firebase.crashlytics"
+// END: FlutterFire Configuration
+
+
+}
+
+
 def localProperties = new Properties()
 def localPropertiesFile = rootProject.file('local.properties')
 if (localPropertiesFile.exists()) {
     localPropertiesFile.withReader('UTF-8') { reader ->
         localProperties.load(reader)
     }
-}
-
-def flutterRoot = localProperties.getProperty('flutter.sdk')
-if (flutterRoot == null) {
-    throw new FileNotFoundException("Flutter SDK not found. Define location with flutter.sdk in the local.properties file.")
 }
 
 def flutterVersionCode = localProperties.getProperty('flutter.versionCode')
@@ -21,14 +31,6 @@ if (flutterVersionName == null) {
     flutterVersionName = '1.0'
 }
 
-apply plugin: 'com.android.application'
-// START: FlutterFire Configuration
-apply plugin: 'com.google.gms.google-services'
-apply plugin: 'com.google.firebase.crashlytics'
-// END: FlutterFire Configuration
-apply plugin: 'kotlin-android'
-apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
-
 
 // Added for release build. See https://docs.flutter.dev/deployment/android#signing-the-app
 def keystoreProperties = new Properties()
@@ -38,6 +40,8 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
+    namespace "org.soaringforecast.rasp"
+
     compileSdkVersion 34
 
     sourceSets {
@@ -49,9 +53,9 @@ android {
     }
 
     defaultConfig {
-        applicationId "org.soaringforecast.rasp"
+        //applicationId "org.soaringforecast.rasp"
         minSdkVersion 21
-            targetSdkVersion 34
+        targetSdkVersion 34
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -108,18 +112,17 @@ dependencies {
 
     implementation 'androidx.multidex:multidex:2.0.1'
     // Added following to try to resolve compile problem when webview added to project
-    implementation "androidx.versionedparcelable:versionedparcelable:1.1.1"
-    implementation "androidx.lifecycle:lifecycle-runtime:2.6.0"
+    implementation "androidx.versionedparcelable:versionedparcelable:1.2.1"
+    implementation "androidx.lifecycle:lifecycle-runtime:2.8.7"
     implementation "androidx.core:core:1.9.0"
-    implementation "androidx.drawerlayout:drawerlayout:1.1.1"
-    implementation "androidx.lifecycle:lifecycle-viewmodel:2.6.0"
+    implementation "androidx.drawerlayout:drawerlayout:1.2.0"
+    implementation "androidx.lifecycle:lifecycle-viewmodel:2.8.7"
     implementation "androidx.legacy:legacy-support-core-ui:1.0.0"
-    implementation "androidx.fragment:fragment:1.5.5"
+    implementation "androidx.fragment:fragment:1.8.5"
     implementation 'androidx.work:work-runtime-ktx:2.8.0'
 
     // These were added by flutter on project creation
-    // implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     testImplementation 'junit:junit:4.123.2'
-    androidTestImplementation 'androidx.test:runner:1.5.2'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+    androidTestImplementation 'androidx.test:runner:1.6.2'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.6.1'
 }
