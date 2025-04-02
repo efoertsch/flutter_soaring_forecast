@@ -28,7 +28,7 @@ class _GeosScreenState extends State<GeosScreen> {
 
   AppBar _getAppBar(BuildContext context) {
     return AppBar(
-      title: Text('GEOS NE'),
+      title: Text('GOES NE'),
       leading: BackButton(
         onPressed: () => Navigator.pop(context),
       ),

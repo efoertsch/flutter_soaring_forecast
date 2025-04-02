@@ -17,10 +17,7 @@ import 'package:flutter/foundation.dart'
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      throw UnsupportedError(
-        'DefaultFirebaseOptions have not been configured for web - '
-        'you can reconfigure this by running the FlutterFire CLI again.',
-      );
+      return web;
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
@@ -28,10 +25,7 @@ class DefaultFirebaseOptions {
       case TargetPlatform.iOS:
         return ios;
       case TargetPlatform.macOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for macos - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return macos;
       case TargetPlatform.windows:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for windows - '
@@ -54,7 +48,7 @@ class DefaultFirebaseOptions {
     appId: '1:390759997758:android:1e16ab864d345c83590c6f',
     messagingSenderId: '390759997758',
     projectId: 'soaringforecast-48021',
-    storageBucket: 'soaringforecast-48021.appspot.com',
+    storageBucket: 'soaringforecast-48021.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
@@ -62,9 +56,29 @@ class DefaultFirebaseOptions {
     appId: '1:390759997758:ios:1c494acdbb444f8a590c6f',
     messagingSenderId: '390759997758',
     projectId: 'soaringforecast-48021',
-    storageBucket: 'soaringforecast-48021.appspot.com',
+    storageBucket: 'soaringforecast-48021.firebasestorage.app',
     androidClientId: '390759997758-87bqhk1tg992373g8qtov48b7jjjgitu.apps.googleusercontent.com',
-    iosClientId: '390759997758-0ambrp4rtbeob08is8i8kk5uf3h3hp13.apps.googleusercontent.com',
     iosBundleId: 'org.soaringforecast.rasp',
   );
+
+  static const FirebaseOptions web = FirebaseOptions(
+    apiKey: 'AIzaSyBTlkCZRbXLCLtcd2v9wsht7Sju1Nffs2s',
+    appId: '1:390759997758:web:8d6b862cbe0003f3590c6f',
+    messagingSenderId: '390759997758',
+    projectId: 'soaringforecast-48021',
+    authDomain: 'soaringforecast-48021.firebaseapp.com',
+    storageBucket: 'soaringforecast-48021.firebasestorage.app',
+    measurementId: 'G-6J0TWWTBN2',
+  );
+
+  static const FirebaseOptions macos = FirebaseOptions(
+    apiKey: 'AIzaSyD3fqNiWI1HAn0oRAWDEXZRv91Z7kMbBzs',
+    appId: '1:390759997758:ios:a887a23ab8c7e4ab590c6f',
+    messagingSenderId: '390759997758',
+    projectId: 'soaringforecast-48021',
+    storageBucket: 'soaringforecast-48021.firebasestorage.app',
+    androidClientId: '390759997758-87bqhk1tg992373g8qtov48b7jjjgitu.apps.googleusercontent.com',
+    iosBundleId: 'org.soaringforecast.flutterSoaringForecast',
+  );
+
 }
