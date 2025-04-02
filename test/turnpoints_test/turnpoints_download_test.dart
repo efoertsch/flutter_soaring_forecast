@@ -29,10 +29,10 @@ void main() {
     expect(turnpoinstCSV.length > 0, true);
     List<Turnpoint> turnpoints =
         await convertDynamicListToTurnpoints(turnpoinstCSV);
-    turnpoints.forEach((turnpoint) async {
-      var id = await repository.insertTurnpoint(turnpoint);
-      print('turnpoint id $id');
-    });
+    // turnpoints.forEach((turnpoint) async {
+    //   var id = await repository.insertTurnpoint(turnpoint);
+    //   debugPrint('turnpoint id $id');
+    // });
     await Future.delayed(Duration(seconds: 1));
     //print('Number of turnpoints ${numberOfTurnpoints}');
     expect(await repository.getCountOfTurnpoints() > 0, true);

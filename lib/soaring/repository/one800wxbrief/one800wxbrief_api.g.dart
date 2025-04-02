@@ -6,12 +6,13 @@ part of 'one800wxbrief_api.dart';
 // RetrofitGenerator
 // **************************************************************************
 
-// ignore_for_file: unnecessary_brace_in_string_interps,no_leading_underscores_for_local_identifiers
+// ignore_for_file: unnecessary_brace_in_string_interps,no_leading_underscores_for_local_identifiers,unused_element,unnecessary_string_interpolations
 
 class _One800WxBriefClient implements One800WxBriefClient {
   _One800WxBriefClient(
     this._dio, {
     this.baseUrl,
+    this.errorLogger,
   }) {
     baseUrl ??= 'https://lmfsweb.afss.com/Website/rest/';
   }
@@ -20,12 +21,14 @@ class _One800WxBriefClient implements One800WxBriefClient {
 
   String? baseUrl;
 
+  final ParseErrorLogger? errorLogger;
+
   @override
   Future<MetarTafResponse> getMETAR(
     String basicBase64,
     String airport,
   ) async {
-    const _extra = <String, dynamic>{};
+    final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{r'location': airport};
     final _headers = <String, dynamic>{
       r'Content-Type': 'application/x-www-form-urlencoded',
@@ -33,27 +36,33 @@ class _One800WxBriefClient implements One800WxBriefClient {
       r'Authorization': basicBase64,
     };
     _headers.removeWhere((k, v) => v == null);
-    final Map<String, dynamic>? _data = null;
-    final _result = await _dio
-        .fetch<Map<String, dynamic>>(_setStreamType<MetarTafResponse>(Options(
+    const Map<String, dynamic>? _data = null;
+    final _options = _setStreamType<MetarTafResponse>(Options(
       method: 'GET',
       headers: _headers,
       extra: _extra,
       contentType: 'application/x-www-form-urlencoded',
     )
-            .compose(
-              _dio.options,
-              '/retrieveMETAR',
-              queryParameters: queryParameters,
-              data: _data,
-            )
-            .copyWith(
-                baseUrl: _combineBaseUrls(
-              _dio.options.baseUrl,
-              baseUrl,
-            ))));
-    final value = MetarTafResponse.fromJson(_result.data!);
-    return value;
+        .compose(
+          _dio.options,
+          '/retrieveMETAR',
+          queryParameters: queryParameters,
+          data: _data,
+        )
+        .copyWith(
+            baseUrl: _combineBaseUrls(
+          _dio.options.baseUrl,
+          baseUrl,
+        )));
+    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
+    late MetarTafResponse _value;
+    try {
+      _value = MetarTafResponse.fromJson(_result.data!);
+    } on Object catch (e, s) {
+      errorLogger?.logError(e, s, _options);
+      rethrow;
+    }
+    return _value;
   }
 
   @override
@@ -61,7 +70,7 @@ class _One800WxBriefClient implements One800WxBriefClient {
     String basicBase64,
     String airport,
   ) async {
-    const _extra = <String, dynamic>{};
+    final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{r'location': airport};
     final _headers = <String, dynamic>{
       r'Content-Type': 'application/x-www-form-urlencoded',
@@ -69,27 +78,33 @@ class _One800WxBriefClient implements One800WxBriefClient {
       r'Authorization': basicBase64,
     };
     _headers.removeWhere((k, v) => v == null);
-    final Map<String, dynamic>? _data = null;
-    final _result = await _dio
-        .fetch<Map<String, dynamic>>(_setStreamType<MetarTafResponse>(Options(
+    const Map<String, dynamic>? _data = null;
+    final _options = _setStreamType<MetarTafResponse>(Options(
       method: 'GET',
       headers: _headers,
       extra: _extra,
       contentType: 'application/x-www-form-urlencoded',
     )
-            .compose(
-              _dio.options,
-              '/retrieveTAF',
-              queryParameters: queryParameters,
-              data: _data,
-            )
-            .copyWith(
-                baseUrl: _combineBaseUrls(
-              _dio.options.baseUrl,
-              baseUrl,
-            ))));
-    final value = MetarTafResponse.fromJson(_result.data!);
-    return value;
+        .compose(
+          _dio.options,
+          '/retrieveTAF',
+          queryParameters: queryParameters,
+          data: _data,
+        )
+        .copyWith(
+            baseUrl: _combineBaseUrls(
+          _dio.options.baseUrl,
+          baseUrl,
+        )));
+    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
+    late MetarTafResponse _value;
+    try {
+      _value = MetarTafResponse.fromJson(_result.data!);
+    } on Object catch (e, s) {
+      errorLogger?.logError(e, s, _options);
+      rethrow;
+    }
+    return _value;
   }
 
   @override
@@ -97,7 +112,7 @@ class _One800WxBriefClient implements One800WxBriefClient {
     String basicBase64,
     String completeQueryString,
   ) async {
-    const _extra = <String, dynamic>{};
+    final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{
       r'Content-Type': 'application/x-www-form-urlencoded',
@@ -106,26 +121,32 @@ class _One800WxBriefClient implements One800WxBriefClient {
     };
     _headers.removeWhere((k, v) => v == null);
     final _data = completeQueryString;
-    final _result = await _dio
-        .fetch<Map<String, dynamic>>(_setStreamType<One800WxBrief>(Options(
+    final _options = _setStreamType<One800WxBrief>(Options(
       method: 'POST',
       headers: _headers,
       extra: _extra,
       contentType: 'application/x-www-form-urlencoded',
     )
-            .compose(
-              _dio.options,
-              'FP/routeBriefing',
-              queryParameters: queryParameters,
-              data: _data,
-            )
-            .copyWith(
-                baseUrl: _combineBaseUrls(
-              _dio.options.baseUrl,
-              baseUrl,
-            ))));
-    final value = One800WxBrief.fromJson(_result.data!);
-    return value;
+        .compose(
+          _dio.options,
+          'FP/routeBriefing',
+          queryParameters: queryParameters,
+          data: _data,
+        )
+        .copyWith(
+            baseUrl: _combineBaseUrls(
+          _dio.options.baseUrl,
+          baseUrl,
+        )));
+    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
+    late One800WxBrief _value;
+    try {
+      _value = One800WxBrief.fromJson(_result.data!);
+    } on Object catch (e, s) {
+      errorLogger?.logError(e, s, _options);
+      rethrow;
+    }
+    return _value;
   }
 
   @override
@@ -133,7 +154,7 @@ class _One800WxBriefClient implements One800WxBriefClient {
     String basicBase64,
     String completeQueryString,
   ) async {
-    const _extra = <String, dynamic>{};
+    final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{
       r'Content-Type': 'application/x-www-form-urlencoded',
@@ -142,26 +163,32 @@ class _One800WxBriefClient implements One800WxBriefClient {
     };
     _headers.removeWhere((k, v) => v == null);
     final _data = completeQueryString;
-    final _result = await _dio
-        .fetch<Map<String, dynamic>>(_setStreamType<One800WxBrief>(Options(
+    final _options = _setStreamType<One800WxBrief>(Options(
       method: 'POST',
       headers: _headers,
       extra: _extra,
       contentType: 'application/x-www-form-urlencoded',
     )
-            .compose(
-              _dio.options,
-              'FP/areaBriefing',
-              queryParameters: queryParameters,
-              data: _data,
-            )
-            .copyWith(
-                baseUrl: _combineBaseUrls(
-              _dio.options.baseUrl,
-              baseUrl,
-            ))));
-    final value = One800WxBrief.fromJson(_result.data!);
-    return value;
+        .compose(
+          _dio.options,
+          'FP/areaBriefing',
+          queryParameters: queryParameters,
+          data: _data,
+        )
+        .copyWith(
+            baseUrl: _combineBaseUrls(
+          _dio.options.baseUrl,
+          baseUrl,
+        )));
+    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
+    late One800WxBrief _value;
+    try {
+      _value = One800WxBrief.fromJson(_result.data!);
+    } on Object catch (e, s) {
+      errorLogger?.logError(e, s, _options);
+      rethrow;
+    }
+    return _value;
   }
 
   RequestOptions _setStreamType<T>(RequestOptions requestOptions) {

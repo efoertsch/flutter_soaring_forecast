@@ -452,7 +452,7 @@ class DrawerLiterals {
   static const String ONE_800_WX_BRIEF = "1800WxBrief";
   static const String AREA_BRIEF = "Area Brief";
   static const String AIRPORT_METAR_TAF = "Airport METAR/TAF";
-  static const String GEOS_NE = " GEOS NE";
+  static const String GEOS_NE = " GOES NE";
   static const String CUSTOMIZATION = "Customization";
   static const String TASK_LIST = "Task List";
   static const String TURNPOINTS = "Turnpoints";

@@ -81,7 +81,6 @@ class Repository {
   static const String _AIRPORT_CODES_FOR_METAR = "AIRPORT_CODES_FOR_METAR_TAF";
   static const String _ICAO_CODE_DELIMITER = " ";
   static const String _WXBRIEF_AIRPORT_ID = "WXBRIEF_AIRPORT_ID";
-  static const String _VIEW_MAP_BOUNDS = "VIEW_MAP_BOUNDS";
   static const String _BEGINNER_FORECAST_MODE = "BEGINNER_FORECAST_MODE";
   static const String _LOCAL_FORECAST_FAVORITE = "LOCAL_FORECAST_FAVORITE";
   static const String _LAST_FORECAST_TIME = "LAST_FORECAST_TIME";
@@ -89,9 +88,6 @@ class Repository {
   static const String _SELECTED_GLIDER = "SELECTED_GLIDER";
   static const String _DISPLAY_UNITS = "DISPLAY_UNITS";
   static const String _DISPLAY_XCSOAR_VALUES = "DISPLAY_XCSOAR_VALUES";
-
-  late final String _satelliteRegionUS;
-  late final String _satelliteTypeVis;
 
   static const String _WXBRIEF_AIRCRAFT_REGISTRATION =
       "WXBRIEF_AIRCRAFT_REGISTRATION";

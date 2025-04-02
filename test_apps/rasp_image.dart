@@ -8,6 +8,8 @@ import 'package:intl/intl.dart';
 void main() => runApp(RaspImageTest());
 
 class RaspImageTest extends StatefulWidget {
+  const RaspImageTest({super.key});
+
   // This widget is the root of your application.
 
   @override
@@ -17,7 +19,7 @@ class RaspImageTest extends StatefulWidget {
 class _RaspImageTestState extends State<RaspImageTest> {
   Repository? repository;
   Image? image;
-  final f = new DateFormat('yyyy-MM-dd');
+  final f = DateFormat('yyyy-MM-dd');
   String? today;
 
   Key raspImageKey = Key("raspImage");
@@ -39,7 +41,7 @@ class _RaspImageTestState extends State<RaspImageTest> {
     image = await repository!.getRaspForecastImage(url);
     setState(() {
       stackIndex = 1;
-      print("image found");
+      debugPrint("image found");
     });
   }
 
@@ -54,8 +56,8 @@ class _RaspImageTestState extends State<RaspImageTest> {
         ),
         home: Scaffold(
           resizeToAvoidBottomInset: false,
-          appBar: new AppBar(
-            title: new Text("test"),
+          appBar: AppBar(
+            title: Text("test"),
           ),
           body: _stackDisplay(),
         ));

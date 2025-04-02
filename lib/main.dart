@@ -30,7 +30,7 @@ import 'package:flutter_soaring_forecast/soaring/region/ui/region_list_screen.da
 import 'package:flutter_soaring_forecast/soaring/region_model/bloc/region_model_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/region_model/bloc/region_model_event.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
-import 'package:flutter_soaring_forecast/soaring/satellite/geos/geos.dart';
+import 'package:flutter_soaring_forecast/soaring/satellite/goes/goes.dart';
 import 'package:flutter_soaring_forecast/soaring/settings/bloc/settings_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/settings/ui/settings_screen.dart';
 import 'package:flutter_soaring_forecast/soaring/task_estimate/cubit/task_estimate_cubit.dart';
@@ -125,6 +125,8 @@ void main() async {
 }
 
 class RepositorySetup extends StatelessWidget {
+  const RepositorySetup({super.key});
+
   @override
   Widget build(BuildContext context) {
     return RepositoryProvider(
@@ -186,7 +188,7 @@ class SoaringForecastApp extends StatelessWidget {
   CustomMaterialPageRoute? _buildRoute(
       RouteSettings settings) {
     if (settings.name == TaskListRouteBuilder.routeName) {
-      var option = null;
+      var option;
       if (settings.arguments != null) {
         option = settings.arguments as String;
       }
@@ -320,7 +322,7 @@ class SoaringForecastApp extends StatelessWidget {
     }
 
     if (settings.name == AirportsSearchRouteBuilder.routeName) {
-      String? option = null;
+      String? option;
       if (settings.arguments != null) {
         option = settings.arguments as String;
       }
@@ -417,7 +419,7 @@ class SoaringForecastApp extends StatelessWidget {
 class SoaringForecastRouteBuilder extends StatelessWidget {
   static const routeName = '/';
 
-  SoaringForecastRouteBuilder();
+  const SoaringForecastRouteBuilder({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -467,7 +469,7 @@ class LocalForecastGraphRouteBuilder extends StatelessWidget {
 class EstimatedTaskRouteBuilder extends StatelessWidget {
   static const routeName = '/EstimatedTask';
 
-  EstimatedTaskRouteBuilder();
+  const EstimatedTaskRouteBuilder({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -489,6 +491,7 @@ class EstimatedTaskRouteBuilder extends StatelessWidget {
 class GliderPolarListBuilder extends StatelessWidget {
   static const routeName = '/GliderPolarList';
 
+  @override
   Widget build(BuildContext context) {
     return BlocProvider<GliderCubit>(
       create: (BuildContext context) =>
@@ -597,8 +600,9 @@ class TaskListRouteBuilder extends StatelessWidget {
   static const routeName = '/ViewTask';
   final String? viewOption;
 
-  TaskListRouteBuilder({this.viewOption = null});
+  TaskListRouteBuilder({this.viewOption });
 
+  @override
   Widget build(BuildContext context) {
     return BlocProvider<TaskBloc>(
       create: (BuildContext context) =>
@@ -660,7 +664,7 @@ class RegionListRouteBuilder extends StatelessWidget {
 }
 
 class GeosRouteBuilder extends StatelessWidget {
-  static const routeName = '/geos';
+  static const routeName = '/goes';
 
   GeosRouteBuilder();
 

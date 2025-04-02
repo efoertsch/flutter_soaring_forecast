@@ -2,7 +2,7 @@
   "project_info": {
     "project_number": "390759997758",
     "project_id": "soaringforecast-48021",
-    "storage_bucket": "soaringforecast-48021.appspot.com"
+    "storage_bucket": "soaringforecast-48021.firebasestorage.app"
   },
   "client": [
     {
@@ -20,10 +20,6 @@
             "package_name": "org.soaringforecast.rasp",
             "certificate_hash": "50b406574841f4261bad6bf6bca85d99783bce83"
           }
-        },
-        {
-          "client_id": "390759997758-51naoano1o8cblrgptke5o4brl8122t7.apps.googleusercontent.com",
-          "client_type": 3
         }
       ],
       "api_key": [
@@ -33,19 +29,7 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "390759997758-51naoano1o8cblrgptke5o4brl8122t7.apps.googleusercontent.com",
-              "client_type": 3
-            },
-            {
-              "client_id": "390759997758-0ambrp4rtbeob08is8i8kk5uf3h3hp13.apps.googleusercontent.com",
-              "client_type": 2,
-              "ios_info": {
-                "bundle_id": "org.soaringforecast.rasp"
-              }
-            }
-          ]
+          "other_platform_oauth_client": []
         }
       }
     },
@@ -64,10 +48,6 @@
             "package_name": "org.soaringforecast.rasp.dev",
             "certificate_hash": "50b406574841f4261bad6bf6bca85d99783bce83"
           }
-        },
-        {
-          "client_id": "390759997758-51naoano1o8cblrgptke5o4brl8122t7.apps.googleusercontent.com",
-          "client_type": 3
         }
       ],
       "api_key": [
@@ -77,19 +57,7 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "390759997758-51naoano1o8cblrgptke5o4brl8122t7.apps.googleusercontent.com",
-              "client_type": 3
-            },
-            {
-              "client_id": "390759997758-0ambrp4rtbeob08is8i8kk5uf3h3hp13.apps.googleusercontent.com",
-              "client_type": 2,
-              "ios_info": {
-                "bundle_id": "org.soaringforecast.rasp"
-              }
-            }
-          ]
+          "other_platform_oauth_client": []
         }
       }
     }

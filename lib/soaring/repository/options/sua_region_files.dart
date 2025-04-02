@@ -11,7 +11,7 @@ class SUARegionFiles {
     if (json['sua_regions'] != null) {
       suaRegions = <SuaRegion>[];
       json['sua_regions'].forEach((v) {
-        suaRegions.add(new SuaRegion.fromJson(v));
+        suaRegions.add(SuaRegion.fromJson(v));
       });
     }
   }
