@@ -464,10 +464,14 @@ class Repository {
       // Oops. Added this so as not to lose existing Android users info
       if (Platform.isAndroid) {
         _appDatabase =
-            await $FloorAppDatabase.databaseBuilder('app_database').build();
+            await $FloorAppDatabase.databaseBuilder('app_database')
+               .addMigrations([migration2to3])
+              .build();
       } else if (Platform.isIOS) {
         _appDatabase =
-            await $FloorAppDatabase.databaseBuilder('app_database.db').build();
+            await $FloorAppDatabase.databaseBuilder('app_database.db')
+                .addMigrations([migration2to3])
+                .build();
       }
     }
     return _appDatabase!;
