@@ -14,10 +14,15 @@ part 'app_database.g.dart'; // the generated code will be there
 
 //TODO if any changes run  - flutter packages pub run build_runner build --delete-conflicting-outputs
 
-@Database(version: 2, entities: [Airport, Task, TaskTurnpoint, Turnpoint]) //
+//@Database(version: 2, entities: [Airport, Task, TaskTurnpoint, Turnpoint]) //
+@Database(version: 3, entities: [Airport, Task, TaskTurnpoint, Turnpoint]) //
 abstract class AppDatabase extends FloorDatabase {
   AirportDao get airportDao;
   TaskDao get taskDao;
   TaskTurnpointDao get taskTurnpointDao;
   TurnpointDao get turnpointDao;
 }
+
+final migration2to3 = Migration(2, 3, (db) async {
+  await db.execute('ALTER TABLE Task ADD COLUMN forecastFavorite BOOLEAN default false');
+});
