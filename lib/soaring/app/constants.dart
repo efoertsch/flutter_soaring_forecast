@@ -15,7 +15,7 @@ const String BASE_URL = 'https://www.soargbsc.net/';
 const String RASP_BASE_URL = BASE_URL + 'rasp/';
 //const String RASP_BASE_URL ='http://192.168.1.7/';
 const String RASP_OPTIONS_BASE_URL = 'https://soargbsc.com/soaringforecast/';
-const String AIRPORT_URL = 'http://ourairports.com/data/airports.csv';
+const String AIRPORT_URL = 'https://ourairports.com/data/airports.csv';
 const String GEOS_GIF =
     "https://cdn.star.nesdis.noaa.gov/GOES16/ABI/GIFS/GOES16-NE-GEOCOLOR-600x600.gif";
 const String GEOS_CURRENT =

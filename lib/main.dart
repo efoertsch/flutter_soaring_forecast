@@ -87,6 +87,7 @@ void main() async {
 
   //https://firebase.google.com/docs/crashlytics/get-started?platform=flutter
   await Firebase.initializeApp(
+    name: "SoaringForecast",
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
