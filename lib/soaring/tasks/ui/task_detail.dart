@@ -19,8 +19,6 @@ import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoints_list.d
 //ignore: must_be_immutable
 class TaskDetailScreen extends StatefulWidget {
   final int taskId;
-  bool _displaySaveButton = false;
-  bool _validTask = false;
 
   TaskDetailScreen({Key? key, required this.taskId}) : super(key: key);
 
@@ -31,6 +29,9 @@ class TaskDetailScreen extends StatefulWidget {
 class _TaskDetailScreenState extends State<TaskDetailScreen>
     with AfterLayoutMixin<TaskDetailScreen> {
   final TextEditingController textEditingController = TextEditingController();
+  bool _displaySaveButton = false;
+  bool _validTask = false;
+  bool _updatesMade = false;
 
   @override
   void afterFirstLayout(BuildContext context) {
@@ -74,14 +75,14 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
   List<Widget> _getMenu() {
     return <Widget>[
       Visibility(
-        visible: widget._displaySaveButton,
+        visible:_displaySaveButton,
         child: TextButton(
           child: const Text(TaskLiterals.SAVE_TASK,
               style: TextStyle(color: Colors.white)),
           onPressed: () {
             ScaffoldMessenger.of(context).hideCurrentSnackBar();
             BlocProvider.of<TaskBloc>(context).add(SaveTaskTurnpointsEvent());
-            widget._displaySaveButton = false;
+           _displaySaveButton = false;
           },
         ),
       ),
@@ -103,26 +104,27 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
             context, TaskLiterals.TASK_ERROR, state.errorMsg);
       }
       if (state is ValidTaskState){
-        widget._validTask = state.validTask;
-        if (!widget._validTask){
+        _validTask = state.validTask;
+        _updatesMade = true;
+        if (!_validTask){
           CommonWidgets.showErrorDialog(
               context, TaskLiterals.TASK_ERROR, state.invalidTaskMsg);
           setState(() {
-            widget._displaySaveButton = false;
+            _displaySaveButton = false;
           });
         } else {
-          widget._displaySaveButton = true;
+          _displaySaveButton = true;
         }
 
       }
       if (state is TaskModifiedState) {
         setState(() {
-          widget._displaySaveButton = true;
+          _displaySaveButton = true;
         });
       }
       if (state is TaskSavedState) {
         setState(() {
-          widget._displaySaveButton = false;
+          _displaySaveButton = false;
         });
       }
       if (state is TurnpointFoundState) {
@@ -448,7 +450,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
 
   Future<bool> _onWillPop() async {
     // TODO check for changes
-    if (!widget._validTask){
+    if (!_validTask && _updatesMade){
       CommonWidgets.showInfoDialog(
           context: context,
           title: TaskLiterals.INVALID_TASK,
@@ -459,7 +461,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
           button2Function: _cancelUpdateFunction);
       return false;
     }
-    if (widget._displaySaveButton) {
+    if (_displaySaveButton) {
       CommonWidgets.showInfoDialog(
           context: context,
           title: StandardLiterals.UNSAVED_CHANGES,

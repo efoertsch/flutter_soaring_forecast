@@ -79,10 +79,6 @@ dependencies:
   #geojson_vector_slicer:
   #  path: ../geojson_vector_slicer
   collection: ^1.19.0
-  firebase_crashlytics: 4.2.0
-  firebase_core: 3.9.0
-
-  cupertino_icons: ^1.0.5
 
   flutter:
     sdk: flutter
