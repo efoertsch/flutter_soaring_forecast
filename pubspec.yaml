@@ -22,8 +22,8 @@ dependencies:
   # upgrading dio/retrofit would give:
   #  DioError [DioErrorType.DEFAULT]: type 'String' is not a subtype of type 'Map<String, dynamic>'
   dio: ^5.2.1
-  json_serializable: ^6.9.3
-  json_annotation: ^4.8.1
+  json_serializable: ^6.3.1
+  json_annotation: ^4.9.0
   retrofit: '^4.0.3'
   logger: ^2.3.0  #for logging purpose
   provider: ^6.0.3
@@ -47,12 +47,12 @@ dependencies:
   flutter_cache_manager: ^3.3.0
   intl: ^0.20.2   # used for date/time formatting,  syncfusion_flutter_pdfviewer 28.2.4 depends on intl >=0.18.1 <0.20.0
   after_layout: ^1.2.0
-  floor: ^1.5.0
+  floor: ^1.4.2
   # https://pub.dev/packages/csv/install
   csv: ^6.0.0
   path: ^1.9.0  # can't upgrade to 1.9.1 as conflicts with flutter_test
-  sqflite: ^2.0.3+1
-  shared_preferences: ^2.3.2
+  sqflite: 2.4.1
+  shared_preferences: 2.5.2
   scrollable_positioned_list: ^0.3.2
   flutter_html: ^3.0.0-alpha.3
 
@@ -74,20 +74,24 @@ dependencies:
 
   flutter_map:  ^7.0.2 # can't upgrade until get update to or replace flutter_map_geojson
   flutter_map_animations: ^0.8.0  # see flutter_map above
-  google_maps_flutter: ^2.2.0 # used for overhead view of turnpoints
+  google_maps_flutter:  2.5.2 #  2.6 (iOS 12+) used for overhead view of turnpoints
   flutter_map_geojson: ^1.0.8  # replaced geojson_vector_slicer
   #geojson_vector_slicer:
   #  path: ../geojson_vector_slicer
+  collection: ^1.19.0
+  firebase_crashlytics: 4.2.0
+  firebase_core: 3.9.0
+
+  cupertino_icons: ^1.0.5
 
   flutter:
     sdk: flutter
  # map_controller:       # library not developed enough for what I need
  #   path: ../map_controller
-
+ 
   cupertino_icons: ^1.0.5
   firebase_core: 3.13.0
   firebase_crashlytics: ^4.3.2
-
 
 #https://pub.dev/packages/flutter_launcher_icons
 flutter_icons:
@@ -103,10 +107,9 @@ dev_dependencies:
     sdk: flutter
 
   test: ^1.21.1
-
   retrofit_generator: ^9.1.9
   build_runner: '>=2.2.1 <4.0.0'
-
+  flutter_lints: ^5.0.0 # Contains a set of recommended lints for Flutter code
 
   flutter_test:
     sdk: flutter

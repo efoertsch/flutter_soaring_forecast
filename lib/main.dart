@@ -128,6 +128,8 @@ void main() async {
 }
 
 class RepositorySetup extends StatelessWidget {
+  const RepositorySetup({super.key});
+
   @override
   Widget build(BuildContext context) {
     return RepositoryProvider(
@@ -189,7 +191,7 @@ class SoaringForecastApp extends StatelessWidget {
   CustomMaterialPageRoute? _buildRoute(
       RouteSettings settings) {
     if (settings.name == TaskListRouteBuilder.routeName) {
-      var option = null;
+      var option;
       if (settings.arguments != null) {
         option = settings.arguments as String;
       }
@@ -323,7 +325,7 @@ class SoaringForecastApp extends StatelessWidget {
     }
 
     if (settings.name == AirportsSearchRouteBuilder.routeName) {
-      String? option = null;
+      String? option;
       if (settings.arguments != null) {
         option = settings.arguments as String;
       }
@@ -430,7 +432,7 @@ class SoaringForecastApp extends StatelessWidget {
 class SoaringForecastRouteBuilder extends StatelessWidget {
   static const routeName = '/';
 
-  SoaringForecastRouteBuilder();
+  const SoaringForecastRouteBuilder({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -480,7 +482,7 @@ class LocalForecastGraphRouteBuilder extends StatelessWidget {
 class EstimatedTaskRouteBuilder extends StatelessWidget {
   static const routeName = '/EstimatedTask';
 
-  EstimatedTaskRouteBuilder();
+  const EstimatedTaskRouteBuilder({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -502,6 +504,7 @@ class EstimatedTaskRouteBuilder extends StatelessWidget {
 class GliderPolarListBuilder extends StatelessWidget {
   static const routeName = '/GliderPolarList';
 
+  @override
   Widget build(BuildContext context) {
     return BlocProvider<GliderCubit>(
       create: (BuildContext context) =>
@@ -610,8 +613,9 @@ class TaskListRouteBuilder extends StatelessWidget {
   static const routeName = '/ViewTask';
   final String? viewOption;
 
-  TaskListRouteBuilder({this.viewOption = null});
+  TaskListRouteBuilder({this.viewOption });
 
+  @override
   Widget build(BuildContext context) {
     return BlocProvider<TaskBloc>(
       create: (BuildContext context) =>
@@ -671,6 +675,7 @@ class RegionListRouteBuilder extends StatelessWidget {
     );
   }
 }
+
 
 class GoesRouteBuilder extends StatelessWidget {
   static const routeName = '/goes';

@@ -56,7 +56,7 @@ class _GoesScreenState extends State<GoesScreen> {
         break;
     }
   }
-
+  
   Widget _getGoesMenuOption() {
     if (_displayCurrent) {
       return _geosLoopOption;

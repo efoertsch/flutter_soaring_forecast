@@ -21,12 +21,4 @@ class EstimatedTaskRegionModel {
       required this.forecastHours,
       required this.selectedHourIndex});
 
-  @override
-  List<Object?> get props => [
-        regionName,
-        selectedModelName,
-        selectedDate,
-        forecastHours,
-        selectedHourIndex
-      ];
 }
