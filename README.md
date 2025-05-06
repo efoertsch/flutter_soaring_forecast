@@ -14,7 +14,7 @@ Display soaring forecast and weather information of interest to glider pilots. F
 7. Skew-t soundings can be displayed from selected NE locations (soundings from soarbgsc.net/rasp/ also)
 8. METAR and TAF from 1800WxBrief
 9. Generate local, route(task) or NOTAM specific 1800WxBrief briefings
-10. GEOS East current and animated (GIF) images.
+10. GOES East current and animated (GIF) images.
 11. Customized version of Windy with task overlay.
 
 Airport information to supplement TAF/METARS downloaded from http://ourairports.com/data/. Note that on weekends, the file may be empty (being updated?) for a period of time, but the app should check for that and schedule downloads until what appears to be a full file is available.

@@ -42,7 +42,7 @@ if (keystorePropertiesFile.exists()) {
 android {
     namespace "org.soaringforecast.rasp"
 
-    compileSdkVersion 34
+    compileSdkVersion 35
 
     sourceSets {
         main.java.srcDirs += 'src/main/kotlin'
@@ -92,14 +92,14 @@ android {
             resValue "string", "app_name", "SoaringForecast"
         }
     }
-
+    def javaVersion = JavaVersion.VERSION_17
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility javaVersion
+        targetCompatibility javaVersion
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_1_8.toString()
+        jvmTarget = javaVersion.toString()
     }
 }
 

@@ -4,10 +4,11 @@ import 'package:cupertino_will_pop_scope/cupertino_will_pop_scope.dart';
 import 'package:flutter/material.dart' hide Feedback;
 import 'package:flutter/services.dart';
 import 'package:flutter_html/flutter_html.dart';
+import 'package:flutter_soaring_forecast/main.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
-    show FEEDBACK_EMAIL_ADDRESS, Feedback;
+    show  FEEDBACK_EMAIL_ADDRESS, Feedback;
+import 'package:flutter_soaring_forecast/soaring/email_sender/email_sender.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../app/web_launcher.dart';
 
@@ -117,29 +118,36 @@ class _AboutScreenState extends State<AboutScreen> {
             return SingleChildScrollView(
               child: Html(
                 data: snapshot.data,
-                onLinkTap: (url, _, __, )  async {
+                onLinkTap: (
+                  url,
+                  _,
+                  __,
+                ) async {
                   if (url!.isNotEmpty) {
                     if (url.contains("privacy-policy")) {
                       // yeah - hack just to use this launcher
-                      launchWebBrowser("soaringforecast.org","privacy-policy");
+                      launchWebBrowser("soaringforecast.org", "privacy-policy");
                     } else if (url.startsWith("mailto")) {
-                      String subject = Feedback.FEEDBACK_TITLE +
-                          ' - ' +
-                          Platform.operatingSystem;
-                      final Uri emailLaunchUri = Uri(
-                        scheme: 'mailto',
-                        path: FEEDBACK_EMAIL_ADDRESS,
-                        query:
-                          'subject= ${subject}',
-                      );
-
-                      if (await canLaunchUrl(emailLaunchUri)) {
-                        await launchUrl(emailLaunchUri);
-                      } else {
-                        print('Could not launch $emailLaunchUri');
-                      }
+                      sendEmail();
+                      // String subject = Feedback.FEEDBACK_TITLE +
+                      //     ' - ' +
+                      //     Platform.operatingSystem;
+                      // final Uri emailLaunchUri = Uri(
+                      //   scheme: 'mailto',
+                      //   path: FEEDBACK_EMAIL_ADDRESS,
+                      //   query:
+                      //     'subject= ${subject}',
+                      // );
+                      //
+                      // if (await canLaunchUrl(emailLaunchUri)) {
+                      //   await launchUrl(emailLaunchUri);
+                      // } else {
+                      //   CommonWidgets.showErrorDialog(
+                      //       context, EmailError.send_email_error, EmailError.email_error_text);
+                      // }
                     }
-                  };
+                  }
+                  ;
                 },
               ),
             ); // snapshot.data  :- get your object which is pass from your downloadData() function
@@ -162,5 +170,14 @@ class _AboutScreenState extends State<AboutScreen> {
 
   Future<String> _loadAboutHtml() async {
     return rootBundle.loadString('assets/html/about.html');
+  }
+
+  void sendEmail() async {
+    EmailDetails emailDetails = EmailDetails(title: "Feedback"
+        ,subject: Feedback.FEEDBACK_TITLE +
+           ' - ' + Platform.operatingSystem
+        , recipients: FEEDBACK_EMAIL_ADDRESS);
+    await Navigator.pushNamed(context, SendEmailRouteBuilder.routeName,  arguments:emailDetails);
+
   }
 }

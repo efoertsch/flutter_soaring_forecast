@@ -82,23 +82,31 @@ class AirportsDownloader {
   }
 
   Future<List<List<dynamic>>> getAirportsCSV() async {
-    final response = await http.get(Uri.parse(Constants.AIRPORT_URL));
-    if (response.statusCode == 200) {
-      // If the server did return a 200 OK response,
-      // then parse the CSV.
-      List<List<dynamic>> rowsAsListOfValues = const CsvToListConverter(
-        eol: '\n',
-      ).convert(response.body);
-      // for (var row in rowsAsListOfValues) {
-      //   for (var value in row) {
-      //     debugPrint(value);
-      //   }
-      //   break;
-      // }
-      return rowsAsListOfValues;
-    } else {
-      // If the server did not return a 200 OK response,
-      // then throw an exception.
+    try {
+      final response = await http.get(Uri.parse(Constants.AIRPORT_URL));
+      if (response.statusCode == 200) {
+        // If the server did return a 200 OK response,
+        // then parse the CSV.
+        List<List<dynamic>> rowsAsListOfValues = const CsvToListConverter(
+          eol: '\n',
+        ).convert(response.body);
+        // for (var row in rowsAsListOfValues) {
+        //   for (var value in row) {
+        //     debugPrint(value);
+        //   }
+        //   break;
+        // }
+        return rowsAsListOfValues;
+      } else {
+        // If the server did not return a 200 OK response,
+        // then throw an exception.
+        throw Exception(
+            'AirportsDownloader.getAirportsCSV(). Failed to download and/or parse airports.csv file');
+      }
+    } catch (e, s) {
+      debugPrint('Error getting airports from ${Constants.AIRPORT_URL}');
+      debugPrint('Exception $e');
+      debugPrint('Stacktrace $s');
       throw Exception(
           'AirportsDownloader.getAirportsCSV(). Failed to download and/or parse airports.csv file');
     }
@@ -116,8 +124,8 @@ class AirportsDownloader {
         row[10].toString().toLowerCase() == 'municipality');
   }
 
-  //---- started but then discarded. Maybe use for the future if can't
-  // download and process airports in one gulp
+//---- started but then discarded. Maybe use for the future if can't
+// download and process airports in one gulp
 
 //     Future<void> getAirportDownloadState() async {
 //       var state = await repository.getGenericString(
@@ -218,5 +226,4 @@ class AirportsDownloader {
 //         debugPrint('Error: $e');
 //       }
 //     }
-
 }

@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_soaring_forecast/soaring/about/about_screen.dart';
 import 'package:flutter_soaring_forecast/soaring/airport/bloc/airport_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/airport/download/airports_downloader.dart';
@@ -15,6 +16,7 @@ import 'package:flutter_soaring_forecast/soaring/airport/ui/selected_airports_li
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     show WxBriefBriefingRequest;
 import 'package:flutter_soaring_forecast/soaring/app/custom_material_page_route.dart';
+import 'package:flutter_soaring_forecast/soaring/email_sender/email_sender.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/bloc/rasp_data_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/ui/rasp_screen.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast_hour/forecast_hour_cubit.dart';
@@ -30,7 +32,7 @@ import 'package:flutter_soaring_forecast/soaring/region/ui/region_list_screen.da
 import 'package:flutter_soaring_forecast/soaring/region_model/bloc/region_model_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/region_model/bloc/region_model_event.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
-import 'package:flutter_soaring_forecast/soaring/satellite/geos/geos.dart';
+import 'package:flutter_soaring_forecast/soaring/satellite/goes/goes.dart';
 import 'package:flutter_soaring_forecast/soaring/settings/bloc/settings_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/settings/ui/settings_screen.dart';
 import 'package:flutter_soaring_forecast/soaring/task_estimate/cubit/task_estimate_cubit.dart';
@@ -284,10 +286,10 @@ class SoaringForecastApp extends StatelessWidget {
       );
     }
 
-    if (settings.name == GeosRouteBuilder.routeName) {
+    if (settings.name == GoesRouteBuilder.routeName) {
       return CustomMaterialPageRoute(
         builder: (context) {
-          return GeosScreen();
+          return GoesScreen();
         },
         settings: settings,
       );
@@ -405,6 +407,16 @@ class SoaringForecastApp extends StatelessWidget {
       return CustomMaterialPageRoute(
         builder: (context) {
           return GliderPolarListBuilder();
+        },
+        settings: settings,
+      );
+    }
+    if (settings.name == SendEmailRouteBuilder.routeName) {
+      final emailDetails = settings.arguments as EmailDetails;
+      return CustomMaterialPageRoute(
+        builder: (context) {
+          return SendEmailRouteBuilder(title: emailDetails.title,
+            subject: emailDetails.subject, recipients: emailDetails.recipients);
         },
         settings: settings,
       );
@@ -660,14 +672,14 @@ class RegionListRouteBuilder extends StatelessWidget {
   }
 }
 
-class GeosRouteBuilder extends StatelessWidget {
-  static const routeName = '/geos';
+class GoesRouteBuilder extends StatelessWidget {
+  static const routeName = '/goes';
 
-  GeosRouteBuilder();
+  GoesRouteBuilder();
 
   @override
   Widget build(BuildContext context) {
-    return GeosScreen();
+    return GoesScreen();
   }
 }
 
@@ -785,5 +797,18 @@ class SettingsRouteBuilder extends StatelessWidget {
           SettingsBloc(repository: RepositoryProvider.of<Repository>(context)),
       child: SettingsScreen(),
     );
+  }
+}
+
+class SendEmailRouteBuilder extends StatelessWidget {
+  static const routeName = '/SendEmail';
+  final String title;
+  final String subject;
+  final String recipients;
+
+  SendEmailRouteBuilder({required this.title, required this.subject, required this.recipients });
+
+  Widget build(BuildContext context) {
+    return EmailSender(title: title, subject: subject, recipients: recipients);
   }
 }
