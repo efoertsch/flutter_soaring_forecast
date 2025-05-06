@@ -11,11 +11,11 @@ import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
         WxBriefBriefingRequest;
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:url_launcher/url_launcher.dart';
 
-import '../bloc/rasp_bloc.dart';
 import '../../app/web_launcher.dart';
+import '../../email_sender/email_sender.dart' show EmailDetails;
 import '../../local_forecast/data/local_forecast_favorite.dart';
+import '../bloc/rasp_bloc.dart';
 
 class AppDrawerWidget extends StatefulWidget {
   final Function? refreshTaskDisplayFunction;
@@ -109,9 +109,9 @@ class _AppDrawerWidgetState extends State<AppDrawerWidget> {
             thickness: 2,
           ),
           ListTile(
-            title: Text(DrawerLiterals.GEOS_NE),
+            title: Text(DrawerLiterals.GOES_NE),
             onTap: () {
-              Navigator.popAndPushNamed(context, GeosRouteBuilder.routeName);
+              Navigator.popAndPushNamed(context, GoesRouteBuilder.routeName);
             },
           ),
           _getDivider(),
@@ -153,18 +153,7 @@ class _AppDrawerWidgetState extends State<AppDrawerWidget> {
           ListTile(
             title: Text(DrawerLiterals.FEEDBACK),
             onTap: () async {
-              String subject =
-                  Feedback.FEEDBACK_TITLE + ' - ' + Platform.operatingSystem;
-              final Uri emailLaunchUri = Uri(
-                scheme: 'mailto',
-                path: FEEDBACK_EMAIL_ADDRESS,
-                query: 'subject= ${subject}',
-              );
-              if (await canLaunchUrl(emailLaunchUri)) {
-                await launchUrl(emailLaunchUri);
-              } else {
-                print('Could not launch $emailLaunchUri');
-              }
+              await sendEmail();
             },
           ),
           ListTile(
@@ -177,6 +166,16 @@ class _AppDrawerWidgetState extends State<AppDrawerWidget> {
         ],
       ),
     );
+  }
+
+  Future<void> sendEmail() async {
+
+    EmailDetails emailDetails = EmailDetails(title: "Feedback"
+        ,subject: Feedback.FEEDBACK_TITLE +
+            ' - ' + Platform.operatingSystem
+        , recipients: FEEDBACK_EMAIL_ADDRESS);
+    await Navigator.pushNamed(context, SendEmailRouteBuilder.routeName,  arguments:emailDetails);
+
   }
 
   static Widget _getDivider() {

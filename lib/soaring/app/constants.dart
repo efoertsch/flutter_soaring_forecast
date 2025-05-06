@@ -15,10 +15,10 @@ const String BASE_URL = 'https://www.soargbsc.net/';
 const String RASP_BASE_URL = BASE_URL + 'rasp/';
 //const String RASP_BASE_URL ='http://192.168.1.7/';
 const String RASP_OPTIONS_BASE_URL = 'https://soargbsc.com/soaringforecast/';
-const String AIRPORT_URL = 'http://ourairports.com/data/airports.csv';
-const String GEOS_GIF =
+const String AIRPORT_URL = RASP_OPTIONS_BASE_URL + 'airports.csv';
+const String GOES_GIF =
     "https://cdn.star.nesdis.noaa.gov/GOES16/ABI/GIFS/GOES16-NE-GEOCOLOR-600x600.gif";
-const String GEOS_CURRENT =
+const String GOES_CURRENT =
     "https://cdn.star.nesdis.noaa.gov/GOES16/ABI/SECTOR/ne/GEOCOLOR/2400x2400.jpg";
 
 //const String WXBRIEF_URL = "https://ffspelabs.leidos.com/Website2/rest/";
@@ -201,6 +201,11 @@ class StandardLiterals {
 
 }
 
+class EmailError {
+  static const String send_email_error = "Email Error";
+  static const String email_error_text = "There was a glitch in the matrix. Please use your main email app to send feedback.";
+}
+
 class RaspMenu {
   static const String selectTask = 'SELECT TASK';
   static const String clearTask = 'Clear Task';
@@ -328,7 +333,7 @@ class WindyMenu {
   static const String TopoMap = 'Topo Map';
 }
 
-class GeosMenu {
+class GoesMenu {
   static const String loop = "LOOP";
   static const String noaa = "NOAA";
   static const String current = "CURRENT";
@@ -452,7 +457,7 @@ class DrawerLiterals {
   static const String ONE_800_WX_BRIEF = "1800WxBrief";
   static const String AREA_BRIEF = "Area Brief";
   static const String AIRPORT_METAR_TAF = "Airport METAR/TAF";
-  static const String GEOS_NE = " GOES NE";
+  static const String GOES_NE = " GOES NE";
   static const String CUSTOMIZATION = "Customization";
   static const String TASK_LIST = "Task List";
   static const String TURNPOINTS = "Turnpoints";

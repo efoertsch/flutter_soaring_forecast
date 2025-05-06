@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
 
-class GeosScreen extends StatefulWidget {
-  const GeosScreen({Key? key}) : super(key: key);
+class GoesScreen extends StatefulWidget {
+  const GoesScreen({Key? key}) : super(key: key);
 
   @override
-  _GeosScreenState createState() => _GeosScreenState();
+  _GoesScreenState createState() => _GoesScreenState();
 }
 
-class _GeosScreenState extends State<GeosScreen> {
+class _GoesScreenState extends State<GoesScreen> {
   bool _displayCurrent = true;
   static final _geosLoopOption =
-      Text(GeosMenu.loop, style: TextStyle(color: Colors.white));
+      Text(GoesMenu.loop, style: TextStyle(color: Colors.white));
   static final _geosCurrentOption =
-      Text(GeosMenu.current, style: TextStyle(color: Colors.white));
+      Text(GoesMenu.current, style: TextStyle(color: Colors.white));
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +39,7 @@ class _GeosScreenState extends State<GeosScreen> {
   List<Widget> _getMenu() {
     return <Widget>[
       TextButton(
-        child: _getGeosMenuOption(),
+        child: _getGoesMenuOption(),
         onPressed: () {
           setState(() {
             _displayCurrent = !_displayCurrent;
@@ -51,13 +51,13 @@ class _GeosScreenState extends State<GeosScreen> {
 
   void handleClick(String value) async {
     switch (value) {
-      case GeosMenu.noaa:
+      case GoesMenu.noaa:
         _displayNoaa();
         break;
     }
   }
-
-  Widget _getGeosMenuOption() {
+  
+  Widget _getGoesMenuOption() {
     if (_displayCurrent) {
       return _geosLoopOption;
     } else {
@@ -75,7 +75,7 @@ class _GeosScreenState extends State<GeosScreen> {
           minScale: 1.0,
           maxScale: 4.0,
           child: Image.network(
-            _displayCurrent ? GEOS_CURRENT : GEOS_GIF,
+            _displayCurrent ? GOES_CURRENT : GOES_GIF,
             fit: BoxFit.fitWidth,
             loadingBuilder: (BuildContext context, Widget child, ImageChunkEvent? loadingProgress) {
               if (loadingProgress == null)
