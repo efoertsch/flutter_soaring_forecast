@@ -1,5 +1,7 @@
 
+import 'package:collection/collection.dart';
 import 'package:floor/floor.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:sqflite/sqflite.dart' as sqflite;
 import 'package:flutter_soaring_forecast/soaring/floor/airport/airport.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/airport/airport_dao.dart';
@@ -24,5 +26,15 @@ abstract class AppDatabase extends FloorDatabase {
 }
 
 final migration2to3 = Migration(2, 3, (db) async {
-  await db.execute('ALTER TABLE Task ADD COLUMN forecastFavorite BOOLEAN default false');
+  List<Map> columns = await db.rawQuery("PRAGMA table_info('Task')");
+  Map<dynamic,dynamic >?  addedColumn = columns.firstWhereOrNull((column) => column["name"] == "forecastFavorite");
+  // for (var row in list) {
+  //   for (var field in row.values){
+  //     debugPrint("field: $field");
+  //   }
+  // }
+ if (addedColumn == null) {
+   await db.execute(
+       'ALTER TABLE Task ADD COLUMN forecastFavorite BOOLEAN default false');
+ }
 });

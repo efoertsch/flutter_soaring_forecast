@@ -4,6 +4,7 @@ import 'package:after_layout/after_layout.dart';
 import 'package:cupertino_will_pop_scope/cupertino_will_pop_scope.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+//import 'package:flutter_file_dialog/flutter_file_dialog.dart';
 import 'package:flutter_soaring_forecast/main.dart';
 import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
@@ -83,6 +84,9 @@ class _TurnpointsListState extends State<TurnpointsList>
             button1Text: StandardLiterals.OK,
             button1Function: Navigator.of(context).pop);
       }
+      // if (state is TempTurnpointsDownloadDirectory ){
+      //    _downloadTurnpointsToFinalDirectory(state.tempFile);
+      // }
     }, buildWhen: (previous, current) {
       return current is TurnpointsInitialState ||
           current is SearchingTurnpointsState ||
@@ -398,6 +402,32 @@ class _TurnpointsListState extends State<TurnpointsList>
   Future<void> _openAppSettingsFunction() async {
     await openAppSettings();
   }
+
+  // void _downloadTurnpointsToFinalDirectory(File tempFile) async {
+  //   if (!await FlutterFileDialog.isPickDirectorySupported()) {
+  //     if (context.mounted) {
+  //       CommonWidgets.showInfoDialog(
+  //           context: context,
+  //           title: "Download Error",
+  //           msg: "Picking directory not supported",
+  //           button1Text: StandardLiterals.OK,
+  //           button1Function: Navigator
+  //               .of(context)
+  //               .pop);
+  //       return;
+  //     }
+  //   }
+  //   DirectoryLocation? pickedDirectory = await FlutterFileDialog.pickDirectory();
+  //   if (pickedDirectory != null) {
+  //      await FlutterFileDialog.saveFileToDirectory(
+  //       directory: pickedDirectory,
+  //       data: tempFile.readAsBytesSync(),
+  //       mimeType: "text/plain",
+  //       fileName: tempFile.path.split('/').last,
+  //       replace: true,
+  //     );
+  //   }
+  // }
 
 
 }

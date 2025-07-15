@@ -132,17 +132,20 @@ class _SeeYouImportScreenState extends State<SeeYouImportScreen>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              turnpointFile.location,
+                              turnpointFile.description,
                               textAlign: TextAlign.left,
                               style: TextStyle(
                                   color: Colors.black87, fontSize: 20),
                             ),
-                            Text(
-                              turnpointFile.date,
-                              textAlign: TextAlign.left,
-                              style: TextStyle(
-                                  color: Colors.black87, fontSize: 20),
-                            ),
+                            Padding(
+                              padding: const EdgeInsets.only(left: 8.0),
+                              child: Text(
+                                turnpointFile.date,
+                                textAlign: TextAlign.left,
+                                style: TextStyle(
+                                    color: Colors.black87, fontSize: 20),
+                              ),
+                            )
                           ],
                         ),
                       ),
@@ -230,12 +233,9 @@ class _SeeYouImportScreenState extends State<SeeYouImportScreen>
     debugPrint("returned from CustomTurnpointFileImport");
   }
 
-
   Future<void> _openAppSettingsFunction() async {
     await openAppSettings();
   }
-
-
 
   _cancel() {
     Navigator.of(context, rootNavigator: true).pop();
