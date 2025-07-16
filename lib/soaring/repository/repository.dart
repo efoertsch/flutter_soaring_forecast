@@ -1261,7 +1261,7 @@ class Repository {
   Future<File?> createFile(String filename) async {
     File? file = null;
     try {
-      Directory? directory = await getDownloadDirectory();
+      Directory? directory = await getTempOrIOSDocDirectory();
       if (directory != null) {
         file = File('${directory.absolute.path}/$filename');
       }
@@ -1274,13 +1274,31 @@ class Repository {
   Future<Directory?> getDownloadDirectory() async {
     Directory? directory = null;
     if (Platform.isAndroid) {
+      await MediaStore.ensureInitialized();
+      // You have set this otherwise it throws AppFolderNotSetException
+      MediaStore.appFolder = "MediaStorePlugin";
+      directory = await getDownloadsDirectory();
+      debugPrint("Download Directory: ${directory!.absolute}");
+    } else {
+      //iOS
+      directory = await getApplicationDocumentsDirectory();
+      if (!directory.existsSync()) {
+        directory.createSync(recursive: true);
+      }
+    }
+    return directory;
+  }
+
+  Future<Directory?> getTempOrIOSDocDirectory() async {
+    Directory? directory = null;
+    if (Platform.isAndroid) {
       //https://pub.dev/packages/media_store_plus/example
       await MediaStore.ensureInitialized();
       // You have set this otherwise it throws AppFolderNotSetException
       MediaStore.appFolder = "MediaStorePlugin";
       // Temp directory - Why is Android such a PITA?
       directory = await getTemporaryDirectory();
-        debugPrint("Downloads Directory: ${directory.absolute}");
+      debugPrint("Temp Directory: ${directory.absolute}");
     } else {
       //iOS
       directory = await getApplicationDocumentsDirectory();

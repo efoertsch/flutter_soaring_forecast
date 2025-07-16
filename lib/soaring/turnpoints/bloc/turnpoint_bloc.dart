@@ -308,7 +308,7 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
   Future<File?> _createTurnpointFile(String filename) async {
     File? file;
     try {
-      Directory? directory = await repository.getDownloadDirectory();
+      Directory? directory = await repository.getTempOrIOSDocDirectory();
       if (directory != null) {
         file = File('${directory.absolute.path}/$filename');
       }
@@ -323,7 +323,7 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
       GetCustomImportFileNamesEvent event, Emitter<TurnpointState> emit) async {
     List<File> cupfiles = [];
     try {
-      Directory? directory = await repository.getDownloadDirectory();
+      Directory? directory = await repository.getTempOrIOSDocDirectory();
       if (directory != null) {
         directory
             .listSync()

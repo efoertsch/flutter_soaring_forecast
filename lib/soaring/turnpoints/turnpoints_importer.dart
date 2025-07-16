@@ -7,9 +7,10 @@ import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoint_utils.dart';
 import 'package:http/http.dart' as http;
 
+import '../app/constants.dart' show TURNPOINTS_URL;
+
 class TurnpointsImporter {
   late Repository repository;
-  static const TURNPOINTS_URL = "http://serkowski.com/soaring/TP/";  //"https://soaringweb.org/TP/";
 
   TurnpointsImporter({required this.repository});
 
@@ -33,7 +34,7 @@ class TurnpointsImporter {
 
   static Future<List<List<dynamic>>> getTurnpointsCSV(
       String turnpointUrl) async {
-    final response = await http.get(Uri.parse(TURNPOINTS_URL + turnpointUrl));
+    final response = await http.get(Uri.parse("https://" + TURNPOINTS_URL + "/TP/" + turnpointUrl));
     if (response.statusCode == 200) {
       // If the server did return a 200 OK response,
       // then parse the CSV.
@@ -54,8 +55,13 @@ class TurnpointsImporter {
     } else {
       // If the server did not return a 200 OK response,
       // then throw an exception.
-      throw Exception(
-          'TurnpointsDownloader.getTurnpointsCSV(). Failed to download and/or parse turnpoints.csv file');
+      if (response.statusCode == 404) {
+        throw Exception(
+            "${TURNPOINTS_URL + turnpointUrl} not found. Select Turnpoint Exchange from menu and get latest file");
+      } else {
+        throw Exception(
+            'Error in download. Response.statusCode = {$response.statusCode}');
+      }
     }
   }
 
