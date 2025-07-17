@@ -286,7 +286,7 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
         // Close the IOSink to free system resources.
         sink.close();
         if (Platform.isAndroid) {
-          _storeFileViaMediaManager(file, emit);
+          await _storeFileViaMediaManager(file, emit);
         }else {
           emit(TurnpointShortMessageState("Turnpoint(s) downloaded to ${file.path.split("/").last}"));
         }
@@ -303,7 +303,7 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
 
   String _getCurrentDateAndTime() {
     DateTime now = DateTime.now();
-    return DateFormat('yyyy_MM_dd.HH.mm').format(now);
+    return DateFormat('yyyy_MM_dd').format(now);
   }
 
   Future<File?> _createTurnpointFile(String filename) async {
@@ -357,12 +357,12 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
   }
 
   //https://github.com/SNNafi/media_store_plus/blob/7d3760c2948634fe200c51ab9633092600376db6/lib/media_store_plus.dart
-  void _storeFileViaMediaManager(File file, Emitter<TurnpointState> emit) async {
+  Future<void> _storeFileViaMediaManager(File file, Emitter<TurnpointState> emit) async {
     SaveInfo? saveInfo;
     await MediaStore.ensureInitialized();
     MediaStore mediaStore = MediaStore();
     List<String> dirParts = file.toString().split("/");
-    String filename = dirParts.first;
+    String filename = dirParts.last;
     String dirToUse  = dirParts.length > 3 ? dirParts[dirParts.length - 3] : "";
     MediaStore.appFolder = dirToUse;
     saveInfo = await mediaStore.saveFile(tempFilePath: file.path
@@ -370,7 +370,7 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
         , dirName: DirName.download);
 
   if (saveInfo != null){
-    emit (TurnpointShortMessageState("Turnpoints saved to $filename"));
+    emit (TurnpointShortMessageState("Turnpoints saved to ${filename}"));
   }
 
   }
