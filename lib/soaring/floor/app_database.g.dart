@@ -86,7 +86,7 @@ class _$AppDatabase extends AppDatabase {
     Callback? callback,
   ]) async {
     final databaseOptions = sqflite.OpenDatabaseOptions(
-      version: 3,
+      version: 2,
       onConfigure: (database) async {
         await database.execute('PRAGMA foreign_keys = ON');
         await callback?.onConfigure?.call(database);
@@ -104,7 +104,7 @@ class _$AppDatabase extends AppDatabase {
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `airport` (`ident` TEXT NOT NULL, `type` TEXT NOT NULL, `name` TEXT NOT NULL, `latitudeDeg` REAL NOT NULL, `longitudeDeg` REAL NOT NULL, `elevationFt` INTEGER NOT NULL, `state` TEXT NOT NULL, `municipality` TEXT NOT NULL, PRIMARY KEY (`ident`))');
         await database.execute(
-            'CREATE TABLE IF NOT EXISTS `task` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `taskName` TEXT NOT NULL, `distance` REAL NOT NULL, `taskOrder` INTEGER NOT NULL, `forecastFavorite` INTEGER NOT NULL)');
+            'CREATE TABLE IF NOT EXISTS `task` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `taskName` TEXT NOT NULL, `distance` REAL NOT NULL, `taskOrder` INTEGER NOT NULL)');
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `taskturnpoint` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `taskId` INTEGER, `taskOrder` INTEGER NOT NULL, `title` TEXT NOT NULL, `code` TEXT NOT NULL, `latitudeDeg` REAL NOT NULL, `longitudeDeg` REAL NOT NULL, `distanceFromPriorTurnpoint` REAL NOT NULL, `distanceFromStartingPoint` REAL NOT NULL, `lastTurnpoint` INTEGER NOT NULL, FOREIGN KEY (`taskId`) REFERENCES `task` (`id`) ON UPDATE NO ACTION ON DELETE CASCADE)');
         await database.execute(
@@ -288,8 +288,7 @@ class _$TaskDao extends TaskDao {
                   'id': item.id,
                   'taskName': item.taskName,
                   'distance': item.distance,
-                  'taskOrder': item.taskOrder,
-                  'forecastFavorite': item.forecastFavorite ? 1 : 0
+                  'taskOrder': item.taskOrder
                 }),
         _taskUpdateAdapter = UpdateAdapter(
             database,
@@ -299,8 +298,7 @@ class _$TaskDao extends TaskDao {
                   'id': item.id,
                   'taskName': item.taskName,
                   'distance': item.distance,
-                  'taskOrder': item.taskOrder,
-                  'forecastFavorite': item.forecastFavorite ? 1 : 0
+                  'taskOrder': item.taskOrder
                 });
 
   final sqflite.DatabaseExecutor database;
@@ -320,8 +318,7 @@ class _$TaskDao extends TaskDao {
             id: row['id'] as int?,
             taskName: row['taskName'] as String,
             distance: row['distance'] as double,
-            taskOrder: row['taskOrder'] as int,
-            forecastFavorite: (row['forecastFavorite'] as int) != 0));
+            taskOrder: row['taskOrder'] as int));
   }
 
   @override
@@ -331,8 +328,7 @@ class _$TaskDao extends TaskDao {
             id: row['id'] as int?,
             taskName: row['taskName'] as String,
             distance: row['distance'] as double,
-            taskOrder: row['taskOrder'] as int,
-            forecastFavorite: (row['forecastFavorite'] as int) != 0),
+            taskOrder: row['taskOrder'] as int),
         arguments: [taskId]);
   }
 
@@ -341,18 +337,6 @@ class _$TaskDao extends TaskDao {
     return _queryAdapter.query('Delete from task where id = ?1',
         mapper: (Map<String, Object?> row) => row.values.first as int,
         arguments: [taskId]);
-  }
-
-  @override
-  Future<Task?> getForecastFavorite() async {
-    return _queryAdapter.query(
-        'Select * from task where forecastFavorite = TRUE Limit 1',
-        mapper: (Map<String, Object?> row) => Task(
-            id: row['id'] as int?,
-            taskName: row['taskName'] as String,
-            distance: row['distance'] as double,
-            taskOrder: row['taskOrder'] as int,
-            forecastFavorite: (row['forecastFavorite'] as int) != 0));
   }
 
   @override

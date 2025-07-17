@@ -478,7 +478,9 @@ class _WxBriefRequestScreenState extends State<WxBriefRequestScreen>
   }
 
   Widget _getBriefingFormat(List<WxBriefFormat> wxBriefFormats) {
-    _selectedWxBriefFormat = wxBriefFormats[0];
+    if (_selectedWxBriefFormat == null) {
+      _selectedWxBriefFormat = wxBriefFormats[0];
+    }
     return Column(
       children: [
         Text(WxBriefLiterals.BRIEFING_FORMAT),

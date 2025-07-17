@@ -192,7 +192,7 @@ class _SeeYouImportScreenState extends State<SeeYouImportScreen>
         itemBuilder: (BuildContext context) {
           return {
             TurnpointMenu.turnpointExchange,
-            TurnpointMenu.customImport,
+            TurnpointMenu.importFromDownload ,
             TurnpointMenu.clearTurnpointDatabase,
           }.map((String choice) {
             return PopupMenuItem<String>(
@@ -221,7 +221,7 @@ class _SeeYouImportScreenState extends State<SeeYouImportScreen>
             button2Text: "Yes",
             button2Function: _sendDeleteTurnpointsEvent);
         break;
-      case TurnpointMenu.customImport:
+      case TurnpointMenu.importFromDownload :
         //checkForCustomImportPermission();
         _pickFiles();
         break;

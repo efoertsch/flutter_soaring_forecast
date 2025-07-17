@@ -3,6 +3,7 @@ import 'package:flutter_soaring_forecast/soaring/floor/base_dao.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/task/task.dart';
 
 //TODO if any changes run  -  flutter packages pub run build_runner build
+
 @dao
 abstract class TaskDao extends BaseDao<Task> {
   @Query("Select * from task order by taskOrder")
@@ -14,9 +15,6 @@ abstract class TaskDao extends BaseDao<Task> {
   // Current sqlite code never returns record key - always get null
   @Query("Delete from task where id = :taskId")
   Future<int?> deleteTask(int taskId);
-
-  @Query("Select * from task where forecastFavorite = TRUE Limit 1")
-  Future<Task?> getForecastFavorite();
 
   // Current version of floor can't return count() so using rawQuery
   // (See repository)

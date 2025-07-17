@@ -1,7 +1,5 @@
 
-import 'package:collection/collection.dart';
 import 'package:floor/floor.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:sqflite/sqflite.dart' as sqflite;
 import 'package:flutter_soaring_forecast/soaring/floor/airport/airport.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/airport/airport_dao.dart';
@@ -16,25 +14,10 @@ part 'app_database.g.dart'; // the generated code will be there
 
 //TODO if any changes run  - flutter packages pub run build_runner build --delete-conflicting-outputs
 
-//@Database(version: 2, entities: [Airport, Task, TaskTurnpoint, Turnpoint]) //
-@Database(version: 3, entities: [Airport, Task, TaskTurnpoint, Turnpoint]) //
+@Database(version: 2, entities: [Airport, Task, TaskTurnpoint, Turnpoint]) //
 abstract class AppDatabase extends FloorDatabase {
   AirportDao get airportDao;
   TaskDao get taskDao;
   TaskTurnpointDao get taskTurnpointDao;
   TurnpointDao get turnpointDao;
 }
-
-final migration2to3 = Migration(2, 3, (db) async {
-  List<Map> columns = await db.rawQuery("PRAGMA table_info('Task')");
-  Map<dynamic,dynamic >?  addedColumn = columns.firstWhereOrNull((column) => column["name"] == "forecastFavorite");
-  // for (var row in list) {
-  //   for (var field in row.values){
-  //     debugPrint("field: $field");
-  //   }
-  // }
- if (addedColumn == null) {
-   await db.execute(
-       'ALTER TABLE Task ADD COLUMN forecastFavorite BOOLEAN default false');
- }
-});

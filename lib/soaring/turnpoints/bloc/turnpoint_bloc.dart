@@ -109,12 +109,6 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
     }
   }
 
-  Future<List<Turnpoint>> _getTurnpointsFromTurnpointExchange(
-      TurnpointFile turnpointfile) async {
-    return await repository.importTurnpointsFromTurnpointExchange(
-        turnpointfile.location + "/" + turnpointfile.filename);
-  }
-
   void _loadTurnpointFileFromTurnpointExchange(
       LoadTurnpointFileEvent event, Emitter<TurnpointState> emit) async {
     emit(TurnpointsInitialState());
@@ -128,6 +122,13 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
       print(e.toString());
       emit(TurnpointErrorState(e.toString()));
     }
+  }
+
+
+  Future<List<Turnpoint>> _getTurnpointsFromTurnpointExchange(
+      TurnpointFile turnpointfile) async {
+    return await repository.importTurnpointsFromTurnpointExchange(
+        turnpointfile.location + "/" + turnpointfile.filename);
   }
 
   void _deleteAllTurnpoints(

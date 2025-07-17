@@ -20,6 +20,7 @@ const String GOES_GIF =
     "https://cdn.star.nesdis.noaa.gov/GOES16/ABI/GIFS/GOES16-NE-GEOCOLOR-600x600.gif";
 const String GOES_CURRENT =
     "https://cdn.star.nesdis.noaa.gov/GOES16/ABI/SECTOR/ne/GEOCOLOR/2400x2400.jpg";
+const TURNPOINTS_URL = "soaringweb.org"; //"http://serkowski.com/soaring/TP/";
 
 //const String WXBRIEF_URL = "https://ffspelabs.leidos.com/Website2/rest/";
 const String WXBRIEF_URL = "https://lmfsweb.afss.com/Website/rest/";
@@ -48,8 +49,8 @@ enum ForecastCategoryEnum { thermal, wave, wind }
 
 
 // Order must be most current, (arguably) 'best' model for the day
-enum ModelsEnum {hrrr, rap, nam, gfs }
-enum ForecastDateChange{previous, next}
+enum ModelsEnum { hrrr, rap, nam, gfs }
+enum ForecastDateChange { previous, next }
 
 final Widget waveIcon = SvgPicture.asset('assets/svg/wave.svg');
 final Widget windIcon = SvgPicture.asset('assets/svg/wind.svg');
@@ -90,11 +91,11 @@ const String turnpointsDisplayOption = "TurnpointsDisplayOption";
 final List<PreferenceOption> RaspDisplayOptions = [
   PreferenceOption(
       key: soundingsDisplayOption,
-      displayText: RaspDisplayOptionsMenu.soundings ,
+      displayText: RaspDisplayOptionsMenu.soundings,
       selected: true),
   PreferenceOption(
       key: suaDisplayOption, displayText: RaspDisplayOptionsMenu.sua,
-      selected:true),
+      selected: true),
   PreferenceOption(
       key: turnpointsDisplayOption,
       displayText: RaspDisplayOptionsMenu.turnpoints)
@@ -136,10 +137,9 @@ enum SUAColor {
       airspaceColor: Color(0x40FF0000),
       dashedLine: false);
 
-  const SUAColor(
-      {required this.suaClassType,
-      required this.airspaceColor,
-      required this.dashedLine});
+  const SUAColor({required this.suaClassType,
+    required this.airspaceColor,
+    required this.dashedLine});
 
   final String suaClassType;
   final Color airspaceColor;
@@ -265,9 +265,11 @@ class TurnpointMenu {
   static const String emailTurnpoints = 'Email Turnpoints';
   static const String clearTurnpointDatabase = 'Clear Turnpoint Database';
   static const String customImport = 'Custom Import';
+  static const String importFromDownload = "Import From Download";
   static const String turnpoints = "Turnpoints";
   static const String turnpoint = "Turnpoint";
   static const String turnpointImport = "Turnpoint Import";
+  static const String turnpointExchange = "Turnpoint Exchange";
 }
 
 class TurnpointEditMenu {
@@ -394,6 +396,7 @@ class WxBriefMenu {
 class PolarLiterals {
   static const String POLAR = "Polar";
 }
+
 class WxBriefLiterals {
   static const String DO_NOT_SHOW_THIS_AGAIN = "Do not show this again";
   static const String WXBRIEF_AUTHORIZATION = "1800Brief Authorization";
@@ -426,7 +429,7 @@ class WxBriefLiterals {
       "For current date the brief assumes 1hr in the future. For future days, a 9AM departure is assumed.";
 
   static const String WXBRIEF_NOTAMS_ABBREV_BRIEF_INFO =
-      '''This option retrieves aeronautical and meteorological data from 1800wxbrief.com, and provides NOTAMs and TFRs as of the time the request is made.
+  '''This option retrieves aeronautical and meteorological data from 1800wxbrief.com, and provides NOTAMs and TFRs as of the time the request is made.
   \n\nOnly the following are requested for this briefing:
   \n\u2022 Temporary Flight Restrictions
   \n\u2022 Closed/Unsafe NOTAMS

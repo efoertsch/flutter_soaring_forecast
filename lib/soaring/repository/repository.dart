@@ -460,13 +460,11 @@ class Repository {
       debugPrint('App database being created');
       // Oops. Added this so as not to lose existing Android users info
       if (Platform.isAndroid) {
-        _appDatabase = await $FloorAppDatabase
-            .databaseBuilder('app_database')
-            .addMigrations([migration2to3]).build();
+        _appDatabase =
+            await $FloorAppDatabase.databaseBuilder('app_database').build();
       } else if (Platform.isIOS) {
-        _appDatabase = await $FloorAppDatabase
-            .databaseBuilder('app_database.db')
-            .addMigrations([migration2to3]).build();
+        _appDatabase =
+            await $FloorAppDatabase.databaseBuilder('app_database.db').build();
       }
     }
     return _appDatabase!;

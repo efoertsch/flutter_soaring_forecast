@@ -20,30 +20,17 @@ class TurnpointsImporter {
     return await convertTurnpointCsvListToTurnpoints(parsedTurnpoints);
   }
 
-  static Future<List<Turnpoint>> getTurnpointsFromFile(
-      File turnpointFile) async {
-    String turnpointString = await turnpointFile.readAsString();
-    if (turnpointString.indexOf('\r\n') == -1) {
-      turnpointString = turnpointString.replaceAll('\n', '\r\n');
-    }
-    List<List<dynamic>> parsedTurnpoints = const CsvToListConverter(
-      eol: '\r\n',
-    ).convert(turnpointString);
-    return await convertTurnpointCsvListToTurnpoints(parsedTurnpoints);
-  }
-
   static Future<List<List<dynamic>>> getTurnpointsCSV(
       String turnpointUrl) async {
-    final response = await http.get(Uri.parse("https://" + TURNPOINTS_URL + "/TP/" + turnpointUrl));
+    final response = await http
+        .get(Uri.parse("https://" + TURNPOINTS_URL + "/TP/" + turnpointUrl));
     if (response.statusCode == 200) {
       // If the server did return a 200 OK response,
       // then parse the CSV.
       var body = response.body;
-      if (body.indexOf('\r\n') == -1) {
-        body = body.replaceAll('\n', '\r\n');
-      }
+      body = body.replaceAll('\r\n', '\n');
       List<List<dynamic>> rowsAsListOfValues = const CsvToListConverter(
-        eol: '\r\n',
+        eol: '\n',
       ).convert(body);
       // for (var row in rowsAsListOfValues) {
       //   for (var value in row) {
@@ -64,6 +51,18 @@ class TurnpointsImporter {
       }
     }
   }
+
+  static Future<List<Turnpoint>> getTurnpointsFromFile(
+      File turnpointFile) async {
+    String turnpointString = await turnpointFile.readAsString();
+    turnpointString = turnpointString.replaceAll('\r\n', '\n');
+    List<List<dynamic>> parsedTurnpoints = const CsvToListConverter(
+      eol: '\n',
+    ).convert(turnpointString);
+    return await convertTurnpointCsvListToTurnpoints(parsedTurnpoints);
+  }
+
+
 
   static Future<List<Turnpoint>> convertTurnpointCsvListToTurnpoints(
       List<List<dynamic>> turnpointsCSV) async {
