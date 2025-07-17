@@ -16,14 +16,14 @@ class TurnpointsInitialState extends TurnpointState {
 
 class TurnpointErrorState extends TurnpointState {
   final String errorMsg;
-  TurnpointErrorState(String this.errorMsg);
+  TurnpointErrorState(this.errorMsg);
   @override
   List<Object?> get props => [errorMsg];
 }
 
 class TurnpointShortMessageState extends TurnpointState {
   final String shortMsg;
-  TurnpointShortMessageState(String this.shortMsg);
+  TurnpointShortMessageState(this.shortMsg);
   @override
   List<Object?> get props => [shortMsg];
 }
@@ -50,14 +50,14 @@ class SearchingTurnpointsState extends TurnpointState {
 
 class TurnpointSearchErrorState extends TurnpointState {
   final String errorMsg;
-  TurnpointSearchErrorState(String this.errorMsg);
+  TurnpointSearchErrorState(this.errorMsg);
   @override
   List<Object?> get props => [errorMsg];
 }
 
 class TurnpointSearchMessageState extends TurnpointState {
   final String msg;
-  TurnpointSearchMessageState(String this.msg);
+  TurnpointSearchMessageState(this.msg);
   @override
   List<Object?> get props => [msg];
 }
@@ -97,7 +97,6 @@ class UpdatedTurnpointState extends TurnpointState {
 
 class TurnpointDeletedState extends TurnpointState {
   @override
-  // TODO: implement props
   List<Object?> get props => throw UnimplementedError();
 }
 
@@ -134,8 +133,16 @@ class TurnpointFilesFoundState extends TurnpointState {
 
 class CustomTurnpointFileListState extends TurnpointState {
   final List<File> customTurnpointFiles;
-  CustomTurnpointFileListState(List<File> this.customTurnpointFiles);
+  CustomTurnpointFileListState(this.customTurnpointFiles);
   @override
-  // TODO: implement props
   List<Object?> get props => [customTurnpointFiles];
+}
+
+class TempTurnpointsDownloadDirectory extends TurnpointState {
+  final File tempFile;
+  TempTurnpointsDownloadDirectory(this.tempFile);
+  @override
+  List<Object?> get props => [tempFile.toString()];
+
+
 }

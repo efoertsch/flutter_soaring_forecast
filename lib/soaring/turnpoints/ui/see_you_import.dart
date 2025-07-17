@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:after_layout/after_layout.dart';
 import 'package:cupertino_will_pop_scope/cupertino_will_pop_scope.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/main.dart';
@@ -11,8 +12,10 @@ import 'package:flutter_soaring_forecast/soaring/turnpoints/bloc/turnpoint_bloc.
 import 'package:flutter_soaring_forecast/soaring/turnpoints/bloc/turnpoint_event.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/bloc/turnpoint_state.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter/services.dart';
 
 import '../../app/constants.dart';
+import '../../app/web_launcher.dart';
 
 class SeeYouImportScreen extends StatefulWidget {
   SeeYouImportScreen({Key? key}) : super(key: key);
@@ -23,7 +26,13 @@ class SeeYouImportScreen extends StatefulWidget {
 
 class _SeeYouImportScreenState extends State<SeeYouImportScreen>
     with AfterLayoutMixin<SeeYouImportScreen> {
+  final _scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
+  bool _isLoading = false;
+  bool _userAborted = false;
+  Widget _resultsWidget = const Row();
+
   bool importedTurnpoints = false;
+
 // Make sure first layout occurs prior to map ready otherwise crash occurs
   @override
   void afterFirstLayout(BuildContext context) {
@@ -132,17 +141,20 @@ class _SeeYouImportScreenState extends State<SeeYouImportScreen>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              turnpointFile.location,
+                              turnpointFile.description,
                               textAlign: TextAlign.left,
                               style: TextStyle(
                                   color: Colors.black87, fontSize: 20),
                             ),
-                            Text(
-                              turnpointFile.date,
-                              textAlign: TextAlign.left,
-                              style: TextStyle(
-                                  color: Colors.black87, fontSize: 20),
-                            ),
+                            Padding(
+                              padding: const EdgeInsets.only(left: 8.0),
+                              child: Text(
+                                turnpointFile.date,
+                                textAlign: TextAlign.left,
+                                style: TextStyle(
+                                    color: Colors.black87, fontSize: 20),
+                              ),
+                            )
                           ],
                         ),
                       ),
@@ -179,7 +191,8 @@ class _SeeYouImportScreenState extends State<SeeYouImportScreen>
         onSelected: _handleClick,
         itemBuilder: (BuildContext context) {
           return {
-            TurnpointMenu.customImport,
+            TurnpointMenu.turnpointExchange,
+            TurnpointMenu.importFromDownload ,
             TurnpointMenu.clearTurnpointDatabase,
           }.map((String choice) {
             return PopupMenuItem<String>(
@@ -194,6 +207,9 @@ class _SeeYouImportScreenState extends State<SeeYouImportScreen>
 
   void _handleClick(String value) {
     switch (value) {
+      case TurnpointMenu.turnpointExchange:
+        _goToWorldWideTurnpointExchange();
+        break;
       case TurnpointMenu.clearTurnpointDatabase:
         CommonWidgets.showInfoDialog(
             context: context,
@@ -205,8 +221,9 @@ class _SeeYouImportScreenState extends State<SeeYouImportScreen>
             button2Text: "Yes",
             button2Function: _sendDeleteTurnpointsEvent);
         break;
-      case TurnpointMenu.customImport:
-        _checkForCustomImportPermission();
+      case TurnpointMenu.importFromDownload :
+        //checkForCustomImportPermission();
+        _pickFiles();
         break;
     }
   }
@@ -230,12 +247,9 @@ class _SeeYouImportScreenState extends State<SeeYouImportScreen>
     debugPrint("returned from CustomTurnpointFileImport");
   }
 
-
   Future<void> _openAppSettingsFunction() async {
     await openAppSettings();
   }
-
-
 
   _cancel() {
     Navigator.of(context, rootNavigator: true).pop();
@@ -250,5 +264,73 @@ class _SeeYouImportScreenState extends State<SeeYouImportScreen>
 
   void _sendEvent(TurnpointEvent event) {
     BlocProvider.of<TurnpointBloc>(context).add(event);
+  }
+
+  void _pickFiles() async {
+    bool hasUserAborted = true;
+    List<PlatformFile>? pickedFiles;
+    try {
+      pickedFiles = (await FilePicker.platform.pickFiles(
+        type: FileType.any,
+        allowMultiple: false,
+        onFileLoading: (FilePickerStatus status) =>
+            debugPrint(status.toString()),
+        //allowedExtensions: <String>["cup"],
+        dialogTitle: "Select CUP File",
+        lockParentWindow: true,
+        withData: false,
+      ))
+          ?.files;
+      hasUserAborted = pickedFiles == null;
+    } on PlatformException catch (e) {
+      _logException('Unsupported operation: $e');
+    } catch (e) {
+      _logException(e.toString());
+    }
+    if (!mounted) return;
+
+    if (!hasUserAborted) {
+      _sendEvent(ImportTurnpointsFromFileEvent(File(pickedFiles!.first.path.toString())));
+    } else {
+      CommonWidgets.showInfoDialog(
+          context: context,
+          title: TurnpointMenu.importTurnpoints,
+          msg: "No turnpoint file selected",
+          button1Text: StandardLiterals.OK,
+          button1Function: Navigator.of(context).pop);
+    }
+  }
+
+  Widget _buildFilePickerResultsWidget({
+    required int itemCount,
+    required Widget Function(BuildContext, int) itemBuilder,
+  }) {
+    return SizedBox(
+      height: MediaQuery.sizeOf(context).height * 0.50,
+      child: ListView.separated(
+        itemCount: itemCount,
+        itemBuilder: itemBuilder,
+        separatorBuilder: (BuildContext context, int index) => const Divider(),
+      ),
+    );
+  }
+
+  void _logException(String message) {
+    debugPrint(message);
+    _scaffoldMessengerKey.currentState?.hideCurrentSnackBar();
+    _scaffoldMessengerKey.currentState?.showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: const TextStyle(
+            color: Colors.white,
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _goToWorldWideTurnpointExchange() {
+    launchWebBrowser(TURNPOINTS_URL, "TP");
   }
 }

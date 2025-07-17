@@ -26,6 +26,7 @@ import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoint_utils.dart
 import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_overhead_view.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../region_model/bloc/region_model_bloc.dart';
 import '../../region_model/bloc/region_model_state.dart';
@@ -33,8 +34,7 @@ import '../../region_model/bloc/region_model_state.dart';
 class RaspMap extends StatefulWidget {
   final Function runAnimation;
 
-  RaspMap({Key? key, required Function this.runAnimation})
-      : super(key: key);
+  RaspMap({Key? key, required Function this.runAnimation}) : super(key: key);
 
   @override
   RaspMapState createState() => RaspMapState();
@@ -86,7 +86,6 @@ class RaspMapState extends State<RaspMap>
   String? suaSelected;
   bool _showEstimatedFlightButton = false;
 
-
   @override
   void initState() {
     super.initState();
@@ -129,7 +128,6 @@ class RaspMapState extends State<RaspMap>
 
   Stack _getMapAndLegendWidget() {
     return Stack(children: [
-
       Container(
         alignment: Alignment.center,
         child: _forecastMap(),
@@ -242,14 +240,18 @@ class RaspMapState extends State<RaspMap>
           children: [
             // !!!---- Order of layers very important for receiving click events --- !!!
             TileLayer(
-              urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-              subdomains: ['a', 'b', 'c'],
-            ),
+                urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                subdomains: ['a', 'b', 'c'],
+                userAgentPackageName: "org.soaringforecast.rasp"),
             OverlayImageLayer(
               key: null,
               overlayImages: _overlayImages,
             ),
-
+            TextSourceAttribution(
+              "OpenStreetMap",
+              onTap: () => launchUrl(
+                  Uri.parse('https://www.openstreetmap.org/copyright')),
+            ),
             PolygonLayer(polygons: _suaPolygons),
             PolylineLayer(
               polylines: _combinedTaskLines,
@@ -360,8 +362,6 @@ class RaspMapState extends State<RaspMap>
       child: SizedBox.shrink(),
     );
   }
-
-
 
   void _updateTaskTurnpoints(List<TaskTurnpoint> taskTurnpoints) {
     print('number of task turnpoints ${taskTurnpoints.length.toString()} ');
@@ -755,8 +755,7 @@ class RaspMapState extends State<RaspMap>
     _mapMarkers.addAll(_soundingMarkers);
     _mapMarkers.addAll(_taskMarkers);
     _mapMarkers.addAll(_latLngMarkers);
-    setState(() {
-    });
+    setState(() {});
   }
 
   void _rebuildTaskLinesArray() {
@@ -947,12 +946,11 @@ class RaspMapState extends State<RaspMap>
               onPressed: () async {
                 widget.runAnimation(false);
                 await Navigator.pushNamed(
-                      context, EstimatedTaskRouteBuilder.routeName);
+                    context, EstimatedTaskRouteBuilder.routeName);
                 // Need to wait a frame otherwise resultant refresh goes to
                 // estimated task
-                WidgetsBinding.instance.addPostFrameCallback((_)=>
-                  _sendEvent(RefreshModelDateEvent())
-                );
+                WidgetsBinding.instance.addPostFrameCallback(
+                    (_) => _sendEvent(RefreshModelDateEvent()));
               },
               child: Stack(
                 alignment: Alignment.center,
@@ -973,7 +971,7 @@ class RaspMapState extends State<RaspMap>
         : SizedBox.shrink();
   }
 
-  _regionModelListener()  {
+  _regionModelListener() {
     return BlocListener<RegionModelBloc, RegionModelState>(
         listener: (context, state) async {
           if (state is CenterOfMapState) {

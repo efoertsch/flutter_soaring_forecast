@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:media_store_plus/media_store_plus.dart';
 import 'package:collection/collection.dart';
 import 'package:csv/csv.dart';
 import 'package:device_info_plus/device_info_plus.dart';
@@ -1258,9 +1259,9 @@ class Repository {
   Future<File?> createFile(String filename) async {
     File? file = null;
     try {
-      Directory? directory = await getDownloadDirectory();
+      Directory? directory = await getTempOrIOSDocDirectory();
       if (directory != null) {
-        file = File(directory.absolute.path + '/' + filename);
+        file = File('${directory.absolute.path}/$filename');
       }
     } catch (e) {
       print("Exception creating download file: " + e.toString());
@@ -1271,17 +1272,31 @@ class Repository {
   Future<Directory?> getDownloadDirectory() async {
     Directory? directory = null;
     if (Platform.isAndroid) {
-      final DeviceInfoPlugin deviceInfoPlugin = DeviceInfoPlugin();
-      final AndroidDeviceInfo info = await deviceInfoPlugin.androidInfo;
-      if ((info.version.sdkInt) >= 30) {
-        directory = await getExternalStorageDirectory();
-        debugPrint("ExternalStorageDirectory: ${directory?.absolute}");
-      } else {
-        directory = Directory('/storage/emulated/0/Download');
-        if (!await directory.exists()) {
-          directory = await getExternalStorageDirectory();
-        }
+      await MediaStore.ensureInitialized();
+      // You have set this otherwise it throws AppFolderNotSetException
+      MediaStore.appFolder = "MediaStorePlugin";
+      directory = await getDownloadsDirectory();
+      debugPrint("Download Directory: ${directory!.absolute}");
+    } else {
+      //iOS
+      directory = await getApplicationDocumentsDirectory();
+      if (!directory.existsSync()) {
+        directory.createSync(recursive: true);
       }
+    }
+    return directory;
+  }
+
+  Future<Directory?> getTempOrIOSDocDirectory() async {
+    Directory? directory = null;
+    if (Platform.isAndroid) {
+      //https://pub.dev/packages/media_store_plus/example
+      await MediaStore.ensureInitialized();
+      // You have set this otherwise it throws AppFolderNotSetException
+      MediaStore.appFolder = "MediaStorePlugin";
+      // Temp directory - Why is Android such a PITA?
+      directory = await getTemporaryDirectory();
+      debugPrint("Temp Directory: ${directory.absolute}");
     } else {
       //iOS
       directory = await getApplicationDocumentsDirectory();

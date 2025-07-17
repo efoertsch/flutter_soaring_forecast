@@ -14,10 +14,13 @@ import 'package:flutter_soaring_forecast/soaring/turnpoints/cup/cup_styles.dart'
 import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoint_utils.dart';
 import 'package:intl/intl.dart';
 import 'package:location/location.dart';
+import 'package:media_store_plus/media_store_plus.dart';
+import 'package:media_store_plus/src/dir_type.dart';
 
 class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
   final Repository repository;
   final List<TurnpointFile> turnpointFiles = [];
+
   //final List<CupStyle> cupStyles = [];
 
   //TurnpointState get initialState => TurnpointsLoadingState();
@@ -106,12 +109,6 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
     }
   }
 
-  Future<List<Turnpoint>> _getTurnpointsFromTurnpointExchange(
-      TurnpointFile turnpointfile) async {
-    return await repository.importTurnpointsFromTurnpointExchange(
-        turnpointfile.location + "/" + turnpointfile.filename);
-  }
-
   void _loadTurnpointFileFromTurnpointExchange(
       LoadTurnpointFileEvent event, Emitter<TurnpointState> emit) async {
     emit(TurnpointsInitialState());
@@ -125,6 +122,13 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
       print(e.toString());
       emit(TurnpointErrorState(e.toString()));
     }
+  }
+
+
+  Future<List<Turnpoint>> _getTurnpointsFromTurnpointExchange(
+      TurnpointFile turnpointfile) async {
+    return await repository.importTurnpointsFromTurnpointExchange(
+        turnpointfile.location + "/" + turnpointfile.filename);
   }
 
   void _deleteAllTurnpoints(
@@ -229,8 +233,8 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
   FutureOr<void> _getElevationAtLatLong(
       GetElevationAtLatLong event, Emitter<TurnpointState> emit) async {
     double elevation;
-    elevation =
-        await _getUSGSElevationAtLocation(event.latitude, event.longitude, emit);
+    elevation = await _getUSGSElevationAtLocation(
+        event.latitude, event.longitude, emit);
     emit(LatLongElevationState(event.latitude, event.longitude, elevation));
   }
 
@@ -253,76 +257,65 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
   FutureOr<void> _downloadTurnpointsToFile(
       DownloadTurnpointsToFile event, Emitter<TurnpointState> emit) async {
     List<Turnpoint> turnpoints = [];
-    try {
-      turnpoints.addAll(await repository.getAllTurnpoints());
-      String filename = await _writeTurnpointsToFile(turnpoints);
-      emit(TurnpointShortMessageState("Turnpoints written to :" + filename));
-    } catch (e) {
-      emit(TurnpointErrorState("Error on writing turnpoints to file"));
-      print("Error on writing turnpoints to file: ${e.toString()}");
-    }
+    turnpoints.addAll(await repository.getAllTurnpoints());
+     await _writeTurnpointsToFile(turnpoints, emit);
+
   }
 
+  // Make sure user has file permissions before calling this method
   FutureOr<void> _downloadTurnpointToFile(
       DownloadTurnpointToFile event, Emitter<TurnpointState> emit) async {
-    final turnpoint = event.turnpoint;
+    final List<Turnpoint> turnpoints = <Turnpoint>[]..add(event.turnpoint);
+     await _writeTurnpointsToFile(turnpoints, emit);
+  }
+
+  FutureOr<void> _writeTurnpointsToFile(
+      List<Turnpoint> turnpoints, Emitter<TurnpointState> emit) async {
     try {
-      String filename = await _writeTurnpointToFile(turnpoint);
-      emit(TurnpointShortMessageState("Turnpoint written to :" + filename));
+      String turnpointsFileName = "${turnpoints.length == 1
+              ? ("Turnpoint_${turnpoints[0].code}_")
+              : "Turnpoints_"}${_getCurrentDateAndTime()}.cup";
+      File? file = await _createTurnpointFile(turnpointsFileName);
+      if (file != null) {
+        var sink = file.openWrite();
+        sink.write(TurnpointUtils.getAllColumnHeaders());
+        turnpoints.forEach((turnpoint) {
+          sink.write(TurnpointUtils.getCupFormattedRecord(turnpoint) +
+              Constants.NEW_LINE);
+        });
+        // Close the IOSink to free system resources.
+        sink.close();
+        if (Platform.isAndroid) {
+          await _storeFileViaMediaManager(file, emit);
+        }else {
+          emit(TurnpointShortMessageState("Turnpoint(s) downloaded to ${file.path.split("/").last}"));
+        }
+      } else {
+        emit(TurnpointErrorState("Error writing turnpoints to temp directory"));
+      }
+
     } catch (e) {
-      emit(TurnpointErrorState("Error on writing turnpoint to file"));
-      print("Error on writing turnpoint to file: ${e.toString()}");
+      emit(TurnpointErrorState("Error on writing turnpoints to file"));
+      debugPrint("Error on writing turnpoints to file: ${e.toString()}");
+      return null;
     }
-  }
-
-  FutureOr<String> _writeTurnpointsToFile(
-      List<Turnpoint> turnpointsList) async {
-    String turnpointFileName =
-        "Turnpoints_" + _getCurrentDateAndTime() + ".cup";
-    File? file = await _createTurnpointFile(turnpointFileName);
-    if (file != null) {
-      var sink = file.openWrite();
-      sink.write(TurnpointUtils.getAllColumnHeaders());
-      turnpointsList.forEach((turnpoint) {
-        sink.write(TurnpointUtils.getCupFormattedRecord(turnpoint) +
-            Constants.NEW_LINE);
-      });
-      // Close the IOSink to free system resources.
-      sink.close();
-    }
-    return turnpointFileName;
-  }
-
-  FutureOr<String> _writeTurnpointToFile(Turnpoint turnpoint) async {
-    String turnpointFileName =
-        "Turnpoint_" + turnpoint.code + "_" + _getCurrentDateAndTime() + ".cup";
-    File? file = await _createTurnpointFile(turnpointFileName);
-    if (file != null) {
-      var sink = file.openWrite();
-      sink.write(TurnpointUtils.getAllColumnHeaders());
-      sink.write(
-          TurnpointUtils.getCupFormattedRecord(turnpoint) + Constants.NEW_LINE);
-      // Close the IOSink to free system resources.
-      sink.close();
-    };
-    return turnpointFileName;
   }
 
   String _getCurrentDateAndTime() {
     DateTime now = DateTime.now();
-    return DateFormat('yyyy_MM_dd.HH.mm').format(now);
+    return DateFormat('yyyy_MM_dd').format(now);
   }
 
   Future<File?> _createTurnpointFile(String filename) async {
-    File? file = null;
+    File? file;
     try {
-      Directory? directory = await repository.getDownloadDirectory();
+      Directory? directory = await repository.getTempOrIOSDocDirectory();
       if (directory != null) {
-        file = File(directory.absolute.path + '/' + filename);
+        file = File('${directory.absolute.path}/$filename');
       }
     } catch (e) {
-      print("Exception creating download file: " + e.toString());
-      throw (e);
+      debugPrint("Exception creating download file: $e");
+      rethrow;
     }
     return file;
   }
@@ -331,7 +324,7 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
       GetCustomImportFileNamesEvent event, Emitter<TurnpointState> emit) async {
     List<File> cupfiles = [];
     try {
-      Directory? directory = await repository.getDownloadDirectory();
+      Directory? directory = await repository.getTempOrIOSDocDirectory();
       if (directory != null) {
         directory
             .listSync()
@@ -361,5 +354,24 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
       print(e.toString());
       emit(TurnpointErrorState(e.toString()));
     }
+  }
+
+  //https://github.com/SNNafi/media_store_plus/blob/7d3760c2948634fe200c51ab9633092600376db6/lib/media_store_plus.dart
+  Future<void> _storeFileViaMediaManager(File file, Emitter<TurnpointState> emit) async {
+    SaveInfo? saveInfo;
+    await MediaStore.ensureInitialized();
+    MediaStore mediaStore = MediaStore();
+    List<String> dirParts = file.toString().split("/");
+    String filename = dirParts.last;
+    String dirToUse  = dirParts.length > 3 ? dirParts[dirParts.length - 3] : "";
+    MediaStore.appFolder = dirToUse;
+    saveInfo = await mediaStore.saveFile(tempFilePath: file.path
+        , dirType: DirType.download
+        , dirName: DirName.download);
+
+  if (saveInfo != null){
+    emit (TurnpointShortMessageState("Turnpoints saved to ${filename}"));
+  }
+
   }
 }
