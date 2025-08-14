@@ -162,15 +162,15 @@ class TaskEstimateCubit extends Cubit<TaskEstimateState> {
     _taskLatLonString = "";
     int index = 1;
     for (var taskTurnpoints in _taskTurnpoints) {
-      turnpointLatLons.write(index.toString());
+      turnpointLatLons.write(index.toString());   //1,2,3,...
       turnpointLatLons.write(",");
-      turnpointLatLons.write(taskTurnpoints.latitudeDeg.toString());
+      turnpointLatLons.write(taskTurnpoints.latitudeDeg.toString());  //lat of course
       turnpointLatLons.write(",");
-      turnpointLatLons.write(taskTurnpoints.longitudeDeg.toString());
+      turnpointLatLons.write(taskTurnpoints.longitudeDeg.toString()); //long of course
       turnpointLatLons.write(",");
       turnpointLatLons.write(taskTurnpoints.title.substring(0,
-          taskTurnpoints.title.length > 4 ? 4 : taskTurnpoints.title.length));
-      turnpointLatLons.write(",");
+          taskTurnpoints.title.length > 4 ? 4 : taskTurnpoints.title.length)); //first 4 chars of title
+      turnpointLatLons.write(","); // add , but will be taken out later if on last turnpoint
       index++;
     }
     if (turnpointLatLons.length > 0) {

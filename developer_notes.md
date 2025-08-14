@@ -6,7 +6,8 @@ imported into a Google Sheet - https://docs.google.com/spreadsheets/d/11s6b0BEiO
 4. The 'Polar JSON' tab and formulas were created to format the 'PolarData' tab data to a form that was
 then copied/pasted into the assets/json/gliders.json  file.
 
-
+!!! MacOS updates may overwrite the httpd.conf file. If don't get proper response from local server check
+!!! to make sure httpd.conf is correct.
 Stuff I forget for configuring local RASP server on my Mac.
 This doesn't cover setting up getting a copy of the prod RASP html/forecast files  (ask Steve Paavola)
 and nor setting up the Apache server to run RASP website
