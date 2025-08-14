@@ -282,9 +282,9 @@ class TurnpointUtils {
   /// _cupStyles must be set earlier (by bloc call loading them)
   /// before use in these util functions.
   static String getStyleFromStyleDescription(
-      List<CupStyle> cupStyles, String styleDesription) {
+      List<CupStyle> cupStyles, String styleDescription) {
     return cupStyles
-        .firstWhere((cupStyle) => cupStyle.description == styleDesription,
+        .firstWhere((cupStyle) => cupStyle.description == styleDescription,
             orElse: () => CupStyle(style: '0', description: "Unknown"))
         .style;
   }

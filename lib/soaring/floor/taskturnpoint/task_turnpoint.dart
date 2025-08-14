@@ -11,7 +11,7 @@ import 'package:flutter_soaring_forecast/soaring/floor/task/task.dart';
     onDelete: ForeignKeyAction.cascade,
   )
 ])
-class TaskTurnpoint {
+class  TaskTurnpoint {
   @PrimaryKey(autoGenerate: true)
   late int? id;
   late int? taskId;
@@ -39,6 +39,9 @@ class TaskTurnpoint {
   // Option color for turnpoint icon - green grass, black asphalt, red everything else
   @ignore
   Color turnpointColor = Colors.red;
+
+  @ignore
+  bool isAirport = false;
 
   TaskTurnpoint(
       {this.id,

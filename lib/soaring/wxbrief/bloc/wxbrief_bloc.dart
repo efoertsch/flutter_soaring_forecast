@@ -8,12 +8,16 @@ import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/airport/airport.dart';
 import 'package:flutter_soaring_forecast/soaring/floor/taskturnpoint/task_turnpoint.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
+import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoint_utils.dart';
 import 'package:flutter_soaring_forecast/soaring/wxbrief/bloc/wxbrief_event.dart';
 import 'package:flutter_soaring_forecast/soaring/wxbrief/bloc/wxbrief_state.dart';
 import 'package:flutter_soaring_forecast/soaring/wxbrief/data/briefing_option.dart';
 import 'package:flutter_soaring_forecast/soaring/wxbrief/data/route_briefing_request.dart';
 import 'package:flutter_soaring_forecast/soaring/wxbrief/data/wxbrief_defaults.dart';
 import 'package:intl/intl.dart';
+
+import '../../floor/turnpoint/turnpoint.dart';
+import '../../turnpoints/cup/cup_styles.dart';
 
 class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
   static const int ONE_HOUR_IN_MILLISECS = 60 * 60 * 1000;
@@ -108,6 +112,8 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
       final task = await repository.getTask(taskId);
       if (task.id != null) {
         _taskTurnpoints.addAll(await repository.getTaskTurnpoints(task.id!));
+        // determine if turnpoint a likely FAA recognized airport
+        checkIfAirports(_taskTurnpoints);
       }
       _taskTurnpoints.forEach((taskTurnpoint) {
         _taskTurnpointIds.add(taskTurnpoint.code);
@@ -172,7 +178,9 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
       }
     }
     final sb = StringBuffer();
-    sb.writeAll( _taskTurnpoints.map((taskTurnpoint) => taskTurnpoint.code), ",");
+    sb.writeAll( _taskTurnpoints.map((taskTurnpoint)=>
+       (taskTurnpoint.isAirport ? taskTurnpoint.code :
+       getWxBriefLatLong(taskTurnpoint.latitudeDeg, taskTurnpoint.longitudeDeg))), ",");
     _routeBriefingRequest.setRoute(sb.toString());
   }
 
@@ -375,5 +383,29 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
   FutureOr<void> _setDisplayAuthScreen(SetWxBriefDisplayAuthScreenEvent event,
       Emitter<WxBriefState> emit) async {
     await repository.setWxBriefShowAuthScreen(event.showAuthScreen);
+  }
+
+  void checkIfAirports(List<TaskTurnpoint> taskTurnpoints) async {
+    Turnpoint? turnpoint;
+    if (TurnpointUtils.getCupStyles().isEmpty) {
+      final List<CupStyle> cupStyles = await TurnpointUtils.getCupStyles();
+    }
+    taskTurnpoints.forEach((taskTurnpoint)  async {
+       turnpoint = await repository.getTurnpointByCode(taskTurnpoint.code);
+       if (turnpoint != null){
+           taskTurnpoint.isAirport = TurnpointUtils.isAirport(turnpoint!.style);
+       } else {
+         taskTurnpoint.isAirport = false;
+       }
+    });
+  }
+
+  String getWxBriefLatLong(double latitudeDeg, double longitudeDeg) {
+    // lat in DDMM.dddN|S format and long in DDDMM.dddE|W format
+    String lat = TurnpointUtils.getLatitudeInCupFormat(latitudeDeg);
+    String long = TurnpointUtils.getLongitudeInCupFormat(longitudeDeg);
+    // For wxbrief return string as DDMMN|SDDDMME|W
+    return lat.substring(0,4) + lat.substring(lat.length - 1) +
+    long.substring(0,5) + long.substring(long.length -1 );
   }
 }
