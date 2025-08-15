@@ -188,7 +188,7 @@ class Repository {
     for (int i = 0; i < region.dates!.length; ++i) {
       try {
         ForecastModels forecastModels =
-            await getforecastModelsForRegionAndDate(region.name!, dates[i]);
+            await getForecastModelsForRegionAndDate(region.name!, dates[i]);
         region.addForecastModelsForDate(
             forecastModels, dates[i], printdates[i]);
       } catch (error, stackTrace) {
@@ -199,9 +199,10 @@ class Repository {
   }
 
   // Date in yyyy-mm-dd format
-  Future<ForecastModels> getforecastModelsForRegionAndDate(
-          String regionName, String date) async =>
-      await _raspClient.getForecastModels(regionName, date);
+  Future<ForecastModels> getForecastModelsForRegionAndDate(
+          String regionName, String date) async {
+     return await _raspClient.getForecastModels(regionName, date);
+  }
 
   /// Get the list of forecasts that are generated.
   /// Note we use a customized list held locally.

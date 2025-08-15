@@ -51,7 +51,7 @@ class WindyBloc extends Bloc<WindyEvent, WindyState> {
     _regionName = await repository.getSelectedRegionName();
     final date = DateFormat('yyyy-MM-dd').format(DateTime.now());
     final forecastModels =
-        await repository.getforecastModelsForRegionAndDate(_regionName!, date);
+        await repository.getForecastModelsForRegionAndDate(_regionName!, date);
     return forecastModels.models[0];
   }
 
