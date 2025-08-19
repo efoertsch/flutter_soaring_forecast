@@ -168,20 +168,33 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
   }
 
   void _setDepartureRouteAndDestination() {
-    for (int i = 0; i < _taskTurnpoints.length; ++i) {
-      if (i == 0) {
-        _routeBriefingRequest.setDeparture(_taskTurnpoints[0].code);
-      } else if (i == _taskTurnpoints.length - 1) {
-        _routeBriefingRequest.setDestination(_taskTurnpoints[i].code);
-      } else {
-        _taskTurnpointIds.add(_taskTurnpoints[i].code);
-      }
+    if (_taskTurnpoints[0].isAirport) {
+      _routeBriefingRequest.setDeparture(_taskTurnpoints[0].code);
+    } else {
+      _routeBriefingRequest.setDeparture("ZZZZ");
+      _routeBriefingRequest.addToOtherInfo(
+          "DEP/${getWxBriefLatLong(_taskTurnpoints[0].latitudeDeg,
+              _taskTurnpoints[0].longitudeDeg)} ${_taskTurnpoints[0].code}");
+    }
+    int i = _taskTurnpoints.length - 1;
+    if (_taskTurnpoints[i].isAirport) {
+      _routeBriefingRequest.setDestination(_taskTurnpoints[i].code);
+    } else {
+      _routeBriefingRequest.setDestination("ZZZZ");
+      _routeBriefingRequest.addToOtherInfo(
+          "DEST/${getWxBriefLatLong(_taskTurnpoints[i].latitudeDeg,
+              _taskTurnpoints[i].longitudeDeg)} ${_taskTurnpoints[i].code}");
     }
     final sb = StringBuffer();
-    sb.writeAll( _taskTurnpoints.map((taskTurnpoint)=>
-       (taskTurnpoint.isAirport ? taskTurnpoint.code :
-       getWxBriefLatLong(taskTurnpoint.latitudeDeg, taskTurnpoint.longitudeDeg))), ",");
-    _routeBriefingRequest.setRoute(sb.toString());
+    for (i = 1; i < _taskTurnpoints.length - 1; i++) {
+      sb.write(_taskTurnpoints[i].isAirport ? _taskTurnpoints[i].code :
+      getWxBriefLatLong(
+          _taskTurnpoints[i].latitudeDeg, _taskTurnpoints[i].longitudeDeg));
+      if (i < _taskTurnpoints.length - 2) {
+        sb.write(",");
+      }
+    }
+      _routeBriefingRequest.setRoute(sb.toString());
   }
 
   /**
@@ -243,7 +256,8 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
         }
       } else if (routeBriefing.returnCodedMessage!.length > 0) {
         final sb = StringBuffer();
-        sb.writeAll(routeBriefing.returnCodedMessage!.map((e) => e.message), "\n");
+        sb.writeAll(
+            routeBriefing.returnCodedMessage!.map((e) => e.message), "\n");
         emit(WxBriefErrorState(sb.toString()));
       }
     }).catchError((Object obj) {
@@ -390,13 +404,13 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
     if (TurnpointUtils.getCupStyles().isEmpty) {
       final List<CupStyle> cupStyles = await TurnpointUtils.getCupStyles();
     }
-    taskTurnpoints.forEach((taskTurnpoint)  async {
-       turnpoint = await repository.getTurnpointByCode(taskTurnpoint.code);
-       if (turnpoint != null){
-           taskTurnpoint.isAirport = TurnpointUtils.isAirport(turnpoint!.style);
-       } else {
-         taskTurnpoint.isAirport = false;
-       }
+    taskTurnpoints.forEach((taskTurnpoint) async {
+      turnpoint = await repository.getTurnpointByCode(taskTurnpoint.code);
+      if (turnpoint != null) {
+        taskTurnpoint.isAirport = TurnpointUtils.isAirport(turnpoint!.style);
+      } else {
+        taskTurnpoint.isAirport = false;
+      }
     });
   }
 
@@ -405,7 +419,9 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
     String lat = TurnpointUtils.getLatitudeInCupFormat(latitudeDeg);
     String long = TurnpointUtils.getLongitudeInCupFormat(longitudeDeg);
     // For wxbrief return string as DDMMN|SDDDMME|W
-    return lat.substring(0,4) + lat.substring(lat.length - 1) +
-    long.substring(0,5) + long.substring(long.length -1 );
+    return lat.substring(0, 4) +
+        lat.substring(lat.length - 1) +
+        long.substring(0, 5) +
+        long.substring(long.length - 1);
   }
 }

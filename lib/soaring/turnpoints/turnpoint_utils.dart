@@ -47,7 +47,7 @@ class TurnpointUtils {
   static final frequencyRegex =
       RegExp(r'^1[1-3][0-9]\.(([0-9][0-9](0|5))|([0-9][0-9])|[0-9])$');
   static final landableRegex = RegExp(r'^[2-5]$');
-  static final airportRegex = RegExp(r'^[245]$');
+  static final airportRegex = RegExp(r'^[25]$');
 
 // Besides determining the input file format, also used for exporting turnpoints to a file
   static const WITH_WIDTH_AND_DESCRIPTION_LABELS = [

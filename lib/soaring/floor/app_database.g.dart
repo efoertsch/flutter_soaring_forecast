@@ -581,7 +581,7 @@ class _$TurnpointDao extends TurnpointDao {
   @override
   Future<Turnpoint?> getTurnpointByCode(String code) async {
     return _queryAdapter.query(
-        'Select * from turnpoint where code = ?1 collate nocase',
+        'Select * from turnpoint where code = ?1 limit 1 collate nocase',
         mapper: (Map<String, Object?> row) => Turnpoint(
             id: row['id'] as int?,
             title: row['title'] as String,

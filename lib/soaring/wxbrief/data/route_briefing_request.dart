@@ -229,6 +229,7 @@ class RouteBriefingRequest {
   int _briefingRadius = 25;
   int _windsAloftRadius = 100;
   String _fixName = "";
+  String _otherInfo  = "";
 
   void setWxBriefBriefingRequest(
       WxBriefBriefingRequest wxBriefBriefingRequest) {
@@ -362,6 +363,14 @@ class RouteBriefingRequest {
     this._windsAloftRadius = windsAloftRadius;
   }
 
+  void addToOtherInfo(String otherInfo){
+    if (_otherInfo.isEmpty) {
+      _otherInfo = otherInfo;
+    }else {
+      _otherInfo = "$_otherInfo $otherInfo";
+    }
+  }
+
   /**
    * Create the parm string for a REST routeBriefing API call. Create string like
    * includeCodedMessages=true&routeCorridorWidth=25&briefingPreferences={"tailoring":["ENCODED_ONLY"]}
@@ -428,6 +437,10 @@ class RouteBriefingRequest {
       sb.writeAll(
           [_AMPERSAND, "briefingPreferences=", getBriefingPreferences()]);
     }
+    if (_otherInfo.isNotEmpty){
+      sb.writeAll([_AMPERSAND, "otherInfo=", _otherInfo]);
+    }
+
     String unencodedParms = sb.toString();
     debugPrint("Briefing Request Options (unencoded): ${unencodedParms}");
     return unencodedParms;

@@ -134,6 +134,10 @@ class RepositorySetup extends StatelessWidget {
   Widget build(BuildContext context) {
     return RepositoryProvider(
       create: (context) => Repository(context),
+      // !!! Android Studio has bug in that this widget gets called when WorkManager task is triggered !!
+      // !!! which causes display issues
+      // !!! use flutter run --flavor dev from terminal
+      // !!! if debugging needed comment out if (Platform.isAndroid) {...} above
       child: SoaringForecastApp(),
     );
   }
@@ -163,29 +167,12 @@ class SoaringForecastApp extends StatelessWidget {
             ),
             debugShowCheckedModeBanner: false,
             title: Strings.appTitle,
-            home: SoaringForecastRouteBuilder(),
-            initialRoute: SoaringForecastRouteBuilder.routeName,
+            home: SoaringForecastWidget(),
+            //initialRoute: SoaringForecastRouteBuilder.routeName,
             onGenerateRoute: (settings) {
               return _buildRoute(settings);
             }));
 
-    // regionModelBloc =
-    //     RegionModelBloc(repository: RepositoryProvider.of<Repository>(context));
-    // forecastHourCubit = ForecastHourCubit();
-    // return MaterialApp(
-    //     theme: ThemeData(
-    //       useMaterial3: false,
-    //     ),
-    //     debugShowCheckedModeBanner: false,
-    //     title: Strings.appTitle,
-    //     home: SoaringForecastRouteBuilder(
-    //       regionModelBloc: regionModelBloc,
-    //       forecastHourCubit: forecastHourCubit,
-    //     ),
-    //     initialRoute: SoaringForecastRouteBuilder.routeName,
-    //     onGenerateRoute: (settings) {
-    //       return _buildRoute(settings, regionModelBloc);
-    //     });
   }
 
   CustomMaterialPageRoute? _buildRoute(
@@ -429,10 +416,10 @@ class SoaringForecastApp extends StatelessWidget {
   }
 }
 
-class SoaringForecastRouteBuilder extends StatelessWidget {
-  static const routeName = '/';
+class SoaringForecastWidget extends StatelessWidget {
 
-  const SoaringForecastRouteBuilder({super.key});
+
+  const SoaringForecastWidget({super.key});
 
   @override
   Widget build(BuildContext context) {

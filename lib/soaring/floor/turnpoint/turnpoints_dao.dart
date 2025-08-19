@@ -21,7 +21,7 @@ abstract class TurnpointDao extends BaseDao<Turnpoint> {
   @Query("Select * from turnpoint  order by id")
   Future<List<Turnpoint>> selectAllTurnpointsForDownload();
 
-  @Query("Select * from turnpoint where code = :code collate nocase")
+  @Query("Select * from turnpoint where code = :code limit 1 collate nocase")
   Future<Turnpoint?> getTurnpointByCode(String code);
 
   @Query(
