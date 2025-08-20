@@ -78,6 +78,7 @@ android {
         }
         release {
             signingConfig signingConfigs.release
+            ndk{ debugSymbolLevel 'full' }
         }
     }
     flavorDimensions "version"
