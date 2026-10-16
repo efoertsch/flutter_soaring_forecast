@@ -6,7 +6,7 @@ import 'package:retrofit/retrofit.dart';
 part 'rasp_options_api.g.dart';
 
 //!!! Remember to run generator with any changes !!!
-//!!!  flutter pub run build_runner build  --delete-conflicting-outputs     !!!
+//!!!  dart run build_runner build  --delete-conflicting-outputs     !!!
 @RestApi(baseUrl: Constants.RASP_OPTIONS_BASE_URL)
 abstract class RaspOptionsClient {
   factory RaspOptionsClient(Dio dio) = _RaspOptionsClient;

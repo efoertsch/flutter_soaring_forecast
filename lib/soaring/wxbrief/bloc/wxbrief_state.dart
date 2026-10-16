@@ -2,7 +2,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     show WxBriefFormat, WxBriefTypeOfBrief;
-import 'package:flutter_soaring_forecast/soaring/floor/airport/airport.dart';
+import 'package:flutter_soaring_forecast/soaring/drift/airport/airports.dart';
 import 'package:flutter_soaring_forecast/soaring/wxbrief/data/briefing_option.dart';
 import 'package:flutter_soaring_forecast/soaring/wxbrief/data/wxbrief_defaults.dart';
 

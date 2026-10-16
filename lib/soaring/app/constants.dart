@@ -16,6 +16,7 @@ const String RASP_BASE_URL = BASE_URL + 'rasp/';
 //const String BASE_URL = 'http://192.168.1.15/';    // Remember to rebuild api calls
 //const String RASP_BASE_URL ='http://192.168.1.15/';
 const String RASP_OPTIONS_BASE_URL = 'https://soargbsc.com/soaringforecast/';
+//const String RASP_OPTIONS_BASE_URL = BASE_URL + '/soaringforecast/';
 const String AIRPORT_URL = RASP_OPTIONS_BASE_URL + 'airports.csv';
 const String GOES_GIF =
     "https://cdn.star.nesdis.noaa.gov/GOES16/ABI/GIFS/GOES16-NE-GEOCOLOR-600x600.gif";

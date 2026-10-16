@@ -2,13 +2,15 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_soaring_forecast/soaring/floor/task/task.dart';
-import 'package:flutter_soaring_forecast/soaring/floor/taskturnpoint/task_turnpoint.dart';
-import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
+import 'package:flutter_soaring_forecast/soaring/drift/task/tasks.dart';
+import 'package:flutter_soaring_forecast/soaring/drift/taskturnpoint/task_turnpoints.dart';
+import 'package:flutter_soaring_forecast/soaring/drift/turnpoint/turnpoints.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 import 'package:flutter_soaring_forecast/soaring/tasks/bloc/task_event.dart';
 import 'package:flutter_soaring_forecast/soaring/tasks/bloc/task_state.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoint_utils.dart';
+
+import '../../drift/app_database.dart';
 
 class TaskBloc extends Bloc<TaskEvent, TaskState> {
   final Repository repository;

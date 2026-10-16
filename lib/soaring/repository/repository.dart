@@ -7,7 +7,6 @@ import 'package:collection/collection.dart';
 import 'package:csv/csv.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:dio/dio.dart';
-import 'package:floor/floor.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
@@ -21,11 +20,11 @@ import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
         RaspDisplayOptions,
         WxBriefBriefingRequest,
         WxBriefTypeOfBrief;
-import 'package:flutter_soaring_forecast/soaring/floor/airport/airport.dart';
-import 'package:flutter_soaring_forecast/soaring/floor/app_database.dart';
-import 'package:flutter_soaring_forecast/soaring/floor/task/task.dart';
-import 'package:flutter_soaring_forecast/soaring/floor/taskturnpoint/task_turnpoint.dart';
-import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
+import 'package:flutter_soaring_forecast/soaring/drift/airport/airports.dart';
+import 'package:flutter_soaring_forecast/soaring/drift/app_database.dart';
+import 'package:flutter_soaring_forecast/soaring/drift/task/tasks.dart';
+import 'package:flutter_soaring_forecast/soaring/drift/taskturnpoint/task_turnpoints.dart';
+import 'package:flutter_soaring_forecast/soaring/drift/turnpoint/turnpoints.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/ImageCacheManager.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/one800wxbrief/metar_taf_response.dart';
@@ -53,6 +52,7 @@ import 'package:retrofit/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
 
+import '../drift/turnpoint/turnpoints.dart';
 import '../local_forecast/data/local_forecast_favorite.dart';
 import 'dio_interceptor.dart';
 import 'rasp/forecast_models.dart';
@@ -462,10 +462,10 @@ class Repository {
       // Oops. Added this so as not to lose existing Android users info
       if (Platform.isAndroid) {
         _appDatabase =
-            await $FloorAppDatabase.databaseBuilder('app_database').build();
+            await AppDatabase();
       } else if (Platform.isIOS) {
         _appDatabase =
-            await $FloorAppDatabase.databaseBuilder('app_database.db').build();
+            await AppDatabase();
       }
     }
     return _appDatabase!;
@@ -473,21 +473,20 @@ class Repository {
 
   Future<int> getCountOfAirports() async {
     await makeDatabaseAvailable();
-    int? count = await Sqflite.firstIntValue(
-        await _appDatabase!.database.rawQuery('SELECT count(*) FROM airport'));
-    return count ?? 0;
+    int count = await _appDatabase!.airportsDao.getCount();
+    return count;
   }
 
-  @transaction
+  //@transaction
   Future<int?> deleteAllAirports() async {
     await makeDatabaseAvailable();
-    return _appDatabase!.airportDao.deleteAll();
+    return _appDatabase!.airportsDao.deleteAll();
   }
 
-  @transaction
+  //@transaction
   Future<List<int?>> insertAllAirports(List<Airport> airports) async {
     await makeDatabaseAvailable();
-    return await _appDatabase!.airportDao.insertAll(airports);
+    return await _appDatabase!.airportsDao.insertAll(airports);
   }
 
   Future<List<Airport>?> findAirports(String searchTerm) async {
@@ -673,7 +672,7 @@ class Repository {
 
   Future<Turnpoint?> getTurnpoint(String title, String code) async {
     await makeDatabaseAvailable();
-    return _appDatabase!.turnpointDao.getTurnpoint(title, code);
+    return _appDatabase!.turnpointDao.getTurnpoint(title, code).get();
   }
 
   Future<Turnpoint?> getTurnpointById(int turnpointId) async {
@@ -722,28 +721,28 @@ class Repository {
 
   Future<List<Task>> getAlltasks() async {
     await makeDatabaseAvailable();
-    return _appDatabase!.taskDao.listAllTasks();
+    return _appDatabase!.tasksDao.listAllTasks();
   }
 
   Future<Task> getTask(int taskId) async {
     await makeDatabaseAvailable();
-    Task? task = await _appDatabase!.taskDao.getTask(taskId);
+    Task? task = await _appDatabase!.tasksDao.getTask(taskId);
     return task ?? Task();
   }
 
   Future<int?> saveTask(Task task) async {
     await makeDatabaseAvailable();
-    return _appDatabase!.taskDao.insert(task);
+    return _appDatabase!.tasksDao.insert(task);
   }
 
   Future<int> updateTask(Task task) async {
     await makeDatabaseAvailable();
-    return _appDatabase!.taskDao.update(task);
+    return  _appDatabase!.tasksDao.updateRecord(task.toCompanion(true));
   }
 
   Future<int?> deleteTask(int taskId) async {
     await makeDatabaseAvailable();
-    return _appDatabase!.taskDao.deleteTask(taskId);
+    return _appDatabase!.tasksDao.deleteTask(taskId);
   }
 
   // -1 is no task defined
@@ -1150,9 +1149,7 @@ class Repository {
     final briefingOptions = <BriefingOption>[];
     String optionsString =
         await rootBundle.loadString('assets/csv/' + optionsFileName);
-    final rowsAsListOfValues = const CsvToListConverter(
-      eol: '\n',
-    ).convert(optionsString);
+    final rowsAsListOfValues = csv.decode(optionsString);
     for (int i = 0; i < rowsAsListOfValues.length; ++i) {
       if (i > 0) {
         final briefingOption =

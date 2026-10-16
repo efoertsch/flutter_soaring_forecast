@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_soaring_forecast/soaring/floor/taskturnpoint/task_turnpoint.dart';
+import 'package:flutter_soaring_forecast/soaring/drift/taskturnpoint/task_turnpoints.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_models.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 import 'package:flutter_soaring_forecast/soaring/windy/bloc/windy_event.dart';

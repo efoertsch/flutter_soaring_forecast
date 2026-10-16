@@ -270,18 +270,20 @@ class _SeeYouImportScreenState extends State<SeeYouImportScreen>
     bool hasUserAborted = true;
     List<PlatformFile>? pickedFiles;
     try {
-      pickedFiles = (await FilePicker.platform.pickFiles(
+      pickedFiles = await FilePicker.pickFiles(
         type: FileType.any,
-        allowMultiple: false,
         onFileLoading: (FilePickerStatus status) =>
             debugPrint(status.toString()),
         //allowedExtensions: <String>["cup"],
         dialogTitle: "Select CUP File",
-        lockParentWindow: true,
-        withData: false,
-      ))
-          ?.files;
-      hasUserAborted = pickedFiles == null;
+        windowsOptions: WindowsOptions(
+          lockParentWindow: true, // <-- Moved here
+        ),
+        linuxOptions: LinuxOptions(
+          lockParentWindow: true, // <-- Moved here
+        )
+      );
+      hasUserAborted = pickedFiles.length ==0;
     } on PlatformException catch (e) {
       _logException('Unsupported operation: $e');
     } catch (e) {

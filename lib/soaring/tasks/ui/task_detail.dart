@@ -7,9 +7,9 @@ import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     show StandardLiterals, TaskLiterals;
 import 'package:flutter_soaring_forecast/soaring/app/custom_styles.dart';
-import 'package:flutter_soaring_forecast/soaring/floor/task/task.dart';
-import 'package:flutter_soaring_forecast/soaring/floor/taskturnpoint/task_turnpoint.dart';
-import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
+import 'package:flutter_soaring_forecast/soaring/drift/task/tasks.dart';
+import 'package:flutter_soaring_forecast/soaring/drift/taskturnpoint/task_turnpoints.dart';
+import 'package:flutter_soaring_forecast/soaring/drift/turnpoint/turnpoints.dart';
 import 'package:flutter_soaring_forecast/soaring/tasks/bloc/task_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/tasks/bloc/task_event.dart';
 import 'package:flutter_soaring_forecast/soaring/tasks/bloc/task_state.dart';

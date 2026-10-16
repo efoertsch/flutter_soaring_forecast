@@ -12,7 +12,7 @@ import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     show AirportLiterals, AirportMenu, StandardLiterals;
 import 'package:flutter_soaring_forecast/soaring/app/upper_case_text_formatter.dart';
-import 'package:flutter_soaring_forecast/soaring/floor/airport/airport.dart';
+import 'package:flutter_soaring_forecast/soaring/drift/airport/airports.dart';
 
 class AirportsSearch extends StatefulWidget {
   static const String PICK_ONE = "PICK_ONE";

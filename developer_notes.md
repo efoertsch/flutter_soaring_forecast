@@ -56,11 +56,6 @@ Apache2 error log on Mac can be listed via:
 
 TODO: implement flutter_flavorizr - https://pub.dev/packages/flutter_flavorizr
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-Prior to production compile, ensure proper RASP_BASE_URL value is set
-for Production and the API's are regen'ed. 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
 Development:
 
 For Android:
@@ -83,6 +78,12 @@ For iOS:
 
 
 Production:
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Prior to production compile, ensure proper RASP_BASE_URL value is set
+for Production and the API's are regen'ed.  <<<<<<<
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 
 For any production release:
 1. Update release number in pubspec.yml

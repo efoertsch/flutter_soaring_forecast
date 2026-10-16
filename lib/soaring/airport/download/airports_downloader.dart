@@ -2,7 +2,7 @@ import 'package:csv/csv.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     as Constants;
-import 'package:flutter_soaring_forecast/soaring/floor/airport/airport.dart';
+import 'package:flutter_soaring_forecast/soaring/drift/airport/airports.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 import 'package:http/http.dart' as http;
 
@@ -87,9 +87,7 @@ class AirportsDownloader {
       if (response.statusCode == 200) {
         // If the server did return a 200 OK response,
         // then parse the CSV.
-        List<List<dynamic>> rowsAsListOfValues = const CsvToListConverter(
-          eol: '\n',
-        ).convert(response.body);
+        List<List<dynamic>> rowsAsListOfValues = csv.decode(response.body);
         // for (var row in rowsAsListOfValues) {
         //   for (var value in row) {
         //     debugPrint(value);

@@ -1,6 +1,7 @@
 import 'package:flutter_soaring_forecast/soaring/airport/download/airports_downloader.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
-import 'package:test/test.dart';
+import 'package:flutter_test/flutter_test.dart';
+
 
 void main() {
   test('AirportsDownloader.getAirportsCSV returns List<List<dynamic>>',

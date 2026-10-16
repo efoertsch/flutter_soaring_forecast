@@ -2,7 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/local_forecast/data/local_forecast_graph.dart';
 import 'package:flutter_soaring_forecast/soaring/task_estimate/cubit/task_estimate_state.dart';
 
-import '../../floor/taskturnpoint/task_turnpoint.dart';
+import '../../drift/taskturnpoint/task_turnpoints.dart';
 import '../../region_model/data/region_model_data.dart';
 import '../../repository/rasp/gliders.dart';
 import '../../repository/repository.dart';

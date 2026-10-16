@@ -54,6 +54,7 @@ import 'package:flutter_soaring_forecast/soaring/wxbrief/ui/wxbrief_request_scre
 import 'package:workmanager/workmanager.dart';
 
 import 'firebase_options.dart';
+import 'soaring/drift/app_database.dart';
 import 'soaring/local_forecast/bloc/local_forecast_event.dart';
 import 'soaring/local_forecast/data/local_forecast_graph.dart';
 import 'soaring/local_forecast/ui/local_forecast_graph_display.dart';
@@ -72,7 +73,7 @@ void callbackDispatcher() {
       var ok = AirportsDownloader(repository: Repository(null))
           .downloadAirportsIfNeeded();
       debugPrint('AirportsDownloader response : $ok');
-      return Future.value(ok);
+      return await Future.value(ok);
     } catch (err) {
       debugPrint(err.toString());
       throw Exception(err);
@@ -80,8 +81,13 @@ void callbackDispatcher() {
   });
 }
 
+late AppDatabase database;
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  database = AppDatabase();
+
   // In release mode this will override Flutter debugPrint() so nothing printed to logs
   if (kReleaseMode) {
     debugPrint = (String? message, {int? wrapWidth}) {};

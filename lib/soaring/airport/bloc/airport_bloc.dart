@@ -6,7 +6,7 @@ import 'package:flutter_soaring_forecast/soaring/airport/bloc/airport_event.dart
 import 'package:flutter_soaring_forecast/soaring/airport/bloc/airport_state.dart';
 import 'package:flutter_soaring_forecast/soaring/airport/download/airports_downloader.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
-import 'package:flutter_soaring_forecast/soaring/floor/airport/airport.dart';
+import 'package:flutter_soaring_forecast/soaring/drift/airport/airports.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 
 class AirportBloc extends Bloc<AirportEvent, AirportState> {

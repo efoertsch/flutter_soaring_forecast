@@ -20,7 +20,7 @@ import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
 import 'package:flutter_soaring_forecast/soaring/app/custom_styles.dart';
 import 'package:flutter_soaring_forecast/soaring/app/upper_case_text_formatter.dart';
 import 'package:flutter_soaring_forecast/soaring/fileutils/file_utils.dart';
-import 'package:flutter_soaring_forecast/soaring/floor/airport/airport.dart';
+import 'package:flutter_soaring_forecast/soaring/drift/airport/airports.dart';
 import 'package:flutter_soaring_forecast/soaring/wxbrief/bloc/wxbrief_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/wxbrief/bloc/wxbrief_event.dart';
 import 'package:flutter_soaring_forecast/soaring/wxbrief/bloc/wxbrief_state.dart';
