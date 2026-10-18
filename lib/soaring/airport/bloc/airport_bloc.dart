@@ -2,12 +2,15 @@ import 'dart:async';
 
 import 'package:async/async.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_soaring_forecast/main.dart';
 import 'package:flutter_soaring_forecast/soaring/airport/bloc/airport_event.dart';
 import 'package:flutter_soaring_forecast/soaring/airport/bloc/airport_state.dart';
 import 'package:flutter_soaring_forecast/soaring/airport/download/airports_downloader.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
 import 'package:flutter_soaring_forecast/soaring/drift/airport/airports.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
+
+import '../../drift/app_database.dart';
 
 class AirportBloc extends Bloc<AirportEvent, AirportState> {
   final Repository repository;
@@ -132,7 +135,7 @@ class AirportBloc extends Bloc<AirportEvent, AirportState> {
   FutureOr<void> _downloadAirportsNow(
       DownloadAirportsNowEvent event, Emitter<AirportState> emit) async {
     emit(AirportsBeingDownloadedState());
-    var ok = await AirportsDownloader(repository: Repository(null))
+    var ok = await AirportsDownloader(repository: Repository(null, database))
         .downloadAirports();
     if (ok) {
       emit(AirportsDownloadedOKState());

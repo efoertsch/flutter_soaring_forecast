@@ -6,6 +6,8 @@ import 'package:flutter_soaring_forecast/soaring/drift/airport/airports.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 import 'package:http/http.dart' as http;
 
+import '../../drift/app_database.dart';
+
 enum DownloadState { not_started, downloaded, being_processed, completed }
 
 class AirportsDownloader {
@@ -39,12 +41,7 @@ class AirportsDownloader {
       repository.deleteAllAirports();
       debugPrint("Deleted all airports from database");
     }
-    var insertedResponse = await repository.insertAllAirports(listOfAirports);
-    var totalInserted = insertedResponse.fold<int>(0, (previous, current) {
-      //debugPrint('airport insert result: $current');
-      return previous + (current != null ? 1 : 0);
-    });
-
+    var totalInserted = await repository.insertAllAirports(listOfAirports);
     debugPrint('Number airports inserted : $totalInserted');
     return (totalUSAirportsDownloaded == totalInserted && totalInserted > 0);
   }
@@ -65,7 +62,7 @@ class AirportsDownloader {
             row.length > 10 &&
             row[2] != 'closed' &&
             row[8].toString().trim() == 'US') {
-          var airport = Airport.fromList(row);
+          var airport = fromList(row);
           maybeBadRow = airport;
           listofAirports.add(airport);
         } else {
@@ -121,6 +118,30 @@ class AirportsDownloader {
         row[9].toString().toLowerCase() == 'iso_region' &&
         row[10].toString().toLowerCase() == 'municipality');
   }
+
+  Airport fromList(List<dynamic> list) => Airport(
+        id: -1,
+        ident: list[1],
+        type: list[2],
+        name: list[3],
+        latitudeDeg: list[4] != ''
+            ? (list[4] is double
+                ? list[4]
+                : (list[4] is int)
+                    ? list[4].toDouble()
+                    : 0.0)
+            : 0.0,
+        longitudeDeg: list[5] != ''
+            ? (list[4] is double
+                ? list[4]
+                : (list[4] is int)
+                    ? list[4].toDouble()
+                    : 0.0)
+            : 0.0,
+        elevationFt: list[6] != '' ? list[6] : 0,
+        state: list[9].toString().replaceAll('US-', ''),
+        municipality: list[10],
+      );
 
 //---- started but then discarded. Maybe use for the future if can't
 // download and process airports in one gulp

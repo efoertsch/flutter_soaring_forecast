@@ -11,6 +11,7 @@ import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 
+import '../../drift/app_database.dart';
 import '../../local_forecast/data/local_forecast_graph.dart';
 import 'rasp_bloc.dart';
 

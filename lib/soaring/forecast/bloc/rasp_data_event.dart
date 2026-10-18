@@ -6,6 +6,8 @@ import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/regions.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../drift/app_database.dart';
+
 /// https://medium.com/flutter-community/flutter-bloc-pattern-for-dummies-like-me-c22d40f05a56
 /// Event In - State Out
 ///

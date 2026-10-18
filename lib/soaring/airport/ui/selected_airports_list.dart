@@ -12,7 +12,8 @@ import 'package:flutter_soaring_forecast/soaring/airport/ui/common_airport_widge
 import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     show AirportLiterals, MetarTafMenu, StandardLiterals;
-import 'package:flutter_soaring_forecast/soaring/drift/airport/airports.dart';
+
+import '../../drift/app_database.dart';
 
 class SelectedAirportsList extends StatefulWidget {
   final List<Airport> selectedAirports = [];

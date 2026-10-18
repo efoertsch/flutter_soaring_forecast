@@ -128,7 +128,7 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
     _deletedTaskTurnpoints.clear();
     emit(TasksTurnpointsLoadingState());
     if (event.taskId == -1) {
-      _currentTask = Task();
+      _currentTask = Task(id: -1);
     } else {
       try {
         _currentTask = await repository.getTask(event.taskId);

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_soaring_forecast/soaring/app/custom_styles.dart';
-import 'package:flutter_soaring_forecast/soaring/drift/airport/airports.dart';
+
+import '../../drift/app_database.dart';
 
 Widget getAirportWidget(Airport airport) {
   return Padding(

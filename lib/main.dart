@@ -70,7 +70,7 @@ void callbackDispatcher() {
     // }
     try {
       debugPrint('Checking to download airports');
-      var ok = AirportsDownloader(repository: Repository(null))
+      var ok = AirportsDownloader(repository: Repository(null, database))
           .downloadAirportsIfNeeded();
       debugPrint('AirportsDownloader response : $ok');
       return await Future.value(ok);
@@ -86,7 +86,6 @@ late AppDatabase database;
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  database = AppDatabase();
 
   // In release mode this will override Flutter debugPrint() so nothing printed to logs
   if (kReleaseMode) {
@@ -130,16 +129,17 @@ void main() async {
       .setTrustedCertificatesBytes(data.buffer.asUint8List());
   // End of Lets Encrypt SSL stuff
 
-  runApp(RepositorySetup());
+  runApp(RepositorySetup(appDatabase: AppDatabase()));
 }
 
 class RepositorySetup extends StatelessWidget {
-  const RepositorySetup({super.key});
+  final AppDatabase appDatabase;
+  const RepositorySetup({required this.appDatabase, super.key});
 
   @override
   Widget build(BuildContext context) {
     return RepositoryProvider(
-      create: (context) => Repository(context),
+      create: (context) => Repository(context, appDatabase: appDatabase),
       // !!! Android Studio has bug in that this widget gets called when WorkManager task is triggered !!
       // !!! which causes display issues
       // !!! use flutter run --flavor dev from terminal

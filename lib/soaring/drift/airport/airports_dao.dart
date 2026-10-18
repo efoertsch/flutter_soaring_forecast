@@ -20,13 +20,14 @@ class AirportsDao extends DatabaseAccessor<AppDatabase>
 
   Future<List<Airport>> findAirports(String searchTerm) async {
     return await (select(airports)
-      ..where((tbl) =>
-          tbl.ident.collate(Collate.noCase).like(searchTerm) |
-          tbl.name.collate(Collate.noCase).like(searchTerm) |
-          tbl.municipality.collate(Collate.noCase).like(searchTerm))).get();
+          ..where((tbl) =>
+              tbl.ident.collate(Collate.noCase).like(searchTerm) |
+              tbl.name.collate(Collate.noCase).like(searchTerm) |
+              tbl.municipality.collate(Collate.noCase).like(searchTerm)))
+        .get();
   }
 
-  Future<Airport?> getAirportsByIdent(String ident) async {
+  Future<Airport?> getAirportByIdent(String ident) async {
     return await (select(airports)
           ..where((tbl) => tbl.ident.collate(Collate.noCase).equals(ident)))
         .getSingleOrNull();
@@ -34,12 +35,16 @@ class AirportsDao extends DatabaseAccessor<AppDatabase>
 
   Future<List<Airport>?> listAllAirports() async {
     return await (select(airports)
-      ..orderBy(
-          [(t) => OrderingTerm(expression: t.state, mode: OrderingMode.asc)])).get();
+          ..orderBy([
+            (t) => OrderingTerm(expression: t.state, mode: OrderingMode.asc)
+          ]))
+        .get();
   }
 
-  Future<List<Airport>?> selectIcaoIdAirportss(List<String> iacoAirportss) async {
-    return await (select(airports)..where((tbl) => tbl.ident.isIn(iacoAirportss)))
+  Future<List<Airport>?> selectIcaoIdAirports(
+      List<String> iacoAirportss) async {
+    return await (select(airports)
+          ..where((tbl) => tbl.ident.isIn(iacoAirportss)))
         .get();
   }
 
@@ -47,3 +52,5 @@ class AirportsDao extends DatabaseAccessor<AppDatabase>
     return await getCount();
   }
 }
+
+

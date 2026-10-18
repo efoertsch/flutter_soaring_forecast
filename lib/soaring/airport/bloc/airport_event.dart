@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_soaring_forecast/soaring/drift/airport/airports.dart';
+
+import '../../drift/app_database.dart';
 
 @immutable
 abstract class AirportEvent extends Equatable {}
@@ -41,7 +42,9 @@ class AddAirportToSelectListEvent extends AirportEvent {
 class SwitchOrderOfSelectedAirportsEvent extends AirportEvent {
   final int oldIndex;
   final int newIndex;
+
   SwitchOrderOfSelectedAirportsEvent(this.oldIndex, this.newIndex);
+
   @override
   List<Object?> get props => [oldIndex, newIndex];
 }
@@ -50,6 +53,7 @@ class SwipeDeletedAirportEvent extends AirportEvent {
   final Airport airport;
 
   SwipeDeletedAirportEvent(this.airport);
+
   @override
   List<Object?> get props => [airport];
 }
@@ -57,7 +61,9 @@ class SwipeDeletedAirportEvent extends AirportEvent {
 class AddBackAirportEvent extends AirportEvent {
   final Airport airport;
   final int index;
+
   AddBackAirportEvent(this.airport, this.index);
+
   @override
   List<Object?> get props => [airport];
 }

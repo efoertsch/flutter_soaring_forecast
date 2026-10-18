@@ -17,8 +17,24 @@ mixin BaseDao<T extends Table, D, C extends UpdateCompanion<D>> {
       await db.into(table).insert(companion, mode: InsertMode.insertOrReplace);
 
   /// Insert or update multiple records in a batch
-  Future<void> insertAll(Iterable<Insertable<D>> list) async {
-    await db.batch((batch) => batch.insertAllOnConflictUpdate(table, list));
+  Future<int> insertAll(Iterable<Insertable<D>> list) async {
+    return await db.transaction(() async {
+      int insertedCount = 0;
+
+      for (final entry in list) {
+        // insert() returns the generated row ID (or 0/null if ignored)
+        final id = await db.into(table).insert(
+          entry,
+          mode: InsertMode.insertOrIgnore,
+        );
+
+        if (id > 0) {
+          insertedCount++;
+        }
+      }
+
+      return insertedCount;
+    });
   }
 
   /// Update a specific record using a companion (returns number of updated rows)

@@ -6,6 +6,7 @@ import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/LatLngFo
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image_set.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
 
+import '../../drift/app_database.dart';
 import '../../local_forecast/data/local_forecast_graph.dart';
 
 

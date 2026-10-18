@@ -485,7 +485,9 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
   @override
   late final GeneratedColumn<String> taskName = GeneratedColumn<String>(
       'task_name', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(''));
   static const VerificationMeta _distanceMeta =
       const VerificationMeta('distance');
   @override
@@ -499,7 +501,9 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
   @override
   late final GeneratedColumn<int> taskOrder = GeneratedColumn<int>(
       'task_order', aliasedName, false,
-      type: DriftSqlType.int, requiredDuringInsert: true);
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
   @override
   List<GeneratedColumn> get $columns => [id, taskName, distance, taskOrder];
   @override
@@ -518,8 +522,6 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
     if (data.containsKey('task_name')) {
       context.handle(_taskNameMeta,
           taskName.isAcceptableOrUnknown(data['task_name']!, _taskNameMeta));
-    } else if (isInserting) {
-      context.missing(_taskNameMeta);
     }
     if (data.containsKey('distance')) {
       context.handle(_distanceMeta,
@@ -528,8 +530,6 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
     if (data.containsKey('task_order')) {
       context.handle(_taskOrderMeta,
           taskOrder.isAcceptableOrUnknown(data['task_order']!, _taskOrderMeta));
-    } else if (isInserting) {
-      context.missing(_taskOrderMeta);
     }
     return context;
   }
@@ -557,96 +557,6 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
   }
 }
 
-class Task extends DataClass implements Insertable<Task> {
-  final int id;
-  final String taskName;
-  final double distance;
-  final int taskOrder;
-  const Task(
-      {required this.id,
-      required this.taskName,
-      required this.distance,
-      required this.taskOrder});
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    map['id'] = Variable<int>(id);
-    map['task_name'] = Variable<String>(taskName);
-    map['distance'] = Variable<double>(distance);
-    map['task_order'] = Variable<int>(taskOrder);
-    return map;
-  }
-
-  TasksCompanion toCompanion(bool nullToAbsent) {
-    return TasksCompanion(
-      id: Value(id),
-      taskName: Value(taskName),
-      distance: Value(distance),
-      taskOrder: Value(taskOrder),
-    );
-  }
-
-  factory Task.fromJson(Map<String, dynamic> json,
-      {ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return Task(
-      id: serializer.fromJson<int>(json['id']),
-      taskName: serializer.fromJson<String>(json['taskName']),
-      distance: serializer.fromJson<double>(json['distance']),
-      taskOrder: serializer.fromJson<int>(json['taskOrder']),
-    );
-  }
-  @override
-  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return <String, dynamic>{
-      'id': serializer.toJson<int>(id),
-      'taskName': serializer.toJson<String>(taskName),
-      'distance': serializer.toJson<double>(distance),
-      'taskOrder': serializer.toJson<int>(taskOrder),
-    };
-  }
-
-  Task copyWith(
-          {int? id, String? taskName, double? distance, int? taskOrder}) =>
-      Task(
-        id: id ?? this.id,
-        taskName: taskName ?? this.taskName,
-        distance: distance ?? this.distance,
-        taskOrder: taskOrder ?? this.taskOrder,
-      );
-  Task copyWithCompanion(TasksCompanion data) {
-    return Task(
-      id: data.id.present ? data.id.value : this.id,
-      taskName: data.taskName.present ? data.taskName.value : this.taskName,
-      distance: data.distance.present ? data.distance.value : this.distance,
-      taskOrder: data.taskOrder.present ? data.taskOrder.value : this.taskOrder,
-    );
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('Task(')
-          ..write('id: $id, ')
-          ..write('taskName: $taskName, ')
-          ..write('distance: $distance, ')
-          ..write('taskOrder: $taskOrder')
-          ..write(')'))
-        .toString();
-  }
-
-  @override
-  int get hashCode => Object.hash(id, taskName, distance, taskOrder);
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      (other is Task &&
-          other.id == this.id &&
-          other.taskName == this.taskName &&
-          other.distance == this.distance &&
-          other.taskOrder == this.taskOrder);
-}
-
 class TasksCompanion extends UpdateCompanion<Task> {
   final Value<int> id;
   final Value<String> taskName;
@@ -660,11 +570,10 @@ class TasksCompanion extends UpdateCompanion<Task> {
   });
   TasksCompanion.insert({
     this.id = const Value.absent(),
-    required String taskName,
+    this.taskName = const Value.absent(),
     this.distance = const Value.absent(),
-    required int taskOrder,
-  })  : taskName = Value(taskName),
-        taskOrder = Value(taskOrder);
+    this.taskOrder = const Value.absent(),
+  });
   static Insertable<Task> custom({
     Expression<int>? id,
     Expression<String>? taskName,
@@ -723,7 +632,7 @@ class TasksCompanion extends UpdateCompanion<Task> {
 }
 
 class $TaskTurnpointsTable extends TaskTurnpoints
-    with TableInfo<$TaskTurnpointsTable, TaskTurnpoint> {
+    with TableInfo<$TaskTurnpointsTable, TaskTurnpoints> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -740,9 +649,9 @@ class $TaskTurnpointsTable extends TaskTurnpoints
   static const VerificationMeta _taskIdMeta = const VerificationMeta('taskId');
   @override
   late final GeneratedColumn<int> taskId = GeneratedColumn<int>(
-      'task_id', aliasedName, false,
+      'task_id', aliasedName, true,
       type: DriftSqlType.int,
-      requiredDuringInsert: true,
+      requiredDuringInsert: false,
       defaultConstraints: GeneratedColumn.constraintIsAlways(
           'REFERENCES task (id) ON DELETE CASCADE'));
   static const VerificationMeta _taskOrderMeta =
@@ -750,52 +659,67 @@ class $TaskTurnpointsTable extends TaskTurnpoints
   @override
   late final GeneratedColumn<int> taskOrder = GeneratedColumn<int>(
       'task_order', aliasedName, false,
-      type: DriftSqlType.int, requiredDuringInsert: true);
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
   static const VerificationMeta _titleMeta = const VerificationMeta('title');
   @override
   late final GeneratedColumn<String> title = GeneratedColumn<String>(
       'title', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(''));
   static const VerificationMeta _codeMeta = const VerificationMeta('code');
   @override
   late final GeneratedColumn<String> code = GeneratedColumn<String>(
       'code', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(''));
   static const VerificationMeta _latitudeDegMeta =
       const VerificationMeta('latitudeDeg');
   @override
   late final GeneratedColumn<double> latitudeDeg = GeneratedColumn<double>(
       'latitude_deg', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+      type: DriftSqlType.double,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0.0));
   static const VerificationMeta _longitudeDegMeta =
       const VerificationMeta('longitudeDeg');
   @override
   late final GeneratedColumn<double> longitudeDeg = GeneratedColumn<double>(
       'longitude_deg', aliasedName, false,
-      type: DriftSqlType.double, requiredDuringInsert: true);
+      type: DriftSqlType.double,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0.0));
   static const VerificationMeta _distanceFromPriorTurnpointMeta =
       const VerificationMeta('distanceFromPriorTurnpoint');
   @override
   late final GeneratedColumn<double> distanceFromPriorTurnpoint =
       GeneratedColumn<double>(
           'distance_from_prior_turnpoint', aliasedName, false,
-          type: DriftSqlType.double, requiredDuringInsert: true);
+          type: DriftSqlType.double,
+          requiredDuringInsert: false,
+          defaultValue: const Constant(0.0));
   static const VerificationMeta _distanceFromStartingPointMeta =
       const VerificationMeta('distanceFromStartingPoint');
   @override
   late final GeneratedColumn<double> distanceFromStartingPoint =
       GeneratedColumn<double>(
           'distance_from_starting_point', aliasedName, false,
-          type: DriftSqlType.double, requiredDuringInsert: true);
+          type: DriftSqlType.double,
+          requiredDuringInsert: false,
+          defaultValue: const Constant(0.0));
   static const VerificationMeta _lastTurnpointMeta =
       const VerificationMeta('lastTurnpoint');
   @override
   late final GeneratedColumn<bool> lastTurnpoint = GeneratedColumn<bool>(
       'last_turnpoint', aliasedName, false,
       type: DriftSqlType.bool,
-      requiredDuringInsert: true,
+      requiredDuringInsert: false,
       defaultConstraints: GeneratedColumn.constraintIsAlways(
-          'CHECK ("last_turnpoint" IN (0, 1))'));
+          'CHECK ("last_turnpoint" IN (0, 1))'),
+      defaultValue: const Constant(false));
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -815,7 +739,7 @@ class $TaskTurnpointsTable extends TaskTurnpoints
   String get actualTableName => $name;
   static const String $name = 'taskturnpoint';
   @override
-  VerificationContext validateIntegrity(Insertable<TaskTurnpoint> instance,
+  VerificationContext validateIntegrity(Insertable<TaskTurnpoints> instance,
       {bool isInserting = false}) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
@@ -825,42 +749,30 @@ class $TaskTurnpointsTable extends TaskTurnpoints
     if (data.containsKey('task_id')) {
       context.handle(_taskIdMeta,
           taskId.isAcceptableOrUnknown(data['task_id']!, _taskIdMeta));
-    } else if (isInserting) {
-      context.missing(_taskIdMeta);
     }
     if (data.containsKey('task_order')) {
       context.handle(_taskOrderMeta,
           taskOrder.isAcceptableOrUnknown(data['task_order']!, _taskOrderMeta));
-    } else if (isInserting) {
-      context.missing(_taskOrderMeta);
     }
     if (data.containsKey('title')) {
       context.handle(
           _titleMeta, title.isAcceptableOrUnknown(data['title']!, _titleMeta));
-    } else if (isInserting) {
-      context.missing(_titleMeta);
     }
     if (data.containsKey('code')) {
       context.handle(
           _codeMeta, code.isAcceptableOrUnknown(data['code']!, _codeMeta));
-    } else if (isInserting) {
-      context.missing(_codeMeta);
     }
     if (data.containsKey('latitude_deg')) {
       context.handle(
           _latitudeDegMeta,
           latitudeDeg.isAcceptableOrUnknown(
               data['latitude_deg']!, _latitudeDegMeta));
-    } else if (isInserting) {
-      context.missing(_latitudeDegMeta);
     }
     if (data.containsKey('longitude_deg')) {
       context.handle(
           _longitudeDegMeta,
           longitudeDeg.isAcceptableOrUnknown(
               data['longitude_deg']!, _longitudeDegMeta));
-    } else if (isInserting) {
-      context.missing(_longitudeDegMeta);
     }
     if (data.containsKey('distance_from_prior_turnpoint')) {
       context.handle(
@@ -868,8 +780,6 @@ class $TaskTurnpointsTable extends TaskTurnpoints
           distanceFromPriorTurnpoint.isAcceptableOrUnknown(
               data['distance_from_prior_turnpoint']!,
               _distanceFromPriorTurnpointMeta));
-    } else if (isInserting) {
-      context.missing(_distanceFromPriorTurnpointMeta);
     }
     if (data.containsKey('distance_from_starting_point')) {
       context.handle(
@@ -877,16 +787,12 @@ class $TaskTurnpointsTable extends TaskTurnpoints
           distanceFromStartingPoint.isAcceptableOrUnknown(
               data['distance_from_starting_point']!,
               _distanceFromStartingPointMeta));
-    } else if (isInserting) {
-      context.missing(_distanceFromStartingPointMeta);
     }
     if (data.containsKey('last_turnpoint')) {
       context.handle(
           _lastTurnpointMeta,
           lastTurnpoint.isAcceptableOrUnknown(
               data['last_turnpoint']!, _lastTurnpointMeta));
-    } else if (isInserting) {
-      context.missing(_lastTurnpointMeta);
     }
     return context;
   }
@@ -894,32 +800,9 @@ class $TaskTurnpointsTable extends TaskTurnpoints
   @override
   Set<GeneratedColumn> get $primaryKey => {id};
   @override
-  TaskTurnpoint map(Map<String, dynamic> data, {String? tablePrefix}) {
+  TaskTurnpoints map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return TaskTurnpoint(
-      id: attachedDatabase.typeMapping
-          .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
-      taskId: attachedDatabase.typeMapping
-          .read(DriftSqlType.int, data['${effectivePrefix}task_id'])!,
-      taskOrder: attachedDatabase.typeMapping
-          .read(DriftSqlType.int, data['${effectivePrefix}task_order'])!,
-      title: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}title'])!,
-      code: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}code'])!,
-      latitudeDeg: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}latitude_deg'])!,
-      longitudeDeg: attachedDatabase.typeMapping
-          .read(DriftSqlType.double, data['${effectivePrefix}longitude_deg'])!,
-      distanceFromPriorTurnpoint: attachedDatabase.typeMapping.read(
-          DriftSqlType.double,
-          data['${effectivePrefix}distance_from_prior_turnpoint'])!,
-      distanceFromStartingPoint: attachedDatabase.typeMapping.read(
-          DriftSqlType.double,
-          data['${effectivePrefix}distance_from_starting_point'])!,
-      lastTurnpoint: attachedDatabase.typeMapping
-          .read(DriftSqlType.bool, data['${effectivePrefix}last_turnpoint'])!,
-    );
+    return TaskTurnpoints();
   }
 
   @override
@@ -928,195 +811,9 @@ class $TaskTurnpointsTable extends TaskTurnpoints
   }
 }
 
-class TaskTurnpoint extends DataClass implements Insertable<TaskTurnpoint> {
-  final int id;
-  final int taskId;
-  final int taskOrder;
-  final String title;
-  final String code;
-  final double latitudeDeg;
-  final double longitudeDeg;
-  final double distanceFromPriorTurnpoint;
-  final double distanceFromStartingPoint;
-  final bool lastTurnpoint;
-  const TaskTurnpoint(
-      {required this.id,
-      required this.taskId,
-      required this.taskOrder,
-      required this.title,
-      required this.code,
-      required this.latitudeDeg,
-      required this.longitudeDeg,
-      required this.distanceFromPriorTurnpoint,
-      required this.distanceFromStartingPoint,
-      required this.lastTurnpoint});
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    map['id'] = Variable<int>(id);
-    map['task_id'] = Variable<int>(taskId);
-    map['task_order'] = Variable<int>(taskOrder);
-    map['title'] = Variable<String>(title);
-    map['code'] = Variable<String>(code);
-    map['latitude_deg'] = Variable<double>(latitudeDeg);
-    map['longitude_deg'] = Variable<double>(longitudeDeg);
-    map['distance_from_prior_turnpoint'] =
-        Variable<double>(distanceFromPriorTurnpoint);
-    map['distance_from_starting_point'] =
-        Variable<double>(distanceFromStartingPoint);
-    map['last_turnpoint'] = Variable<bool>(lastTurnpoint);
-    return map;
-  }
-
-  TaskTurnpointsCompanion toCompanion(bool nullToAbsent) {
-    return TaskTurnpointsCompanion(
-      id: Value(id),
-      taskId: Value(taskId),
-      taskOrder: Value(taskOrder),
-      title: Value(title),
-      code: Value(code),
-      latitudeDeg: Value(latitudeDeg),
-      longitudeDeg: Value(longitudeDeg),
-      distanceFromPriorTurnpoint: Value(distanceFromPriorTurnpoint),
-      distanceFromStartingPoint: Value(distanceFromStartingPoint),
-      lastTurnpoint: Value(lastTurnpoint),
-    );
-  }
-
-  factory TaskTurnpoint.fromJson(Map<String, dynamic> json,
-      {ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return TaskTurnpoint(
-      id: serializer.fromJson<int>(json['id']),
-      taskId: serializer.fromJson<int>(json['taskId']),
-      taskOrder: serializer.fromJson<int>(json['taskOrder']),
-      title: serializer.fromJson<String>(json['title']),
-      code: serializer.fromJson<String>(json['code']),
-      latitudeDeg: serializer.fromJson<double>(json['latitudeDeg']),
-      longitudeDeg: serializer.fromJson<double>(json['longitudeDeg']),
-      distanceFromPriorTurnpoint:
-          serializer.fromJson<double>(json['distanceFromPriorTurnpoint']),
-      distanceFromStartingPoint:
-          serializer.fromJson<double>(json['distanceFromStartingPoint']),
-      lastTurnpoint: serializer.fromJson<bool>(json['lastTurnpoint']),
-    );
-  }
-  @override
-  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return <String, dynamic>{
-      'id': serializer.toJson<int>(id),
-      'taskId': serializer.toJson<int>(taskId),
-      'taskOrder': serializer.toJson<int>(taskOrder),
-      'title': serializer.toJson<String>(title),
-      'code': serializer.toJson<String>(code),
-      'latitudeDeg': serializer.toJson<double>(latitudeDeg),
-      'longitudeDeg': serializer.toJson<double>(longitudeDeg),
-      'distanceFromPriorTurnpoint':
-          serializer.toJson<double>(distanceFromPriorTurnpoint),
-      'distanceFromStartingPoint':
-          serializer.toJson<double>(distanceFromStartingPoint),
-      'lastTurnpoint': serializer.toJson<bool>(lastTurnpoint),
-    };
-  }
-
-  TaskTurnpoint copyWith(
-          {int? id,
-          int? taskId,
-          int? taskOrder,
-          String? title,
-          String? code,
-          double? latitudeDeg,
-          double? longitudeDeg,
-          double? distanceFromPriorTurnpoint,
-          double? distanceFromStartingPoint,
-          bool? lastTurnpoint}) =>
-      TaskTurnpoint(
-        id: id ?? this.id,
-        taskId: taskId ?? this.taskId,
-        taskOrder: taskOrder ?? this.taskOrder,
-        title: title ?? this.title,
-        code: code ?? this.code,
-        latitudeDeg: latitudeDeg ?? this.latitudeDeg,
-        longitudeDeg: longitudeDeg ?? this.longitudeDeg,
-        distanceFromPriorTurnpoint:
-            distanceFromPriorTurnpoint ?? this.distanceFromPriorTurnpoint,
-        distanceFromStartingPoint:
-            distanceFromStartingPoint ?? this.distanceFromStartingPoint,
-        lastTurnpoint: lastTurnpoint ?? this.lastTurnpoint,
-      );
-  TaskTurnpoint copyWithCompanion(TaskTurnpointsCompanion data) {
-    return TaskTurnpoint(
-      id: data.id.present ? data.id.value : this.id,
-      taskId: data.taskId.present ? data.taskId.value : this.taskId,
-      taskOrder: data.taskOrder.present ? data.taskOrder.value : this.taskOrder,
-      title: data.title.present ? data.title.value : this.title,
-      code: data.code.present ? data.code.value : this.code,
-      latitudeDeg:
-          data.latitudeDeg.present ? data.latitudeDeg.value : this.latitudeDeg,
-      longitudeDeg: data.longitudeDeg.present
-          ? data.longitudeDeg.value
-          : this.longitudeDeg,
-      distanceFromPriorTurnpoint: data.distanceFromPriorTurnpoint.present
-          ? data.distanceFromPriorTurnpoint.value
-          : this.distanceFromPriorTurnpoint,
-      distanceFromStartingPoint: data.distanceFromStartingPoint.present
-          ? data.distanceFromStartingPoint.value
-          : this.distanceFromStartingPoint,
-      lastTurnpoint: data.lastTurnpoint.present
-          ? data.lastTurnpoint.value
-          : this.lastTurnpoint,
-    );
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('TaskTurnpoint(')
-          ..write('id: $id, ')
-          ..write('taskId: $taskId, ')
-          ..write('taskOrder: $taskOrder, ')
-          ..write('title: $title, ')
-          ..write('code: $code, ')
-          ..write('latitudeDeg: $latitudeDeg, ')
-          ..write('longitudeDeg: $longitudeDeg, ')
-          ..write('distanceFromPriorTurnpoint: $distanceFromPriorTurnpoint, ')
-          ..write('distanceFromStartingPoint: $distanceFromStartingPoint, ')
-          ..write('lastTurnpoint: $lastTurnpoint')
-          ..write(')'))
-        .toString();
-  }
-
-  @override
-  int get hashCode => Object.hash(
-      id,
-      taskId,
-      taskOrder,
-      title,
-      code,
-      latitudeDeg,
-      longitudeDeg,
-      distanceFromPriorTurnpoint,
-      distanceFromStartingPoint,
-      lastTurnpoint);
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      (other is TaskTurnpoint &&
-          other.id == this.id &&
-          other.taskId == this.taskId &&
-          other.taskOrder == this.taskOrder &&
-          other.title == this.title &&
-          other.code == this.code &&
-          other.latitudeDeg == this.latitudeDeg &&
-          other.longitudeDeg == this.longitudeDeg &&
-          other.distanceFromPriorTurnpoint == this.distanceFromPriorTurnpoint &&
-          other.distanceFromStartingPoint == this.distanceFromStartingPoint &&
-          other.lastTurnpoint == this.lastTurnpoint);
-}
-
-class TaskTurnpointsCompanion extends UpdateCompanion<TaskTurnpoint> {
+class TaskTurnpointsCompanion extends UpdateCompanion<TaskTurnpoints> {
   final Value<int> id;
-  final Value<int> taskId;
+  final Value<int?> taskId;
   final Value<int> taskOrder;
   final Value<String> title;
   final Value<String> code;
@@ -1139,25 +836,17 @@ class TaskTurnpointsCompanion extends UpdateCompanion<TaskTurnpoint> {
   });
   TaskTurnpointsCompanion.insert({
     this.id = const Value.absent(),
-    required int taskId,
-    required int taskOrder,
-    required String title,
-    required String code,
-    required double latitudeDeg,
-    required double longitudeDeg,
-    required double distanceFromPriorTurnpoint,
-    required double distanceFromStartingPoint,
-    required bool lastTurnpoint,
-  })  : taskId = Value(taskId),
-        taskOrder = Value(taskOrder),
-        title = Value(title),
-        code = Value(code),
-        latitudeDeg = Value(latitudeDeg),
-        longitudeDeg = Value(longitudeDeg),
-        distanceFromPriorTurnpoint = Value(distanceFromPriorTurnpoint),
-        distanceFromStartingPoint = Value(distanceFromStartingPoint),
-        lastTurnpoint = Value(lastTurnpoint);
-  static Insertable<TaskTurnpoint> custom({
+    this.taskId = const Value.absent(),
+    this.taskOrder = const Value.absent(),
+    this.title = const Value.absent(),
+    this.code = const Value.absent(),
+    this.latitudeDeg = const Value.absent(),
+    this.longitudeDeg = const Value.absent(),
+    this.distanceFromPriorTurnpoint = const Value.absent(),
+    this.distanceFromStartingPoint = const Value.absent(),
+    this.lastTurnpoint = const Value.absent(),
+  });
+  static Insertable<TaskTurnpoints> custom({
     Expression<int>? id,
     Expression<int>? taskId,
     Expression<int>? taskOrder,
@@ -1187,7 +876,7 @@ class TaskTurnpointsCompanion extends UpdateCompanion<TaskTurnpoint> {
 
   TaskTurnpointsCompanion copyWith(
       {Value<int>? id,
-      Value<int>? taskId,
+      Value<int?>? taskId,
       Value<int>? taskOrder,
       Value<String>? title,
       Value<String>? code,
@@ -2173,9 +1862,9 @@ typedef $$AirportsTableProcessedTableManager = ProcessedTableManager<
     PrefetchHooks Function()>;
 typedef $$TasksTableCreateCompanionBuilder = TasksCompanion Function({
   Value<int> id,
-  required String taskName,
+  Value<String> taskName,
   Value<double> distance,
-  required int taskOrder,
+  Value<int> taskOrder,
 });
 typedef $$TasksTableUpdateCompanionBuilder = TasksCompanion Function({
   Value<int> id,
@@ -2188,7 +1877,7 @@ final class $$TasksTableReferences
     extends BaseReferences<_$AppDatabase, $TasksTable, Task> {
   $$TasksTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
-  static MultiTypedResultKey<$TaskTurnpointsTable, List<TaskTurnpoint>>
+  static MultiTypedResultKey<$TaskTurnpointsTable, List<TaskTurnpoints>>
       _taskTurnpointsRefsTable(_$AppDatabase db) =>
           MultiTypedResultKey.fromTable(db.taskTurnpoints,
               aliasName: 'task__id__taskturnpoint__task_id');
@@ -2346,9 +2035,9 @@ class $$TasksTableTableManager extends RootTableManager<
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
-            required String taskName,
+            Value<String> taskName = const Value.absent(),
             Value<double> distance = const Value.absent(),
-            required int taskOrder,
+            Value<int> taskOrder = const Value.absent(),
           }) =>
               TasksCompanion.insert(
             id: id,
@@ -2372,7 +2061,8 @@ class $$TasksTableTableManager extends RootTableManager<
               getPrefetchedDataCallback: (items) async {
                 return [
                   if (taskTurnpointsRefs)
-                    await $_getPrefetchedData<Task, $TasksTable, TaskTurnpoint>(
+                    await $_getPrefetchedData<Task, $TasksTable,
+                            TaskTurnpoints>(
                         currentTable: table,
                         referencedTable:
                             $$TasksTableReferences._taskTurnpointsRefsTable(db),
@@ -2405,20 +2095,20 @@ typedef $$TasksTableProcessedTableManager = ProcessedTableManager<
 typedef $$TaskTurnpointsTableCreateCompanionBuilder = TaskTurnpointsCompanion
     Function({
   Value<int> id,
-  required int taskId,
-  required int taskOrder,
-  required String title,
-  required String code,
-  required double latitudeDeg,
-  required double longitudeDeg,
-  required double distanceFromPriorTurnpoint,
-  required double distanceFromStartingPoint,
-  required bool lastTurnpoint,
+  Value<int?> taskId,
+  Value<int> taskOrder,
+  Value<String> title,
+  Value<String> code,
+  Value<double> latitudeDeg,
+  Value<double> longitudeDeg,
+  Value<double> distanceFromPriorTurnpoint,
+  Value<double> distanceFromStartingPoint,
+  Value<bool> lastTurnpoint,
 });
 typedef $$TaskTurnpointsTableUpdateCompanionBuilder = TaskTurnpointsCompanion
     Function({
   Value<int> id,
-  Value<int> taskId,
+  Value<int?> taskId,
   Value<int> taskOrder,
   Value<String> title,
   Value<String> code,
@@ -2429,17 +2119,17 @@ typedef $$TaskTurnpointsTableUpdateCompanionBuilder = TaskTurnpointsCompanion
   Value<bool> lastTurnpoint,
 });
 
-final class $$TaskTurnpointsTableReferences
-    extends BaseReferences<_$AppDatabase, $TaskTurnpointsTable, TaskTurnpoint> {
+final class $$TaskTurnpointsTableReferences extends BaseReferences<
+    _$AppDatabase, $TaskTurnpointsTable, TaskTurnpoints> {
   $$TaskTurnpointsTableReferences(
       super.$_db, super.$_table, super.$_typedResult);
 
   static $TasksTable _taskIdTable(_$AppDatabase db) =>
       db.tasks.createAlias('taskturnpoint__task_id__task__id');
 
-  $$TasksTableProcessedTableManager get taskId {
-    final $_column = $_itemColumn<int>('task_id')!;
-
+  $$TasksTableProcessedTableManager? get taskId {
+    final $_column = $_itemColumn<int>('task_id');
+    if ($_column == null) return null;
     final manager = $$TasksTableTableManager($_db, $_db.tasks)
         .filter((f) => f.id.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_taskIdTable($_db));
@@ -2629,14 +2319,14 @@ class $$TaskTurnpointsTableAnnotationComposer
 class $$TaskTurnpointsTableTableManager extends RootTableManager<
     _$AppDatabase,
     $TaskTurnpointsTable,
-    TaskTurnpoint,
+    TaskTurnpoints,
     $$TaskTurnpointsTableFilterComposer,
     $$TaskTurnpointsTableOrderingComposer,
     $$TaskTurnpointsTableAnnotationComposer,
     $$TaskTurnpointsTableCreateCompanionBuilder,
     $$TaskTurnpointsTableUpdateCompanionBuilder,
-    (TaskTurnpoint, $$TaskTurnpointsTableReferences),
-    TaskTurnpoint,
+    (TaskTurnpoints, $$TaskTurnpointsTableReferences),
+    TaskTurnpoints,
     PrefetchHooks Function({bool taskId})> {
   $$TaskTurnpointsTableTableManager(
       _$AppDatabase db, $TaskTurnpointsTable table)
@@ -2651,7 +2341,7 @@ class $$TaskTurnpointsTableTableManager extends RootTableManager<
               $$TaskTurnpointsTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback: ({
             Value<int> id = const Value.absent(),
-            Value<int> taskId = const Value.absent(),
+            Value<int?> taskId = const Value.absent(),
             Value<int> taskOrder = const Value.absent(),
             Value<String> title = const Value.absent(),
             Value<String> code = const Value.absent(),
@@ -2675,15 +2365,15 @@ class $$TaskTurnpointsTableTableManager extends RootTableManager<
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
-            required int taskId,
-            required int taskOrder,
-            required String title,
-            required String code,
-            required double latitudeDeg,
-            required double longitudeDeg,
-            required double distanceFromPriorTurnpoint,
-            required double distanceFromStartingPoint,
-            required bool lastTurnpoint,
+            Value<int?> taskId = const Value.absent(),
+            Value<int> taskOrder = const Value.absent(),
+            Value<String> title = const Value.absent(),
+            Value<String> code = const Value.absent(),
+            Value<double> latitudeDeg = const Value.absent(),
+            Value<double> longitudeDeg = const Value.absent(),
+            Value<double> distanceFromPriorTurnpoint = const Value.absent(),
+            Value<double> distanceFromStartingPoint = const Value.absent(),
+            Value<bool> lastTurnpoint = const Value.absent(),
           }) =>
               TaskTurnpointsCompanion.insert(
             id: id,
@@ -2699,7 +2389,7 @@ class $$TaskTurnpointsTableTableManager extends RootTableManager<
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (
-                    e.readTable<$TaskTurnpointsTable, TaskTurnpoint>(table),
+                    e.readTable<$TaskTurnpointsTable, TaskTurnpoints>(table),
                     $$TaskTurnpointsTableReferences(db, table, e)
                   ))
               .toList(),
@@ -2744,14 +2434,14 @@ class $$TaskTurnpointsTableTableManager extends RootTableManager<
 typedef $$TaskTurnpointsTableProcessedTableManager = ProcessedTableManager<
     _$AppDatabase,
     $TaskTurnpointsTable,
-    TaskTurnpoint,
+    TaskTurnpoints,
     $$TaskTurnpointsTableFilterComposer,
     $$TaskTurnpointsTableOrderingComposer,
     $$TaskTurnpointsTableAnnotationComposer,
     $$TaskTurnpointsTableCreateCompanionBuilder,
     $$TaskTurnpointsTableUpdateCompanionBuilder,
-    (TaskTurnpoint, $$TaskTurnpointsTableReferences),
-    TaskTurnpoint,
+    (TaskTurnpoints, $$TaskTurnpointsTableReferences),
+    TaskTurnpoints,
     PrefetchHooks Function({bool taskId})>;
 typedef $$TurnpointsTableCreateCompanionBuilder = TurnpointsCompanion Function({
   Value<int> id,

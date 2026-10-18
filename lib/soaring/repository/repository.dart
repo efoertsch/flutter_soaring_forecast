@@ -69,7 +69,7 @@ class Repository {
   static late RaspOptionsClient _raspOptionsClient;
   static UsgsClient? _usgsClient;
   static One800WxBriefClient? _one800WxBriefClient;
-  static AppDatabase? _appDatabase;
+  static AppDatabase _appDatabase;
   static var logger = DLogger.Logger();
   static SharedPreferences? sharedPreferences;
 
@@ -117,10 +117,11 @@ class Repository {
   Repository._();
 
   // BuildContext should only be null if repository created in WorkManager task!!!
-  factory Repository(BuildContext? context) {
+  factory Repository(BuildContext? context, AppDatabase appDatabase) {
     if (_repository == null) {
       _repository = Repository._();
       _context = context;
+      _appDatabase = appDatabase;
       _dio.options.receiveTimeout = Duration(seconds: 30);
       _dio.options.followRedirects = true;
       if (kDebugMode) {
@@ -453,45 +454,25 @@ class Repository {
     await getSettingOptionsFromAssets();
     return getGenericString(key: 'INITIAL_FORECAST_HOUR', defaultValue: '1300');
   }
-
-  //--------  Floor -----------------------------------------------------------------------
-  // Set up Floor database
-  Future<AppDatabase> makeDatabaseAvailable() async {
-    if (_appDatabase == null) {
-      debugPrint('App database being created');
-      // Oops. Added this so as not to lose existing Android users info
-      if (Platform.isAndroid) {
-        _appDatabase =
-            await AppDatabase();
-      } else if (Platform.isIOS) {
-        _appDatabase =
-            await AppDatabase();
-      }
-    }
-    return _appDatabase!;
-  }
+  
 
   Future<int> getCountOfAirports() async {
-    await makeDatabaseAvailable();
-    int count = await _appDatabase!.airportsDao.getCount();
+    int count = await _appDatabase.airportsDao.getCount();
     return count;
   }
 
   //@transaction
   Future<int?> deleteAllAirports() async {
-    await makeDatabaseAvailable();
-    return _appDatabase!.airportsDao.deleteAll();
+    return _appDatabase.airportsDao.deleteAll();
   }
 
-  //@transaction
-  Future<List<int?>> insertAllAirports(List<Airport> airports) async {
-    await makeDatabaseAvailable();
-    return await _appDatabase!.airportsDao.insertAll(airports);
+
+  Future<int> insertAllAirports(List<Airport> airports) async {
+  return  await _appDatabase.airportsDao.insertAll(airports);
   }
 
   Future<List<Airport>?> findAirports(String searchTerm) async {
-    await makeDatabaseAvailable();
-    return await _appDatabase!.airportDao.findAirports('%' + searchTerm + '%');
+    return await _appDatabase.airportsDao.findAirports('%' + searchTerm + '%');
   }
 
   Future<String> getSelectedAirportCodesAsString() async {
@@ -504,13 +485,11 @@ class Repository {
   }
 
   Future<List<Airport>?> getSelectedAirports(List<String> icaoCodes) async {
-    await makeDatabaseAvailable();
-    return await _appDatabase!.airportDao.selectIcaoIdAirports(icaoCodes);
+    return await _appDatabase.airportsDao.selectIcaoIdAirports(icaoCodes);
   }
 
   Future<Airport?> getAirportById(String ident) async {
-    await makeDatabaseAvailable();
-    Airport? airport = await _appDatabase!.airportDao.getAirportByIdent(ident);
+    Airport? airport = await _appDatabase.airportsDao.getAirportByIdent(ident);
     return airport;
   }
 
@@ -542,51 +521,43 @@ class Repository {
   }
 
   // ----- Turnpoints ----------------------------------
-  @transaction
   Future<int?> deleteAllTurnpoints() async {
-    await makeDatabaseAvailable();
-    return _appDatabase!.turnpointDao.deleteAllTurnpoints();
+    return _appDatabase.turnpointsDao.deleteAllTurnpoints();
   }
 
   Future<int> getCountOfTurnpoints() async {
-    await makeDatabaseAvailable();
-    //int? count = await _appDatabase!.turnpointDao.getTurnpointCount();
-    int? count = Sqflite.firstIntValue(await _appDatabase!.database
-        .rawQuery('select count(*) count from turnpoint'));
-    return count ?? 0;
+    return await _appDatabase.turnpointsDao.getCount();
   }
 
-  @transaction
+ 
   Future<int?> insertTurnpoint(Turnpoint turnpoint) async {
-    await makeDatabaseAvailable();
-    return _appDatabase!.turnpointDao.insert(turnpoint);
+    return _appDatabase.turnpointsDao.insert(turnpoint.toCompanion(false));
   }
 
-  @transaction
-  Future<List<int?>> insertAllTurnpoints(List<Turnpoint> turnpoints) async {
-    await makeDatabaseAvailable();
-    return _appDatabase!.turnpointDao.insertAll(turnpoints);
+
+  Future<int> insertAllTurnpoints(List<Turnpoint> turnpoints)  {
+    return _appDatabase.turnpointsDao.insertAll(turnpoints);
   }
 
   Future<List<Turnpoint>> getAllTurnpoints() async {
-    await makeDatabaseAvailable();
-    return _appDatabase!.turnpointDao.listAllTurnpoints();
+    
+    return _appDatabase.turnpointsDao.listAllTurnpoints();
   }
 
   Future<List<Turnpoint>> getTurnpointsWithinBounds(
       LatLngBounds latLngBounds) async {
-    await makeDatabaseAvailable();
+    
     // key comes from settings.json
     final landableOnly = await getGenericBool(
         key: "DISPLAY_LANDABLE_TURNPOINTS", defaultValue: true);
     if (landableOnly) {
-      return _appDatabase!.turnpointDao.getLandableTurnpointsWithinBounds(
+      return _appDatabase.turnpointsDao.getLandableTurnpointsWithinBounds(
           latLngBounds.southWest.latitude,
           latLngBounds.southWest.longitude,
           latLngBounds.northEast.latitude,
           latLngBounds.northEast.longitude);
     }
-    return _appDatabase!.turnpointDao.getTurnpointsWithinBounds(
+    return _appDatabase.turnpointsDao.getTurnpointsWithinBounds(
         latLngBounds.southWest.latitude,
         latLngBounds.southWest.longitude,
         latLngBounds.northEast.latitude,
@@ -594,8 +565,8 @@ class Repository {
   }
 
   Future<List<Turnpoint>> findTurnpoints(String query) async {
-    await makeDatabaseAvailable();
-    return _appDatabase!.turnpointDao.findTurnpoints('%' + query + '%');
+    
+    return _appDatabase.turnpointsDao.findTurnpoints('%' + query + '%');
   }
 
   // Download a file to the downloads directory
@@ -625,8 +596,8 @@ class Repository {
   }
 
   Future<Turnpoint?> getTurnpointByCode(String code) async {
-    await makeDatabaseAvailable();
-    return _appDatabase!.turnpointDao.getTurnpointByCode(code);
+    
+    return _appDatabase.turnpointsDao.getTurnpointByCode(code);
   }
 
   Future<Color> getColorForTurnpoint(String turnpointCode) async {
@@ -656,8 +627,8 @@ class Repository {
     List<Turnpoint> turnpoints = [];
     turnpoints.addAll(
         await TurnpointsImporter.getTurnpointsFromTurnpointExchange(endUrl));
-    var ids = await insertAllTurnpoints(turnpoints);
-    debugPrint("Number turnpoints downloaded: ${ids.length}");
+    var numberInserted = await insertAllTurnpoints(turnpoints);
+    debugPrint("Number turnpoints downloaded: $numberInserted");
     return turnpoints;
   }
 
@@ -665,34 +636,32 @@ class Repository {
     List<Turnpoint> turnpoints = [];
     turnpoints
         .addAll(await TurnpointsImporter.getTurnpointsFromFile(turnpointFile));
-    var ids = await insertAllTurnpoints(turnpoints);
-    debugPrint("Number turnpoints downloaded: ${ids.length}");
+    var numberInserted  = await insertAllTurnpoints(turnpoints);
+    debugPrint("Number turnpoints downloaded: $numberInserted ");
     return turnpoints;
   }
 
   Future<Turnpoint?> getTurnpoint(String title, String code) async {
-    await makeDatabaseAvailable();
-    return _appDatabase!.turnpointDao.getTurnpoint(title, code).get();
+    return _appDatabase.turnpointsDao.getTurnpoint(title, code);
   }
 
   Future<Turnpoint?> getTurnpointById(int turnpointId) async {
-    await makeDatabaseAvailable();
-    return _appDatabase!.turnpointDao.getTurnpointById(turnpointId);
+    
+    return _appDatabase.turnpointsDao.getTurnpointById(turnpointId);
   }
 
   Future<int?> saveTurnpoint(Turnpoint turnpoint) async {
-    await makeDatabaseAvailable();
-    return _appDatabase!.turnpointDao.insert(turnpoint);
+    
+    return _appDatabase.turnpointsDao.insert(turnpoint.toCompanion(false));
   }
 
   Future<int?> updateTurnpoint(Turnpoint turnpoint) async {
-    await makeDatabaseAvailable();
-    return _appDatabase!.turnpointDao.update(turnpoint);
+    return _appDatabase.turnpointsDao.updateRecord(turnpoint);
   }
 
   Future<int?> deleteTurnpoint(int id) async {
-    await makeDatabaseAvailable();
-    return _appDatabase!.turnpointDao.deleteTurnpoint(id);
+    
+    return _appDatabase.turnpointsDao.deleteTurnpoint(id);
   }
 
   /// Get the types of valid cup styles
@@ -713,36 +682,32 @@ class Repository {
   // ----- Task ----------------------------------------
 
   Future<int?> getCountOfTasks() async {
-    await makeDatabaseAvailable();
-    int? count = Sqflite.firstIntValue(await _appDatabase!.database
-        .rawQuery('select count(*) count from task'));
-    return count ?? 0;
+    return await _appDatabase.tasksDao.getCount();
   }
 
   Future<List<Task>> getAlltasks() async {
-    await makeDatabaseAvailable();
-    return _appDatabase!.tasksDao.listAllTasks();
+    
+    return _appDatabase.tasksDao.listAllTasks();
   }
 
   Future<Task> getTask(int taskId) async {
-    await makeDatabaseAvailable();
-    Task? task = await _appDatabase!.tasksDao.getTask(taskId);
-    return task ?? Task();
+    Task? task = await _appDatabase.tasksDao.getTask(taskId);
+    return task ?? Task(id: -1);
   }
 
   Future<int?> saveTask(Task task) async {
-    await makeDatabaseAvailable();
-    return _appDatabase!.tasksDao.insert(task);
+    
+    return _appDatabase.tasksDao.insert(task.toCompanion(true));
   }
 
   Future<int> updateTask(Task task) async {
-    await makeDatabaseAvailable();
-    return  _appDatabase!.tasksDao.updateRecord(task.toCompanion(true));
+    
+    return  _appDatabase.tasksDao.updateRecord(task.toCompanion(true));
   }
 
   Future<int?> deleteTask(int taskId) async {
-    await makeDatabaseAvailable();
-    return _appDatabase!.tasksDao.deleteTask(taskId);
+    
+    return _appDatabase.tasksDao.deleteTask(taskId);
   }
 
   // -1 is no task defined
@@ -758,23 +723,23 @@ class Repository {
   // ----- Task Turnpoints----------------------------------------
 
   Future<List<TaskTurnpoint>> getTaskTurnpoints(final int taskId) async {
-    await makeDatabaseAvailable();
-    return _appDatabase!.taskTurnpointDao.getTaskTurnpoints(taskId);
+    
+    return _appDatabase.taskturnpointsDao.getTaskTurnpoints(taskId);
   }
 
   Future<int?> insertTaskTurnpoint(final TaskTurnpoint taskTurnpoint) async {
-    await makeDatabaseAvailable();
-    return _appDatabase!.taskTurnpointDao.insert(taskTurnpoint);
+    
+    return _appDatabase.taskturnpointsDao.insert(taskTurnpoint);
   }
 
   Future<int?> updateTaskTurnpoint(final TaskTurnpoint taskTurnpoint) async {
-    await makeDatabaseAvailable();
-    return _appDatabase!.taskTurnpointDao.update(taskTurnpoint);
+    
+    return _appDatabase.taskturnpointsDao.update(taskTurnpoint);
   }
 
   Future<int?> deleteTaskTurnpoint(final int taskTurnpointId) async {
-    await makeDatabaseAvailable();
-    return _appDatabase!.taskTurnpointDao.deleteTaskTurnpoint(taskTurnpointId);
+    
+    return _appDatabase.taskturnpointsDao.deleteTaskTurnpoint(taskTurnpointId);
   }
 
   //-------- Map Display Options ----------------------------------------

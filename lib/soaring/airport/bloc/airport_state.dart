@@ -1,7 +1,8 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_soaring_forecast/soaring/drift/airport/airports.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/one800wxbrief/metar_taf_response.dart';
+
+import '../../drift/app_database.dart';
 
 @immutable
 abstract class AirportState extends Equatable {}
