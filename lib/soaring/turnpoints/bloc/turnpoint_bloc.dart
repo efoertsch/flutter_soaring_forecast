@@ -177,12 +177,12 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
   FutureOr<void> _saveTurnpoint(
       SaveTurnpointEvent event, Emitter<TurnpointState> emit) async {
     final turnpoint = event.turnpoint;
-    int? id = turnpoint.id;
+
     try {
-      if (turnpoint.id == null) {
-        id = await repository.saveTurnpoint(turnpoint);
+      if (turnpoint.id == -1) {
+        turnpoint.id = await repository.saveTurnpoint(turnpoint);
       } else {
-        id = await repository.updateTurnpoint(turnpoint);
+          await repository.updateTurnpoint(turnpoint);
       }
     } catch (e) {
       emit(TurnpointErrorState(
@@ -190,7 +190,6 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
       return null;
     }
     emit(TurnpointShortMessageState("Turnpoint updated."));
-    turnpoint.id = id;
     emit(UpdatedTurnpointState(turnpoint));
   }
 

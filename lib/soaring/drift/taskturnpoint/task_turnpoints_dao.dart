@@ -47,5 +47,11 @@ class TaskTurnpointsDao extends DatabaseAccessor<AppDatabase>
   Future<int?> deleteTaskTurnpoint(int id) async {
     return (delete(taskTurnpoints)..where((tbl) => tbl.id.equals(id))).go();
   }
+
+
+  Future<int> updateTaskTurnpoint(TaskTurnpoint taskTurnpoint) async {
+    return await (update(taskTurnpoints)
+      ..where((tbl) => tbl.id.equals(taskTurnpoint.id))).write(taskTurnpoint.toCompanion(true));
+  }
 }
 

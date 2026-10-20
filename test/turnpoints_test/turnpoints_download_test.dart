@@ -1,11 +1,24 @@
+import 'package:drift/native.dart';
+import 'package:flutter_soaring_forecast/main.dart';
+import 'package:flutter_soaring_forecast/soaring/drift/app_database.dart';
 import 'package:flutter_soaring_forecast/soaring/drift/turnpoint/turnpoints.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoints_importer.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  late AppDatabase appDatabase;
+  setUp(() {
+    // Create a fresh in-memory database before each test
+    appDatabase = AppDatabase.forTesting(NativeDatabase.memory());
+  });
+  tearDown(() async {
+    // Close the database after each test
+    await appDatabase.close();
+  });
+
   const testUrl = 'Sterling/Sterling, Massachusetts 2021 SeeYou.cup.txt';
-  var repository = Repository(null);
+  var repository = Repository(null,database);
   test('TurnpointsDownloader.getTurnpointsCSV returns List<List<dynamic>>',
       () async {
     List<List<dynamic>> turnpoinstCSV = await getTurnpoinstCSV(testUrl);

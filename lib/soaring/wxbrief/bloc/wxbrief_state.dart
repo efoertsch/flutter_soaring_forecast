@@ -6,6 +6,8 @@ import 'package:flutter_soaring_forecast/soaring/drift/airport/airports.dart';
 import 'package:flutter_soaring_forecast/soaring/wxbrief/data/briefing_option.dart';
 import 'package:flutter_soaring_forecast/soaring/wxbrief/data/wxbrief_defaults.dart';
 
+import '../../drift/app_database.dart';
+
 @immutable
 abstract class WxBriefState extends Equatable {}
 

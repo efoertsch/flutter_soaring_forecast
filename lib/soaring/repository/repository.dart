@@ -69,7 +69,7 @@ class Repository {
   static late RaspOptionsClient _raspOptionsClient;
   static UsgsClient? _usgsClient;
   static One800WxBriefClient? _one800WxBriefClient;
-  static AppDatabase _appDatabase;
+  static late AppDatabase _appDatabase;
   static var logger = DLogger.Logger();
   static SharedPreferences? sharedPreferences;
 
@@ -490,6 +490,7 @@ class Repository {
 
   Future<Airport?> getAirportById(String ident) async {
     Airport? airport = await _appDatabase.airportsDao.getAirportByIdent(ident);
+
     return airport;
   }
 
@@ -650,13 +651,13 @@ class Repository {
     return _appDatabase.turnpointsDao.getTurnpointById(turnpointId);
   }
 
-  Future<int?> saveTurnpoint(Turnpoint turnpoint) async {
+  Future<int> saveTurnpoint(Turnpoint turnpoint) async {
     
     return _appDatabase.turnpointsDao.insert(turnpoint.toCompanion(false));
   }
 
-  Future<int?> updateTurnpoint(Turnpoint turnpoint) async {
-    return _appDatabase.turnpointsDao.updateRecord(turnpoint);
+  Future<int> updateTurnpoint(Turnpoint turnpoint) async {
+    return _appDatabase.turnpointsDao.updateTurnpoint(turnpoint);
   }
 
   Future<int?> deleteTurnpoint(int id) async {
@@ -701,8 +702,7 @@ class Repository {
   }
 
   Future<int> updateTask(Task task) async {
-    
-    return  _appDatabase.tasksDao.updateRecord(task.toCompanion(true));
+    return  _appDatabase.tasksDao.updateTask(task);
   }
 
   Future<int?> deleteTask(int taskId) async {
@@ -724,22 +724,22 @@ class Repository {
 
   Future<List<TaskTurnpoint>> getTaskTurnpoints(final int taskId) async {
     
-    return _appDatabase.taskturnpointsDao.getTaskTurnpoints(taskId);
+    return _appDatabase.taskTurnpointsDao.getTaskTurnpoints(taskId);
   }
 
   Future<int?> insertTaskTurnpoint(final TaskTurnpoint taskTurnpoint) async {
     
-    return _appDatabase.taskturnpointsDao.insert(taskTurnpoint);
+    return _appDatabase.taskTurnpointsDao.insert(taskTurnpoint.toCompanion(false));
   }
 
   Future<int?> updateTaskTurnpoint(final TaskTurnpoint taskTurnpoint) async {
     
-    return _appDatabase.taskturnpointsDao.update(taskTurnpoint);
+    return _appDatabase.taskTurnpointsDao.updateTaskTurnpoint(taskTurnpoint);
   }
 
   Future<int?> deleteTaskTurnpoint(final int taskTurnpointId) async {
     
-    return _appDatabase.taskturnpointsDao.deleteTaskTurnpoint(taskTurnpointId);
+    return _appDatabase.taskTurnpointsDao.deleteTaskTurnpoint(taskTurnpointId);
   }
 
   //-------- Map Display Options ----------------------------------------

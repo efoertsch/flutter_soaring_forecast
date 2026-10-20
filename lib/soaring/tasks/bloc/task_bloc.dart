@@ -14,7 +14,7 @@ import '../../drift/app_database.dart';
 
 class TaskBloc extends Bloc<TaskEvent, TaskState> {
   final Repository repository;
-  Task _currentTask = Task();
+  Task _currentTask = Task(id: -1);
   List<Task> _tasks = [];
   List<TaskTurnpoint> _taskTurnpoints = [];
   List<TaskTurnpoint> _deletedTaskTurnpoints = [];
@@ -95,10 +95,10 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
     _tasks.insert(event.task.taskOrder, task);
     // since task deleted from database, set id to null so it gets inserted rather
     // than attempting update.
-    task.id = null;
+    task.id = -1;
     // also going to null out taskturnpoint ids and re-add them
     _taskTurnpoints.forEach((taskTurnpoint) {
-      taskTurnpoint.id = null;
+      taskTurnpoint.id = -1;
     });
     await _saveCurrentTaskAndTurnpoints(emit);
     // and update task order for all tasks
@@ -256,7 +256,7 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
 
   Future<void> _saveCurrentTaskAndTurnpoints(Emitter<TaskState> emit) async {
     bool isTaskUpdate = true;
-    if (_currentTask.id == null) {
+    if (_currentTask.id == -1) {
       isTaskUpdate = false;
       int? taskNumber = await repository.getCountOfTasks();
       _currentTask.taskOrder = taskNumber!;

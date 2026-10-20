@@ -1,6 +1,8 @@
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     as Constants;
+import 'package:flutter_soaring_forecast/soaring/drift/app_database.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 import 'package:flutter_soaring_forecast/soaring/values/strings.dart';
 import 'package:intl/intl.dart';
@@ -27,12 +29,21 @@ class _RaspImageTestState extends State<RaspImageTest> {
 
   var stackIndex = 0;
 
+  late AppDatabase appDatabase;
+
   @override
   void initState() {
-    repository = Repository(context);
+    appDatabase = AppDatabase.forTesting(NativeDatabase.memory());
+    repository = Repository(context, appDatabase);
     today = f.format(DateTime.now());
     _getImage();
     super.initState();
+  }
+
+  @override
+  void dispose() async {
+    await appDatabase.close();
+    super.dispose();
   }
 
   _getImage() async {

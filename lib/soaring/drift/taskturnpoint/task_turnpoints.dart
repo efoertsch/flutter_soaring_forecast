@@ -9,7 +9,7 @@ import '../task/tasks.dart';
 @UseRowClass(TaskTurnpoint)
 class TaskTurnpoints extends Table {
   late final id = integer().autoIncrement()();
-  late final taskId = integer().nullable().references(
+  late final taskId = integer().references(
         Tasks,
         #id,
         onDelete: KeyAction.cascade,
@@ -41,8 +41,8 @@ class TaskTurnpoints extends Table {
 }
 
 class TaskTurnpoint {
-  int? id;
-  int? taskId;
+  int id;
+  int taskId;
   int taskOrder;
   String title;
   String code;
@@ -63,8 +63,8 @@ class TaskTurnpoint {
   bool isAirport = false;
 
   TaskTurnpoint(
-      {this.id,
-      this.taskId,
+      {this.id = -1,
+      this.taskId = -1 ,
       this.taskOrder = 0,
       this.title = "",
       this.code = "",
@@ -76,8 +76,8 @@ class TaskTurnpoint {
 
   TaskTurnpointsCompanion toCompanion(bool nullToAbsent) {
     return TaskTurnpointsCompanion(
-      id: id == null && nullToAbsent ? const Value.absent() : Value(id!),
-      taskId: taskId == null && nullToAbsent ? const Value.absent() : Value(taskId),
+      id: id == -1 && nullToAbsent ? const Value.absent() : Value(id),
+      taskId: taskId == -1 && nullToAbsent ? const Value.absent() : Value(taskId),
       taskOrder: Value(taskOrder),
       title: Value(title),
       code: Value(code),
@@ -89,7 +89,7 @@ class TaskTurnpoint {
     );
   }
 
-  TaskTurnpointsCompanion copyToCompanion({bool nullToAbsent = false}) {
+  TaskTurnpointsCompanion copyToCompanion({bool nullToAbsent = true}) {
     return toCompanion(nullToAbsent);
   }
 }

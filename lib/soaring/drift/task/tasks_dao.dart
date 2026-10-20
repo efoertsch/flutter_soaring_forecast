@@ -31,6 +31,11 @@ class TasksDao extends DatabaseAccessor<AppDatabase>
         .getSingleOrNull();
   }
 
+Future<int> updateTask(Task task) async {
+  return await (update(tasks)
+    ..where((tbl) => tbl.id.equals(task.id))).write(task.toCompanion(true));
+}
+
 //@Query("Delete from task where id = :taskId")
   Future<int?> deleteTask(int taskId) async {
     return await (delete(tasks)

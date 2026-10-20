@@ -89,6 +89,7 @@ dependencies:
   flutter_map: <8.0.0  # can't upgrade until get update to or replace flutter_map_geojson
   flutter_map_animations: ^0.8.0  # see flutter_map above
   google_maps_flutter:  2.18.2 #  2.6 (iOS 12+) used for overhead view of turnpoints
+  google_maps_flutter_ios_sdk9:  2.19.0 #  2.6 (iOS 12+) used for overhead view of turnpoints
   #flutter_map_geojson: ^1.0.8  # replaced geojson_vector_slicer
   flutter_map_geojson:   # needed to apply pull request for > Fix: int is not a subtype of double
     path: ../flutter_map_geojson

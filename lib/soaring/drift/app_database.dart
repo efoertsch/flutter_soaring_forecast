@@ -22,6 +22,9 @@ class AppDatabase extends _$AppDatabase {
   // These are described in the getting started guide: https://drift.simonbinder.eu/setup/
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
+  // Constructor to use an in-memory database for testing
+  AppDatabase.forTesting(QueryExecutor e) : super(e);
+
   @override
   int get schemaVersion => 2;
 
@@ -37,4 +40,6 @@ class AppDatabase extends _$AppDatabase {
       // If you need web support, see https://drift.simonbinder.eu/platforms/web/
     );
   }
+
+
 }

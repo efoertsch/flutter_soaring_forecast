@@ -37,9 +37,6 @@ mixin BaseDao<T extends Table, D, C extends UpdateCompanion<D>> {
     });
   }
 
-  /// Update a specific record using a companion (returns number of updated rows)
-  Future<int> updateRecord(Insertable<D> companion) async =>
-      await db.update(table).write(companion);
 
   /// Delete a specific record
   Future<int> deleteEntity(Insertable<D> companion) async =>

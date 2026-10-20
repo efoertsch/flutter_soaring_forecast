@@ -5,7 +5,6 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
-import 'package:flutter_soaring_forecast/soaring/drift/airport/airports.dart';
 import 'package:flutter_soaring_forecast/soaring/drift/taskturnpoint/task_turnpoints.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoint_utils.dart';
@@ -16,6 +15,7 @@ import 'package:flutter_soaring_forecast/soaring/wxbrief/data/route_briefing_req
 import 'package:flutter_soaring_forecast/soaring/wxbrief/data/wxbrief_defaults.dart';
 import 'package:intl/intl.dart';
 
+import '../../drift/app_database.dart' show Airport;
 import '../../drift/turnpoint/turnpoints.dart';
 import '../../turnpoints/cup/cup_styles.dart';
 
@@ -376,9 +376,10 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
   FutureOr<void> _emitAirport(
       Emitter<WxBriefState> emit, String airportId) async {
     Airport? airport = await repository.getAirportById(airportId);
-    if (airport == null) {
-      airport = Airport(ident: airportId);
+    if (airport == null){
+      airport = Airport(ident: airportId, id: 0, type: '', name: '', elevationFt:0, state: '', municipality: '');
     }
+
     emit(WxBriefAirportState(airport: airport));
     _selectedAirportId = airportId;
   }

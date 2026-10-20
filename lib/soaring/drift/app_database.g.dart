@@ -631,8 +631,28 @@ class TasksCompanion extends UpdateCompanion<Task> {
   }
 }
 
+class _$TaskInsertable implements Insertable<Task> {
+  Task _object;
+  _$TaskInsertable(this._object);
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    return TasksCompanion(
+      id: Value(_object.id),
+      taskName: Value(_object.taskName),
+      distance: Value(_object.distance),
+      taskOrder: Value(_object.taskOrder),
+    ).toColumns(false);
+  }
+}
+
+extension TaskToInsertable on Task {
+  _$TaskInsertable toInsertable() {
+    return _$TaskInsertable(this);
+  }
+}
+
 class $TaskTurnpointsTable extends TaskTurnpoints
-    with TableInfo<$TaskTurnpointsTable, TaskTurnpoints> {
+    with TableInfo<$TaskTurnpointsTable, TaskTurnpoint> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -649,9 +669,9 @@ class $TaskTurnpointsTable extends TaskTurnpoints
   static const VerificationMeta _taskIdMeta = const VerificationMeta('taskId');
   @override
   late final GeneratedColumn<int> taskId = GeneratedColumn<int>(
-      'task_id', aliasedName, true,
+      'task_id', aliasedName, false,
       type: DriftSqlType.int,
-      requiredDuringInsert: false,
+      requiredDuringInsert: true,
       defaultConstraints: GeneratedColumn.constraintIsAlways(
           'REFERENCES task (id) ON DELETE CASCADE'));
   static const VerificationMeta _taskOrderMeta =
@@ -739,7 +759,7 @@ class $TaskTurnpointsTable extends TaskTurnpoints
   String get actualTableName => $name;
   static const String $name = 'taskturnpoint';
   @override
-  VerificationContext validateIntegrity(Insertable<TaskTurnpoints> instance,
+  VerificationContext validateIntegrity(Insertable<TaskTurnpoint> instance,
       {bool isInserting = false}) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
@@ -749,6 +769,8 @@ class $TaskTurnpointsTable extends TaskTurnpoints
     if (data.containsKey('task_id')) {
       context.handle(_taskIdMeta,
           taskId.isAcceptableOrUnknown(data['task_id']!, _taskIdMeta));
+    } else if (isInserting) {
+      context.missing(_taskIdMeta);
     }
     if (data.containsKey('task_order')) {
       context.handle(_taskOrderMeta,
@@ -800,9 +822,32 @@ class $TaskTurnpointsTable extends TaskTurnpoints
   @override
   Set<GeneratedColumn> get $primaryKey => {id};
   @override
-  TaskTurnpoints map(Map<String, dynamic> data, {String? tablePrefix}) {
+  TaskTurnpoint map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return TaskTurnpoints();
+    return TaskTurnpoint(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      taskId: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}task_id'])!,
+      taskOrder: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}task_order'])!,
+      title: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}title'])!,
+      code: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}code'])!,
+      latitudeDeg: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}latitude_deg'])!,
+      longitudeDeg: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}longitude_deg'])!,
+      distanceFromPriorTurnpoint: attachedDatabase.typeMapping.read(
+          DriftSqlType.double,
+          data['${effectivePrefix}distance_from_prior_turnpoint'])!,
+      distanceFromStartingPoint: attachedDatabase.typeMapping.read(
+          DriftSqlType.double,
+          data['${effectivePrefix}distance_from_starting_point'])!,
+      lastTurnpoint: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}last_turnpoint'])!,
+    );
   }
 
   @override
@@ -811,9 +856,9 @@ class $TaskTurnpointsTable extends TaskTurnpoints
   }
 }
 
-class TaskTurnpointsCompanion extends UpdateCompanion<TaskTurnpoints> {
+class TaskTurnpointsCompanion extends UpdateCompanion<TaskTurnpoint> {
   final Value<int> id;
-  final Value<int?> taskId;
+  final Value<int> taskId;
   final Value<int> taskOrder;
   final Value<String> title;
   final Value<String> code;
@@ -836,7 +881,7 @@ class TaskTurnpointsCompanion extends UpdateCompanion<TaskTurnpoints> {
   });
   TaskTurnpointsCompanion.insert({
     this.id = const Value.absent(),
-    this.taskId = const Value.absent(),
+    required int taskId,
     this.taskOrder = const Value.absent(),
     this.title = const Value.absent(),
     this.code = const Value.absent(),
@@ -845,8 +890,8 @@ class TaskTurnpointsCompanion extends UpdateCompanion<TaskTurnpoints> {
     this.distanceFromPriorTurnpoint = const Value.absent(),
     this.distanceFromStartingPoint = const Value.absent(),
     this.lastTurnpoint = const Value.absent(),
-  });
-  static Insertable<TaskTurnpoints> custom({
+  }) : taskId = Value(taskId);
+  static Insertable<TaskTurnpoint> custom({
     Expression<int>? id,
     Expression<int>? taskId,
     Expression<int>? taskOrder,
@@ -876,7 +921,7 @@ class TaskTurnpointsCompanion extends UpdateCompanion<TaskTurnpoints> {
 
   TaskTurnpointsCompanion copyWith(
       {Value<int>? id,
-      Value<int?>? taskId,
+      Value<int>? taskId,
       Value<int>? taskOrder,
       Value<String>? title,
       Value<String>? code,
@@ -1195,216 +1240,6 @@ class $TurnpointsTable extends Turnpoints
   $TurnpointsTable createAlias(String alias) {
     return $TurnpointsTable(attachedDatabase, alias);
   }
-}
-
-class Turnpoint extends DataClass implements Insertable<Turnpoint> {
-  final int id;
-  final String title;
-  final String code;
-  final String country;
-  final double latitudeDeg;
-  final double longitudeDeg;
-  final String elevation;
-  final String style;
-  final String direction;
-  final String length;
-  final String frequency;
-  final String description;
-  final String runwayWidth;
-  const Turnpoint(
-      {required this.id,
-      required this.title,
-      required this.code,
-      required this.country,
-      required this.latitudeDeg,
-      required this.longitudeDeg,
-      required this.elevation,
-      required this.style,
-      required this.direction,
-      required this.length,
-      required this.frequency,
-      required this.description,
-      required this.runwayWidth});
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    map['id'] = Variable<int>(id);
-    map['title'] = Variable<String>(title);
-    map['code'] = Variable<String>(code);
-    map['country'] = Variable<String>(country);
-    map['latitude_deg'] = Variable<double>(latitudeDeg);
-    map['longitude_deg'] = Variable<double>(longitudeDeg);
-    map['elevation'] = Variable<String>(elevation);
-    map['style'] = Variable<String>(style);
-    map['direction'] = Variable<String>(direction);
-    map['length'] = Variable<String>(length);
-    map['frequency'] = Variable<String>(frequency);
-    map['description'] = Variable<String>(description);
-    map['runway_width'] = Variable<String>(runwayWidth);
-    return map;
-  }
-
-  TurnpointsCompanion toCompanion(bool nullToAbsent) {
-    return TurnpointsCompanion(
-      id: Value(id),
-      title: Value(title),
-      code: Value(code),
-      country: Value(country),
-      latitudeDeg: Value(latitudeDeg),
-      longitudeDeg: Value(longitudeDeg),
-      elevation: Value(elevation),
-      style: Value(style),
-      direction: Value(direction),
-      length: Value(length),
-      frequency: Value(frequency),
-      description: Value(description),
-      runwayWidth: Value(runwayWidth),
-    );
-  }
-
-  factory Turnpoint.fromJson(Map<String, dynamic> json,
-      {ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return Turnpoint(
-      id: serializer.fromJson<int>(json['id']),
-      title: serializer.fromJson<String>(json['title']),
-      code: serializer.fromJson<String>(json['code']),
-      country: serializer.fromJson<String>(json['country']),
-      latitudeDeg: serializer.fromJson<double>(json['latitudeDeg']),
-      longitudeDeg: serializer.fromJson<double>(json['longitudeDeg']),
-      elevation: serializer.fromJson<String>(json['elevation']),
-      style: serializer.fromJson<String>(json['style']),
-      direction: serializer.fromJson<String>(json['direction']),
-      length: serializer.fromJson<String>(json['length']),
-      frequency: serializer.fromJson<String>(json['frequency']),
-      description: serializer.fromJson<String>(json['description']),
-      runwayWidth: serializer.fromJson<String>(json['runwayWidth']),
-    );
-  }
-  @override
-  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return <String, dynamic>{
-      'id': serializer.toJson<int>(id),
-      'title': serializer.toJson<String>(title),
-      'code': serializer.toJson<String>(code),
-      'country': serializer.toJson<String>(country),
-      'latitudeDeg': serializer.toJson<double>(latitudeDeg),
-      'longitudeDeg': serializer.toJson<double>(longitudeDeg),
-      'elevation': serializer.toJson<String>(elevation),
-      'style': serializer.toJson<String>(style),
-      'direction': serializer.toJson<String>(direction),
-      'length': serializer.toJson<String>(length),
-      'frequency': serializer.toJson<String>(frequency),
-      'description': serializer.toJson<String>(description),
-      'runwayWidth': serializer.toJson<String>(runwayWidth),
-    };
-  }
-
-  Turnpoint copyWith(
-          {int? id,
-          String? title,
-          String? code,
-          String? country,
-          double? latitudeDeg,
-          double? longitudeDeg,
-          String? elevation,
-          String? style,
-          String? direction,
-          String? length,
-          String? frequency,
-          String? description,
-          String? runwayWidth}) =>
-      Turnpoint(
-        id: id ?? this.id,
-        title: title ?? this.title,
-        code: code ?? this.code,
-        country: country ?? this.country,
-        latitudeDeg: latitudeDeg ?? this.latitudeDeg,
-        longitudeDeg: longitudeDeg ?? this.longitudeDeg,
-        elevation: elevation ?? this.elevation,
-        style: style ?? this.style,
-        direction: direction ?? this.direction,
-        length: length ?? this.length,
-        frequency: frequency ?? this.frequency,
-        description: description ?? this.description,
-        runwayWidth: runwayWidth ?? this.runwayWidth,
-      );
-  Turnpoint copyWithCompanion(TurnpointsCompanion data) {
-    return Turnpoint(
-      id: data.id.present ? data.id.value : this.id,
-      title: data.title.present ? data.title.value : this.title,
-      code: data.code.present ? data.code.value : this.code,
-      country: data.country.present ? data.country.value : this.country,
-      latitudeDeg:
-          data.latitudeDeg.present ? data.latitudeDeg.value : this.latitudeDeg,
-      longitudeDeg: data.longitudeDeg.present
-          ? data.longitudeDeg.value
-          : this.longitudeDeg,
-      elevation: data.elevation.present ? data.elevation.value : this.elevation,
-      style: data.style.present ? data.style.value : this.style,
-      direction: data.direction.present ? data.direction.value : this.direction,
-      length: data.length.present ? data.length.value : this.length,
-      frequency: data.frequency.present ? data.frequency.value : this.frequency,
-      description:
-          data.description.present ? data.description.value : this.description,
-      runwayWidth:
-          data.runwayWidth.present ? data.runwayWidth.value : this.runwayWidth,
-    );
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('Turnpoint(')
-          ..write('id: $id, ')
-          ..write('title: $title, ')
-          ..write('code: $code, ')
-          ..write('country: $country, ')
-          ..write('latitudeDeg: $latitudeDeg, ')
-          ..write('longitudeDeg: $longitudeDeg, ')
-          ..write('elevation: $elevation, ')
-          ..write('style: $style, ')
-          ..write('direction: $direction, ')
-          ..write('length: $length, ')
-          ..write('frequency: $frequency, ')
-          ..write('description: $description, ')
-          ..write('runwayWidth: $runwayWidth')
-          ..write(')'))
-        .toString();
-  }
-
-  @override
-  int get hashCode => Object.hash(
-      id,
-      title,
-      code,
-      country,
-      latitudeDeg,
-      longitudeDeg,
-      elevation,
-      style,
-      direction,
-      length,
-      frequency,
-      description,
-      runwayWidth);
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      (other is Turnpoint &&
-          other.id == this.id &&
-          other.title == this.title &&
-          other.code == this.code &&
-          other.country == this.country &&
-          other.latitudeDeg == this.latitudeDeg &&
-          other.longitudeDeg == this.longitudeDeg &&
-          other.elevation == this.elevation &&
-          other.style == this.style &&
-          other.direction == this.direction &&
-          other.length == this.length &&
-          other.frequency == this.frequency &&
-          other.description == this.description &&
-          other.runwayWidth == this.runwayWidth);
 }
 
 class TurnpointsCompanion extends UpdateCompanion<Turnpoint> {
@@ -1877,7 +1712,7 @@ final class $$TasksTableReferences
     extends BaseReferences<_$AppDatabase, $TasksTable, Task> {
   $$TasksTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
-  static MultiTypedResultKey<$TaskTurnpointsTable, List<TaskTurnpoints>>
+  static MultiTypedResultKey<$TaskTurnpointsTable, List<TaskTurnpoint>>
       _taskTurnpointsRefsTable(_$AppDatabase db) =>
           MultiTypedResultKey.fromTable(db.taskTurnpoints,
               aliasName: 'task__id__taskturnpoint__task_id');
@@ -2061,8 +1896,7 @@ class $$TasksTableTableManager extends RootTableManager<
               getPrefetchedDataCallback: (items) async {
                 return [
                   if (taskTurnpointsRefs)
-                    await $_getPrefetchedData<Task, $TasksTable,
-                            TaskTurnpoints>(
+                    await $_getPrefetchedData<Task, $TasksTable, TaskTurnpoint>(
                         currentTable: table,
                         referencedTable:
                             $$TasksTableReferences._taskTurnpointsRefsTable(db),
@@ -2095,7 +1929,7 @@ typedef $$TasksTableProcessedTableManager = ProcessedTableManager<
 typedef $$TaskTurnpointsTableCreateCompanionBuilder = TaskTurnpointsCompanion
     Function({
   Value<int> id,
-  Value<int?> taskId,
+  required int taskId,
   Value<int> taskOrder,
   Value<String> title,
   Value<String> code,
@@ -2108,7 +1942,7 @@ typedef $$TaskTurnpointsTableCreateCompanionBuilder = TaskTurnpointsCompanion
 typedef $$TaskTurnpointsTableUpdateCompanionBuilder = TaskTurnpointsCompanion
     Function({
   Value<int> id,
-  Value<int?> taskId,
+  Value<int> taskId,
   Value<int> taskOrder,
   Value<String> title,
   Value<String> code,
@@ -2119,17 +1953,17 @@ typedef $$TaskTurnpointsTableUpdateCompanionBuilder = TaskTurnpointsCompanion
   Value<bool> lastTurnpoint,
 });
 
-final class $$TaskTurnpointsTableReferences extends BaseReferences<
-    _$AppDatabase, $TaskTurnpointsTable, TaskTurnpoints> {
+final class $$TaskTurnpointsTableReferences
+    extends BaseReferences<_$AppDatabase, $TaskTurnpointsTable, TaskTurnpoint> {
   $$TaskTurnpointsTableReferences(
       super.$_db, super.$_table, super.$_typedResult);
 
   static $TasksTable _taskIdTable(_$AppDatabase db) =>
       db.tasks.createAlias('taskturnpoint__task_id__task__id');
 
-  $$TasksTableProcessedTableManager? get taskId {
-    final $_column = $_itemColumn<int>('task_id');
-    if ($_column == null) return null;
+  $$TasksTableProcessedTableManager get taskId {
+    final $_column = $_itemColumn<int>('task_id')!;
+
     final manager = $$TasksTableTableManager($_db, $_db.tasks)
         .filter((f) => f.id.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_taskIdTable($_db));
@@ -2319,14 +2153,14 @@ class $$TaskTurnpointsTableAnnotationComposer
 class $$TaskTurnpointsTableTableManager extends RootTableManager<
     _$AppDatabase,
     $TaskTurnpointsTable,
-    TaskTurnpoints,
+    TaskTurnpoint,
     $$TaskTurnpointsTableFilterComposer,
     $$TaskTurnpointsTableOrderingComposer,
     $$TaskTurnpointsTableAnnotationComposer,
     $$TaskTurnpointsTableCreateCompanionBuilder,
     $$TaskTurnpointsTableUpdateCompanionBuilder,
-    (TaskTurnpoints, $$TaskTurnpointsTableReferences),
-    TaskTurnpoints,
+    (TaskTurnpoint, $$TaskTurnpointsTableReferences),
+    TaskTurnpoint,
     PrefetchHooks Function({bool taskId})> {
   $$TaskTurnpointsTableTableManager(
       _$AppDatabase db, $TaskTurnpointsTable table)
@@ -2341,7 +2175,7 @@ class $$TaskTurnpointsTableTableManager extends RootTableManager<
               $$TaskTurnpointsTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback: ({
             Value<int> id = const Value.absent(),
-            Value<int?> taskId = const Value.absent(),
+            Value<int> taskId = const Value.absent(),
             Value<int> taskOrder = const Value.absent(),
             Value<String> title = const Value.absent(),
             Value<String> code = const Value.absent(),
@@ -2365,7 +2199,7 @@ class $$TaskTurnpointsTableTableManager extends RootTableManager<
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
-            Value<int?> taskId = const Value.absent(),
+            required int taskId,
             Value<int> taskOrder = const Value.absent(),
             Value<String> title = const Value.absent(),
             Value<String> code = const Value.absent(),
@@ -2389,7 +2223,7 @@ class $$TaskTurnpointsTableTableManager extends RootTableManager<
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (
-                    e.readTable<$TaskTurnpointsTable, TaskTurnpoints>(table),
+                    e.readTable<$TaskTurnpointsTable, TaskTurnpoint>(table),
                     $$TaskTurnpointsTableReferences(db, table, e)
                   ))
               .toList(),
@@ -2434,14 +2268,14 @@ class $$TaskTurnpointsTableTableManager extends RootTableManager<
 typedef $$TaskTurnpointsTableProcessedTableManager = ProcessedTableManager<
     _$AppDatabase,
     $TaskTurnpointsTable,
-    TaskTurnpoints,
+    TaskTurnpoint,
     $$TaskTurnpointsTableFilterComposer,
     $$TaskTurnpointsTableOrderingComposer,
     $$TaskTurnpointsTableAnnotationComposer,
     $$TaskTurnpointsTableCreateCompanionBuilder,
     $$TaskTurnpointsTableUpdateCompanionBuilder,
-    (TaskTurnpoints, $$TaskTurnpointsTableReferences),
-    TaskTurnpoints,
+    (TaskTurnpoint, $$TaskTurnpointsTableReferences),
+    TaskTurnpoint,
     PrefetchHooks Function({bool taskId})>;
 typedef $$TurnpointsTableCreateCompanionBuilder = TurnpointsCompanion Function({
   Value<int> id,

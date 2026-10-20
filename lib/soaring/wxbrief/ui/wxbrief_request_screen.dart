@@ -27,6 +27,8 @@ import 'package:flutter_soaring_forecast/soaring/wxbrief/bloc/wxbrief_state.dart
 import 'package:flutter_soaring_forecast/soaring/wxbrief/data/briefing_option.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+import '../../drift/app_database.dart' show Airport;
+
 ///  The following is used to determine which widgets to display
 ///  Area Brief
 ///               Departure Date      Reporting Options   Product Options
@@ -71,7 +73,7 @@ class _WxBriefRequestScreenState extends State<WxBriefRequestScreen>
 
   List<String> _departureDates = <String>[];
 
-  Airport? _airport = Airport(ident: "");
+  Airport? _airport = null;
 
   @override
   FutureOr<void> afterFirstLayout(BuildContext context) {

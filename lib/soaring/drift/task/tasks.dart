@@ -3,7 +3,7 @@ import '../app_database.dart';
 
 //TODO if any changes run  -  dart run build_runner build --delete-conflicting-outputs
 
-@UseRowClass(Task)
+@UseRowClass(Task,generateInsertable: true)
 class Tasks extends Table {
   late final id = integer().autoIncrement()();
   late final taskName = text().withDefault(const Constant(''))();
@@ -16,7 +16,7 @@ class Tasks extends Table {
 }
 
 class Task {
-  int? id;
+  int id;
   String taskName;
   double distance; //In Kilometers
   int taskOrder;
@@ -30,7 +30,7 @@ class Task {
 
   TasksCompanion toCompanion(bool nullToAbsent) {
     return TasksCompanion(
-      id: id == null && nullToAbsent ? const Value.absent() : Value(id!),
+      id: id == -1 && nullToAbsent ? const Value.absent() : Value(id),
       taskName: Value(taskName),
       distance: Value(distance),
       taskOrder: Value(taskOrder),

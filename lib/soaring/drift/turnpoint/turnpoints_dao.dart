@@ -30,6 +30,11 @@ class TurnpointsDao extends DatabaseAccessor<AppDatabase>
     return await (delete(turnpoints)).go();
   }
 
+  /// Update a specific record using a companion (returns number of updated rows)
+  Future<int> updateTurnpoint(Turnpoint turnpoint) async =>
+      await (update(turnpoints)..where((tbl) => tbl.id.equals(turnpoint.id))).write(turnpoint.toCompanion(true));
+
+
   // @Query("Delete from turnpoint where id = :id")
   Future<int?> deleteTurnpoint(int id) async {
     return await (delete(turnpoints)..where((tbl) => tbl.id.equals(id))).go();

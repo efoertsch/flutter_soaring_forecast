@@ -139,7 +139,7 @@ class RepositorySetup extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return RepositoryProvider(
-      create: (context) => Repository(context, appDatabase: appDatabase),
+      create: (context) => Repository(context,  appDatabase),
       // !!! Android Studio has bug in that this widget gets called when WorkManager task is triggered !!
       // !!! which causes display issues
       // !!! use flutter run --flavor dev from terminal
