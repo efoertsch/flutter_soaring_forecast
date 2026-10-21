@@ -4,7 +4,7 @@ import 'package:cupertino_will_pop_scope/cupertino_will_pop_scope.dart';
 import 'package:flutter/material.dart' hide Feedback;
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_html/flutter_html.dart';
+import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
     show StandardLiterals, WxBriefLiterals;
 import 'package:flutter_soaring_forecast/soaring/app/web_launcher.dart';
@@ -88,10 +88,11 @@ class _WxBriefAuthScreenState extends State<WxBriefAuthScreen> {
             return Center(child: Text('Error: ${snapshot.error}'));
           else
             return SingleChildScrollView(
-              child: Html(
-                data: snapshot.data,
-                onLinkTap: (url, _, __, ) async {
+              child: HtmlWidget(
+                snapshot.data ?? '',
+                onTapUrl: (String url) async {
                   launchWebBrowser(url!, "", launchAsExternal: true);
+                  return true;
                 },
               ),
             );

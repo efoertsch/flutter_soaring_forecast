@@ -102,11 +102,11 @@ class _RaspClient implements RaspClient {
     };
     final _options = _setStreamType<HttpResponse<dynamic>>(
       Options(
-        method: 'POST',
-        headers: _headers,
-        extra: _extra,
-        contentType: contentType,
-      )
+            method: 'POST',
+            headers: _headers,
+            extra: _extra,
+            contentType: contentType,
+          )
           .compose(
             _dio.options,
             '/cgi/get_rasp_blipspot.cgi',
@@ -147,11 +147,11 @@ class _RaspClient implements RaspClient {
     const Map<String, dynamic>? _data = null;
     final _options = _setStreamType<HttpResponse<String>>(
       Options(
-        method: 'GET',
-        headers: _headers,
-        extra: _extra,
-        contentType: contentType,
-      )
+            method: 'GET',
+            headers: _headers,
+            extra: _extra,
+            contentType: contentType,
+          )
           .compose(
             _dio.options,
             '/cgi/get_multirasp_blipspot.cgi',
@@ -206,11 +206,11 @@ class _RaspClient implements RaspClient {
     const Map<String, dynamic>? _data = null;
     final _options = _setStreamType<HttpResponse<String>>(
       Options(
-        method: 'GET',
-        headers: _headers,
-        extra: _extra,
-        contentType: contentType,
-      )
+            method: 'GET',
+            headers: _headers,
+            extra: _extra,
+            contentType: contentType,
+          )
           .compose(
             _dio.options,
             '/cgi/get_estimated_flight_avg.cgi',

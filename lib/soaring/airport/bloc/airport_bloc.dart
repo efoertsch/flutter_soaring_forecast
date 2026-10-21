@@ -135,7 +135,7 @@ class AirportBloc extends Bloc<AirportEvent, AirportState> {
   FutureOr<void> _downloadAirportsNow(
       DownloadAirportsNowEvent event, Emitter<AirportState> emit) async {
     emit(AirportsBeingDownloadedState());
-    var ok = await AirportsDownloader(repository: Repository(null, database))
+    var ok = await AirportsDownloader(repository: repository)
         .downloadAirports();
     if (ok) {
       emit(AirportsDownloadedOKState());

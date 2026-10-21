@@ -1,5 +1,4 @@
 import 'package:drift/drift.dart';
-import '../app_database.dart';
 import '../converter/latlng_converter.dart';
 //! This class is used when fetching from sqflite database for (currently) METAR/TAF
 //TODO if any changes run  -  dart run build_runner build --delete-conflicting-outputs

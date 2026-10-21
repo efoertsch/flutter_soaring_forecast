@@ -1,5 +1,6 @@
 import 'package:flutter_soaring_forecast/soaring/repository/one800wxbrief/coded_message.dart';
 import 'package:json_annotation/json_annotation.dart';
+part 'one800wxbrief.g.dart';
 
 @JsonSerializable()
 class One800WxBrief {

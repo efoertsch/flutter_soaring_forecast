@@ -16,5 +16,7 @@ class TaskTurnpointsDaoManager {
       $$TasksTableTableManager(_db.attachedDatabase, _db.tasks);
   $$TaskTurnpointsTableTableManager get taskTurnpoints =>
       $$TaskTurnpointsTableTableManager(
-          _db.attachedDatabase, _db.taskTurnpoints);
+        _db.attachedDatabase,
+        _db.taskTurnpoints,
+      );
 }

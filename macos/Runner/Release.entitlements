@@ -4,5 +4,8 @@
 <dict>
 	<key>com.apple.security.app-sandbox</key>
 	<true/>
+	<!-- Add this line to allow outgoing network requests -->
+       <key>com.apple.security.network.client</key>
+       <true/>
 </dict>
 </plist>

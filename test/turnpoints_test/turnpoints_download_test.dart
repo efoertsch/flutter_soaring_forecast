@@ -18,7 +18,7 @@ void main() {
   });
 
   const testUrl = 'Sterling/Sterling, Massachusetts 2021 SeeYou.cup.txt';
-  var repository = Repository(null,database);
+  var repository = Repository(null,appDatabase);
   test('TurnpointsDownloader.getTurnpointsCSV returns List<List<dynamic>>',
       () async {
     List<List<dynamic>> turnpoinstCSV = await getTurnpoinstCSV(testUrl);

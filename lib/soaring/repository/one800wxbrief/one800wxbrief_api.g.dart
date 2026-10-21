@@ -35,11 +35,11 @@ class _One800WxBriefClient implements One800WxBriefClient {
     const Map<String, dynamic>? _data = null;
     final _options = _setStreamType<MetarTafResponse>(
       Options(
-        method: 'GET',
-        headers: _headers,
-        extra: _extra,
-        contentType: 'application/x-www-form-urlencoded',
-      )
+            method: 'GET',
+            headers: _headers,
+            extra: _extra,
+            contentType: 'application/x-www-form-urlencoded',
+          )
           .compose(
             _dio.options,
             '/retrieveMETAR',
@@ -72,11 +72,11 @@ class _One800WxBriefClient implements One800WxBriefClient {
     const Map<String, dynamic>? _data = null;
     final _options = _setStreamType<MetarTafResponse>(
       Options(
-        method: 'GET',
-        headers: _headers,
-        extra: _extra,
-        contentType: 'application/x-www-form-urlencoded',
-      )
+            method: 'GET',
+            headers: _headers,
+            extra: _extra,
+            contentType: 'application/x-www-form-urlencoded',
+          )
           .compose(
             _dio.options,
             '/retrieveTAF',
@@ -112,11 +112,11 @@ class _One800WxBriefClient implements One800WxBriefClient {
     final _data = completeQueryString;
     final _options = _setStreamType<One800WxBrief>(
       Options(
-        method: 'POST',
-        headers: _headers,
-        extra: _extra,
-        contentType: 'application/x-www-form-urlencoded',
-      )
+            method: 'POST',
+            headers: _headers,
+            extra: _extra,
+            contentType: 'application/x-www-form-urlencoded',
+          )
           .compose(
             _dio.options,
             'FP/routeBriefing',
@@ -152,11 +152,11 @@ class _One800WxBriefClient implements One800WxBriefClient {
     final _data = completeQueryString;
     final _options = _setStreamType<One800WxBrief>(
       Options(
-        method: 'POST',
-        headers: _headers,
-        extra: _extra,
-        contentType: 'application/x-www-form-urlencoded',
-      )
+            method: 'POST',
+            headers: _headers,
+            extra: _extra,
+            contentType: 'application/x-www-form-urlencoded',
+          )
           .compose(
             _dio.options,
             'FP/areaBriefing',

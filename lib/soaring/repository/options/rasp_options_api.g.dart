@@ -13,7 +13,7 @@ part of 'rasp_options_api.dart';
 
 class _RaspOptionsClient implements RaspOptionsClient {
   _RaspOptionsClient(this._dio, {this.baseUrl, this.errorLogger}) {
-    baseUrl ??= 'https://soargbsc.com/soaringforecast/';
+    baseUrl ??= 'https://soargbsc.net/soaringforecast/';
   }
 
   final Dio _dio;

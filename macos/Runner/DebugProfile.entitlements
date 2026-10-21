@@ -8,5 +8,8 @@
 	<true/>
 	<key>com.apple.security.network.server</key>
 	<true/>
+	<!-- Add this line to allow outgoing network requests -->
+       <key>com.apple.security.network.client</key>
+       <true/>
 </dict>
 </plist>

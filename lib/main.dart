@@ -6,7 +6,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_soaring_forecast/soaring/about/about_screen.dart';
 import 'package:flutter_soaring_forecast/soaring/airport/bloc/airport_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/airport/download/airports_downloader.dart';
@@ -69,8 +68,9 @@ void callbackDispatcher() {
     //   debugPrint("The iOS background fetch was triggered");
     // }
     try {
+
       debugPrint('Checking to download airports');
-      var ok = AirportsDownloader(repository: Repository(null, database))
+      var ok = AirportsDownloader(repository: Repository(null, AppDatabase()))
           .downloadAirportsIfNeeded();
       debugPrint('AirportsDownloader response : $ok');
       return await Future.value(ok);
@@ -80,8 +80,6 @@ void callbackDispatcher() {
     }
   });
 }
-
-late AppDatabase database;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
