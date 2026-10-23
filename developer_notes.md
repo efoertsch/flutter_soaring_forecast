@@ -1,3 +1,10 @@
+Checking records in drift(sqlite database)
+1. Flutter dev tools extension (icon on right) opens up a drift viewer but it didn't allow direct viewing the database.
+   I could validate the database or download it, but not view it directly
+2. To view database downloaded, I used DB Browser for SQLite on my Mac.
+  
+
+
 Glider Polar info used in task Estimated Flight logic
 1. Polar info was obtained from Github XCSOAR -> XCSoar/src/Polar/PolarStore.cpp
 2. The cpp file was editted to remove comments and extraneous stuff to get CSV format that could then be 

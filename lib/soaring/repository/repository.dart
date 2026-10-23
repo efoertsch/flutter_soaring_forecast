@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:media_store_plus/media_store_plus.dart';
 import 'package:collection/collection.dart';
 import 'package:csv/csv.dart';
@@ -468,7 +469,19 @@ class Repository {
 
 
   Future<int> insertAllAirports(List<Airport> airports) async {
-  return  await _appDatabase.airportsDao.insertAll(airports);
+    List<AirportsCompanion> airportCompanions = [];
+    for (Airport airport in airports) {
+      airportCompanions.add(AirportsCompanion(ident: Value(airport.ident),
+          type:  Value(airport.type),
+          name:  Value(airport.name),
+          latitudeDeg : Value(airport.latitudeDeg),
+          longitudeDeg: Value(airport.longitudeDeg),
+          elevationFt : Value(airport.elevationFt),
+          state : Value(airport.state),
+          municipality: Value(airport.municipality)));
+    }
+
+  return  await _appDatabase.airportsDao.insertAll(airportCompanions);
   }
 
   Future<List<Airport>?> findAirports(String searchTerm) async {
@@ -729,7 +742,7 @@ class Repository {
 
   Future<int?> insertTaskTurnpoint(final TaskTurnpoint taskTurnpoint) async {
     
-    return _appDatabase.taskTurnpointsDao.insert(taskTurnpoint.toCompanion(false));
+    return _appDatabase.taskTurnpointsDao.insert(taskTurnpoint.toCompanion(true));
   }
 
   Future<int?> updateTaskTurnpoint(final TaskTurnpoint taskTurnpoint) async {

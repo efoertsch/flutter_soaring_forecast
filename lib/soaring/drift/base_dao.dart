@@ -32,7 +32,6 @@ mixin BaseDao<T extends Table, D, C extends UpdateCompanion<D>> {
           insertedCount++;
         }
       }
-
       return insertedCount;
     });
   }

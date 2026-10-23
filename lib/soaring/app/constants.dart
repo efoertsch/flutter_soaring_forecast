@@ -15,9 +15,16 @@ const String BASE_URL = 'https://www.soargbsc.net/';
 const String RASP_BASE_URL = BASE_URL + 'rasp/';
 //const String BASE_URL = 'http://192.168.1.15/';    // Remember to rebuild api calls
 //const String RASP_BASE_URL ='http://192.168.1.15/';
-const String RASP_OPTIONS_BASE_URL = 'https://soargbsc.net/soaringforecast/';
+const String RASP_OPTIONS_BASE_URL = BASE_URL + 'soaringforecast/';
 //const String RASP_OPTIONS_BASE_URL = BASE_URL + '/soaringforecast/';
-const String AIRPORT_URL = RASP_OPTIONS_BASE_URL + 'airports.csv';
+
+//const String BASE_AIRPORT_URL = 'https://www.ourairports.com/data/';
+// Can't download via ourairports.com/data url anymore
+const String BASE_AIRPORT_URL = 'https://davidmegginson.github.io/ourairports-data/';
+const String AIRPORT_FILE_NAME = 'airports.csv';
+//const String AIRPORT_URL = RASP_OPTIONS_BASE_URL + 'airports.csv';
+const String AIRPORT_URL = BASE_AIRPORT_URL + AIRPORT_FILE_NAME;
+
 const String GOES_GIF =
     "https://cdn.star.nesdis.noaa.gov/GOES16/ABI/GIFS/GOES16-NE-GEOCOLOR-600x600.gif";
 const String GOES_CURRENT =

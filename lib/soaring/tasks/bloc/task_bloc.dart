@@ -280,7 +280,7 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
       TaskTurnpoint taskTurnpoint = _taskTurnpoints[turnpointOrder];
       taskTurnpoint.taskId = _currentTask.id!;
       taskTurnpoint.taskOrder = turnpointOrder;
-      if (taskTurnpoint.id == null) {
+      if (taskTurnpoint.id < 0) {
         turnpointId = await repository.insertTaskTurnpoint(taskTurnpoint);
         if (turnpointId == null) {
           emit(TaskErrorState(
