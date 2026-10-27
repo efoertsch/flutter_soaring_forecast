@@ -8,19 +8,6 @@ class $AirportsTable extends Airports with TableInfo<$AirportsTable, Airport> {
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
   $AirportsTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _idMeta = const VerificationMeta('id');
-  @override
-  late final GeneratedColumn<int> id = GeneratedColumn<int>(
-    'id',
-    aliasedName,
-    false,
-    hasAutoIncrement: true,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'PRIMARY KEY AUTOINCREMENT',
-    ),
-  );
   static const VerificationMeta _identMeta = const VerificationMeta('ident');
   @override
   late final GeneratedColumn<String> ident = GeneratedColumn<String>(
@@ -53,7 +40,7 @@ class $AirportsTable extends Airports with TableInfo<$AirportsTable, Airport> {
   @override
   late final GeneratedColumnWithTypeConverter<dynamic, double> latitudeDeg =
       GeneratedColumn<double>(
-        'latitude_deg',
+        'latitudeDeg',
         aliasedName,
         false,
         type: DriftSqlType.double,
@@ -62,7 +49,7 @@ class $AirportsTable extends Airports with TableInfo<$AirportsTable, Airport> {
   @override
   late final GeneratedColumnWithTypeConverter<dynamic, double> longitudeDeg =
       GeneratedColumn<double>(
-        'longitude_deg',
+        'longitudeDeg',
         aliasedName,
         false,
         type: DriftSqlType.double,
@@ -73,7 +60,7 @@ class $AirportsTable extends Airports with TableInfo<$AirportsTable, Airport> {
   );
   @override
   late final GeneratedColumn<int> elevationFt = GeneratedColumn<int>(
-    'elevation_ft',
+    'elevationFt',
     aliasedName,
     false,
     type: DriftSqlType.int,
@@ -104,7 +91,6 @@ class $AirportsTable extends Airports with TableInfo<$AirportsTable, Airport> {
   );
   @override
   List<GeneratedColumn> get $columns => [
-    id,
     ident,
     type,
     name,
@@ -126,9 +112,6 @@ class $AirportsTable extends Airports with TableInfo<$AirportsTable, Airport> {
   }) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
-    if (data.containsKey('id')) {
-      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
-    }
     if (data.containsKey('ident')) {
       context.handle(
         _identMeta,
@@ -149,11 +132,11 @@ class $AirportsTable extends Airports with TableInfo<$AirportsTable, Airport> {
         name.isAcceptableOrUnknown(data['name']!, _nameMeta),
       );
     }
-    if (data.containsKey('elevation_ft')) {
+    if (data.containsKey('elevationFt')) {
       context.handle(
         _elevationFtMeta,
         elevationFt.isAcceptableOrUnknown(
-          data['elevation_ft']!,
+          data['elevationFt']!,
           _elevationFtMeta,
         ),
       );
@@ -177,15 +160,11 @@ class $AirportsTable extends Airports with TableInfo<$AirportsTable, Airport> {
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => {id};
+  Set<GeneratedColumn> get $primaryKey => const {};
   @override
   Airport map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return Airport(
-      id: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}id'],
-      )!,
       ident: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}ident'],
@@ -201,18 +180,18 @@ class $AirportsTable extends Airports with TableInfo<$AirportsTable, Airport> {
       latitudeDeg: $AirportsTable.$converterlatitudeDeg.fromSql(
         attachedDatabase.typeMapping.read(
           DriftSqlType.double,
-          data['${effectivePrefix}latitude_deg'],
+          data['${effectivePrefix}latitudeDeg'],
         )!,
       ),
       longitudeDeg: $AirportsTable.$converterlongitudeDeg.fromSql(
         attachedDatabase.typeMapping.read(
           DriftSqlType.double,
-          data['${effectivePrefix}longitude_deg'],
+          data['${effectivePrefix}longitudeDeg'],
         )!,
       ),
       elevationFt: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
-        data['${effectivePrefix}elevation_ft'],
+        data['${effectivePrefix}elevationFt'],
       )!,
       state: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
@@ -237,7 +216,6 @@ class $AirportsTable extends Airports with TableInfo<$AirportsTable, Airport> {
 }
 
 class Airport extends DataClass implements Insertable<Airport> {
-  final int id;
   final String ident;
   final String type;
   final String name;
@@ -247,7 +225,6 @@ class Airport extends DataClass implements Insertable<Airport> {
   final String state;
   final String municipality;
   const Airport({
-    required this.id,
     required this.ident,
     required this.type,
     required this.name,
@@ -260,21 +237,20 @@ class Airport extends DataClass implements Insertable<Airport> {
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
-    map['id'] = Variable<int>(id);
     map['ident'] = Variable<String>(ident);
     map['type'] = Variable<String>(type);
     map['name'] = Variable<String>(name);
     if (!nullToAbsent || latitudeDeg != null) {
-      map['latitude_deg'] = Variable<double>(
+      map['latitudeDeg'] = Variable<double>(
         $AirportsTable.$converterlatitudeDeg.toSql(latitudeDeg),
       );
     }
     if (!nullToAbsent || longitudeDeg != null) {
-      map['longitude_deg'] = Variable<double>(
+      map['longitudeDeg'] = Variable<double>(
         $AirportsTable.$converterlongitudeDeg.toSql(longitudeDeg),
       );
     }
-    map['elevation_ft'] = Variable<int>(elevationFt);
+    map['elevationFt'] = Variable<int>(elevationFt);
     map['state'] = Variable<String>(state);
     map['municipality'] = Variable<String>(municipality);
     return map;
@@ -282,7 +258,6 @@ class Airport extends DataClass implements Insertable<Airport> {
 
   AirportsCompanion toCompanion(bool nullToAbsent) {
     return AirportsCompanion(
-      id: Value(id),
       ident: Value(ident),
       type: Value(type),
       name: Value(name),
@@ -304,7 +279,6 @@ class Airport extends DataClass implements Insertable<Airport> {
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return Airport(
-      id: serializer.fromJson<int>(json['id']),
       ident: serializer.fromJson<String>(json['ident']),
       type: serializer.fromJson<String>(json['type']),
       name: serializer.fromJson<String>(json['name']),
@@ -319,7 +293,6 @@ class Airport extends DataClass implements Insertable<Airport> {
   Map<String, dynamic> toJson({ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
-      'id': serializer.toJson<int>(id),
       'ident': serializer.toJson<String>(ident),
       'type': serializer.toJson<String>(type),
       'name': serializer.toJson<String>(name),
@@ -332,7 +305,6 @@ class Airport extends DataClass implements Insertable<Airport> {
   }
 
   Airport copyWith({
-    int? id,
     String? ident,
     String? type,
     String? name,
@@ -342,7 +314,6 @@ class Airport extends DataClass implements Insertable<Airport> {
     String? state,
     String? municipality,
   }) => Airport(
-    id: id ?? this.id,
     ident: ident ?? this.ident,
     type: type ?? this.type,
     name: name ?? this.name,
@@ -354,7 +325,6 @@ class Airport extends DataClass implements Insertable<Airport> {
   );
   Airport copyWithCompanion(AirportsCompanion data) {
     return Airport(
-      id: data.id.present ? data.id.value : this.id,
       ident: data.ident.present ? data.ident.value : this.ident,
       type: data.type.present ? data.type.value : this.type,
       name: data.name.present ? data.name.value : this.name,
@@ -377,7 +347,6 @@ class Airport extends DataClass implements Insertable<Airport> {
   @override
   String toString() {
     return (StringBuffer('Airport(')
-          ..write('id: $id, ')
           ..write('ident: $ident, ')
           ..write('type: $type, ')
           ..write('name: $name, ')
@@ -392,7 +361,6 @@ class Airport extends DataClass implements Insertable<Airport> {
 
   @override
   int get hashCode => Object.hash(
-    id,
     ident,
     type,
     name,
@@ -406,7 +374,6 @@ class Airport extends DataClass implements Insertable<Airport> {
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is Airport &&
-          other.id == this.id &&
           other.ident == this.ident &&
           other.type == this.type &&
           other.name == this.name &&
@@ -418,7 +385,6 @@ class Airport extends DataClass implements Insertable<Airport> {
 }
 
 class AirportsCompanion extends UpdateCompanion<Airport> {
-  final Value<int> id;
   final Value<String> ident;
   final Value<String> type;
   final Value<String> name;
@@ -427,8 +393,8 @@ class AirportsCompanion extends UpdateCompanion<Airport> {
   final Value<int> elevationFt;
   final Value<String> state;
   final Value<String> municipality;
+  final Value<int> rowid;
   const AirportsCompanion({
-    this.id = const Value.absent(),
     this.ident = const Value.absent(),
     this.type = const Value.absent(),
     this.name = const Value.absent(),
@@ -437,9 +403,9 @@ class AirportsCompanion extends UpdateCompanion<Airport> {
     this.elevationFt = const Value.absent(),
     this.state = const Value.absent(),
     this.municipality = const Value.absent(),
+    this.rowid = const Value.absent(),
   });
   AirportsCompanion.insert({
-    this.id = const Value.absent(),
     required String ident,
     this.type = const Value.absent(),
     this.name = const Value.absent(),
@@ -448,11 +414,11 @@ class AirportsCompanion extends UpdateCompanion<Airport> {
     this.elevationFt = const Value.absent(),
     this.state = const Value.absent(),
     this.municipality = const Value.absent(),
+    this.rowid = const Value.absent(),
   }) : ident = Value(ident),
        latitudeDeg = Value(latitudeDeg),
        longitudeDeg = Value(longitudeDeg);
   static Insertable<Airport> custom({
-    Expression<int>? id,
     Expression<String>? ident,
     Expression<String>? type,
     Expression<String>? name,
@@ -461,22 +427,22 @@ class AirportsCompanion extends UpdateCompanion<Airport> {
     Expression<int>? elevationFt,
     Expression<String>? state,
     Expression<String>? municipality,
+    Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
-      if (id != null) 'id': id,
       if (ident != null) 'ident': ident,
       if (type != null) 'type': type,
       if (name != null) 'name': name,
-      if (latitudeDeg != null) 'latitude_deg': latitudeDeg,
-      if (longitudeDeg != null) 'longitude_deg': longitudeDeg,
-      if (elevationFt != null) 'elevation_ft': elevationFt,
+      if (latitudeDeg != null) 'latitudeDeg': latitudeDeg,
+      if (longitudeDeg != null) 'longitudeDeg': longitudeDeg,
+      if (elevationFt != null) 'elevationFt': elevationFt,
       if (state != null) 'state': state,
       if (municipality != null) 'municipality': municipality,
+      if (rowid != null) 'rowid': rowid,
     });
   }
 
   AirportsCompanion copyWith({
-    Value<int>? id,
     Value<String>? ident,
     Value<String>? type,
     Value<String>? name,
@@ -485,9 +451,9 @@ class AirportsCompanion extends UpdateCompanion<Airport> {
     Value<int>? elevationFt,
     Value<String>? state,
     Value<String>? municipality,
+    Value<int>? rowid,
   }) {
     return AirportsCompanion(
-      id: id ?? this.id,
       ident: ident ?? this.ident,
       type: type ?? this.type,
       name: name ?? this.name,
@@ -496,15 +462,13 @@ class AirportsCompanion extends UpdateCompanion<Airport> {
       elevationFt: elevationFt ?? this.elevationFt,
       state: state ?? this.state,
       municipality: municipality ?? this.municipality,
+      rowid: rowid ?? this.rowid,
     );
   }
 
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
-    if (id.present) {
-      map['id'] = Variable<int>(id.value);
-    }
     if (ident.present) {
       map['ident'] = Variable<String>(ident.value);
     }
@@ -515,17 +479,17 @@ class AirportsCompanion extends UpdateCompanion<Airport> {
       map['name'] = Variable<String>(name.value);
     }
     if (latitudeDeg.present) {
-      map['latitude_deg'] = Variable<double>(
+      map['latitudeDeg'] = Variable<double>(
         $AirportsTable.$converterlatitudeDeg.toSql(latitudeDeg.value),
       );
     }
     if (longitudeDeg.present) {
-      map['longitude_deg'] = Variable<double>(
+      map['longitudeDeg'] = Variable<double>(
         $AirportsTable.$converterlongitudeDeg.toSql(longitudeDeg.value),
       );
     }
     if (elevationFt.present) {
-      map['elevation_ft'] = Variable<int>(elevationFt.value);
+      map['elevationFt'] = Variable<int>(elevationFt.value);
     }
     if (state.present) {
       map['state'] = Variable<String>(state.value);
@@ -533,13 +497,15 @@ class AirportsCompanion extends UpdateCompanion<Airport> {
     if (municipality.present) {
       map['municipality'] = Variable<String>(municipality.value);
     }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
     return map;
   }
 
   @override
   String toString() {
     return (StringBuffer('AirportsCompanion(')
-          ..write('id: $id, ')
           ..write('ident: $ident, ')
           ..write('type: $type, ')
           ..write('name: $name, ')
@@ -547,7 +513,8 @@ class AirportsCompanion extends UpdateCompanion<Airport> {
           ..write('longitudeDeg: $longitudeDeg, ')
           ..write('elevationFt: $elevationFt, ')
           ..write('state: $state, ')
-          ..write('municipality: $municipality')
+          ..write('municipality: $municipality, ')
+          ..write('rowid: $rowid')
           ..write(')'))
         .toString();
   }
@@ -576,7 +543,7 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
   );
   @override
   late final GeneratedColumn<String> taskName = GeneratedColumn<String>(
-    'task_name',
+    'taskName',
     aliasedName,
     false,
     type: DriftSqlType.string,
@@ -600,7 +567,7 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
   );
   @override
   late final GeneratedColumn<int> taskOrder = GeneratedColumn<int>(
-    'task_order',
+    'taskOrder',
     aliasedName,
     false,
     type: DriftSqlType.int,
@@ -624,10 +591,10 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
     }
-    if (data.containsKey('task_name')) {
+    if (data.containsKey('taskName')) {
       context.handle(
         _taskNameMeta,
-        taskName.isAcceptableOrUnknown(data['task_name']!, _taskNameMeta),
+        taskName.isAcceptableOrUnknown(data['taskName']!, _taskNameMeta),
       );
     }
     if (data.containsKey('distance')) {
@@ -636,10 +603,10 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
         distance.isAcceptableOrUnknown(data['distance']!, _distanceMeta),
       );
     }
-    if (data.containsKey('task_order')) {
+    if (data.containsKey('taskOrder')) {
       context.handle(
         _taskOrderMeta,
-        taskOrder.isAcceptableOrUnknown(data['task_order']!, _taskOrderMeta),
+        taskOrder.isAcceptableOrUnknown(data['taskOrder']!, _taskOrderMeta),
       );
     }
     return context;
@@ -657,7 +624,7 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
       )!,
       taskName: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
-        data['${effectivePrefix}task_name'],
+        data['${effectivePrefix}taskName'],
       )!,
       distance: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
@@ -665,7 +632,7 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
       )!,
       taskOrder: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
-        data['${effectivePrefix}task_order'],
+        data['${effectivePrefix}taskOrder'],
       )!,
     );
   }
@@ -701,9 +668,9 @@ class TasksCompanion extends UpdateCompanion<Task> {
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
-      if (taskName != null) 'task_name': taskName,
+      if (taskName != null) 'taskName': taskName,
       if (distance != null) 'distance': distance,
-      if (taskOrder != null) 'task_order': taskOrder,
+      if (taskOrder != null) 'taskOrder': taskOrder,
     });
   }
 
@@ -728,13 +695,13 @@ class TasksCompanion extends UpdateCompanion<Task> {
       map['id'] = Variable<int>(id.value);
     }
     if (taskName.present) {
-      map['task_name'] = Variable<String>(taskName.value);
+      map['taskName'] = Variable<String>(taskName.value);
     }
     if (distance.present) {
       map['distance'] = Variable<double>(distance.value);
     }
     if (taskOrder.present) {
-      map['task_order'] = Variable<int>(taskOrder.value);
+      map['taskOrder'] = Variable<int>(taskOrder.value);
     }
     return map;
   }
@@ -793,7 +760,7 @@ class $TaskTurnpointsTable extends TaskTurnpoints
   static const VerificationMeta _taskIdMeta = const VerificationMeta('taskId');
   @override
   late final GeneratedColumn<int> taskId = GeneratedColumn<int>(
-    'task_id',
+    'taskId',
     aliasedName,
     false,
     type: DriftSqlType.int,
@@ -807,7 +774,7 @@ class $TaskTurnpointsTable extends TaskTurnpoints
   );
   @override
   late final GeneratedColumn<int> taskOrder = GeneratedColumn<int>(
-    'task_order',
+    'taskOrder',
     aliasedName,
     false,
     type: DriftSqlType.int,
@@ -839,7 +806,7 @@ class $TaskTurnpointsTable extends TaskTurnpoints
   );
   @override
   late final GeneratedColumn<double> latitudeDeg = GeneratedColumn<double>(
-    'latitude_deg',
+    'latitudeDeg',
     aliasedName,
     false,
     type: DriftSqlType.double,
@@ -851,7 +818,7 @@ class $TaskTurnpointsTable extends TaskTurnpoints
   );
   @override
   late final GeneratedColumn<double> longitudeDeg = GeneratedColumn<double>(
-    'longitude_deg',
+    'longitudeDeg',
     aliasedName,
     false,
     type: DriftSqlType.double,
@@ -863,7 +830,7 @@ class $TaskTurnpointsTable extends TaskTurnpoints
   @override
   late final GeneratedColumn<double> distanceFromPriorTurnpoint =
       GeneratedColumn<double>(
-        'distance_from_prior_turnpoint',
+        'distanceFromPriorTurnpoint',
         aliasedName,
         false,
         type: DriftSqlType.double,
@@ -875,7 +842,7 @@ class $TaskTurnpointsTable extends TaskTurnpoints
   @override
   late final GeneratedColumn<double> distanceFromStartingPoint =
       GeneratedColumn<double>(
-        'distance_from_starting_point',
+        'distanceFromStartingPoint',
         aliasedName,
         false,
         type: DriftSqlType.double,
@@ -887,13 +854,13 @@ class $TaskTurnpointsTable extends TaskTurnpoints
   );
   @override
   late final GeneratedColumn<bool> lastTurnpoint = GeneratedColumn<bool>(
-    'last_turnpoint',
+    'lastTurnpoint',
     aliasedName,
     false,
     type: DriftSqlType.bool,
     requiredDuringInsert: false,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("last_turnpoint" IN (0, 1))',
+      'CHECK ("lastTurnpoint" IN (0, 1))',
     ),
     defaultValue: const Constant(false),
   );
@@ -925,18 +892,18 @@ class $TaskTurnpointsTable extends TaskTurnpoints
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
     }
-    if (data.containsKey('task_id')) {
+    if (data.containsKey('taskId')) {
       context.handle(
         _taskIdMeta,
-        taskId.isAcceptableOrUnknown(data['task_id']!, _taskIdMeta),
+        taskId.isAcceptableOrUnknown(data['taskId']!, _taskIdMeta),
       );
     } else if (isInserting) {
       context.missing(_taskIdMeta);
     }
-    if (data.containsKey('task_order')) {
+    if (data.containsKey('taskOrder')) {
       context.handle(
         _taskOrderMeta,
-        taskOrder.isAcceptableOrUnknown(data['task_order']!, _taskOrderMeta),
+        taskOrder.isAcceptableOrUnknown(data['taskOrder']!, _taskOrderMeta),
       );
     }
     if (data.containsKey('title')) {
@@ -951,47 +918,47 @@ class $TaskTurnpointsTable extends TaskTurnpoints
         code.isAcceptableOrUnknown(data['code']!, _codeMeta),
       );
     }
-    if (data.containsKey('latitude_deg')) {
+    if (data.containsKey('latitudeDeg')) {
       context.handle(
         _latitudeDegMeta,
         latitudeDeg.isAcceptableOrUnknown(
-          data['latitude_deg']!,
+          data['latitudeDeg']!,
           _latitudeDegMeta,
         ),
       );
     }
-    if (data.containsKey('longitude_deg')) {
+    if (data.containsKey('longitudeDeg')) {
       context.handle(
         _longitudeDegMeta,
         longitudeDeg.isAcceptableOrUnknown(
-          data['longitude_deg']!,
+          data['longitudeDeg']!,
           _longitudeDegMeta,
         ),
       );
     }
-    if (data.containsKey('distance_from_prior_turnpoint')) {
+    if (data.containsKey('distanceFromPriorTurnpoint')) {
       context.handle(
         _distanceFromPriorTurnpointMeta,
         distanceFromPriorTurnpoint.isAcceptableOrUnknown(
-          data['distance_from_prior_turnpoint']!,
+          data['distanceFromPriorTurnpoint']!,
           _distanceFromPriorTurnpointMeta,
         ),
       );
     }
-    if (data.containsKey('distance_from_starting_point')) {
+    if (data.containsKey('distanceFromStartingPoint')) {
       context.handle(
         _distanceFromStartingPointMeta,
         distanceFromStartingPoint.isAcceptableOrUnknown(
-          data['distance_from_starting_point']!,
+          data['distanceFromStartingPoint']!,
           _distanceFromStartingPointMeta,
         ),
       );
     }
-    if (data.containsKey('last_turnpoint')) {
+    if (data.containsKey('lastTurnpoint')) {
       context.handle(
         _lastTurnpointMeta,
         lastTurnpoint.isAcceptableOrUnknown(
-          data['last_turnpoint']!,
+          data['lastTurnpoint']!,
           _lastTurnpointMeta,
         ),
       );
@@ -1011,11 +978,11 @@ class $TaskTurnpointsTable extends TaskTurnpoints
       )!,
       taskId: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
-        data['${effectivePrefix}task_id'],
+        data['${effectivePrefix}taskId'],
       )!,
       taskOrder: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
-        data['${effectivePrefix}task_order'],
+        data['${effectivePrefix}taskOrder'],
       )!,
       title: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
@@ -1027,23 +994,23 @@ class $TaskTurnpointsTable extends TaskTurnpoints
       )!,
       latitudeDeg: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
-        data['${effectivePrefix}latitude_deg'],
+        data['${effectivePrefix}latitudeDeg'],
       )!,
       longitudeDeg: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
-        data['${effectivePrefix}longitude_deg'],
+        data['${effectivePrefix}longitudeDeg'],
       )!,
       distanceFromPriorTurnpoint: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
-        data['${effectivePrefix}distance_from_prior_turnpoint'],
+        data['${effectivePrefix}distanceFromPriorTurnpoint'],
       )!,
       distanceFromStartingPoint: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
-        data['${effectivePrefix}distance_from_starting_point'],
+        data['${effectivePrefix}distanceFromStartingPoint'],
       )!,
       lastTurnpoint: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
-        data['${effectivePrefix}last_turnpoint'],
+        data['${effectivePrefix}lastTurnpoint'],
       )!,
     );
   }
@@ -1103,17 +1070,17 @@ class TaskTurnpointsCompanion extends UpdateCompanion<TaskTurnpoint> {
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
-      if (taskId != null) 'task_id': taskId,
-      if (taskOrder != null) 'task_order': taskOrder,
+      if (taskId != null) 'taskId': taskId,
+      if (taskOrder != null) 'taskOrder': taskOrder,
       if (title != null) 'title': title,
       if (code != null) 'code': code,
-      if (latitudeDeg != null) 'latitude_deg': latitudeDeg,
-      if (longitudeDeg != null) 'longitude_deg': longitudeDeg,
+      if (latitudeDeg != null) 'latitudeDeg': latitudeDeg,
+      if (longitudeDeg != null) 'longitudeDeg': longitudeDeg,
       if (distanceFromPriorTurnpoint != null)
-        'distance_from_prior_turnpoint': distanceFromPriorTurnpoint,
+        'distanceFromPriorTurnpoint': distanceFromPriorTurnpoint,
       if (distanceFromStartingPoint != null)
-        'distance_from_starting_point': distanceFromStartingPoint,
-      if (lastTurnpoint != null) 'last_turnpoint': lastTurnpoint,
+        'distanceFromStartingPoint': distanceFromStartingPoint,
+      if (lastTurnpoint != null) 'lastTurnpoint': lastTurnpoint,
     });
   }
 
@@ -1152,10 +1119,10 @@ class TaskTurnpointsCompanion extends UpdateCompanion<TaskTurnpoint> {
       map['id'] = Variable<int>(id.value);
     }
     if (taskId.present) {
-      map['task_id'] = Variable<int>(taskId.value);
+      map['taskId'] = Variable<int>(taskId.value);
     }
     if (taskOrder.present) {
-      map['task_order'] = Variable<int>(taskOrder.value);
+      map['taskOrder'] = Variable<int>(taskOrder.value);
     }
     if (title.present) {
       map['title'] = Variable<String>(title.value);
@@ -1164,23 +1131,23 @@ class TaskTurnpointsCompanion extends UpdateCompanion<TaskTurnpoint> {
       map['code'] = Variable<String>(code.value);
     }
     if (latitudeDeg.present) {
-      map['latitude_deg'] = Variable<double>(latitudeDeg.value);
+      map['latitudeDeg'] = Variable<double>(latitudeDeg.value);
     }
     if (longitudeDeg.present) {
-      map['longitude_deg'] = Variable<double>(longitudeDeg.value);
+      map['longitudeDeg'] = Variable<double>(longitudeDeg.value);
     }
     if (distanceFromPriorTurnpoint.present) {
-      map['distance_from_prior_turnpoint'] = Variable<double>(
+      map['distanceFromPriorTurnpoint'] = Variable<double>(
         distanceFromPriorTurnpoint.value,
       );
     }
     if (distanceFromStartingPoint.present) {
-      map['distance_from_starting_point'] = Variable<double>(
+      map['distanceFromStartingPoint'] = Variable<double>(
         distanceFromStartingPoint.value,
       );
     }
     if (lastTurnpoint.present) {
-      map['last_turnpoint'] = Variable<bool>(lastTurnpoint.value);
+      map['lastTurnpoint'] = Variable<bool>(lastTurnpoint.value);
     }
     return map;
   }
@@ -1259,7 +1226,7 @@ class $TurnpointsTable extends Turnpoints
   );
   @override
   late final GeneratedColumn<double> latitudeDeg = GeneratedColumn<double>(
-    'latitude_deg',
+    'latitudeDeg',
     aliasedName,
     false,
     type: DriftSqlType.double,
@@ -1271,7 +1238,7 @@ class $TurnpointsTable extends Turnpoints
   );
   @override
   late final GeneratedColumn<double> longitudeDeg = GeneratedColumn<double>(
-    'longitude_deg',
+    'longitudeDeg',
     aliasedName,
     false,
     type: DriftSqlType.double,
@@ -1351,7 +1318,7 @@ class $TurnpointsTable extends Turnpoints
   );
   @override
   late final GeneratedColumn<String> runwayWidth = GeneratedColumn<String>(
-    'runway_width',
+    'runwayWidth',
     aliasedName,
     false,
     type: DriftSqlType.string,
@@ -1407,20 +1374,20 @@ class $TurnpointsTable extends Turnpoints
         country.isAcceptableOrUnknown(data['country']!, _countryMeta),
       );
     }
-    if (data.containsKey('latitude_deg')) {
+    if (data.containsKey('latitudeDeg')) {
       context.handle(
         _latitudeDegMeta,
         latitudeDeg.isAcceptableOrUnknown(
-          data['latitude_deg']!,
+          data['latitudeDeg']!,
           _latitudeDegMeta,
         ),
       );
     }
-    if (data.containsKey('longitude_deg')) {
+    if (data.containsKey('longitudeDeg')) {
       context.handle(
         _longitudeDegMeta,
         longitudeDeg.isAcceptableOrUnknown(
-          data['longitude_deg']!,
+          data['longitudeDeg']!,
           _longitudeDegMeta,
         ),
       );
@@ -1464,11 +1431,11 @@ class $TurnpointsTable extends Turnpoints
         ),
       );
     }
-    if (data.containsKey('runway_width')) {
+    if (data.containsKey('runwayWidth')) {
       context.handle(
         _runwayWidthMeta,
         runwayWidth.isAcceptableOrUnknown(
-          data['runway_width']!,
+          data['runwayWidth']!,
           _runwayWidthMeta,
         ),
       );
@@ -1504,11 +1471,11 @@ class $TurnpointsTable extends Turnpoints
       )!,
       latitudeDeg: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
-        data['${effectivePrefix}latitude_deg'],
+        data['${effectivePrefix}latitudeDeg'],
       )!,
       longitudeDeg: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
-        data['${effectivePrefix}longitude_deg'],
+        data['${effectivePrefix}longitudeDeg'],
       )!,
       elevation: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
@@ -1536,7 +1503,7 @@ class $TurnpointsTable extends Turnpoints
       )!,
       runwayWidth: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
-        data['${effectivePrefix}runway_width'],
+        data['${effectivePrefix}runwayWidth'],
       )!,
     );
   }
@@ -1611,15 +1578,15 @@ class TurnpointsCompanion extends UpdateCompanion<Turnpoint> {
       if (title != null) 'title': title,
       if (code != null) 'code': code,
       if (country != null) 'country': country,
-      if (latitudeDeg != null) 'latitude_deg': latitudeDeg,
-      if (longitudeDeg != null) 'longitude_deg': longitudeDeg,
+      if (latitudeDeg != null) 'latitudeDeg': latitudeDeg,
+      if (longitudeDeg != null) 'longitudeDeg': longitudeDeg,
       if (elevation != null) 'elevation': elevation,
       if (style != null) 'style': style,
       if (direction != null) 'direction': direction,
       if (length != null) 'length': length,
       if (frequency != null) 'frequency': frequency,
       if (description != null) 'description': description,
-      if (runwayWidth != null) 'runway_width': runwayWidth,
+      if (runwayWidth != null) 'runwayWidth': runwayWidth,
     });
   }
 
@@ -1671,10 +1638,10 @@ class TurnpointsCompanion extends UpdateCompanion<Turnpoint> {
       map['country'] = Variable<String>(country.value);
     }
     if (latitudeDeg.present) {
-      map['latitude_deg'] = Variable<double>(latitudeDeg.value);
+      map['latitudeDeg'] = Variable<double>(latitudeDeg.value);
     }
     if (longitudeDeg.present) {
-      map['longitude_deg'] = Variable<double>(longitudeDeg.value);
+      map['longitudeDeg'] = Variable<double>(longitudeDeg.value);
     }
     if (elevation.present) {
       map['elevation'] = Variable<String>(elevation.value);
@@ -1695,7 +1662,7 @@ class TurnpointsCompanion extends UpdateCompanion<Turnpoint> {
       map['description'] = Variable<String>(description.value);
     }
     if (runwayWidth.present) {
-      map['runway_width'] = Variable<String>(runwayWidth.value);
+      map['runwayWidth'] = Variable<String>(runwayWidth.value);
     }
     return map;
   }
@@ -1778,7 +1745,6 @@ abstract class _$AppDatabase extends GeneratedDatabase {
 
 typedef $$AirportsTableCreateCompanionBuilder =
     AirportsCompanion Function({
-      Value<int> id,
       required String ident,
       Value<String> type,
       Value<String> name,
@@ -1787,10 +1753,10 @@ typedef $$AirportsTableCreateCompanionBuilder =
       Value<int> elevationFt,
       Value<String> state,
       Value<String> municipality,
+      Value<int> rowid,
     });
 typedef $$AirportsTableUpdateCompanionBuilder =
     AirportsCompanion Function({
-      Value<int> id,
       Value<String> ident,
       Value<String> type,
       Value<String> name,
@@ -1799,6 +1765,7 @@ typedef $$AirportsTableUpdateCompanionBuilder =
       Value<int> elevationFt,
       Value<String> state,
       Value<String> municipality,
+      Value<int> rowid,
     });
 
 class $$AirportsTableFilterComposer
@@ -1810,11 +1777,6 @@ class $$AirportsTableFilterComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<int> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnFilters(column),
-  );
-
   ColumnFilters<String> get ident => $composableBuilder(
     column: $table.ident,
     builder: (column) => ColumnFilters(column),
@@ -1867,11 +1829,6 @@ class $$AirportsTableOrderingComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<int> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<String> get ident => $composableBuilder(
     column: $table.ident,
     builder: (column) => ColumnOrderings(column),
@@ -1922,9 +1879,6 @@ class $$AirportsTableAnnotationComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<int> get id =>
-      $composableBuilder(column: $table.id, builder: (column) => column);
-
   GeneratedColumn<String> get ident =>
       $composableBuilder(column: $table.ident, builder: (column) => column);
 
@@ -1988,7 +1942,6 @@ class $$AirportsTableTableManager
               $$AirportsTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
-                Value<int> id = const Value.absent(),
                 Value<String> ident = const Value.absent(),
                 Value<String> type = const Value.absent(),
                 Value<String> name = const Value.absent(),
@@ -1997,8 +1950,8 @@ class $$AirportsTableTableManager
                 Value<int> elevationFt = const Value.absent(),
                 Value<String> state = const Value.absent(),
                 Value<String> municipality = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
               }) => AirportsCompanion(
-                id: id,
                 ident: ident,
                 type: type,
                 name: name,
@@ -2007,10 +1960,10 @@ class $$AirportsTableTableManager
                 elevationFt: elevationFt,
                 state: state,
                 municipality: municipality,
+                rowid: rowid,
               ),
           createCompanionCallback:
               ({
-                Value<int> id = const Value.absent(),
                 required String ident,
                 Value<String> type = const Value.absent(),
                 Value<String> name = const Value.absent(),
@@ -2019,8 +1972,8 @@ class $$AirportsTableTableManager
                 Value<int> elevationFt = const Value.absent(),
                 Value<String> state = const Value.absent(),
                 Value<String> municipality = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
               }) => AirportsCompanion.insert(
-                id: id,
                 ident: ident,
                 type: type,
                 name: name,
@@ -2029,6 +1982,7 @@ class $$AirportsTableTableManager
                 elevationFt: elevationFt,
                 state: state,
                 municipality: municipality,
+                rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -2083,7 +2037,7 @@ final class $$TasksTableReferences
   static MultiTypedResultKey<$TaskTurnpointsTable, List<TaskTurnpoint>>
   _taskTurnpointsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.taskTurnpoints,
-    aliasName: 'task__id__taskturnpoint__task_id',
+    aliasName: 'task__id__taskturnpoint__taskId',
   );
 
   $$TaskTurnpointsTableProcessedTableManager get taskTurnpointsRefs {
@@ -2298,7 +2252,12 @@ class $$TasksTableTableManager
               getPrefetchedDataCallback: (items) async {
                 return [
                   if (taskTurnpointsRefs)
-                    await $_getPrefetchedData<Task, $TasksTable, TaskTurnpoint>(
+                    await $_getPrefetchedDataByColumns<
+                      Task,
+                      $TasksTable,
+                      TaskTurnpoint,
+                      $TaskTurnpointsTable
+                    >(
                       currentTable: table,
                       referencedTable: $$TasksTableReferences
                           ._taskTurnpointsRefsTable(db),
@@ -2307,8 +2266,8 @@ class $$TasksTableTableManager
                         table,
                         p0,
                       ).taskTurnpointsRefs,
-                      referencedItemsForCurrentItem: (item, referencedItems) =>
-                          referencedItems.where((e) => e.taskId == item.id),
+                      currentColumn: 'id',
+                      referencedColumn: 'taskId',
                       typedResults: items,
                     ),
                 ];
@@ -2369,10 +2328,10 @@ final class $$TaskTurnpointsTableReferences
   );
 
   static $TasksTable _taskIdTable(_$AppDatabase db) =>
-      db.tasks.createAlias('taskturnpoint__task_id__task__id');
+      db.tasks.createAlias('taskturnpoint__taskId__task__id');
 
   $$TasksTableProcessedTableManager get taskId {
-    final $_column = $_itemColumn<int>('task_id')!;
+    final $_column = $_itemColumn<int>('taskId')!;
 
     final manager = $$TasksTableTableManager(
       $_db,

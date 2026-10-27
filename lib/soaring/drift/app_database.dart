@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
+import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'airport/airports.dart';
 import 'airport/airports_dao.dart';
@@ -31,12 +32,16 @@ class AppDatabase extends _$AppDatabase {
   static QueryExecutor _openConnection() {
     return driftDatabase(
       name: 'app_database',
-      native: const DriftNativeOptions(
-        // By default, `driftDatabase` from `package:drift_flutter` stores the
-        // database files in `getApplicationDocumentsDirectory()`.
-        databaseDirectory: getApplicationSupportDirectory,
-        shareAcrossIsolates: true,  // share database between workmanager and app
+      native: DriftNativeOptions(
+        databasePath: () async {
+          final dbFolder = await getApplicationDocumentsDirectory();
+          // Explicitly target '.db' instead of Drift's default '.sqlite'
+          return p.join(dbFolder.path, 'app_database.db');
+        },
+        shareAcrossIsolates: true,
+        // share database between workmanager and app
       ),
+
       // If you need web support, see https://drift.simonbinder.eu/platforms/web/
     );
   }

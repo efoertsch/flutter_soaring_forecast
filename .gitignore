@@ -91,8 +91,8 @@ ios/
 **/ios/Flutter/flutter_export_environment.sh
 **/ios/ServiceDefinitions.json
 **/ios/Runner/GeneratedPluginRegistrant.*
-ios/Flutter/Debug.xcconfig
-ios/Flutter/Release.xcconfig
+**/Flutter/Debug-keys.xcconfig
+**/Flutter/Release-keys.xcconfig
 
 # macOS
 **/Flutter/ephemeral/
@@ -100,8 +100,8 @@ ios/Flutter/Release.xcconfig
 **/macos/Flutter/GeneratedPluginRegistrant.swift
 **/macos/Flutter/ephemeral
 **/xcuserdata/
-macos/Flutter/Debug.xcconfig
-macos/Flutter/Release.xcconfig
+**/macos/Flutter/Debug-keys.xcconfig
+**/macos/Flutter/Release-keys.xcconfig
 
 # Swift package manager (for code indexing)
 **/.build/

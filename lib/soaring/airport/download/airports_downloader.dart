@@ -156,7 +156,6 @@ class AirportsDownloader {
   }
 
   Airport fromList(List<dynamic> list) => Airport(
-    id: -1,
     ident: list[_IDENT],
     type: list[_TYPE],
     name: list[_NAME],

@@ -7,7 +7,6 @@ import '../converter/latlng_converter.dart';
 @TableIndex(name: 'index_airport_state_name', columns: {#state ,  #name})
 @TableIndex(name: 'index_airport_municipality', columns: {#municipality})
 class Airports extends Table {
-  late final id = integer().autoIncrement()();
   late final ident = text()();
   late final type = text().withDefault(const Constant(''))();
   late final name = text().withDefault(const Constant('Unknown'))();

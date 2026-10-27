@@ -377,7 +377,7 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
       Emitter<WxBriefState> emit, String airportId) async {
     Airport? airport = await repository.getAirportById(airportId);
     if (airport == null){
-      airport = Airport(ident: airportId, id: 0, type: '', name: '', elevationFt:0, state: '', municipality: '');
+      airport = Airport(ident: airportId,  type: '', name: '', elevationFt:0, state: '', municipality: '');
     }
 
     emit(WxBriefAirportState(airport: airport));

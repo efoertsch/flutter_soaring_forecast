@@ -86,12 +86,13 @@ dependencies:
       url: https://github.com/fluttercommunity/flutter_workmanager.git
       path: workmanager
       ref: main
-  flutter_launcher_icons: ^0.14.3
+  # for launcher icons see  https://pub.dev/packages/flutter_launcher_icons
+  flutter_launcher_icons: ^0.14.4
 
   flutter_map: <8.0.0  # can't upgrade until get update to or replace flutter_map_geojson
   flutter_map_animations: ^0.8.0  # see flutter_map above
-  google_maps_flutter:  2.18.2 #  2.6 (iOS 12+) used for overhead view of turnpoints
-  google_maps_flutter_ios_sdk9:  2.19.0 #  2.6 (iOS 12+) used for overhead view of turnpoints
+  google_maps_flutter:  2.19.0 #  2.6 (iOS 12+) used for overhead view of turnpoints
+  #google_maps_flutter_ios_sdk9:  2.19.0 #  2.6 (iOS 12+) used for overhead view of turnpoints
   #flutter_map_geojson: ^1.0.8  # replaced geojson_vector_slicer
   flutter_map_geojson:   # needed to apply pull request for > Fix: int is not a subtype of double
     path: ../flutter_map_geojson
@@ -107,11 +108,15 @@ dependencies:
   firebase_crashlytics: ^5.4.0
 
 #https://pub.dev/packages/flutter_launcher_icons
-flutter_icons:
+flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
-  image_path: 'assets/png/glider_app_icon.png'
+  image_path_android: 'assets/png/glider_icon_1024.png'
+  image_path_ios: 'assets/png/glider_icon_1024.png'
   min_sdk_android: 20
+  macos:
+    generate: true
+    image_path: 'assets/png/glider_icon_1024.png'
 
 
 dev_dependencies:
