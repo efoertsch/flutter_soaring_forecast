@@ -18,9 +18,9 @@ const String RASP_BASE_URL = BASE_URL + 'rasp/';
 const String RASP_OPTIONS_BASE_URL = BASE_URL + 'soaringforecast/';
 //const String RASP_OPTIONS_BASE_URL = BASE_URL + '/soaringforecast/';
 
-//const String BASE_AIRPORT_URL = 'https://www.ourairports.com/data/';
+const String BASE_AIRPORT_URL = 'https://ourairports.com/data/';
 // Can't download via ourairports.com/data url anymore
-const String BASE_AIRPORT_URL = 'https://davidmegginson.github.io/ourairports-data/';
+//const String BASE_AIRPORT_URL = 'https://davidmegginson.github.io/ourairports-data/';
 const String AIRPORT_FILE_NAME = 'airports.csv';
 //const String AIRPORT_URL = RASP_OPTIONS_BASE_URL + 'airports.csv';
 const String AIRPORT_URL = BASE_AIRPORT_URL + AIRPORT_FILE_NAME;

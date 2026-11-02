@@ -31,11 +31,9 @@ class LocalForecastBloc extends Bloc<LocalForecastEvent, LocalForecastState> {
     "zsfclcldif",
     "zsfclcl",
     "zblcldif",
-    "zblcl"
+    "zblcl",
   ];
-  static const _thermalParmList = [
-    "wstar",
-  ];
+  static const _thermalParmList = ["wstar"];
 
   static const _windParmList = [
     "sfcwind0spd",
@@ -45,7 +43,7 @@ class LocalForecastBloc extends Bloc<LocalForecastEvent, LocalForecastState> {
     "blwindspd",
     "blwinddir",
     "bltopwindspd",
-    "bltopwinddir"
+    "bltopwinddir",
   ];
 
   String _forecastParams = "";
@@ -57,7 +55,8 @@ class LocalForecastBloc extends Bloc<LocalForecastEvent, LocalForecastState> {
   String _regionName = "";
   String _selectedModelName = "";
   String _selectedForecastDate = "";
-  List<String> _forecastTimes = [] ;
+  List<String> _forecastTimes = [];
+
   List<LocalForecastPoint> _localForecastPoints = [];
   late double _lat;
   late double _lng;
@@ -68,7 +67,11 @@ class LocalForecastBloc extends Bloc<LocalForecastEvent, LocalForecastState> {
 
   int _currentLocationIndex = 0;
 
-  LocalForecastBloc({required this.repository}) : super(LocalForecastInitialState()) {
+  final missingHourForecasts = <String>[];
+  RegExp missingHourRegex = RegExp(r'\b\d{4}\local\b');
+
+  LocalForecastBloc({required this.repository})
+    : super(LocalForecastInitialState()) {
     on<LocalForecastGraphEvent>(_getLocalForecastData);
     on<SetLocationAsFavoriteEvent>(_setLocationAsFavorite);
     on<LocationTabIndexEvent>(_setLocationIndex);
@@ -76,7 +79,9 @@ class LocalForecastBloc extends Bloc<LocalForecastEvent, LocalForecastState> {
   }
 
   FutureOr<void> _getLocalForecastData(
-      LocalForecastGraphEvent event, Emitter<LocalForecastState> emit) async {
+    LocalForecastGraphEvent event,
+    Emitter<LocalForecastState> emit,
+  ) async {
     emit(LocalForecastWorkingState(working: true));
     _assignInitialForecastFields(event.localForecastGraphData);
     _composeRequestParamsString();
@@ -95,7 +100,9 @@ class LocalForecastBloc extends Bloc<LocalForecastEvent, LocalForecastState> {
     _forecastTimes = inputData.times;
   }
 
-  Future<void> _generateGraphDataAndEmit(Emitter<LocalForecastState> emit) async {
+  Future<void> _generateGraphDataAndEmit(
+    Emitter<LocalForecastState> emit,
+  ) async {
     List<PointForecastGraphData> pointForecastsGraphData = [];
     for (var localForecastPoint in _localForecastPoints) {
       PointForecastGraphData? pointForecastGraphData =
@@ -104,8 +111,11 @@ class LocalForecastBloc extends Bloc<LocalForecastEvent, LocalForecastState> {
         pointForecastsGraphData.add(pointForecastGraphData);
       } else {
         // oh-oh
-        emit(LocalForecastErrorState(
-            "Could not get local forecast for ${localForecastPoint.turnpointName}"));
+        emit(
+          LocalForecastErrorState(
+            "Could not get local forecast for ${localForecastPoint.turnpointName}",
+          ),
+        );
         return;
       }
     }
@@ -117,15 +127,31 @@ class LocalForecastBloc extends Bloc<LocalForecastEvent, LocalForecastState> {
     double maxThermalStrength = _getMaxThermalStrength(pointForecastsGraphData);
 
     ForecastGraphData forecastGraphData = ForecastGraphData(
-        model: _selectedModelName,
-        date: _selectedForecastDate,
-        pointForecastsGraphData: pointForecastsGraphData,
-        startIndex: _startIndex,
-        maxAltitude: maxAltitude,
-        maxThermalStrength: maxThermalStrength);
+      model: _selectedModelName,
+      date: _selectedForecastDate,
+      pointForecastsGraphData: pointForecastsGraphData,
+      startIndex: _startIndex,
+      maxAltitude: maxAltitude,
+      maxThermalStrength: maxThermalStrength,
+    );
     emit(GraphDataState(forecastData: forecastGraphData));
     debugPrint(
-        "Emitted GraphDataState: ${forecastGraphData.model} / ${forecastGraphData.date}");
+      "Emitted GraphDataState: ${forecastGraphData.model} / ${forecastGraphData.date}",
+    );
+    if (missingHourForecasts.isNotEmpty) {
+      try {
+        emit(LocalForecastErrorState(
+            "Hourly forecasts are unavailable for the following hours: ${missingHourForecasts.join(", ")}."
+                " Missing values replaced with 0.",
+          ),
+        );
+      } catch (e, s) {
+        print(s);
+      }
+      debugPrint(
+        "Emitted LocalForecastErrorState:  ${missingHourForecasts.join(', ')}",
+      );
+    }
   }
 
   double _getMaxAltitude(List<PointForecastGraphData> pointForecastsGraphData) {
@@ -141,7 +167,8 @@ class LocalForecastBloc extends Bloc<LocalForecastEvent, LocalForecastState> {
   }
 
   double _getMaxThermalStrength(
-      List<PointForecastGraphData> pointForecastsGraphData) {
+    List<PointForecastGraphData> pointForecastsGraphData,
+  ) {
     double maxThermalStrength = 0;
     pointForecastsGraphData.forEach((pointForecastGraphData) {
       pointForecastGraphData.thermalData.forEach((thermalList) {
@@ -154,68 +181,75 @@ class LocalForecastBloc extends Bloc<LocalForecastEvent, LocalForecastState> {
   }
 
   Future<PointForecastGraphData?> _getPointForecastGraphData(
-      LocalForecastPoint localForecastPoint,
-      Emitter<LocalForecastState> emit) async {
+    LocalForecastPoint localForecastPoint,
+    Emitter<LocalForecastState> emit,
+  ) async {
     final List<Map<String, Object>> altitudeForecastData = [];
     final List<Map<String, Object>> thermalForecastData = [];
     final List<Map<String, Object>> allData = [];
     await _getLatLongForecast(
-            _regionName,
-            _selectedForecastDate,
-            _selectedModelName,
-            _forecastTimesParams,
-            localForecastPoint.lat.toString(),
-            localForecastPoint.lng.toString())
+          _regionName,
+          _selectedForecastDate,
+          _selectedModelName,
+          _forecastTimesParams,
+          localForecastPoint.lat.toString(),
+          localForecastPoint.lng.toString(),
+        )
         .then((response) {
-      // The dailyForecast should consist of
-      // 1st line spaces
-      // 2nd and subsequent lines
-      // space separated list forecast param , forecast for each hour
-      // eg. experimental1   1000  2000 3000
-      // first check if you got any lines with "extract.blipspot read_datafile_pt ERROR"
-      // which likely indicate the forecast is being updated
-      if (response.any((line) => line.contains("extract.blipspot"))) {
-        emit(LocalForecastErrorState(
-            "Looks like the this forecast is being updated. Please retry again in a couple minutes"));
-        return null;
-      }
+          // The dailyForecast should consist of
+          // 1st line spaces
+          // 2nd and subsequent lines
+          // space separated list forecast param , forecast for each hour
+          // eg. experimental1   1000  2000 3000
+          // first check if you got any lines with "extract.blipspot read_datafile_pt ERROR"
+          // which likely indicate the forecast is being updated
+          //  if (response.any((line) => line.contains("extract.blipspot"))) {
+          //    emit(
+          //      LocalForecastErrorState(
+          //        "Looks like the this forecast is being updated. Please retry again in a couple minutes",
+          //      ),
+          //    );
+          //    // return null;
+          //  }
 
-      allData.addAll(_extractDailyForecastValues(response));
-      // allData contains a map of all hourly forecasts for the day
-      // so now we need to extract the forecasts used for the graphing
-      // thermal height, Cu and OD cloud base and thermal strength
-      // allData.forEach((map) {
-      //   map.entries.forEach((element) {
-      //     print("${element.key} : ${element.value.toString()}");
-      //   });
-      // });
-      altitudeForecastData.addAll(_getAltitudeForecasts(allData));
-      thermalForecastData.addAll(_getThermalForecast(allData));
-    }).onError((error, stackTrace) {
-      debugPrint(stackTrace.toString());
-      return null;
-    });
+          allData.addAll(_extractDailyForecastValues(response));
+          // allData contains a map of all hourly forecasts for the day
+          // so now we need to extract the forecasts used for the graphing
+          // thermal height, Cu and OD cloud base and thermal strength
+          // allData.forEach((map) {
+          //   map.entries.forEach((element) {
+          //     print("${element.key} : ${element.value.toString()}");
+          //   });
+          // });
+          altitudeForecastData.addAll(_getAltitudeForecasts(allData));
+          thermalForecastData.addAll(_getThermalForecast(allData));
+        })
+        .onError((error, stackTrace) {
+          debugPrint(stackTrace.toString());
+          return null;
+        });
     // Wheew! Now we have maps that contain the data for all forecast times
     // We need to sort altitude data so it can be properly graphed
     _sortAltitudeDataByCodeAndTime(altitudeForecastData);
     // and finally combine it all
     PointForecastGraphData pointForecastsGraphData = PointForecastGraphData(
-        turnpointTitle: localForecastPoint.turnpointName,
-        turnpointCode: localForecastPoint.turnpointCode,
-        altitudeData: altitudeForecastData,
-        thermalData: thermalForecastData,
-        hours: _forecastTimes,
-        descriptions: _combinedForecastList,
-        gridData:
-            _createGridData(allData, _forecastTimes, _combinedForecastList),
-        lat: localForecastPoint.lat,
-        lng: localForecastPoint.lng);
+      turnpointTitle: localForecastPoint.turnpointName,
+      turnpointCode: localForecastPoint.turnpointCode,
+      altitudeData: altitudeForecastData,
+      thermalData: thermalForecastData,
+      hours: _forecastTimes,
+      descriptions: _combinedForecastList,
+      gridData: _createGridData(allData, _forecastTimes, _combinedForecastList),
+      lat: localForecastPoint.lat,
+      lng: localForecastPoint.lng,
+    );
     return pointForecastsGraphData;
   }
 
   // Compose space separated list of forecast parameters for sending to RASP api
   void _composeRequestParamsString() {
-    _forecastParams = _altitudeParmList.join("@") +
+    _forecastParams =
+        _altitudeParmList.join("@") +
         "@" +
         _thermalParmList.join("@") +
         "@" +
@@ -226,7 +260,8 @@ class LocalForecastBloc extends Bloc<LocalForecastEvent, LocalForecastState> {
   /// Need to sort the forecasts so that graphing routine can properly assign point colors
   /// if say for instance, no OD was forecast for the day
   void _sortAltitudeDataByCodeAndTime(
-      List<Map<String, Object>> altitudeForecastData) {
+    List<Map<String, Object>> altitudeForecastData,
+  ) {
     altitudeForecastData.sort((m1, m2) {
       var r = ((m1['code'] as String)).compareTo((m2['code'] as String));
       if (r != 0) return r;
@@ -234,13 +269,17 @@ class LocalForecastBloc extends Bloc<LocalForecastEvent, LocalForecastState> {
     });
   }
 
-  List<List<String>> _createGridData(List<Map<String, Object>> gridData,
-      List<String> hours, List<Forecast> descriptions) {
+  List<List<String>> _createGridData(
+    List<Map<String, Object>> gridData,
+    List<String> hours,
+    List<Forecast> descriptions,
+  ) {
     var dataGrid = _createGridMatrix(descriptions.length, hours.length);
     gridData.forEach((element) {
       var col = hours.indexOf(element["time"] as String);
       var row = descriptions.indexWhere(
-          (forecast) => forecast.forecastName == element["code"] as String);
+        (forecast) => forecast.forecastName == element["code"] as String,
+      );
       var value = element["value"] ?? 0.0;
       // debugPrint(" row: $row  col: $col   value ${value.toString()}" );
       // if value = 0, then get int not double so need to cast
@@ -259,7 +298,9 @@ class LocalForecastBloc extends Bloc<LocalForecastEvent, LocalForecastState> {
 
   List<List<String>> _createGridMatrix(int rows, int cols) {
     return Iterable<List<String>>.generate(
-        rows, (i) => new List<String>.filled(cols, " ")).toList();
+      rows,
+      (i) => new List<String>.filled(cols, " "),
+    ).toList();
   }
 
   /// Create various lists of forecasts used eventually for graph or data table
@@ -272,70 +313,112 @@ class LocalForecastBloc extends Bloc<LocalForecastEvent, LocalForecastState> {
     _combinedForecastList.clear();
     _forecastParams.split("@").forEach((element) {
       _combinedForecastList.add(
-          _options.singleWhere((forecast) => forecast.forecastName == element));
+        _options.singleWhere((forecast) => forecast.forecastName == element),
+      );
     });
 
     // Create the forecast list needed for the altitude graph
     _altitudeForecastList.clear();
     _altitudeParmList.forEach((element) {
-      _altitudeForecastList.add(_combinedForecastList
-          .singleWhere((forecast) => forecast.forecastName == element));
+      _altitudeForecastList.add(
+        _combinedForecastList.singleWhere(
+          (forecast) => forecast.forecastName == element,
+        ),
+      );
     });
 
     // Create the list needed for the thermal graph
     _thermalForecastList.clear();
     _thermalParmList.forEach((element) {
       _thermalForecastList.add(
-          _options.singleWhere((forecast) => forecast.forecastName == element));
+        _options.singleWhere((forecast) => forecast.forecastName == element),
+      );
     });
   }
 
   /// Call the RASP api and return response parsed into lines
-  Future<List<String>> _getLatLongForecast(String region, String date,
-      String model, String time, String lat, String lng) async {
+  Future<List<String>> _getLatLongForecast(
+    String region,
+    String date,
+    String model,
+    String time,
+    String lat,
+    String lng,
+  ) async {
     final forecastList = <String>[];
     await repository
         .getDaysForecastForLatLong(
-            region, date, model, time, lat, lng, _forecastParams)
-        .then((httpResponse) {
-      if (httpResponse.response.statusCode! >= 200 &&
-          httpResponse.response.statusCode! < 300) {
-        //print('LatLngForecast text ${httpResponse.response.data.toString()}');
-        forecastList.addAll(httpResponse.response.data.toString().split('\n'));
-      } else {
-        throw Exception(
-            "Error occurred in getting local forecast:  ${httpResponse.response.statusMessage}");
-      }
-    }, onError: (error, stackTrace) {
-      debugPrint(
-          "Getting forecast info for ${region}  ${date}  ${model}  ${time}  ${_lat.toString()}  ${_lng.toString()} ");
-      debugPrint(error.toString());
-      debugPrint(stackTrace.toString());
-    });
+          region,
+          date,
+          model,
+          time,
+          lat,
+          lng,
+          _forecastParams,
+        )
+        .then(
+          (httpResponse) {
+            if (httpResponse.response.statusCode! >= 200 &&
+                httpResponse.response.statusCode! < 300) {
+              //print('LatLngForecast text ${httpResponse.response.data.toString()}');
+              forecastList.addAll(
+                httpResponse.response.data.toString().split('\n'),
+              );
+            } else {
+              throw Exception(
+                "Error occurred in getting local forecast:  ${httpResponse.response.statusMessage}",
+              );
+            }
+          },
+          onError: (error, stackTrace) {
+            debugPrint(
+              "Getting forecast info for ${region}  ${date}  ${model}  ${time}  ${_lat.toString()}  ${_lng.toString()} ",
+            );
+            debugPrint(error.toString());
+            debugPrint(stackTrace.toString());
+          },
+        );
     return forecastList;
   }
 
   List<Map<String, Object>> _extractDailyForecastValues(List<String> response) {
     final listMap = <Map<String, Object>>[];
+    missingHourForecasts.clear();
     for (int i = 0; i < response.length; ++i) {
       // first row of response should be string
       var forecastValues = response[i].trim().split(" ");
-      // The size of the forecastValues list should equal  the param name + the number of forecast times
-      if (forecastValues.length == 1 + _forecastTimes.length) {
-        // Get the param name and remove from list (so list size equals the number of times requested)
-        var param = forecastValues.removeAt(0);
-        var forecastNameDisplay = _combinedForecastList
-            .firstWhere((forecast) => forecast.forecastName == param)
-            .forecastNameDisplay;
-        for (int j = 0; j < forecastValues.length; ++j) {
-          final forecastMap = Map<String, Object>();
-          forecastMap.addAll({
-            "time": _forecastTimes[j],
-            "code": param,
-            "value": (double.tryParse(forecastValues[j]) ?? 0),
-            "name": forecastNameDisplay
-          });
-          listMap.addAll({forecastMap});
+      if (response[i].contains("extract.blipspot")) {
+        //TODO parse line and extract hourstring
+        //extract.blipspot read_datafile_pt ERROR - missing datafile /var/www/soargbsc_net/web/rasp/NewEngland/2026-11-02/hrrr/experimental1.1400local.d2.data
+        String? match = missingHourRegex.stringMatch(response[i]);
+        if (match?.length == 9) {
+          String missingHour = match!.substring(0, 4);
+          if (missingHourForecasts.contains(missingHour) == false) {
+            missingHourForecasts.add(missingHour);
+          }
+        }
+      } else {
+        // The size of the forecastValues list should equal  the param name + the number of forecast times
+        if (forecastValues.length == 1 + _forecastTimes.length) {
+          // Get the param name and remove from list (so list size equals the number of times requested)
+          var param = forecastValues.removeAt(0);
+          var forecastNameDisplay = _combinedForecastList
+              .firstWhere((forecast) => forecast.forecastName == param)
+              .forecastNameDisplay;
+          for (int j = 0; j < forecastValues.length; ++j) {
+            final forecastMap = Map<String, Object>();
+            // missing hour forecast has a '-', replace with zero
+            //experimental1 1115 1275 1612 1885 1959 - 1115 1115 1115
+            forecastMap.addAll({
+              "time": _forecastTimes[j],
+              "code": param,
+              "value": (forecastValues[j] != '-'
+                  ? (double.tryParse(forecastValues[j]) ?? 0.0)
+                  : 0.0),
+              "name": forecastNameDisplay,
+            });
+            listMap.addAll({forecastMap});
+          }
         }
       }
     }
@@ -345,7 +428,8 @@ class LocalForecastBloc extends Bloc<LocalForecastEvent, LocalForecastState> {
   /// Extract all forecast values needed for the altitude graph
   /// Note that some time/forecast values may be removed
   List<Map<String, Object>> _getAltitudeForecasts(
-      List<Map<String, Object>> listMap) {
+    List<Map<String, Object>> listMap,
+  ) {
     final altitudeListMap = <Map<String, Object>>[];
     // For each forecast name (e.g. OD Cloudbase (BL CL) MSL)
     _altitudeForecastList.forEach((forecastCode) {
@@ -371,7 +455,8 @@ class LocalForecastBloc extends Bloc<LocalForecastEvent, LocalForecastState> {
   /// If OD Potential (zblcldif) > 0, add  OD Cloudbase (BL CL) MSL (zblcl) to the prunedMap
 
   List<Map<String, Object>> _pruneAltitudeMap(
-      List<Map<String, Object>> listMap) {
+    List<Map<String, Object>> listMap,
+  ) {
     final prunedMap = <Map<String, Object>>[];
     final allCuPotential = <Map<String, Object>>[];
     final allCu = <Map<String, Object>>[];
@@ -414,7 +499,8 @@ class LocalForecastBloc extends Bloc<LocalForecastEvent, LocalForecastState> {
   }
 
   List<Map<String, Object>> _getThermalForecast(
-      List<Map<String, Object>> listMap) {
+    List<Map<String, Object>> listMap,
+  ) {
     final thermalListMap = <Map<String, Object>>[];
     // For each thermal forecast (e.g. wstar)
     _thermalForecastList.forEach((forecast) {
@@ -427,31 +513,35 @@ class LocalForecastBloc extends Bloc<LocalForecastEvent, LocalForecastState> {
     return thermalListMap;
   }
 
-
-
   FutureOr<void> _setLocationAsFavorite(
-      SetLocationAsFavoriteEvent event, Emitter<LocalForecastState> emit) {
-    LocalForecastPoint localForecastPoint = _localForecastPoints[
-        _currentLocationIndex < _localForecastPoints.length
+    SetLocationAsFavoriteEvent event,
+    Emitter<LocalForecastState> emit,
+  ) {
+    LocalForecastPoint localForecastPoint =
+        _localForecastPoints[_currentLocationIndex < _localForecastPoints.length
             ? _currentLocationIndex
             : 0];
     var localForecastFavorite = LocalForecastFavorite(
-        turnpointName: localForecastPoint.turnpointName,
-        turnpointCode: localForecastPoint.turnpointCode,
-        lat: localForecastPoint.lat,
-        lng: localForecastPoint.lng);
+      turnpointName: localForecastPoint.turnpointName,
+      turnpointCode: localForecastPoint.turnpointCode,
+      lat: localForecastPoint.lat,
+      lng: localForecastPoint.lng,
+    );
     repository.storeLocalForecastFavorite(localForecastFavorite);
   }
 
   FutureOr<void> _setLocationIndex(
-      LocationTabIndexEvent event, Emitter<LocalForecastState> emit) {
+    LocationTabIndexEvent event,
+    Emitter<LocalForecastState> emit,
+  ) {
     _currentLocationIndex = event.index;
   }
 
-
   // switch of model and/or date - generate new graphs
   FutureOr<void> _processModelDateChange(
-      LocalModelDateChangeEvent event, Emitter<LocalForecastState> emit) async {
+    LocalModelDateChangeEvent event,
+    Emitter<LocalForecastState> emit,
+  ) async {
     RaspModelDateChange localModelDateChange = event.localModelDateChange;
     _regionName = localModelDateChange.regionName;
     _selectedModelName = localModelDateChange.model;
@@ -462,6 +552,5 @@ class LocalForecastBloc extends Bloc<LocalForecastEvent, LocalForecastState> {
     _composeRequestParamsString();
     await _generateGraphDataAndEmit(emit);
     emit(LocalForecastWorkingState(working: false));
-
   }
 }

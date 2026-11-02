@@ -625,7 +625,10 @@ class _LocalForecastGraphDisplayState extends State<LocalForecastGraphDisplay>
     return BlocListener<LocalForecastBloc, LocalForecastState>(
       listener: (context, state) async {
         if (state is LocalForecastErrorState) {
-          CommonWidgets.showErrorDialog(context, "Error", state.error);
+          debugPrint("_widgetForMessages Error: ${state.error}");
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            CommonWidgets.showErrorDialog(context, "Error", state.error);
+          });
         }
       },
       child: SizedBox.shrink(),
