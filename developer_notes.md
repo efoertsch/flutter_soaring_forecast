@@ -1,3 +1,7 @@
+If testing in Android emulator and getting an error when launching about duplicate values in a dropdown, comment out the call to the Workmanager in main.dart
+Just remember to remove it when creating release code.
+
+
 Checking records in drift(sqlite database)
 1. Flutter dev tools extension (icon on right) opens up a drift viewer but it didn't allow direct viewing the database.
    I could validate the database or download it, but not view it directly

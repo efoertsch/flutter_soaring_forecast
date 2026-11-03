@@ -106,15 +106,15 @@ void main() async {
   };
 
   // Since iOS less definitive on when background task will run, just have user kick it off when requested.
-  if (Platform.isAndroid) {
-    Workmanager().initialize(
-        callbackDispatcher, // The top level function, aka callbackDispatcher
-        isInDebugMode:
-            !kReleaseMode // If enabled it will post a notification whenever the task is running. Handy for debugging tasks
-        );
-    Workmanager()
-        .registerOneOffTask("oneTimeDownload", "workmanager.background.task");
-  }
+  //if (Platform.isAndroid) {
+  //  Workmanager().initialize(
+  //      callbackDispatcher, // The top level function, aka callbackDispatcher
+  //      isInDebugMode:
+  //          !kReleaseMode // If enabled it will post a notification whenever the task is running. Handy for debugging tasks
+  //      );
+  //  Workmanager()
+  //      .registerOneOffTask("oneTimeDownload", "workmanager.background.task");
+  //}
 
   // needed to fix CERTIFICATE_VERIFY_FAILED error on startup due to
   // Android 7 and earlier versions referencing expired Lets Encrypt cert when accessing

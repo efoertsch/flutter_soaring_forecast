@@ -324,11 +324,11 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
   FutureOr<void> _createRouteBriefingPDF(
       String ngbv2pdfBriefing, Emitter<WxBriefState> emit) async {
     Uint8List bytes = base64Decode(ngbv2pdfBriefing);
-    final file = await repository.writeBytesToDirectory("WxBrief.pdf", bytes);
-    if (file == null) {
+    final filePath = await repository.writeWxBriefToDirectory("WxBrief.pdf", bytes);
+    if (filePath == null) {
       // send error
     } else {
-      emit(WxBriefPdfDocState(file.path));
+      emit(WxBriefPdfDocState(filePath));
     }
   }
 

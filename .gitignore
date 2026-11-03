@@ -6,7 +6,7 @@ android/app/src/main/res/values-night/
 lib/generated_plugin_registrant.dart
 local.properties
 web/
-lib/auth/secrets.dart
+**/lib/auth/*
 
 
 # Below lists are what I think A.S. defaulted for flutter (or at least I don't recall updating
@@ -22,8 +22,6 @@ lib/auth/secrets.dart
 .svn/
 .metadata
 
-
-ios/
 
 # IntelliJ related
 *.iml
@@ -63,6 +61,8 @@ ios/
 
 
 # iOS/XCode related
+**/ios/build
+**/ios/Runner*
 **/ios/**/*.mode1v3
 **/ios/**/*.mode2v3
 **/ios/**/*.moved-aside
@@ -94,19 +94,6 @@ ios/
 **/ios/Flutter/Debug-keys.xcconfig
 **/ios/Flutter/Release-keys.xcconfig
 
-# macOS
-**/Flutter/ephemeral/
-**/Pods/
-**/macos/Flutter/GeneratedPluginRegistrant.swift
-**/macos/Flutter/ephemeral
-**/xcuserdata/
-**/macos/Flutter/Debug-keys.xcconfig
-**/macos/Flutter/Release-keys.xcconfig
-macos/Flutter/Release-keys.xcconig
-
-# Swift package manager (for code indexing)
-**/.build/
-
 # Exceptions to above rules.
 !**/ios/**/default.mode1v3
 !**/ios/**/default.mode2v3
@@ -115,6 +102,24 @@ macos/Flutter/Release-keys.xcconig
 !/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
 !/dev/ci/**/Gemfile.lock
 !.vscode/settings.json
+!ios/Runner/AppDelegate.swift
+!ios/Info.plist
+
+# macOS
+**/Flutter/ephemeral/
+**/macos/build
+**/Pods/
+**/macos/Flutter/GeneratedPluginRegistrant.swift
+**/macos/Flutter/ephemeral
+**/xcuserdata/
+**/macos/Flutter/Debug-keys.xcconfig
+**/macos/Flutter/Release-keys.xcconfig
+!**/macos/Runner/AppDelegate.swift
+!**/macos/Info.plist
+
+# Swift package manager (for code indexing)
+**/.build/
+
 
 # Windows
 **/windows/flutter/ephemeral/

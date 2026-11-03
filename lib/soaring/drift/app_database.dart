@@ -1,7 +1,10 @@
+import 'dart:io';
+
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:sqflite/sqflite.dart' show getDatabasesPath;
 import 'airport/airports.dart';
 import 'airport/airports_dao.dart';
 import 'converter/latlng_converter.dart';
@@ -29,14 +32,24 @@ class AppDatabase extends _$AppDatabase {
   @override
   int get schemaVersion => 2;
 
+
+  // Prior code using Floor created databases named
+  //  Android app_database
+  //  iOS  app_database.db
+  // So setting up to (hopefully) finding existing databases
   static QueryExecutor _openConnection() {
     return driftDatabase(
       name: 'app_database',
       native: DriftNativeOptions(
         databasePath: () async {
-          final dbFolder = await getApplicationDocumentsDirectory();
-          // Explicitly target '.db' instead of Drift's default '.sqlite'
-          return p.join(dbFolder.path, 'app_database.db');
+         if (Platform.isAndroid) {
+           final dbFolder = await getDatabasesPath();
+            return p.join(dbFolder, 'app_database');
+         } else {
+           final dbFolder = await getApplicationDocumentsDirectory();
+           // Explicitly target '.db' instead of Drift's default '.sqlite'
+           return p.join(dbFolder.path, 'app_database.db');
+         }
         },
         shareAcrossIsolates: true,
         // share database between workmanager and app

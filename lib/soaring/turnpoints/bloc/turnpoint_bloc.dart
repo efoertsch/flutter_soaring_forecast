@@ -14,8 +14,7 @@ import 'package:flutter_soaring_forecast/soaring/turnpoints/cup/cup_styles.dart'
 import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoint_utils.dart';
 import 'package:intl/intl.dart';
 import 'package:location/location.dart';
-import 'package:media_store_plus/media_store_plus.dart';
-import 'package:media_store_plus/src/dir_type.dart';
+import 'package:path_provider/path_provider.dart';
 
 class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
   final Repository repository;
@@ -274,23 +273,18 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
       String turnpointsFileName = "${turnpoints.length == 1
               ? ("Turnpoint_${turnpoints[0].code}_")
               : "Turnpoints_"}${_getCurrentDateAndTime()}.cup";
-      File? file = await _createTurnpointFile(turnpointsFileName);
-      if (file != null) {
-        var sink = file.openWrite();
-        sink.write(TurnpointUtils.getAllColumnHeaders());
+      StringBuffer sb = StringBuffer();
+      sb.write(TurnpointUtils.getAllColumnHeaders());
         turnpoints.forEach((turnpoint) {
-          sink.write(TurnpointUtils.getCupFormattedRecord(turnpoint) +
+          sb.write(TurnpointUtils.getCupFormattedRecord(turnpoint) +
               Constants.NEW_LINE);
         });
-        // Close the IOSink to free system resources.
-        sink.close();
-        if (Platform.isAndroid) {
-          await _storeFileViaMediaManager(file, emit);
-        }else {
-          emit(TurnpointShortMessageState("Turnpoint(s) downloaded to ${file.path.split("/").last}"));
-        }
+
+       String? filename = await repository.writeTurnpointsToFile(turnpointsFileName, sb.toString(),);
+       if (filename != null) {
+          emit(TurnpointShortMessageState("Turnpoint(s) downloaded to ${filename.split("/").last}"));
       } else {
-        emit(TurnpointErrorState("Error writing turnpoints to temp directory"));
+        emit(TurnpointErrorState("Error writing turnpoints to Downloads or app directory"));
       }
 
     } catch (e) {
@@ -305,25 +299,12 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
     return DateFormat('yyyy_MM_dd').format(now);
   }
 
-  Future<File?> _createTurnpointFile(String filename) async {
-    File? file;
-    try {
-      Directory? directory = await repository.getTempOrIOSDocDirectory();
-      if (directory != null) {
-        file = File('${directory.absolute.path}/$filename');
-      }
-    } catch (e) {
-      debugPrint("Exception creating download file: $e");
-      rethrow;
-    }
-    return file;
-  }
 
   FutureOr<List<File>> _getCustomImportFileNames(
       GetCustomImportFileNamesEvent event, Emitter<TurnpointState> emit) async {
     List<File> cupfiles = [];
     try {
-      Directory? directory = await repository.getTempOrIOSDocDirectory();
+      Directory? directory = await repository.getPublicDownloadsDir();
       if (directory != null) {
         directory
             .listSync()
@@ -355,22 +336,4 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
     }
   }
 
-  //https://github.com/SNNafi/media_store_plus/blob/7d3760c2948634fe200c51ab9633092600376db6/lib/media_store_plus.dart
-  Future<void> _storeFileViaMediaManager(File file, Emitter<TurnpointState> emit) async {
-    SaveInfo? saveInfo;
-    await MediaStore.ensureInitialized();
-    MediaStore mediaStore = MediaStore();
-    List<String> dirParts = file.toString().split("/");
-    String filename = dirParts.last;
-    String dirToUse  = dirParts.length > 3 ? dirParts[dirParts.length - 3] : "";
-    MediaStore.appFolder = dirToUse;
-    saveInfo = await mediaStore.saveFile(tempFilePath: file.path
-        , dirType: DirType.download
-        , dirName: DirName.download);
-
-  if (saveInfo != null){
-    emit (TurnpointShortMessageState("Turnpoints saved to ${filename}"));
-  }
-
-  }
 }
