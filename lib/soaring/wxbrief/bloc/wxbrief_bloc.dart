@@ -325,6 +325,7 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
       String ngbv2pdfBriefing, Emitter<WxBriefState> emit) async {
     Uint8List bytes = base64Decode(ngbv2pdfBriefing);
     final filePath = await repository.writeWxBriefToDirectory("WxBrief.pdf", bytes);
+    // filePath is MediaStore name. Convert to file path
     if (filePath == null) {
       // send error
     } else {

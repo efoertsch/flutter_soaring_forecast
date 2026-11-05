@@ -282,7 +282,7 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
 
        String? filename = await repository.writeTurnpointsToFile(turnpointsFileName, sb.toString(),);
        if (filename != null) {
-          emit(TurnpointShortMessageState("Turnpoint(s) downloaded to ${filename.split("/").last}"));
+          emit(TurnpointShortMessageState("Turnpoint(s) downloaded to $filename"));
       } else {
         emit(TurnpointErrorState("Error writing turnpoints to Downloads or app directory"));
       }

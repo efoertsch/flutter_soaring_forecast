@@ -281,7 +281,10 @@ class _SeeYouImportScreenState extends State<SeeYouImportScreen>
         ),
         linuxOptions: LinuxOptions(
           lockParentWindow: true, // <-- Moved here
-        )
+        ),
+        darwinOptions: const DarwinOptions(
+          assetRepresentationMode: DarwinAssetRepresentationMode.current,
+        ),
       );
       hasUserAborted = pickedFiles.length ==0;
     } on PlatformException catch (e) {

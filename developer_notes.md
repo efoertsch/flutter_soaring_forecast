@@ -1,3 +1,5 @@
+
+Duplicate values in a dropdown bug
 If testing in Android emulator and getting an error when launching about duplicate values in a dropdown, comment out the call to the Workmanager in main.dart
 Just remember to remove it when creating release code.
 

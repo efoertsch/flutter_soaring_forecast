@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:android_media_store/android_media_store.dart';
 import 'package:drift/drift.dart' show Value;
 
 //import 'package:media_store_plus/media_store_plus.dart';
@@ -50,6 +51,7 @@ import 'package:flutter_soaring_forecast/soaring/windy/data/windy_model.dart';
 import 'package:flutter_soaring_forecast/soaring/wxbrief/data/briefing_option.dart';
 import 'package:logger/logger.dart' as DLogger; // Level conflict with Dio
 import 'package:path/path.dart';
+import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:retrofit/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -63,6 +65,7 @@ import 'rasp/forecast_types.dart';
 import 'rasp/rasp_api.dart';
 import 'rasp/regions.dart';
 import 'usgs/usgs_api.dart';
+
 
 class Repository {
   static Repository? _repository;
@@ -647,7 +650,6 @@ class Repository {
     return _appDatabase.turnpointsDao.findTurnpoints('%' + query + '%');
   }
 
-
   Future<Turnpoint?> getTurnpointByCode(String code) async {
     return _appDatabase.turnpointsDao.getTurnpointByCode(code);
   }
@@ -660,17 +662,48 @@ class Repository {
   }
 
   Future<String?> writeTurnpointsToFile(
-      String turnpointsFileName,
-      String turnpointData,
-      ) async {
-    return await FileSaver.instance.saveToDownloads(
-      name: turnpointsFileName,
-      bytes: utf8.encode(turnpointData),
-      // or file / filePath / link
-      fileExtension: "cup",
-      mimeType: MimeType.text,
-      subfolder: "SoaringForecast", // optional: Download/My App/report.pdf
-    );
+    String turnpointsFileName,
+    String turnpointData,
+  ) async {
+    if (Platform.isAndroid) {
+      String? fileuri = await FileSaver.instance.saveToDownloads(
+        name: turnpointsFileName,
+        bytes: utf8.encode(turnpointData),
+        // or file / filePath / link
+        //fileExtension: "cup",
+        includeExtension: false,
+        mimeType: MimeType.other,
+        // subfolder: "SoaringForecast", // optional: Download/My App/report.pdf
+      );
+      if (fileuri != null) {
+        return await getFileNameFromContentUri(fileuri, false);
+      } else
+        return null;
+    } else {
+      String fileuri = await FileSaver.instance.saveFile(
+        name: turnpointsFileName,
+        bytes: utf8.encode(turnpointData),
+        // or file / filePath / link
+        //fileExtension: "cup",
+        includeExtension: false,
+        mimeType: MimeType.other,
+        // subfolder: "SoaringForecast", // optional: Download/My App/report.pdf
+      );
+      return  fileuri.split("/").last ;
+    }
+  }
+
+  //
+  Future<String?> getFileNameFromContentUri(String uriString, bool returnFullPath) async {
+    final mediaStore = AndroidMediaStore.instance;
+    try {
+      String? file = await mediaStore.uriToPath(uriString);
+      // Extract the original file name using the path library
+      return (file != null) ? (returnFullPath ? file : p.basename(p.basename(file))) : null;
+    } catch (error, stackTrace) {
+      logger.e(stackTrace);
+      return null;
+    }
   }
 
   //------  Selected turnpoint files available from turnpoint exchange ------
@@ -1251,14 +1284,23 @@ class Repository {
   }
 
   // Currently used to write WxBrief PDF
-  Future<String?> writeWxBriefToDirectory(String fileName, Uint8List bytes) async {
-   return await FileSaver.instance.saveToDownloads(
+  Future<String?> writeWxBriefToDirectory(
+    String fileName,
+    Uint8List bytes,
+  ) async {
+    String? filename = await FileSaver.instance.saveToDownloads(
       name: fileName,
-      bytes: bytes,            // or file / filePath / link
+      bytes: bytes,
+      // or file / filePath / link
       fileExtension: "pdf",
       mimeType: MimeType.pdf,
-      subfolder: "SoaringForecast",        // optional: Download/My App/report.pdf
+      subfolder: "SoaringForecast", // optional: Download/My App/report.pdf
     );
+    if (filename != null && Platform.isAndroid) {
+      return await getFileNameFromContentUri(filename, true);
+    } else {
+      return filename;
+    }
   }
 
   // ----- Shared preferences --------------------------
@@ -1342,10 +1384,17 @@ class Repository {
 
   Future<Directory?> getPublicDownloadsDir() async {
     // Returns the standard Android Downloads folder
-    return await getDownloadsDirectory();
-
+    if (Platform.isAndroid) {
+      return await getDownloadsDirectory();
+    }
+    else if  (Platform.isIOS){
+      // 1. Get the path to the app's iOS Documents directory
+     final directory = await getApplicationDocumentsDirectory();
+      print('DOCUMENTS PATH: ${directory.path}');
+      return directory;
+    } else //
+      return  await getDownloadsDirectory();
   }
-
 
   Future<List<Group>> getSettingOptionsFromAssets() async {
     if (_settingGroups.isEmpty) {
@@ -1578,6 +1627,4 @@ class Repository {
       value: show,
     );
   }
-
-
 }

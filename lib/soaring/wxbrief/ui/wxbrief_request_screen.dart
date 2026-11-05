@@ -73,7 +73,7 @@ class _WxBriefRequestScreenState extends State<WxBriefRequestScreen>
 
   List<String> _departureDates = <String>[];
 
-  Airport? _airport = null;
+  Airport? _airport = Airport(ident: "", type: '', name: '', elevationFt: 0, state: '', municipality: '');
 
   @override
   FutureOr<void> afterFirstLayout(BuildContext context) {

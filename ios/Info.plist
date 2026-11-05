@@ -7,9 +7,11 @@
         <key>NSLocationWhenInUseUsageDescription</key>
         <string>This app needs access to location when open to show your position on the map.
         </string>
+        <key>UIFileSharingEnabled</key>
+        <true/>
         <key>LSSupportsOpeningDocumentsInPlace</key>
         <true/>
-        <key>UIFileSharingEnabled</key>
+        <key>UISupportsDocumentBrowser</key>
         <true/>
     </dict>
 </plist>
