@@ -6,7 +6,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_soaring_forecast/soaring/about/about_screen.dart';
 import 'package:flutter_soaring_forecast/soaring/airport/bloc/airport_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/airport/download/airports_downloader.dart';
@@ -54,6 +53,7 @@ import 'package:flutter_soaring_forecast/soaring/wxbrief/ui/wxbrief_request_scre
 import 'package:workmanager/workmanager.dart';
 
 import 'firebase_options.dart';
+import 'soaring/drift/app_database.dart';
 import 'soaring/local_forecast/bloc/local_forecast_event.dart';
 import 'soaring/local_forecast/data/local_forecast_graph.dart';
 import 'soaring/local_forecast/ui/local_forecast_graph_display.dart';
@@ -68,11 +68,12 @@ void callbackDispatcher() {
     //   debugPrint("The iOS background fetch was triggered");
     // }
     try {
+
       debugPrint('Checking to download airports');
-      var ok = AirportsDownloader(repository: Repository(null))
+      var ok = AirportsDownloader(repository: Repository(null, AppDatabase()))
           .downloadAirportsIfNeeded();
       debugPrint('AirportsDownloader response : $ok');
-      return Future.value(ok);
+      return await Future.value(ok);
     } catch (err) {
       debugPrint(err.toString());
       throw Exception(err);
@@ -82,6 +83,8 @@ void callbackDispatcher() {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+
   // In release mode this will override Flutter debugPrint() so nothing printed to logs
   if (kReleaseMode) {
     debugPrint = (String? message, {int? wrapWidth}) {};
@@ -89,7 +92,7 @@ void main() async {
 
   //https://firebase.google.com/docs/crashlytics/get-started?platform=flutter
   await Firebase.initializeApp(
-    name: "SoaringForecast",
+    //name: "SoaringForecast",
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
@@ -103,15 +106,15 @@ void main() async {
   };
 
   // Since iOS less definitive on when background task will run, just have user kick it off when requested.
-  if (Platform.isAndroid) {
-    Workmanager().initialize(
-        callbackDispatcher, // The top level function, aka callbackDispatcher
-        isInDebugMode:
-            !kReleaseMode // If enabled it will post a notification whenever the task is running. Handy for debugging tasks
-        );
-    Workmanager()
-        .registerOneOffTask("oneTimeDownload", "workmanager.background.task");
-  }
+  //if (Platform.isAndroid) {
+  //  Workmanager().initialize(
+  //      callbackDispatcher, // The top level function, aka callbackDispatcher
+  //      isInDebugMode:
+  //          !kReleaseMode // If enabled it will post a notification whenever the task is running. Handy for debugging tasks
+  //      );
+  //  Workmanager()
+  //      .registerOneOffTask("oneTimeDownload", "workmanager.background.task");
+  //}
 
   // needed to fix CERTIFICATE_VERIFY_FAILED error on startup due to
   // Android 7 and earlier versions referencing expired Lets Encrypt cert when accessing
@@ -124,16 +127,17 @@ void main() async {
       .setTrustedCertificatesBytes(data.buffer.asUint8List());
   // End of Lets Encrypt SSL stuff
 
-  runApp(RepositorySetup());
+  runApp(RepositorySetup(appDatabase: AppDatabase()));
 }
 
 class RepositorySetup extends StatelessWidget {
-  const RepositorySetup({super.key});
+  final AppDatabase appDatabase;
+  const RepositorySetup({required this.appDatabase, super.key});
 
   @override
   Widget build(BuildContext context) {
     return RepositoryProvider(
-      create: (context) => Repository(context),
+      create: (context) => Repository(context,  appDatabase),
       // !!! Android Studio has bug in that this widget gets called when WorkManager task is triggered !!
       // !!! which causes display issues
       // !!! use flutter run --flavor dev from terminal

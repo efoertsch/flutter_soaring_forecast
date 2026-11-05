@@ -2,12 +2,15 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:media_store_plus/media_store_plus.dart';
+import 'package:android_media_store/android_media_store.dart';
+import 'package:drift/drift.dart' show Value;
+
+//import 'package:media_store_plus/media_store_plus.dart';
 import 'package:collection/collection.dart';
 import 'package:csv/csv.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:dio/dio.dart';
-import 'package:floor/floor.dart';
+import 'package:file_saver/file_saver.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
@@ -21,11 +24,11 @@ import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
         RaspDisplayOptions,
         WxBriefBriefingRequest,
         WxBriefTypeOfBrief;
-import 'package:flutter_soaring_forecast/soaring/floor/airport/airport.dart';
-import 'package:flutter_soaring_forecast/soaring/floor/app_database.dart';
-import 'package:flutter_soaring_forecast/soaring/floor/task/task.dart';
-import 'package:flutter_soaring_forecast/soaring/floor/taskturnpoint/task_turnpoint.dart';
-import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
+import 'package:flutter_soaring_forecast/soaring/drift/airport/airports.dart';
+import 'package:flutter_soaring_forecast/soaring/drift/app_database.dart';
+import 'package:flutter_soaring_forecast/soaring/drift/task/tasks.dart';
+import 'package:flutter_soaring_forecast/soaring/drift/taskturnpoint/task_turnpoints.dart';
+import 'package:flutter_soaring_forecast/soaring/drift/turnpoint/turnpoints.dart';
 import 'package:flutter_soaring_forecast/soaring/forecast/forecast_data/soaring_forecast_image.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/ImageCacheManager.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/one800wxbrief/metar_taf_response.dart';
@@ -48,11 +51,13 @@ import 'package:flutter_soaring_forecast/soaring/windy/data/windy_model.dart';
 import 'package:flutter_soaring_forecast/soaring/wxbrief/data/briefing_option.dart';
 import 'package:logger/logger.dart' as DLogger; // Level conflict with Dio
 import 'package:path/path.dart';
+import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:retrofit/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
 
+import '../drift/turnpoint/turnpoints.dart';
 import '../local_forecast/data/local_forecast_favorite.dart';
 import 'dio_interceptor.dart';
 import 'rasp/forecast_models.dart';
@@ -60,6 +65,7 @@ import 'rasp/forecast_types.dart';
 import 'rasp/rasp_api.dart';
 import 'rasp/regions.dart';
 import 'usgs/usgs_api.dart';
+
 
 class Repository {
   static Repository? _repository;
@@ -69,7 +75,7 @@ class Repository {
   static late RaspOptionsClient _raspOptionsClient;
   static UsgsClient? _usgsClient;
   static One800WxBriefClient? _one800WxBriefClient;
-  static AppDatabase? _appDatabase;
+  static late AppDatabase _appDatabase;
   static var logger = DLogger.Logger();
   static SharedPreferences? sharedPreferences;
 
@@ -117,10 +123,11 @@ class Repository {
   Repository._();
 
   // BuildContext should only be null if repository created in WorkManager task!!!
-  factory Repository(BuildContext? context) {
+  factory Repository(BuildContext? context, AppDatabase appDatabase) {
     if (_repository == null) {
       _repository = Repository._();
       _context = context;
+      _appDatabase = appDatabase;
       _dio.options.receiveTimeout = Duration(seconds: 30);
       _dio.options.followRedirects = true;
       if (kDebugMode) {
@@ -161,18 +168,24 @@ class Repository {
 
   Future<bool> isBeginnerForecastMode() async {
     return await getGenericBool(
-        key: _BEGINNER_FORECAST_MODE, defaultValue: true);
+      key: _BEGINNER_FORECAST_MODE,
+      defaultValue: true,
+    );
   }
 
   // true is to display 'simple' forecast select, false to display 'expert' forecast select
   Future<void> setBeginnerForecastMode(bool isBeginnerForecastMode) async {
     await saveGenericBool(
-        key: _BEGINNER_FORECAST_MODE, value: isBeginnerForecastMode);
+      key: _BEGINNER_FORECAST_MODE,
+      value: isBeginnerForecastMode,
+    );
   }
 
   Future<String> getSelectedRegionName() async {
     return await getGenericString(
-        key: _SELECTED_REGION, defaultValue: _DEFAULT_SELECTED_REGION);
+      key: _SELECTED_REGION,
+      defaultValue: _DEFAULT_SELECTED_REGION,
+    );
   }
 
   Future<void> saveSelectedRegionName(String regionName) async {
@@ -187,10 +200,15 @@ class Repository {
     List<String> dates = region.dates!;
     for (int i = 0; i < region.dates!.length; ++i) {
       try {
-        ForecastModels forecastModels =
-            await getForecastModelsForRegionAndDate(region.name!, dates[i]);
+        ForecastModels forecastModels = await getForecastModelsForRegionAndDate(
+          region.name!,
+          dates[i],
+        );
         region.addForecastModelsForDate(
-            forecastModels, dates[i], printdates[i]);
+          forecastModels,
+          dates[i],
+          printdates[i],
+        );
       } catch (error, stackTrace) {
         logger.e(stackTrace);
       }
@@ -200,8 +218,10 @@ class Repository {
 
   // Date in yyyy-mm-dd format
   Future<ForecastModels> getForecastModelsForRegionAndDate(
-          String regionName, String date) async {
-     return await _raspClient.getForecastModels(regionName, date);
+    String regionName,
+    String date,
+  ) async {
+    return await _raspClient.getForecastModels(regionName, date);
   }
 
   /// Get the list of forecasts that are generated.
@@ -220,9 +240,11 @@ class Repository {
         // Oh well, get the complete list and just return those forecasts
         // that would have related server jpegs/pngs.
         await getFullForecastList();
-        _displayableForecastList.addAll(_fullForecastList
-            .where((forecast) => forecast.selectable == true)
-            .toList());
+        _displayableForecastList.addAll(
+          _fullForecastList
+              .where((forecast) => forecast.selectable == true)
+              .toList(),
+        );
         // Shallow copy of list
         return _displayableForecastList.toList();
       }
@@ -247,16 +269,19 @@ class Repository {
   }
 
   Future<List<Forecast>> _getForecastListFromAssets() async {
-    final json = await DefaultAssetBundle.of(_context!)
-        .loadString('assets/json/forecast_options.json');
+    final json = await DefaultAssetBundle.of(
+      _context!,
+    ).loadString('assets/json/forecast_options.json');
     ForecastTypes forecastTypes = forecastTypesFromJson(json);
     return forecastTypes.forecasts;
   }
 
   Future<List<Forecast>> _getCustomForecastList() async {
     final forecasts = <Forecast>[];
-    final jsonString =
-        await getGenericString(key: _FORECAST_LIST, defaultValue: "");
+    final jsonString = await getGenericString(
+      key: _FORECAST_LIST,
+      defaultValue: "",
+    );
     if (jsonString.isNotEmpty) {
       final forecastTypes = forecastTypesFromJson(jsonString);
       forecasts.addAll(forecastTypes.forecasts);
@@ -272,8 +297,9 @@ class Repository {
   Future<bool> saveForecasts(List<Forecast> forecasts) async {
     _displayableForecastList.clear();
     _displayableForecastList.addAll(forecasts);
-    final jsonForecasts =
-        forecastTypesToJson(ForecastTypes(forecasts: _displayableForecastList));
+    final jsonForecasts = forecastTypesToJson(
+      ForecastTypes(forecasts: _displayableForecastList),
+    );
     return await saveGenericString(key: _FORECAST_LIST, value: jsonForecasts);
   }
 
@@ -283,8 +309,10 @@ class Repository {
   }
 
   Future<Forecast?> getSelectedForecast() async {
-    String jsonString =
-        await getGenericString(key: _SELECTED_FORECAST, defaultValue: "");
+    String jsonString = await getGenericString(
+      key: _SELECTED_FORECAST,
+      defaultValue: "",
+    );
     if (jsonString.isEmpty) return null;
     return Forecast.fromJson(jsonDecode(jsonString));
   }
@@ -301,11 +329,26 @@ class Repository {
    * @param forecasts - a space separated list of forecast types
    * @return
    */
-  Future<HttpResponse> getLatLngForecast(String region, String date,
-      String model, String time, String lat, String lon, String forecasts) {
+  Future<HttpResponse> getLatLngForecast(
+    String region,
+    String date,
+    String model,
+    String time,
+    String lat,
+    String lon,
+    String forecasts,
+  ) {
     final String contentType = "application/x-www-form-urlencoded";
     return _raspClient.getLatLongPointForecast(
-        contentType, region, date, model, time, lat, lon, forecasts);
+      contentType,
+      region,
+      date,
+      model,
+      time,
+      lat,
+      lon,
+      forecasts,
+    );
   }
 
   /*
@@ -318,19 +361,28 @@ class Repository {
   * @param param  -  "wstar@hwcrit" @ separated forecast codes
   * @return
   */
-// Got error when putting Content-type in @Headers annotation
+  // Got error when putting Content-type in @Headers annotation
 
   Future<HttpResponse<String>> getDaysForecastForLatLong(
-      String region,
-      String date,
-      String model,
-      String times,
-      String lat,
-      String lon,
-      String params) {
+    String region,
+    String date,
+    String model,
+    String times,
+    String lat,
+    String lon,
+    String params,
+  ) {
     final String contentType = "application/x-www-form-urlencoded";
     final responseBody = _raspClient.getDaysForecastForLatLong(
-        contentType, region, date, model, times, lat, lon, params);
+      contentType,
+      region,
+      date,
+      model,
+      times,
+      lat,
+      lon,
+      params,
+    );
     debugPrint("responseBody: ${responseBody.toString()}");
     return responseBody;
   }
@@ -352,47 +404,56 @@ class Repository {
     final String contentType = "application/x-www-form-urlencoded";
     await _raspClient
         .getEstimatedFlightAverages(
-            contentType,
-            region,
-            date,
-            model,
-            grid,
-            time,
-            glider,
-            polarFactor,
-            polarCoefficients,
-            thermalSinkRate,
-            thermalMultipler,
-            turnpoints)
+          contentType,
+          region,
+          date,
+          model,
+          grid,
+          time,
+          glider,
+          polarFactor,
+          polarCoefficients,
+          thermalSinkRate,
+          thermalMultipler,
+          turnpoints,
+        )
         .then((httpResponse) {
-      if (httpResponse.response.statusCode! >= 200 &&
-          httpResponse.response.statusCode! < 300 &&
-          httpResponse.data.length > 0 &&
-          httpResponse.data.substring(0, 1) == "{") {
-        debugPrint(" httpResponse: " + httpResponse.data);
-        optimalFlightSummary =
-            EstimatedFlightSummary.fromJson(jsonDecode(httpResponse.data));
-      } else {
-        if (httpResponse.data.length > 0) {
-          var summary = RouteSummary(error: httpResponse.data);
+          if (httpResponse.response.statusCode! >= 200 &&
+              httpResponse.response.statusCode! < 300 &&
+              httpResponse.data.length > 0 &&
+              httpResponse.data.substring(0, 1) == "{") {
+            debugPrint(" httpResponse: " + httpResponse.data);
+            optimalFlightSummary = EstimatedFlightSummary.fromJson(
+              jsonDecode(httpResponse.data),
+            );
+          } else {
+            if (httpResponse.data.length > 0) {
+              var summary = RouteSummary(error: httpResponse.data);
+              optimalFlightSummary = EstimatedFlightSummary(
+                routeSummary: summary,
+              );
+            }
+          }
+        })
+        .catchError((onError) {
+          var summary = RouteSummary(error: onError.toString());
           optimalFlightSummary = EstimatedFlightSummary(routeSummary: summary);
-        }
-      }
-    }).catchError((onError) {
-      var summary = RouteSummary(error: onError.toString());
-      optimalFlightSummary = EstimatedFlightSummary(routeSummary: summary);
-    });
+        });
     return optimalFlightSummary;
   }
 
   Future<double> getForecastOverlayOpacity() async {
     return await getGenericDouble(
-        key: _FORECAST_OVERLAY_OPACITY, defaultValue: 50);
+      key: _FORECAST_OVERLAY_OPACITY,
+      defaultValue: 50,
+    );
   }
 
   Future<void> setForecastOverlayOpacity(double forecastOverlayOpacity) async {
     await saveGenericDouble(
-        key: _FORECAST_OVERLAY_OPACITY, value: forecastOverlayOpacity);
+      key: _FORECAST_OVERLAY_OPACITY,
+      value: forecastOverlayOpacity,
+    );
   }
 
   // Future<void> saveViewBounds(ViewBounds mapBoundsAndZoom) async {
@@ -421,7 +482,8 @@ class Repository {
 
   // ----------- Get RASP forecast images -----------------------
   Future<SoaringForecastImage> getRaspForecastImageByUrl(
-      SoaringForecastImage soaringForecastImage) async {
+    SoaringForecastImage soaringForecastImage,
+  ) async {
     String fullUrl = RASP_BASE_URL + soaringForecastImage.imageUrl;
     File file = await ImageCacheManager().getSingleFile(fullUrl);
     //debugPrint("Downloading forecast image: $fullUrl");
@@ -431,14 +493,17 @@ class Repository {
   }
 
   Future<Image> getRaspForecastImageByParms(
-      String regionName,
-      String forecastDate,
-      String model,
-      String forecastType,
-      String forecastTime,
-      String imageType) async {
-    return getRaspForecastImage(RASP_BASE_URL +
-        "/$regionName/$forecastDate/$model/$forecastType.$forecastTime}local.d2.$imageType.png");
+    String regionName,
+    String forecastDate,
+    String model,
+    String forecastType,
+    String forecastTime,
+    String imageType,
+  ) async {
+    return getRaspForecastImage(
+      RASP_BASE_URL +
+          "/$regionName/$forecastDate/$model/$forecastType.$forecastTime}local.d2.$imageType.png",
+    );
   }
 
   getRaspForecastImage(String url) async {
@@ -454,50 +519,45 @@ class Repository {
     return getGenericString(key: 'INITIAL_FORECAST_HOUR', defaultValue: '1300');
   }
 
-  //--------  Floor -----------------------------------------------------------------------
-  // Set up Floor database
-  Future<AppDatabase> makeDatabaseAvailable() async {
-    if (_appDatabase == null) {
-      debugPrint('App database being created');
-      // Oops. Added this so as not to lose existing Android users info
-      if (Platform.isAndroid) {
-        _appDatabase =
-            await $FloorAppDatabase.databaseBuilder('app_database').build();
-      } else if (Platform.isIOS) {
-        _appDatabase =
-            await $FloorAppDatabase.databaseBuilder('app_database.db').build();
-      }
-    }
-    return _appDatabase!;
-  }
-
   Future<int> getCountOfAirports() async {
-    await makeDatabaseAvailable();
-    int? count = await Sqflite.firstIntValue(
-        await _appDatabase!.database.rawQuery('SELECT count(*) FROM airport'));
-    return count ?? 0;
+    int count = await _appDatabase.airportsDao.getCount();
+    return count;
   }
 
-  @transaction
+  //@transaction
   Future<int?> deleteAllAirports() async {
-    await makeDatabaseAvailable();
-    return _appDatabase!.airportDao.deleteAll();
+    return _appDatabase.airportsDao.deleteAll();
   }
 
-  @transaction
-  Future<List<int?>> insertAllAirports(List<Airport> airports) async {
-    await makeDatabaseAvailable();
-    return await _appDatabase!.airportDao.insertAll(airports);
+  Future<int> insertAllAirports(List<Airport> airports) async {
+    List<AirportsCompanion> airportCompanions = [];
+    for (Airport airport in airports) {
+      airportCompanions.add(
+        AirportsCompanion(
+          ident: Value(airport.ident),
+          type: Value(airport.type),
+          name: Value(airport.name),
+          latitudeDeg: Value(airport.latitudeDeg),
+          longitudeDeg: Value(airport.longitudeDeg),
+          elevationFt: Value(airport.elevationFt),
+          state: Value(airport.state),
+          municipality: Value(airport.municipality),
+        ),
+      );
+    }
+
+    return await _appDatabase.airportsDao.insertAll(airportCompanions);
   }
 
   Future<List<Airport>?> findAirports(String searchTerm) async {
-    await makeDatabaseAvailable();
-    return await _appDatabase!.airportDao.findAirports('%' + searchTerm + '%');
+    return await _appDatabase.airportsDao.findAirports('%' + searchTerm + '%');
   }
 
   Future<String> getSelectedAirportCodesAsString() async {
     return await getGenericString(
-        key: _AIRPORT_CODES_FOR_METAR, defaultValue: "");
+      key: _AIRPORT_CODES_FOR_METAR,
+      defaultValue: "",
+    );
   }
 
   void saveSelectedAirportCodes(String icaoCodes) async {
@@ -505,13 +565,12 @@ class Repository {
   }
 
   Future<List<Airport>?> getSelectedAirports(List<String> icaoCodes) async {
-    await makeDatabaseAvailable();
-    return await _appDatabase!.airportDao.selectIcaoIdAirports(icaoCodes);
+    return await _appDatabase.airportsDao.selectIcaoIdAirports(icaoCodes);
   }
 
   Future<Airport?> getAirportById(String ident) async {
-    await makeDatabaseAvailable();
-    Airport? airport = await _appDatabase!.airportDao.getAirportByIdent(ident);
+    Airport? airport = await _appDatabase.airportsDao.getAirportByIdent(ident);
+
     return airport;
   }
 
@@ -543,91 +602,56 @@ class Repository {
   }
 
   // ----- Turnpoints ----------------------------------
-  @transaction
   Future<int?> deleteAllTurnpoints() async {
-    await makeDatabaseAvailable();
-    return _appDatabase!.turnpointDao.deleteAllTurnpoints();
+    return _appDatabase.turnpointsDao.deleteAllTurnpoints();
   }
 
   Future<int> getCountOfTurnpoints() async {
-    await makeDatabaseAvailable();
-    //int? count = await _appDatabase!.turnpointDao.getTurnpointCount();
-    int? count = Sqflite.firstIntValue(await _appDatabase!.database
-        .rawQuery('select count(*) count from turnpoint'));
-    return count ?? 0;
+    return await _appDatabase.turnpointsDao.getCount();
   }
 
-  @transaction
   Future<int?> insertTurnpoint(Turnpoint turnpoint) async {
-    await makeDatabaseAvailable();
-    return _appDatabase!.turnpointDao.insert(turnpoint);
+    return _appDatabase.turnpointsDao.insert(turnpoint.toCompanion(false));
   }
 
-  @transaction
-  Future<List<int?>> insertAllTurnpoints(List<Turnpoint> turnpoints) async {
-    await makeDatabaseAvailable();
-    return _appDatabase!.turnpointDao.insertAll(turnpoints);
+  Future<int> insertAllTurnpoints(List<Turnpoint> turnpoints) {
+    return _appDatabase.turnpointsDao.insertAll(turnpoints);
   }
 
   Future<List<Turnpoint>> getAllTurnpoints() async {
-    await makeDatabaseAvailable();
-    return _appDatabase!.turnpointDao.listAllTurnpoints();
+    return _appDatabase.turnpointsDao.listAllTurnpoints();
   }
 
   Future<List<Turnpoint>> getTurnpointsWithinBounds(
-      LatLngBounds latLngBounds) async {
-    await makeDatabaseAvailable();
+    LatLngBounds latLngBounds,
+  ) async {
     // key comes from settings.json
     final landableOnly = await getGenericBool(
-        key: "DISPLAY_LANDABLE_TURNPOINTS", defaultValue: true);
+      key: "DISPLAY_LANDABLE_TURNPOINTS",
+      defaultValue: true,
+    );
     if (landableOnly) {
-      return _appDatabase!.turnpointDao.getLandableTurnpointsWithinBounds(
-          latLngBounds.southWest.latitude,
-          latLngBounds.southWest.longitude,
-          latLngBounds.northEast.latitude,
-          latLngBounds.northEast.longitude);
-    }
-    return _appDatabase!.turnpointDao.getTurnpointsWithinBounds(
+      return _appDatabase.turnpointsDao.getLandableTurnpointsWithinBounds(
         latLngBounds.southWest.latitude,
         latLngBounds.southWest.longitude,
         latLngBounds.northEast.latitude,
-        latLngBounds.northEast.longitude);
+        latLngBounds.northEast.longitude,
+      );
+    }
+    return _appDatabase.turnpointsDao.getTurnpointsWithinBounds(
+      latLngBounds.southWest.latitude,
+      latLngBounds.southWest.longitude,
+      latLngBounds.northEast.latitude,
+      latLngBounds.northEast.longitude,
+    );
   }
 
   Future<List<Turnpoint>> findTurnpoints(String query) async {
-    await makeDatabaseAvailable();
-    return _appDatabase!.turnpointDao.findTurnpoints('%' + query + '%');
-  }
-
-  // Download a file to the downloads directory
-  // from https://fluttercorner.com/how-to-download-file-from-url-and-save-in-local-storage-in-flutter/
-  Future<String> downloadFile(String url, String fileName, String dir) async {
-    HttpClient httpClient = new HttpClient();
-    File file;
-    String filePath = '';
-    String myUrl = '';
-
-    try {
-      myUrl = url + '/' + fileName;
-      var request = await httpClient.getUrl(Uri.parse(myUrl));
-      var response = await request.close();
-      if (response.statusCode == 200) {
-        var bytes = await consolidateHttpClientResponseBytes(response);
-        filePath = '$dir/$fileName';
-        file = File(filePath);
-        await file.writeAsBytes(bytes);
-      } else
-        filePath = 'Error code: ' + response.statusCode.toString();
-    } catch (ex) {
-      filePath = 'Can not fetch url';
-    }
-
-    return filePath;
+    return _appDatabase.turnpointsDao.findTurnpoints('%' + query + '%');
   }
 
   Future<Turnpoint?> getTurnpointByCode(String code) async {
-    await makeDatabaseAvailable();
-    return _appDatabase!.turnpointDao.getTurnpointByCode(code);
+    return _appDatabase.turnpointsDao.getTurnpointByCode(code);
   }
 
   Future<Color> getColorForTurnpoint(String turnpointCode) async {
@@ -637,15 +661,63 @@ class Repository {
         : Colors.red;
   }
 
+  Future<String?> writeTurnpointsToFile(
+    String turnpointsFileName,
+    String turnpointData,
+  ) async {
+    if (Platform.isAndroid) {
+      String? fileuri = await FileSaver.instance.saveToDownloads(
+        name: turnpointsFileName,
+        bytes: utf8.encode(turnpointData),
+        // or file / filePath / link
+        //fileExtension: "cup",
+        includeExtension: false,
+        mimeType: MimeType.other,
+        // subfolder: "SoaringForecast", // optional: Download/My App/report.pdf
+      );
+      if (fileuri != null) {
+        return await getFileNameFromContentUri(fileuri, false);
+      } else
+        return null;
+    } else {
+      String fileuri = await FileSaver.instance.saveFile(
+        name: turnpointsFileName,
+        bytes: utf8.encode(turnpointData),
+        // or file / filePath / link
+        //fileExtension: "cup",
+        includeExtension: false,
+        mimeType: MimeType.other,
+        // subfolder: "SoaringForecast", // optional: Download/My App/report.pdf
+      );
+      return  fileuri.split("/").last ;
+    }
+  }
+
+  //
+  Future<String?> getFileNameFromContentUri(String uriString, bool returnFullPath) async {
+    final mediaStore = AndroidMediaStore.instance;
+    try {
+      String? file = await mediaStore.uriToPath(uriString);
+      // Extract the original file name using the path library
+      return (file != null) ? (returnFullPath ? file : p.basename(p.basename(file))) : null;
+    } catch (error, stackTrace) {
+      logger.e(stackTrace);
+      return null;
+    }
+  }
+
   //------  Selected turnpoint files available from turnpoint exchange ------
   Future<List<TurnpointFile>> getListOfTurnpointExchangeRegionFiles() async {
     List<TurnpointRegion> turnpointRegionList = [];
     var stringJson = await _raspOptionsClient.getTurnpointRegions();
-    TurnpointRegions turnpointRegions =
-        TurnpointRegions.fromJson(jsonDecode(stringJson));
+    TurnpointRegions turnpointRegions = TurnpointRegions.fromJson(
+      jsonDecode(stringJson),
+    );
     turnpointRegionList.addAll(turnpointRegions.turnpointRegions!);
     String selectedRegion = await getGenericString(
-        key: _SELECTED_REGION, defaultValue: _DEFAULT_SELECTED_REGION);
+      key: _SELECTED_REGION,
+      defaultValue: _DEFAULT_SELECTED_REGION,
+    );
     return turnpointRegionList
         .firstWhere((region) => region.region == selectedRegion)
         .turnpointFiles;
@@ -653,47 +725,45 @@ class Repository {
 
   // eg from https://soaringweb.org/TP/Sterling/Sterling,%20Massachusetts%202021%20SeeYou.cup
   Future<List<Turnpoint>> importTurnpointsFromTurnpointExchange(
-      String endUrl) async {
+    String endUrl,
+  ) async {
     List<Turnpoint> turnpoints = [];
     turnpoints.addAll(
-        await TurnpointsImporter.getTurnpointsFromTurnpointExchange(endUrl));
-    var ids = await insertAllTurnpoints(turnpoints);
-    debugPrint("Number turnpoints downloaded: ${ids.length}");
+      await TurnpointsImporter.getTurnpointsFromTurnpointExchange(endUrl),
+    );
+    var numberInserted = await insertAllTurnpoints(turnpoints);
+    debugPrint("Number turnpoints downloaded: $numberInserted");
     return turnpoints;
   }
 
   Future<List<Turnpoint>> importTurnpointsFromFile(File turnpointFile) async {
     List<Turnpoint> turnpoints = [];
-    turnpoints
-        .addAll(await TurnpointsImporter.getTurnpointsFromFile(turnpointFile));
-    var ids = await insertAllTurnpoints(turnpoints);
-    debugPrint("Number turnpoints downloaded: ${ids.length}");
+    turnpoints.addAll(
+      await TurnpointsImporter.getTurnpointsFromFile(turnpointFile),
+    );
+    var numberInserted = await insertAllTurnpoints(turnpoints);
+    debugPrint("Number turnpoints downloaded: $numberInserted ");
     return turnpoints;
   }
 
   Future<Turnpoint?> getTurnpoint(String title, String code) async {
-    await makeDatabaseAvailable();
-    return _appDatabase!.turnpointDao.getTurnpoint(title, code);
+    return _appDatabase.turnpointsDao.getTurnpoint(title, code);
   }
 
   Future<Turnpoint?> getTurnpointById(int turnpointId) async {
-    await makeDatabaseAvailable();
-    return _appDatabase!.turnpointDao.getTurnpointById(turnpointId);
+    return _appDatabase.turnpointsDao.getTurnpointById(turnpointId);
   }
 
-  Future<int?> saveTurnpoint(Turnpoint turnpoint) async {
-    await makeDatabaseAvailable();
-    return _appDatabase!.turnpointDao.insert(turnpoint);
+  Future<int> saveTurnpoint(Turnpoint turnpoint) async {
+    return _appDatabase.turnpointsDao.insert(turnpoint.toCompanion(false));
   }
 
-  Future<int?> updateTurnpoint(Turnpoint turnpoint) async {
-    await makeDatabaseAvailable();
-    return _appDatabase!.turnpointDao.update(turnpoint);
+  Future<int> updateTurnpoint(Turnpoint turnpoint) async {
+    return _appDatabase.turnpointsDao.updateTurnpoint(turnpoint);
   }
 
   Future<int?> deleteTurnpoint(int id) async {
-    await makeDatabaseAvailable();
-    return _appDatabase!.turnpointDao.deleteTurnpoint(id);
+    return _appDatabase.turnpointsDao.deleteTurnpoint(id);
   }
 
   /// Get the types of valid cup styles
@@ -701,8 +771,9 @@ class Repository {
   Future<List<CupStyle>> getCupStyles() async {
     final List<CupStyle> cupListStyles = [];
     try {
-      final json = DefaultAssetBundle.of(_context!)
-          .loadString('assets/json/turnpoint_styles.json');
+      final json = DefaultAssetBundle.of(
+        _context!,
+      ).loadString('assets/json/turnpoint_styles.json');
       CupStyles cupStyles = cupStylesFromJson(await json);
       cupListStyles.addAll(cupStyles.styles);
     } catch (error, stackTrace) {
@@ -714,36 +785,28 @@ class Repository {
   // ----- Task ----------------------------------------
 
   Future<int?> getCountOfTasks() async {
-    await makeDatabaseAvailable();
-    int? count = Sqflite.firstIntValue(await _appDatabase!.database
-        .rawQuery('select count(*) count from task'));
-    return count ?? 0;
+    return await _appDatabase.tasksDao.getCount();
   }
 
   Future<List<Task>> getAlltasks() async {
-    await makeDatabaseAvailable();
-    return _appDatabase!.taskDao.listAllTasks();
+    return _appDatabase.tasksDao.listAllTasks();
   }
 
   Future<Task> getTask(int taskId) async {
-    await makeDatabaseAvailable();
-    Task? task = await _appDatabase!.taskDao.getTask(taskId);
-    return task ?? Task();
+    Task? task = await _appDatabase.tasksDao.getTask(taskId);
+    return task ?? Task(id: -1);
   }
 
   Future<int?> saveTask(Task task) async {
-    await makeDatabaseAvailable();
-    return _appDatabase!.taskDao.insert(task);
+    return _appDatabase.tasksDao.insert(task.toCompanion(true));
   }
 
   Future<int> updateTask(Task task) async {
-    await makeDatabaseAvailable();
-    return _appDatabase!.taskDao.update(task);
+    return _appDatabase.tasksDao.updateTask(task);
   }
 
   Future<int?> deleteTask(int taskId) async {
-    await makeDatabaseAvailable();
-    return _appDatabase!.taskDao.deleteTask(taskId);
+    return _appDatabase.tasksDao.deleteTask(taskId);
   }
 
   // -1 is no task defined
@@ -759,42 +822,46 @@ class Repository {
   // ----- Task Turnpoints----------------------------------------
 
   Future<List<TaskTurnpoint>> getTaskTurnpoints(final int taskId) async {
-    await makeDatabaseAvailable();
-    return _appDatabase!.taskTurnpointDao.getTaskTurnpoints(taskId);
+    return _appDatabase.taskTurnpointsDao.getTaskTurnpoints(taskId);
   }
 
   Future<int?> insertTaskTurnpoint(final TaskTurnpoint taskTurnpoint) async {
-    await makeDatabaseAvailable();
-    return _appDatabase!.taskTurnpointDao.insert(taskTurnpoint);
+    return _appDatabase.taskTurnpointsDao.insert(
+      taskTurnpoint.toCompanion(true),
+    );
   }
 
   Future<int?> updateTaskTurnpoint(final TaskTurnpoint taskTurnpoint) async {
-    await makeDatabaseAvailable();
-    return _appDatabase!.taskTurnpointDao.update(taskTurnpoint);
+    return _appDatabase.taskTurnpointsDao.updateTaskTurnpoint(taskTurnpoint);
   }
 
   Future<int?> deleteTaskTurnpoint(final int taskTurnpointId) async {
-    await makeDatabaseAvailable();
-    return _appDatabase!.taskTurnpointDao.deleteTaskTurnpoint(taskTurnpointId);
+    return _appDatabase.taskTurnpointsDao.deleteTaskTurnpoint(taskTurnpointId);
   }
 
   //-------- Map Display Options ----------------------------------------
   Future<List<PreferenceOption>> getRaspDisplayOptions() async {
     List<PreferenceOption> displayOptions = [];
     for (var option in RaspDisplayOptions) {
-      final isSelected =
-          await getGenericBool(key: option.key, defaultValue: option.selected);
-      displayOptions.add(PreferenceOption(
+      final isSelected = await getGenericBool(
+        key: option.key,
+        defaultValue: option.selected,
+      );
+      displayOptions.add(
+        PreferenceOption(
           key: option.key,
           displayText: option.displayText,
-          selected: isSelected));
+          selected: isSelected,
+        ),
+      );
     }
     ;
     return displayOptions;
   }
 
   FutureOr<void> saveRaspDisplayOptions(
-      List<PreferenceOption> displayOptions) async {
+    List<PreferenceOption> displayOptions,
+  ) async {
     RaspDisplayOptions.forEach((option) async {
       saveRaspDisplayOption(option);
     });
@@ -806,12 +873,17 @@ class Repository {
 
   // ---- USGS calls --------------------------------------------------
   Future<NationalMap> getElevationAtLatLongPoint(
-      double latitude, double longitude) {
+    double latitude,
+    double longitude,
+  ) {
     if (_usgsClient == null) {
       _usgsClient = UsgsClient(_dio);
     }
     return _usgsClient!.getElevation(
-        latitude.toStringAsFixed(6), longitude.toStringAsFixed(6), "Meters");
+      latitude.toStringAsFixed(6),
+      longitude.toStringAsFixed(6),
+      "Meters",
+    );
   }
 
   // ------- Special Use Airspace ----------------------
@@ -842,30 +914,33 @@ class Repository {
       sua = SUA.fromJson(json.decode(suaString));
     } else {
       debugPrint(
-          "No sua file related to region $region found in app directory");
+        "No sua file related to region $region found in app directory",
+      );
     }
     // Now see if newer SUA available
     var suaRegionsString = await _raspOptionsClient.getSUARegions();
     if (suaRegionsString != null) {
-      SUARegionFiles? suaRegionFiles =
-          SUARegionFiles.fromJson(jsonDecode(suaRegionsString));
+      SUARegionFiles? suaRegionFiles = SUARegionFiles.fromJson(
+        jsonDecode(suaRegionsString),
+      );
       try {
         String? suaFileName = suaRegionFiles.suaRegions
-            .singleWhere(
-              (suaRegion) => suaRegion.region == region,
-            )
+            .singleWhere((suaRegion) => suaRegion.region == region)
             .suaFileName;
         if (oldSuaFilename == null ||
             (!(oldSuaFilename).endsWith(region + '_' + suaFileName))) {
           debugPrint(
-              "Need to get SUA file from server (no sua on device or new file available");
+            "Need to get SUA file from server (no sua on device or new file available",
+          );
           // so get details from server
           suaString = await _raspOptionsClient.downloadSuaFile(suaFileName);
           // and if OK save them to file
           if (suaString != null) {
             sua = SUA.fromJson(json.decode(suaString));
             await _writeStringToAppDocsFile(
-                region + '_' + suaFileName, suaString);
+              region + '_' + suaFileName,
+              suaString,
+            );
             // and delete the old file
             if (oldSuaFilename != null) {
               await _deleteFileFromAppDocsDirectory(oldSuaFilename);
@@ -895,26 +970,28 @@ class Repository {
       debugPrint("Found existing sua file $oldSuaFilename in app directory");
     } else {
       debugPrint(
-          "No sua file related to region $region found in app directory");
+        "No sua file related to region $region found in app directory",
+      );
     }
     // Now see if newer SUA available
     var suaRegionsString = await _raspOptionsClient.getSUARegions();
     if (suaRegionsString != null) {
-      SUARegionFiles? suaRegionFiles =
-          SUARegionFiles.fromJson(jsonDecode(suaRegionsString));
+      SUARegionFiles? suaRegionFiles = SUARegionFiles.fromJson(
+        jsonDecode(suaRegionsString),
+      );
       try {
         String? suaFileName = suaRegionFiles.suaRegions
-            .singleWhere(
-              (suaRegion) => suaRegion.region == region,
-            )
+            .singleWhere((suaRegion) => suaRegion.region == region)
             .suaFileName;
         if (oldSuaFilename == null ||
             (!(oldSuaFilename).endsWith(region + '_' + suaFileName))) {
           debugPrint(
-              "Need to get SUA file from server (no sua on device or new file available");
+            "Need to get SUA file from server (no sua on device or new file available",
+          );
           // so get details from server
-          String? newSua =
-              await _raspOptionsClient.downloadSuaFile(suaFileName);
+          String? newSua = await _raspOptionsClient.downloadSuaFile(
+            suaFileName,
+          );
           // and if OK save them to file
           if (newSua != null) {
             await _writeStringToAppDocsFile(region + '_' + suaFileName, newSua);
@@ -977,11 +1054,14 @@ class Repository {
     final dir = Directory(path);
     final List<FileSystemEntity?> files = await dir.list().toList();
     try {
-      fileName = basename(files
-          .singleWhere(
+      fileName = basename(
+        files
+            .singleWhere(
               (file) => file is File && fileEndsWith.hasMatch(file.path),
-              orElse: () => null)!
-          .path);
+              orElse: () => null,
+            )!
+            .path,
+      );
       // debugPrint("SUA file found: $fileName");
     } catch (e) {
       // may get Bad State: No element execption if no file found. We ignore exception
@@ -1034,7 +1114,9 @@ class Repository {
   //------ 1800wxbrief ---------------------------------
   Future<String> getSavedAirportId() async {
     return await getGenericString(
-        key: _WXBRIEF_AIRPORT_ID, defaultValue: "3B3");
+      key: _WXBRIEF_AIRPORT_ID,
+      defaultValue: "3B3",
+    );
   }
 
   Future<bool> saveAirportId(String airportId) async {
@@ -1064,12 +1146,16 @@ class Repository {
 
   Future<String> getAircraftRegistration() async {
     return getGenericString(
-        key: _WXBRIEF_AIRCRAFT_REGISTRATION, defaultValue: "");
+      key: _WXBRIEF_AIRCRAFT_REGISTRATION,
+      defaultValue: "",
+    );
   }
 
   Future<bool> setAircraftRegistration(String aircraftRegistration) async {
     return saveGenericString(
-        key: _WXBRIEF_AIRCRAFT_REGISTRATION, value: aircraftRegistration);
+      key: _WXBRIEF_AIRCRAFT_REGISTRATION,
+      value: aircraftRegistration,
+    );
   }
 
   Future<String> getWxBriefAccountName() {
@@ -1078,7 +1164,9 @@ class Repository {
 
   Future<bool> setWxBriefAccountName(String wxbriefAccountName) {
     return saveGenericString(
-        key: _WXBRIEF_ACCOUNT_NAME, value: wxbriefAccountName);
+      key: _WXBRIEF_ACCOUNT_NAME,
+      value: wxbriefAccountName,
+    );
   }
 
   Future<String> getWxBriefCorridorWidth() async {
@@ -1087,17 +1175,23 @@ class Repository {
 
   Future<bool> setWxBriefCorridorWidth(String corridorWidth) async {
     return saveGenericString(
-        key: _WXBRIEF_CORRIDOR_WIDTH, value: corridorWidth);
+      key: _WXBRIEF_CORRIDOR_WIDTH,
+      value: corridorWidth,
+    );
   }
 
   Future<String> getWxBriefWindsAloftWidth() async {
     return getGenericString(
-        key: _WXBRIEF_WINDS_ALOFT_WIDTH, defaultValue: "200");
+      key: _WXBRIEF_WINDS_ALOFT_WIDTH,
+      defaultValue: "200",
+    );
   }
 
   Future<bool> setWxBriefWindsAloftWidth(String windsAloftWidth) async {
     return saveGenericString(
-        key: _WXBRIEF_WINDS_ALOFT_WIDTH, value: windsAloftWidth);
+      key: _WXBRIEF_WINDS_ALOFT_WIDTH,
+      value: windsAloftWidth,
+    );
   }
 
   // return true if user no longer wants to see disclaimer
@@ -1111,7 +1205,9 @@ class Repository {
   }
 
   Future<List<BriefingOption>> getWxBriefProductCodes(
-      selectedBriefingRequest, WxBriefTypeOfBrief selectedTypeOfBrief) async {
+    selectedBriefingRequest,
+    WxBriefTypeOfBrief selectedTypeOfBrief,
+  ) async {
     String filename = "";
     if (selectedBriefingRequest == WxBriefBriefingRequest.AREA_REQUEST) {
       filename = "wxbrief_ab_product_codes.csv";
@@ -1122,8 +1218,9 @@ class Repository {
   }
 
   Future<List<BriefingOption>> getWxBriefNGBV2TailoringOptions(
-      WxBriefBriefingRequest selectedBriefingRequest,
-      WxBriefTypeOfBrief selectedTypeOfBrief) async {
+    WxBriefBriefingRequest selectedBriefingRequest,
+    WxBriefTypeOfBrief selectedTypeOfBrief,
+  ) async {
     String filename = "";
     if (selectedBriefingRequest == WxBriefBriefingRequest.AREA_REQUEST) {
       filename = "wxbrief_ab_ngbv2_options.csv";
@@ -1134,8 +1231,9 @@ class Repository {
   }
 
   Future<List<BriefingOption>> getWxBriefNonNGBV2TailoringOptions(
-      WxBriefBriefingRequest selectedBriefingRequest,
-      WxBriefTypeOfBrief selectedTypeOfBrief) async {
+    WxBriefBriefingRequest selectedBriefingRequest,
+    WxBriefTypeOfBrief selectedTypeOfBrief,
+  ) async {
     String filename = "";
     if (selectedBriefingRequest == WxBriefBriefingRequest.AREA_REQUEST) {
       filename = "wxbrief_ab_non_ngbv2_options.csv";
@@ -1146,18 +1244,21 @@ class Repository {
   }
 
   Future<List<BriefingOption>> getWxBriefingOptions(
-      String optionsFileName, WxBriefTypeOfBrief selectedTypeOfBrief) async {
+    String optionsFileName,
+    WxBriefTypeOfBrief selectedTypeOfBrief,
+  ) async {
     final briefingOptions = <BriefingOption>[];
-    String optionsString =
-        await rootBundle.loadString('assets/csv/' + optionsFileName);
-    final rowsAsListOfValues = const CsvToListConverter(
-      eol: '\n',
-    ).convert(optionsString);
+    String optionsString = await rootBundle.loadString(
+      'assets/csv/' + optionsFileName,
+    );
+    final rowsAsListOfValues = csv.decode(optionsString);
     for (int i = 0; i < rowsAsListOfValues.length; ++i) {
       if (i > 0) {
         final briefingOption =
             await BriefingOption.createBriefingOptionFromCSVDetail(
-                rowsAsListOfValues[i], selectedTypeOfBrief);
+              rowsAsListOfValues[i],
+              selectedTypeOfBrief,
+            );
         if (briefingOption != null) {
           briefingOptions.add(briefingOption);
         }
@@ -1168,7 +1269,9 @@ class Repository {
   }
 
   Future<One800WxBrief> submitWxBriefBriefingRequest(
-      String parms, WxBriefBriefingRequest selectedBriefingRequest) async {
+    String parms,
+    WxBriefBriefingRequest selectedBriefingRequest,
+  ) async {
     if (_one800WxBriefClient == null) {
       _one800WxBriefClient = One800WxBriefClient(_dio);
     }
@@ -1180,16 +1283,24 @@ class Repository {
     }
   }
 
-  Future<File?> writeBytesToDirectory(String fileName, Uint8List bytes) async {
-    File? file = await createFile(fileName);
-    if (file == null) {
-      return null;
+  // Currently used to write WxBrief PDF
+  Future<String?> writeWxBriefToDirectory(
+    String fileName,
+    Uint8List bytes,
+  ) async {
+    String? filename = await FileSaver.instance.saveToDownloads(
+      name: fileName,
+      bytes: bytes,
+      // or file / filePath / link
+      fileExtension: "pdf",
+      mimeType: MimeType.pdf,
+      subfolder: "SoaringForecast", // optional: Download/My App/report.pdf
+    );
+    if (filename != null && Platform.isAndroid) {
+      return await getFileNameFromContentUri(filename, true);
+    } else {
+      return filename;
     }
-    if (await file.exists()) {
-      await file.delete();
-    }
-    await file.writeAsBytes(bytes, flush: true);
-    return file;
   }
 
   // ----- Shared preferences --------------------------
@@ -1201,14 +1312,18 @@ class Repository {
     }
   }
 
-  Future<bool> saveGenericString(
-      {required String key, required String value}) async {
+  Future<bool> saveGenericString({
+    required String key,
+    required String value,
+  }) async {
     await ensureSharedPreferences();
     return await sharedPreferences!.setString(key, value);
   }
 
-  Future<String> getGenericString(
-      {required String key, required String defaultValue}) async {
+  Future<String> getGenericString({
+    required String key,
+    required String defaultValue,
+  }) async {
     await ensureSharedPreferences();
     return await sharedPreferences!.getString(key) ?? defaultValue;
   }
@@ -1223,32 +1338,42 @@ class Repository {
     return await sharedPreferences!.setInt(key, value);
   }
 
-  Future<int> getGenericInt(
-      {required String key, required int defaultValue}) async {
+  Future<int> getGenericInt({
+    required String key,
+    required int defaultValue,
+  }) async {
     await ensureSharedPreferences();
     return await sharedPreferences!.getInt(key) ?? defaultValue;
   }
 
-  Future<bool> saveGenericDouble(
-      {required String key, required double value}) async {
+  Future<bool> saveGenericDouble({
+    required String key,
+    required double value,
+  }) async {
     await ensureSharedPreferences();
     return await sharedPreferences!.setDouble(key, value);
   }
 
-  Future<double> getGenericDouble(
-      {required String key, required double defaultValue}) async {
+  Future<double> getGenericDouble({
+    required String key,
+    required double defaultValue,
+  }) async {
     await ensureSharedPreferences();
     return await sharedPreferences!.getDouble(key) ?? defaultValue;
   }
 
-  Future<bool> saveGenericBool(
-      {required String key, required bool value}) async {
+  Future<bool> saveGenericBool({
+    required String key,
+    required bool value,
+  }) async {
     await ensureSharedPreferences();
     return await sharedPreferences!.setBool(key, value);
   }
 
-  Future<bool> getGenericBool(
-      {required String key, required bool defaultValue}) async {
+  Future<bool> getGenericBool({
+    required String key,
+    required bool defaultValue,
+  }) async {
     await ensureSharedPreferences();
     final value = await sharedPreferences!.getBool(key);
     //debugPrint("getGenericBool  key: $key   value: $value");
@@ -1257,73 +1382,41 @@ class Repository {
 
   // ----- File access -----------------------------------------------
 
-  Future<File?> createFile(String filename) async {
-    File? file = null;
-    try {
-      Directory? directory = await getTempOrIOSDocDirectory();
-      if (directory != null) {
-        file = File('${directory.absolute.path}/$filename');
-      }
-    } catch (e) {
-      print("Exception creating download file: " + e.toString());
-    }
-    return file;
-  }
-
-  Future<Directory?> getDownloadDirectory() async {
-    Directory? directory = null;
+  Future<Directory?> getPublicDownloadsDir() async {
+    // Returns the standard Android Downloads folder
     if (Platform.isAndroid) {
-      await MediaStore.ensureInitialized();
-      // You have set this otherwise it throws AppFolderNotSetException
-      MediaStore.appFolder = "MediaStorePlugin";
-      directory = await getDownloadsDirectory();
-      debugPrint("Download Directory: ${directory!.absolute}");
-    } else {
-      //iOS
-      directory = await getApplicationDocumentsDirectory();
-      if (!directory.existsSync()) {
-        directory.createSync(recursive: true);
-      }
+      return await getDownloadsDirectory();
     }
-    return directory;
-  }
-
-  Future<Directory?> getTempOrIOSDocDirectory() async {
-    Directory? directory = null;
-    if (Platform.isAndroid) {
-      //https://pub.dev/packages/media_store_plus/example
-      await MediaStore.ensureInitialized();
-      // You have set this otherwise it throws AppFolderNotSetException
-      MediaStore.appFolder = "MediaStorePlugin";
-      // Temp directory - Why is Android such a PITA?
-      directory = await getTemporaryDirectory();
-      debugPrint("Temp Directory: ${directory.absolute}");
-    } else {
-      //iOS
-      directory = await getApplicationDocumentsDirectory();
-      if (!directory.existsSync()) {
-        directory.createSync(recursive: true);
-      }
-    }
-    return directory;
+    else if  (Platform.isIOS){
+      // 1. Get the path to the app's iOS Documents directory
+     final directory = await getApplicationDocumentsDirectory();
+      print('DOCUMENTS PATH: ${directory.path}');
+      return directory;
+    } else //
+      return  await getDownloadsDirectory();
   }
 
   Future<List<Group>> getSettingOptionsFromAssets() async {
     if (_settingGroups.isEmpty) {
-      final jsonString = await DefaultAssetBundle.of(_context!)
-          .loadString('assets/json/settings.json');
+      final jsonString = await DefaultAssetBundle.of(
+        _context!,
+      ).loadString('assets/json/settings.json');
       final settings = settingsFromJson(jsonString);
       // loop through the settings to assign the saved value (or default)
       Future.forEach(settings, (group) async {
         Future.forEach(group.options!, (option) async {
           if (option.dataType == "bool") {
             bool savedValue = await getGenericBool(
-                key: option.key, defaultValue: option.optionDefault);
+              key: option.key,
+              defaultValue: option.optionDefault,
+            );
             option.savedValue = savedValue;
           }
           if (option.dataType == "String") {
             String savedValue = await getGenericString(
-                key: option.key, defaultValue: option.optionDefault);
+              key: option.key,
+              defaultValue: option.optionDefault,
+            );
             option.savedValue = savedValue;
           }
         });
@@ -1334,15 +1427,19 @@ class Repository {
   }
 
   void storeLocalForecastFavorite(
-      LocalForecastFavorite localForecastFavorite) async {
+    LocalForecastFavorite localForecastFavorite,
+  ) async {
     await saveGenericString(
-        key: _LOCAL_FORECAST_FAVORITE,
-        value: jsonEncode(localForecastFavorite.toJson()));
+      key: _LOCAL_FORECAST_FAVORITE,
+      value: jsonEncode(localForecastFavorite.toJson()),
+    );
   }
 
   Future<LocalForecastFavorite?> getLocateForecastFavorite() async {
-    String favoriteString =
-        await getGenericString(key: _LOCAL_FORECAST_FAVORITE, defaultValue: "");
+    String favoriteString = await getGenericString(
+      key: _LOCAL_FORECAST_FAVORITE,
+      defaultValue: "",
+    );
     if (favoriteString.isEmpty) {
       return null;
     } else {
@@ -1399,7 +1496,8 @@ class Repository {
     if (_customGliders!.gliders != null) {
       // remove old entry if there was one
       _customGliders!.gliders?.removeWhere(
-          (savedGlider) => savedGlider.glider == customPolar.glider);
+        (savedGlider) => savedGlider.glider == customPolar.glider,
+      );
       // and add updated glider to list
       _customGliders!.gliders!.add(customPolar);
     } else {
@@ -1407,38 +1505,45 @@ class Repository {
       _customGliders!.gliders = <Glider>[customPolar];
     }
     await saveGenericString(
-        key: _MY_GLIDERS, value: Gliders.glidersToJsonString(_customGliders!));
+      key: _MY_GLIDERS,
+      value: Gliders.glidersToJsonString(_customGliders!),
+    );
   }
 
   Future<Glider?> getCustomGliderPolar(String gliderName) async {
     await _loadCustomGliders();
     if (_customGliders!.gliders != null) {
-      return _customGliders!.gliders
-          ?.firstWhereOrNull((polar) => polar.glider == gliderName);
+      return _customGliders!.gliders?.firstWhereOrNull(
+        (polar) => polar.glider == gliderName,
+      );
     }
     return null;
   }
 
   Future<({Glider? defaultGlider, Glider? customGlider})>
-      getDefaultAndCustomGliderDetails(String gliderName) async {
+  getDefaultAndCustomGliderDetails(String gliderName) async {
     // if master list not loaded yet load it
     await _downloadListOfGliderPolars();
     await _loadCustomGliders();
-    Glider? defaultGlider = _fullGliderList!.gliders
-        ?.firstWhereOrNull((polar) => polar.glider == gliderName);
-    Glider? customGlider = _customGliders!.gliders
-        ?.firstWhereOrNull((polar) => polar.glider == gliderName);
+    Glider? defaultGlider = _fullGliderList!.gliders?.firstWhereOrNull(
+      (polar) => polar.glider == gliderName,
+    );
+    Glider? customGlider = _customGliders!.gliders?.firstWhereOrNull(
+      (polar) => polar.glider == gliderName,
+    );
     return (
       defaultGlider: defaultGlider,
-      customGlider: customGlider ?? defaultGlider?.copyWith()
+      customGlider: customGlider ?? defaultGlider?.copyWith(),
     );
   }
 
   /// Polars saved by user, likely customized
   Future<Gliders?> getSavedPolarList() async {
     // See if in repository first, if not get from full list
-    String jsonString =
-        await getGenericString(key: _MY_GLIDERS, defaultValue: "");
+    String jsonString = await getGenericString(
+      key: _MY_GLIDERS,
+      defaultValue: "",
+    );
     if (jsonString.isNotEmpty) {
       final polars = Gliders.glidersFromJsonString(jsonString);
       return polars;
@@ -1448,36 +1553,46 @@ class Repository {
 
   Future<DisplayUnits> getPolarDisplayUnits() async {
     String displayUnit = await getGenericString(
-        key: _DISPLAY_UNITS,
-        defaultValue: DisplayUnits.Imperial_kts.toString());
+      key: _DISPLAY_UNITS,
+      defaultValue: DisplayUnits.Imperial_kts.toString(),
+    );
     return _convertDisplayUnitsStringToEnum(displayUnit);
   }
 
   DisplayUnits _convertDisplayUnitsStringToEnum(String displayUnits) {
-    return DisplayUnits.values
-            .firstWhereOrNull((e) => e.toString() == displayUnits) ??
+    return DisplayUnits.values.firstWhereOrNull(
+          (e) => e.toString() == displayUnits,
+        ) ??
         DisplayUnits.Imperial_kts;
   }
 
   Future<DisplayUnits> savePolarDisplayUnits(DisplayUnits displayUnits) async {
     await saveGenericString(
-        key: _DISPLAY_UNITS, value: displayUnits.toString());
+      key: _DISPLAY_UNITS,
+      value: displayUnits.toString(),
+    );
     return _convertDisplayUnitsStringToEnum(displayUnits.toString());
   }
 
   Future<bool> getDisplayExperimentalEstimatedTaskAlertFlag() async {
     return await getGenericBool(
-        key: _EXPERIMENTAL_ESTIMATED_FLIGHT_FLAG, defaultValue: true);
+      key: _EXPERIMENTAL_ESTIMATED_FLIGHT_FLAG,
+      defaultValue: true,
+    );
   }
 
   Future<void> saveDisplayExperimentalEstimatedTaskFlag(bool flag) async {
     await saveGenericBool(
-        key: _EXPERIMENTAL_ESTIMATED_FLIGHT_FLAG, value: flag);
+      key: _EXPERIMENTAL_ESTIMATED_FLIGHT_FLAG,
+      value: flag,
+    );
   }
 
   Future<bool> getDisplayXCSoarValues() async {
     return await getGenericBool(
-        key: _DISPLAY_XCSOAR_VALUES, defaultValue: false);
+      key: _DISPLAY_XCSOAR_VALUES,
+      defaultValue: false,
+    );
   }
 
   Future<bool> saveDisplayXCSoarValues(bool display) async {
@@ -1494,16 +1609,22 @@ class Repository {
 
   Future<bool> getDisplayEstimatedFlightButton() async {
     return await getGenericBool(
-        key: _SHOW_ESTIMATED_FLIGHT_BUTTON, defaultValue: true);
+      key: _SHOW_ESTIMATED_FLIGHT_BUTTON,
+      defaultValue: true,
+    );
   }
 
   Future<bool> getShowEstimatedFlightExperimentalText() async {
     return await getGenericBool(
-        key: _SHOW_ESTIMATED_FLIGHT_EXPERIMENTAL_TEXT, defaultValue: true);
+      key: _SHOW_ESTIMATED_FLIGHT_EXPERIMENTAL_TEXT,
+      defaultValue: true,
+    );
   }
 
   Future<bool> saveShowEstimatedFlightExperimentalText(bool show) async {
     return await saveGenericBool(
-        key: _SHOW_ESTIMATED_FLIGHT_EXPERIMENTAL_TEXT, value: show);
+      key: _SHOW_ESTIMATED_FLIGHT_EXPERIMENTAL_TEXT,
+      value: show,
+    );
   }
 }

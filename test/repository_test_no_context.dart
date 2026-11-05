@@ -1,4 +1,6 @@
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_soaring_forecast/soaring/drift/app_database.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/regions.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 import "package:flutter_test/flutter_test.dart";
@@ -11,8 +13,17 @@ void main() {
   MockBuildContext _mockContext;
 
   _mockContext = MockBuildContext();
+  late AppDatabase appDatabase;
+  setUp(() {
+    // Create a fresh in-memory database before each test
+    appDatabase = AppDatabase.forTesting(NativeDatabase.memory());
+  });
+  tearDown(() async {
+    // Close the database after each test
+    await appDatabase.close();
+  });
 
-  Repository repository = Repository(_mockContext);
+  Repository repository = Repository(_mockContext,appDatabase);
 
   test("Get current.json", () async {
     repository.getRegions().then(expectAsync1((regions) =>

@@ -20,12 +20,14 @@ import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
 import 'package:flutter_soaring_forecast/soaring/app/custom_styles.dart';
 import 'package:flutter_soaring_forecast/soaring/app/upper_case_text_formatter.dart';
 import 'package:flutter_soaring_forecast/soaring/fileutils/file_utils.dart';
-import 'package:flutter_soaring_forecast/soaring/floor/airport/airport.dart';
+import 'package:flutter_soaring_forecast/soaring/drift/airport/airports.dart';
 import 'package:flutter_soaring_forecast/soaring/wxbrief/bloc/wxbrief_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/wxbrief/bloc/wxbrief_event.dart';
 import 'package:flutter_soaring_forecast/soaring/wxbrief/bloc/wxbrief_state.dart';
 import 'package:flutter_soaring_forecast/soaring/wxbrief/data/briefing_option.dart';
 import 'package:permission_handler/permission_handler.dart';
+
+import '../../drift/app_database.dart' show Airport;
 
 ///  The following is used to determine which widgets to display
 ///  Area Brief
@@ -71,7 +73,7 @@ class _WxBriefRequestScreenState extends State<WxBriefRequestScreen>
 
   List<String> _departureDates = <String>[];
 
-  Airport? _airport = Airport(ident: "");
+  Airport? _airport = Airport(ident: "", type: '', name: '', elevationFt: 0, state: '', municipality: '');
 
   @override
   FutureOr<void> afterFirstLayout(BuildContext context) {

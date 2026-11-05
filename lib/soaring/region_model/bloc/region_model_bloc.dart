@@ -63,9 +63,7 @@ class RegionModelBloc extends Bloc<RegionModelEvent, RegionModelState> {
       _, Emitter<RegionModelState> emit) async {
     emit(WorkingState(working: true));
     try {
-      if (_regions == null) {
         _regions = await this.repository.getRegions();
-      }
       if (_regions != null) {
         await _loadSelectRegionInfo();
         // Now get the models (gfs/etc)

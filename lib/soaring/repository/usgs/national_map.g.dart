@@ -7,14 +7,14 @@ part of 'national_map.dart';
 // **************************************************************************
 
 NationalMap _$NationalMapFromJson(Map<String, dynamic> json) => NationalMap(
-      location: json['location'] == null
-          ? null
-          : Location.fromJson(json['location'] as Map<String, dynamic>),
-      locationId: (json['locationId'] as num?)?.toInt(),
-      value: json['value'] as String?,
-      rasterId: (json['rasterId'] as num?)?.toInt(),
-      resolution: (json['resolution'] as num?)?.toInt(),
-    );
+  location: json['location'] == null
+      ? null
+      : Location.fromJson(json['location'] as Map<String, dynamic>),
+  locationId: (json['locationId'] as num?)?.toInt(),
+  value: json['value'] as String?,
+  rasterId: (json['rasterId'] as num?)?.toInt(),
+  resolution: (json['resolution'] as num?)?.toInt(),
+);
 
 Map<String, dynamic> _$NationalMapToJson(NationalMap instance) =>
     <String, dynamic>{
@@ -26,19 +26,20 @@ Map<String, dynamic> _$NationalMapToJson(NationalMap instance) =>
     };
 
 Location _$LocationFromJson(Map<String, dynamic> json) => Location(
-      x: (json['x'] as num?)?.toDouble(),
-      y: (json['y'] as num?)?.toDouble(),
-      spatialReference: json['spatialReference'] == null
-          ? null
-          : SpatialReference.fromJson(
-              json['spatialReference'] as Map<String, dynamic>),
-    );
+  x: (json['x'] as num?)?.toDouble(),
+  y: (json['y'] as num?)?.toDouble(),
+  spatialReference: json['spatialReference'] == null
+      ? null
+      : SpatialReference.fromJson(
+          json['spatialReference'] as Map<String, dynamic>,
+        ),
+);
 
 Map<String, dynamic> _$LocationToJson(Location instance) => <String, dynamic>{
-      'x': instance.x,
-      'y': instance.y,
-      'spatialReference': instance.spatialReference,
-    };
+  'x': instance.x,
+  'y': instance.y,
+  'spatialReference': instance.spatialReference,
+};
 
 SpatialReference _$SpatialReferenceFromJson(Map<String, dynamic> json) =>
     SpatialReference(
@@ -47,7 +48,4 @@ SpatialReference _$SpatialReferenceFromJson(Map<String, dynamic> json) =>
     );
 
 Map<String, dynamic> _$SpatialReferenceToJson(SpatialReference instance) =>
-    <String, dynamic>{
-      'wkid': instance.wkid,
-      'latestWkid': instance.latestWkid,
-    };
+    <String, dynamic>{'wkid': instance.wkid, 'latestWkid': instance.latestWkid};

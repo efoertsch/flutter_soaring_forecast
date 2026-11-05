@@ -14,25 +14,24 @@ ForecastModels _$ForecastModelsFromJson(Map<String, dynamic> json) =>
     );
 
 Map<String, dynamic> _$ForecastModelsToJson(ForecastModels instance) =>
-    <String, dynamic>{
-      'models': instance.models,
-    };
+    <String, dynamic>{'models': instance.models};
 
 Model _$ModelFromJson(Map<String, dynamic> json) => Model(
-      center: (json['center'] as List<dynamic>)
-          .map((e) => (e as num).toDouble())
-          .toList(),
-      times: (json['times'] as List<dynamic>).map((e) => e as String).toList(),
-      name: json['name'] as String,
-      corners: (json['corners'] as List<dynamic>)
-          .map((e) =>
-              (e as List<dynamic>).map((e) => (e as num).toDouble()).toList())
-          .toList(),
-    );
+  center: (json['center'] as List<dynamic>)
+      .map((e) => (e as num).toDouble())
+      .toList(),
+  times: (json['times'] as List<dynamic>).map((e) => e as String).toList(),
+  name: json['name'] as String,
+  corners: (json['corners'] as List<dynamic>)
+      .map(
+        (e) => (e as List<dynamic>).map((e) => (e as num).toDouble()).toList(),
+      )
+      .toList(),
+);
 
 Map<String, dynamic> _$ModelToJson(Model instance) => <String, dynamic>{
-      'center': instance.center,
-      'times': instance.times,
-      'name': instance.name,
-      'corners': instance.corners,
-    };
+  'center': instance.center,
+  'times': instance.times,
+  'name': instance.name,
+  'corners': instance.corners,
+};

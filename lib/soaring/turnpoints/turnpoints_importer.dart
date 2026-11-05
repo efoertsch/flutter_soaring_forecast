@@ -2,7 +2,7 @@ import 'dart:collection';
 import 'dart:io';
 
 import 'package:csv/csv.dart';
-import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
+import 'package:flutter_soaring_forecast/soaring/drift/turnpoint/turnpoints.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoint_utils.dart';
 import 'package:http/http.dart' as http;
@@ -29,9 +29,7 @@ class TurnpointsImporter {
       // then parse the CSV.
       var body = response.body;
       body = body.replaceAll('\r\n', '\n');
-      List<List<dynamic>> rowsAsListOfValues = const CsvToListConverter(
-        eol: '\n',
-      ).convert(body);
+      List<List<dynamic>> rowsAsListOfValues =   csv.decode(body);
       // for (var row in rowsAsListOfValues) {
       //   for (var value in row) {
       //     print(value);
@@ -56,9 +54,7 @@ class TurnpointsImporter {
       File turnpointFile) async {
     String turnpointString = await turnpointFile.readAsString();
     turnpointString = turnpointString.replaceAll('\r\n', '\n');
-    List<List<dynamic>> parsedTurnpoints = const CsvToListConverter(
-      eol: '\n',
-    ).convert(turnpointString);
+    List<List<dynamic>> parsedTurnpoints = csv.decode(turnpointString);
     return await convertTurnpointCsvListToTurnpoints(parsedTurnpoints);
   }
 

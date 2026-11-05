@@ -1,0 +1,14 @@
+global_options:
+  freezed:
+    runs_before:
+      - json_serializable
+  json_serializable:
+    runs_before:
+      - retrofit_generator:retrofit
+targets:
+  $default:
+    builders:
+      drift_dev:
+        options:
+          # This forces drift to use your Dart field names exactly as they are written
+          case_from_dart_to_sql: preserve

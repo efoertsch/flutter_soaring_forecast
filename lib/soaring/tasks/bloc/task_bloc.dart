@@ -2,17 +2,19 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_soaring_forecast/soaring/floor/task/task.dart';
-import 'package:flutter_soaring_forecast/soaring/floor/taskturnpoint/task_turnpoint.dart';
-import 'package:flutter_soaring_forecast/soaring/floor/turnpoint/turnpoint.dart';
+import 'package:flutter_soaring_forecast/soaring/drift/task/tasks.dart';
+import 'package:flutter_soaring_forecast/soaring/drift/taskturnpoint/task_turnpoints.dart';
+import 'package:flutter_soaring_forecast/soaring/drift/turnpoint/turnpoints.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 import 'package:flutter_soaring_forecast/soaring/tasks/bloc/task_event.dart';
 import 'package:flutter_soaring_forecast/soaring/tasks/bloc/task_state.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoint_utils.dart';
 
+import '../../drift/app_database.dart';
+
 class TaskBloc extends Bloc<TaskEvent, TaskState> {
   final Repository repository;
-  Task _currentTask = Task();
+  Task _currentTask = Task(id: -1);
   List<Task> _tasks = [];
   List<TaskTurnpoint> _taskTurnpoints = [];
   List<TaskTurnpoint> _deletedTaskTurnpoints = [];
@@ -93,10 +95,10 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
     _tasks.insert(event.task.taskOrder, task);
     // since task deleted from database, set id to null so it gets inserted rather
     // than attempting update.
-    task.id = null;
+    task.id = -1;
     // also going to null out taskturnpoint ids and re-add them
     _taskTurnpoints.forEach((taskTurnpoint) {
-      taskTurnpoint.id = null;
+      taskTurnpoint.id = -1;
     });
     await _saveCurrentTaskAndTurnpoints(emit);
     // and update task order for all tasks
@@ -126,7 +128,7 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
     _deletedTaskTurnpoints.clear();
     emit(TasksTurnpointsLoadingState());
     if (event.taskId == -1) {
-      _currentTask = Task();
+      _currentTask = Task(id: -1);
     } else {
       try {
         _currentTask = await repository.getTask(event.taskId);
@@ -254,7 +256,7 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
 
   Future<void> _saveCurrentTaskAndTurnpoints(Emitter<TaskState> emit) async {
     bool isTaskUpdate = true;
-    if (_currentTask.id == null) {
+    if (_currentTask.id == -1) {
       isTaskUpdate = false;
       int? taskNumber = await repository.getCountOfTasks();
       _currentTask.taskOrder = taskNumber!;
@@ -278,7 +280,7 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
       TaskTurnpoint taskTurnpoint = _taskTurnpoints[turnpointOrder];
       taskTurnpoint.taskId = _currentTask.id!;
       taskTurnpoint.taskOrder = turnpointOrder;
-      if (taskTurnpoint.id == null) {
+      if (taskTurnpoint.id < 0) {
         turnpointId = await repository.insertTaskTurnpoint(taskTurnpoint);
         if (turnpointId == null) {
           emit(TaskErrorState(

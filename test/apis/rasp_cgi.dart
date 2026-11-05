@@ -1,11 +1,24 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:drift/native.dart';
+import 'package:flutter_soaring_forecast/soaring/drift/app_database.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/forecast_types.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 Future<void> main() async {
-  //final forecastForDay = ForecastsForDay();
+  late AppDatabase appDatabase;
+  setUp(() {
+    // Create a fresh in-memory database before each test
+    appDatabase = AppDatabase.forTesting(NativeDatabase.memory());
+  });
+  tearDown(() async {
+    // Close the database after each test
+    await appDatabase.close();
+  });
+
+  final forecastForDay = ForecastsForDay(appDatabase);
   //await forecastForDay.getAllForecastsForDay();
 //  final optimizedTaskRoute = OptimizedTaskRoute();
 //  final optimizedRoute = await optimizedTaskRoute.getOptimizedTaskRoute();
@@ -48,14 +61,19 @@ Future<void> main() async {
 
 
 class ForecastsForDay {
+
+  ForecastsForDay(AppDatabase this.appDatabase);
+
   static const forecastParmList = ["hwcrit", "zsfclclmask", "zblclmask"];
   final file = new File('./test/test_resources/forecast_options.json');
+  AppDatabase appDatabase;
+
 
 //final json = jsonDecode(await file.readAsString());
   ForecastTypes? forecastTypes;
 
   final options = <Forecast>[]; //json['forecasts'];
-  final repository = Repository(null);
+  late final repository = Repository(null, appDatabase);
   var times = {
   "1000",
   "1100",
@@ -74,6 +92,7 @@ class ForecastsForDay {
   var lat = 43.1394043.toString();
   var long = (-72.0759888).toString();
   String forecastParmString = forecastParmList.join(" ");
+
 
   FutureOr<void> getAllForecastsForDay() async {
     if (options.isEmpty) {

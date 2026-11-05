@@ -5,8 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/app/constants.dart';
-import 'package:flutter_soaring_forecast/soaring/floor/airport/airport.dart';
-import 'package:flutter_soaring_forecast/soaring/floor/taskturnpoint/task_turnpoint.dart';
+import 'package:flutter_soaring_forecast/soaring/drift/taskturnpoint/task_turnpoints.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoint_utils.dart';
 import 'package:flutter_soaring_forecast/soaring/wxbrief/bloc/wxbrief_event.dart';
@@ -16,7 +15,8 @@ import 'package:flutter_soaring_forecast/soaring/wxbrief/data/route_briefing_req
 import 'package:flutter_soaring_forecast/soaring/wxbrief/data/wxbrief_defaults.dart';
 import 'package:intl/intl.dart';
 
-import '../../floor/turnpoint/turnpoint.dart';
+import '../../drift/app_database.dart' show Airport;
+import '../../drift/turnpoint/turnpoints.dart';
 import '../../turnpoints/cup/cup_styles.dart';
 
 class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
@@ -324,11 +324,12 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
   FutureOr<void> _createRouteBriefingPDF(
       String ngbv2pdfBriefing, Emitter<WxBriefState> emit) async {
     Uint8List bytes = base64Decode(ngbv2pdfBriefing);
-    final file = await repository.writeBytesToDirectory("WxBrief.pdf", bytes);
-    if (file == null) {
+    final filePath = await repository.writeWxBriefToDirectory("WxBrief.pdf", bytes);
+    // filePath is MediaStore name. Convert to file path
+    if (filePath == null) {
       // send error
     } else {
-      emit(WxBriefPdfDocState(file.path));
+      emit(WxBriefPdfDocState(filePath));
     }
   }
 
@@ -376,9 +377,10 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
   FutureOr<void> _emitAirport(
       Emitter<WxBriefState> emit, String airportId) async {
     Airport? airport = await repository.getAirportById(airportId);
-    if (airport == null) {
-      airport = Airport(ident: airportId);
+    if (airport == null){
+      airport = Airport(ident: airportId,  type: '', name: '', elevationFt:0, state: '', municipality: '');
     }
+
     emit(WxBriefAirportState(airport: airport));
     _selectedAirportId = airportId;
   }

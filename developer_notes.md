@@ -1,3 +1,16 @@
+
+Duplicate values in a dropdown bug
+If testing in Android emulator and getting an error when launching about duplicate values in a dropdown, comment out the call to the Workmanager in main.dart
+Just remember to remove it when creating release code.
+
+
+Checking records in drift(sqlite database)
+1. Flutter dev tools extension (icon on right) opens up a drift viewer but it didn't allow direct viewing the database.
+   I could validate the database or download it, but not view it directly
+2. To view database downloaded, I used DB Browser for SQLite on my Mac.
+  
+
+
 Glider Polar info used in task Estimated Flight logic
 1. Polar info was obtained from Github XCSOAR -> XCSoar/src/Polar/PolarStore.cpp
 2. The cpp file was editted to remove comments and extraneous stuff to get CSV format that could then be 
@@ -56,11 +69,6 @@ Apache2 error log on Mac can be listed via:
 
 TODO: implement flutter_flavorizr - https://pub.dev/packages/flutter_flavorizr
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-Prior to production compile, ensure proper RASP_BASE_URL value is set
-for Production and the API's are regen'ed. 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
 Development:
 
 For Android:
@@ -83,6 +91,12 @@ For iOS:
 
 
 Production:
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Prior to production compile, ensure proper RASP_BASE_URL value is set
+for Production and the API's are regen'ed.  <<<<<<<
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 
 For any production release:
 1. Update release number in pubspec.yml
