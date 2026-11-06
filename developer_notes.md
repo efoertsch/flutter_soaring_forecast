@@ -1,3 +1,8 @@
+If you make changes to ios Info.plist, remove the app from simulator, then run fluttter clean, flutter run.
+The values in Info.plist are cached on simulator and extreme measures needed to get app updates into device. 
+
+Find directory of current iOS simulator running
+xcrun simctl get_app_container booted org.soaringforecast.rasp data
 
 Duplicate values in a dropdown bug
 If testing in Android emulator and getting an error when launching about duplicate values in a dropdown, comment out the call to the Workmanager in main.dart
@@ -139,8 +144,10 @@ Reference obfuscate process at https://docs.flutter.dev/deployment/obfuscate
    (Apk gets your laptop signature, Play app bundle gets Googles)
    flutter build apk --flavor prod --split-per-abi --obfuscate --split-debug-info=./android/release_debug_symbols
 3. Install apk (check - make sure apk path and name correct based on build output ) based on device architecture.
-   Example below is for arm device.
-   adb install build/app/outputs/flutter-apk/app-armeabi-v7a-prod-release.apk (match release type to device)
+   Example below is for arm (Samsung) device.
+      adb install build/app/outputs/flutter-apk/app-armeabi-v7a-prod-release.apk 
+   For Pixel
+      adb install build/app/outputs/flutter-apk/app-arm64-v8a-prod-release.apk
 4. To create app bundle:
    flutter build appbundle  --flavor prod --obfuscate --split-debug-info=./android/release_debug_symbols
 

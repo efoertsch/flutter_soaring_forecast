@@ -222,7 +222,7 @@ class _SeeYouImportScreenState extends State<SeeYouImportScreen>
             button2Function: _sendDeleteTurnpointsEvent);
         break;
       case TurnpointMenu.importFromDownload :
-        //checkForCustomImportPermission();
+        //_checkForCustomImportPermission();
         _pickFiles();
         break;
     }
@@ -271,7 +271,7 @@ class _SeeYouImportScreenState extends State<SeeYouImportScreen>
     List<PlatformFile>? pickedFiles;
     try {
       pickedFiles = await FilePicker.pickFiles(
-        type: FileType.any,
+         type: FileType.custom, allowedExtensions: ['cup'],
         onFileLoading: (FilePickerStatus status) =>
             debugPrint(status.toString()),
         //allowedExtensions: <String>["cup"],

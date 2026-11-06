@@ -1,5 +1,5 @@
-import UIKit
-import Flutter
+import FlutterMacOS
+import Cocoa
 import GoogleMaps
 import OSLog
 
@@ -27,5 +27,9 @@ import OSLog
 
     func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
         GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+    }
+
+    override func applicationSupportsSecureRestorableState(_ app: NSApplication) -> Bool {
+        return true
     }
 }

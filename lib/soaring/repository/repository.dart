@@ -680,7 +680,7 @@ class Repository {
       } else
         return null;
     } else {
-      String fileuri = await FileSaver.instance.saveFile(
+      String? fileuri = await FileSaver.instance.saveAs(
         name: turnpointsFileName,
         bytes: utf8.encode(turnpointData),
         // or file / filePath / link
@@ -689,7 +689,7 @@ class Repository {
         mimeType: MimeType.other,
         // subfolder: "SoaringForecast", // optional: Download/My App/report.pdf
       );
-      return  fileuri.split("/").last ;
+      return  (fileuri != null) ? fileuri.split("/").last : null ;
     }
   }
 
