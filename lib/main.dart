@@ -8,7 +8,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/about/about_screen.dart';
 import 'package:flutter_soaring_forecast/soaring/airport/bloc/airport_bloc.dart';
-import 'package:flutter_soaring_forecast/soaring/airport/download/airports_downloader.dart';
 import 'package:flutter_soaring_forecast/soaring/airport/ui/airport_metar_taf.dart';
 import 'package:flutter_soaring_forecast/soaring/airport/ui/airport_search.dart';
 import 'package:flutter_soaring_forecast/soaring/airport/ui/selected_airports_list.dart';
@@ -39,7 +38,6 @@ import 'package:flutter_soaring_forecast/soaring/tasks/bloc/task_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/tasks/ui/task_detail.dart';
 import 'package:flutter_soaring_forecast/soaring/tasks/ui/task_list.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/bloc/turnpoint_bloc.dart';
-import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/custom_see_you_import.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/see_you_import.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_edit_view.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/ui/turnpoint_overhead_view.dart';
@@ -50,7 +48,6 @@ import 'package:flutter_soaring_forecast/soaring/windy/ui/windy_forecast.dart';
 import 'package:flutter_soaring_forecast/soaring/wxbrief/bloc/wxbrief_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/wxbrief/ui/wxbrief_auth_screen.dart';
 import 'package:flutter_soaring_forecast/soaring/wxbrief/ui/wxbrief_request_screen.dart';
-import 'package:workmanager/workmanager.dart';
 
 import 'firebase_options.dart';
 import 'soaring/drift/app_database.dart';
@@ -59,31 +56,31 @@ import 'soaring/local_forecast/data/local_forecast_graph.dart';
 import 'soaring/local_forecast/ui/local_forecast_graph_display.dart';
 import 'soaring/task_estimate/ui/task_estimate_display.dart';
 
+// Seems to be more trouble than it is worth
 // https://github.com/fluttercommunity/flutter_workmanager#customisation-android-only
-@pragma(
-    'vm:entry-point') // Mandatory if the App is obfuscated or using Flutter 3.1+
-void callbackDispatcher() {
-  Workmanager().executeTask((task, inputData) async {
-    // if (task == Workmanager.iOSBackgroundTask) {
-    //   debugPrint("The iOS background fetch was triggered");
-    // }
-    try {
-
-      debugPrint('Checking to download airports');
-      var ok = AirportsDownloader(repository: Repository(null, AppDatabase()))
-          .downloadAirportsIfNeeded();
-      debugPrint('AirportsDownloader response : $ok');
-      return await Future.value(ok);
-    } catch (err) {
-      debugPrint(err.toString());
-      throw Exception(err);
-    }
-  });
-}
+// @pragma(
+//     'vm:entry-point') // Mandatory if the App is obfuscated or using Flutter 3.1+
+// void callbackDispatcher() {
+//   Workmanager().executeTask((task, inputData) async {
+//     // if (task == Workmanager.iOSBackgroundTask) {
+//     //   debugPrint("The iOS background fetch was triggered");
+//     // }
+//     try {
+//
+//       debugPrint('Checking to download airports');
+//       var ok = AirportsDownloader(repository: Repository(null, AppDatabase()))
+//           .downloadAirportsIfNeeded();
+//       debugPrint('AirportsDownloader response : $ok');
+//       return await Future.value(ok);
+//     } catch (err) {
+//       debugPrint(err.toString());
+//       throw Exception(err);
+//     }
+//   });
+// }
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
 
   // In release mode this will override Flutter debugPrint() so nothing printed to logs
   if (kReleaseMode) {
@@ -96,36 +93,27 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  FlutterError.onError = (errorDetails) {
-    FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
-  };
-  // Pass all uncaught asynchronous errors that aren't handled by the Flutter framework to Crashlytics
-  PlatformDispatcher.instance.onError = (error, stack) {
-    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-    return true;
-  };
+  if (!kIsWasm) {
+    FlutterError.onError = (errorDetails) {
+      FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
+    };
+    // Pass all uncaught asynchronous errors that aren't handled by the Flutter framework to Crashlytics
+    PlatformDispatcher.instance.onError = (error, stack) {
+      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+      return true;
+    };
 
-  // Since iOS less definitive on when background task will run, just have user kick it off when requested.
-  //if (Platform.isAndroid) {
-  //  Workmanager().initialize(
-  //      callbackDispatcher, // The top level function, aka callbackDispatcher
-  //      isInDebugMode:
-  //          !kReleaseMode // If enabled it will post a notification whenever the task is running. Handy for debugging tasks
-  //      );
-  //  Workmanager()
-  //      .registerOneOffTask("oneTimeDownload", "workmanager.background.task");
-  //}
-
-  // needed to fix CERTIFICATE_VERIFY_FAILED error on startup due to
-  // Android 7 and earlier versions referencing expired Lets Encrypt cert when accessing
-  // website using Lets Encrypt SSL certificate
-  // https://stackoverflow.com/questions/54285172/how-to-solve-flutter-certificate-verify-failed-error-while-performing-a-post-req
-  // https://flutter-developer.medium.com/flutter-android-7-certificate-verify-failed-with-letsencrypt-ssl-cert-after-sept-30-2021-9cb5f672c090
-  ByteData data =
-      await PlatformAssetBundle().load('assets/ca/lets-encrypt-r3.pem');
-  SecurityContext.defaultContext
-      .setTrustedCertificatesBytes(data.buffer.asUint8List());
-  // End of Lets Encrypt SSL stuff
+    // needed to fix CERTIFICATE_VERIFY_FAILED error on startup due to
+    // Android 7 and earlier versions referencing expired Lets Encrypt cert when accessing
+    // website using Lets Encrypt SSL certificate
+    // https://stackoverflow.com/questions/54285172/how-to-solve-flutter-certificate-verify-failed-error-while-performing-a-post-req
+    // https://flutter-developer.medium.com/flutter-android-7-certificate-verify-failed-with-letsencrypt-ssl-cert-after-sept-30-2021-9cb5f672c090
+    ByteData data =
+        await PlatformAssetBundle().load('assets/ca/lets-encrypt-r3.pem');
+    SecurityContext.defaultContext
+        .setTrustedCertificatesBytes(data.buffer.asUint8List());
+    // End of Lets Encrypt SSL stuff
+  }
 
   runApp(RepositorySetup(appDatabase: AppDatabase()));
 }
@@ -252,14 +240,7 @@ class SoaringForecastApp extends StatelessWidget {
       );
     }
 
-    if (settings.name == CustomTurnpointFileImportRouteBuilder.routeName) {
-      return CustomMaterialPageRoute(
-        builder: (context) {
-          return CustomTurnpointFileImportRouteBuilder();
-        },
-        settings: settings,
-      );
-    }
+
     if (settings.name == ForecastListRouteBuilder.routeName) {
       final forecastArgs = settings.arguments as ForecastListArgs;
       return CustomMaterialPageRoute(
@@ -548,21 +529,6 @@ class TurnpointFileImportRouteBuilder extends StatelessWidget {
       create: (BuildContext context) =>
           TurnpointBloc(repository: RepositoryProvider.of<Repository>(context)),
       child: SeeYouImportScreen(),
-    );
-  }
-}
-
-class CustomTurnpointFileImportRouteBuilder extends StatelessWidget {
-  static const routeName = '/customTurnpointImport';
-
-  CustomTurnpointFileImportRouteBuilder();
-
-  @override
-  Widget build(BuildContext context) {
-    return BlocProvider<TurnpointBloc>(
-      create: (BuildContext context) =>
-          TurnpointBloc(repository: RepositoryProvider.of<Repository>(context)),
-      child: CustomSeeYouImportScreen(),
     );
   }
 }

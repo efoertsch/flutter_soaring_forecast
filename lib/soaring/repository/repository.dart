@@ -3,13 +3,13 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:android_media_store/android_media_store.dart';
-import 'package:drift/drift.dart' show Value;
 
 //import 'package:media_store_plus/media_store_plus.dart';
 import 'package:collection/collection.dart';
 import 'package:csv/csv.dart';
-import 'package:device_info_plus/device_info_plus.dart';
 import 'package:dio/dio.dart';
+import 'package:drift/drift.dart' show Value;
+import 'package:file_picker/file_picker.dart';
 import 'package:file_saver/file_saver.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -24,7 +24,6 @@ import 'package:flutter_soaring_forecast/soaring/app/constants.dart'
         RaspDisplayOptions,
         WxBriefBriefingRequest,
         WxBriefTypeOfBrief;
-import 'package:flutter_soaring_forecast/soaring/drift/airport/airports.dart';
 import 'package:flutter_soaring_forecast/soaring/drift/app_database.dart';
 import 'package:flutter_soaring_forecast/soaring/drift/task/tasks.dart';
 import 'package:flutter_soaring_forecast/soaring/drift/taskturnpoint/task_turnpoints.dart';
@@ -36,7 +35,6 @@ import 'package:flutter_soaring_forecast/soaring/repository/one800wxbrief/one800
 import 'package:flutter_soaring_forecast/soaring/repository/one800wxbrief/one800wxbrief_api.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/rasp_options_api.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/settings.dart';
-import 'package:flutter_soaring_forecast/soaring/repository/options/special_use_airspace.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/sua_region_files.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/turnpoint_regions.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/rasp/estimated_flight_avg_summary.dart';
@@ -50,14 +48,12 @@ import 'package:flutter_soaring_forecast/soaring/windy/data/windy_layer.dart';
 import 'package:flutter_soaring_forecast/soaring/windy/data/windy_model.dart';
 import 'package:flutter_soaring_forecast/soaring/wxbrief/data/briefing_option.dart';
 import 'package:logger/logger.dart' as DLogger; // Level conflict with Dio
-import 'package:path/path.dart';
 import 'package:path/path.dart' as p;
+import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:retrofit/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:sqflite/sqflite.dart';
 
-import '../drift/turnpoint/turnpoints.dart';
 import '../local_forecast/data/local_forecast_favorite.dart';
 import 'dio_interceptor.dart';
 import 'rasp/forecast_models.dart';
@@ -65,7 +61,6 @@ import 'rasp/forecast_types.dart';
 import 'rasp/rasp_api.dart';
 import 'rasp/regions.dart';
 import 'usgs/usgs_api.dart';
-
 
 class Repository {
   static Repository? _repository;
@@ -485,9 +480,13 @@ class Repository {
     SoaringForecastImage soaringForecastImage,
   ) async {
     String fullUrl = RASP_BASE_URL + soaringForecastImage.imageUrl;
-    File file = await ImageCacheManager().getSingleFile(fullUrl);
-    //debugPrint("Downloading forecast image: $fullUrl");
-    Image image = Image.file(file);
+    Image image;
+    if (kIsWasm) {
+      image = Image.network(fullUrl);
+    } else {
+      File file = await ImageCacheManager().getSingleFile(fullUrl);
+      image = Image.file(file);
+    }
     soaringForecastImage.setImage(image);
     return Future<SoaringForecastImage>.value(soaringForecastImage);
   }
@@ -507,8 +506,13 @@ class Repository {
   }
 
   getRaspForecastImage(String url) async {
-    File file = await ImageCacheManager().getSingleFile(url);
-    Image image = Image.file(file);
+    Image image;
+    if (kIsWasm) {
+      image = Image.network(url);
+    } else {
+      File file = await ImageCacheManager().getSingleFile(url);
+      image = Image.file(file);
+    }
     return Future<Image>.value(image);
   }
 
@@ -665,7 +669,19 @@ class Repository {
     String turnpointsFileName,
     String turnpointData,
   ) async {
-    if (Platform.isAndroid) {
+    if (kIsWasm || !Platform.isAndroid) {
+      String? fileuri = await FileSaver.instance.saveAs(
+        name: turnpointsFileName,
+        bytes: utf8.encode(turnpointData),
+        // or file / filePath / link
+        //fileExtension: "cup",
+        includeExtension: false,
+        mimeType: MimeType.other,
+        // subfolder: "SoaringForecast", // optional: Download/My App/report.pdf
+      );
+      return (fileuri != null) ? fileuri.split("/").last : null;
+    } else {
+      // Should only be Android
       String? fileuri = await FileSaver.instance.saveToDownloads(
         name: turnpointsFileName,
         bytes: utf8.encode(turnpointData),
@@ -679,27 +695,22 @@ class Repository {
         return await getFileNameFromContentUri(fileuri, false);
       } else
         return null;
-    } else {
-      String? fileuri = await FileSaver.instance.saveAs(
-        name: turnpointsFileName,
-        bytes: utf8.encode(turnpointData),
-        // or file / filePath / link
-        //fileExtension: "cup",
-        includeExtension: false,
-        mimeType: MimeType.other,
-        // subfolder: "SoaringForecast", // optional: Download/My App/report.pdf
-      );
-      return  (fileuri != null) ? fileuri.split("/").last : null ;
     }
   }
 
   //
-  Future<String?> getFileNameFromContentUri(String uriString, bool returnFullPath) async {
+  Future<String?> getFileNameFromContentUri(
+    String uriString,
+    bool returnFullPath,
+  ) async {
+    if (kIsWasm) return null;
     final mediaStore = AndroidMediaStore.instance;
     try {
       String? file = await mediaStore.uriToPath(uriString);
       // Extract the original file name using the path library
-      return (file != null) ? (returnFullPath ? file : p.basename(p.basename(file))) : null;
+      return (file != null)
+          ? (returnFullPath ? file : p.basename(p.basename(file)))
+          : null;
     } catch (error, stackTrace) {
       logger.e(stackTrace);
       return null;
@@ -736,7 +747,7 @@ class Repository {
     return turnpoints;
   }
 
-  Future<List<Turnpoint>> importTurnpointsFromFile(File turnpointFile) async {
+  Future<List<Turnpoint>> importTurnpointsFromFile(PlatformFile turnpointFile) async {
     List<Turnpoint> turnpoints = [];
     turnpoints.addAll(
       await TurnpointsImporter.getTurnpointsFromFile(turnpointFile),
@@ -903,65 +914,16 @@ class Repository {
    * @param region
    */
 
-  Future<SUA?> getSuaForRegion(String region) async {
-    String? suaString = null;
-    SUA? sua = null;
-    // See if SUA on device and send it if found
-    String? oldSuaFilename = await _seeIfRegionSuaFileExists(region);
-    if (oldSuaFilename != null) {
-      suaString = await _readAppDocFile(oldSuaFilename);
-      debugPrint("Found existing sua file $oldSuaFilename in app directory");
-      sua = SUA.fromJson(json.decode(suaString));
+  Future<String?> getGeoJsonSUAForRegion(String region) async {
+    if (kIsWasm) {
+      return await _getSUAForWeb(region);
     } else {
-      debugPrint(
-        "No sua file related to region $region found in app directory",
-      );
+      return await _getSUAForApp(region);
     }
-    // Now see if newer SUA available
-    var suaRegionsString = await _raspOptionsClient.getSUARegions();
-    if (suaRegionsString != null) {
-      SUARegionFiles? suaRegionFiles = SUARegionFiles.fromJson(
-        jsonDecode(suaRegionsString),
-      );
-      try {
-        String? suaFileName = suaRegionFiles.suaRegions
-            .singleWhere((suaRegion) => suaRegion.region == region)
-            .suaFileName;
-        if (oldSuaFilename == null ||
-            (!(oldSuaFilename).endsWith(region + '_' + suaFileName))) {
-          debugPrint(
-            "Need to get SUA file from server (no sua on device or new file available",
-          );
-          // so get details from server
-          suaString = await _raspOptionsClient.downloadSuaFile(suaFileName);
-          // and if OK save them to file
-          if (suaString != null) {
-            sua = SUA.fromJson(json.decode(suaString));
-            await _writeStringToAppDocsFile(
-              region + '_' + suaFileName,
-              suaString,
-            );
-            // and delete the old file
-            if (oldSuaFilename != null) {
-              await _deleteFileFromAppDocsDirectory(oldSuaFilename);
-            }
-          }
-        }
-      } catch (e) {
-        // some error maybe no SUA files, or region not in list of sua files
-        // ignoring
-        debugPrint("Exception when getting sua file: ${e.toString()}");
-      }
-      if (sua != null) {
-        // debugPrint("returning sua: ${sua.type!.toString()}");
-      } else {
-        debugPrint("No SUA found");
-      }
-    }
-    return sua;
   }
 
-  Future<String?> getGeoJsonSUAForRegion(String region) async {
+  //TODO clean up code
+  Future<String?> _getSUAForApp(String region) async {
     String? sua = null;
     // See if SUA on device and send it if found
     String? oldSuaFilename = await _seeIfRegionSuaFileExists(region);
@@ -974,17 +936,11 @@ class Repository {
       );
     }
     // Now see if newer SUA available
-    var suaRegionsString = await _raspOptionsClient.getSUARegions();
-    if (suaRegionsString != null) {
-      SUARegionFiles? suaRegionFiles = SUARegionFiles.fromJson(
-        jsonDecode(suaRegionsString),
-      );
+    String? suaFileName = await _getCurrentSUAFileNameForRegion(region);
+    if (suaFileName != null) {
       try {
-        String? suaFileName = suaRegionFiles.suaRegions
-            .singleWhere((suaRegion) => suaRegion.region == region)
-            .suaFileName;
         if (oldSuaFilename == null ||
-            (!(oldSuaFilename).endsWith(region + '_' + suaFileName))) {
+            (!(oldSuaFilename).endsWith(region + '_' + (suaFileName ?? "")))) {
           debugPrint(
             "Need to get SUA file from server (no sua on device or new file available",
           );
@@ -1014,6 +970,29 @@ class Repository {
       }
     }
     return sua;
+  }
+
+  //Always get file from server
+  Future<String?> _getSUAForWeb(String region) async {
+    String? sua = null;
+    String? suaFileName = await _getCurrentSUAFileNameForRegion(region);
+    if (suaFileName != null) {
+      sua = await _raspOptionsClient.downloadSuaFile(suaFileName);
+    }
+    return sua;
+  }
+
+  Future<String?> _getCurrentSUAFileNameForRegion(String region) async {
+    String? suaFileName;
+    SUARegionFiles? suaRegionFiles;
+    var suaRegionsString = await _raspOptionsClient.getSUARegions();
+    if (suaRegionsString != null) {
+      suaRegionFiles = SUARegionFiles.fromJson(jsonDecode(suaRegionsString));
+      suaFileName = suaRegionFiles.suaRegions
+          .singleWhere((suaRegion) => suaRegion.region == region)
+          .suaFileName;
+    }
+    return suaFileName;
   }
 
   bool equalsIgnoreCase(String string1, String string2) {
@@ -1048,6 +1027,7 @@ class Repository {
   }
 
   Future<String?> _seeIfRegionSuaFileExists(String region) async {
+    if (kIsWasm) return null;
     String? fileName = null;
     RegExp fileEndsWith = RegExp(region + "_.+\.geojson");
     String path = await _getAppDocsPath();
@@ -1070,6 +1050,7 @@ class Repository {
   }
 
   Future<void> _deleteFileFromAppDocsDirectory(String filename) async {
+    if (kIsWasm) return;
     final file = await _getAppDocsFile(filename);
     await file.delete();
   }
@@ -1296,10 +1277,12 @@ class Repository {
       mimeType: MimeType.pdf,
       subfolder: "SoaringForecast", // optional: Download/My App/report.pdf
     );
-    if (filename != null && Platform.isAndroid) {
-      return await getFileNameFromContentUri(filename, true);
-    } else {
-      return filename;
+    if (filename != null && !kIsWasm) {
+      if (Platform.isAndroid) {
+        return await getFileNameFromContentUri(filename, true);
+      } else {
+        return filename;
+      }
     }
   }
 
@@ -1383,17 +1366,17 @@ class Repository {
   // ----- File access -----------------------------------------------
 
   Future<Directory?> getPublicDownloadsDir() async {
+    if (kIsWasm) return null;
     // Returns the standard Android Downloads folder
     if (Platform.isAndroid) {
       return await getDownloadsDirectory();
-    }
-    else if  (Platform.isIOS){
+    } else if (Platform.isIOS) {
       // 1. Get the path to the app's iOS Documents directory
-     final directory = await getApplicationDocumentsDirectory();
+      final directory = await getApplicationDocumentsDirectory();
       print('DOCUMENTS PATH: ${directory.path}');
       return directory;
     } else //
-      return  await getDownloadsDirectory();
+      return await getDownloadsDirectory();
   }
 
   Future<List<Group>> getSettingOptionsFromAssets() async {

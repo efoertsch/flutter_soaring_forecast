@@ -3,7 +3,6 @@
 analysis_options.yaml
 android/app/src/main/res/drawable-v21/
 android/app/src/main/res/values-night/
-lib/generated_plugin_registrant.dart
 local.properties
 web/
 lib/auth

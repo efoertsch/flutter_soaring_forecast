@@ -120,115 +120,120 @@ class RaspMapState extends State<RaspMap>
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      child: Stack(children: [
-        _getMapAndLegendWidget(),
-        _getSoundingDisplayWidget(),
-      ]),
+      child: Stack(
+        children: [_getMapAndLegendWidget(), _getSoundingDisplayWidget()],
+      ),
     );
   }
 
   Stack _getMapAndLegendWidget() {
-    return Stack(children: [
-      Container(
-        alignment: Alignment.center,
-        child: _forecastMap(),
-      ),
-      Container(
-        alignment: Alignment.centerRight,
-        child: _forecastLegend(),
-      ),
-      _getOpacitySlider(),
-      _getEstimatedTasktIcon(),
-      _regionModelListener(),
-      _raspHandlerWidget(),
-    ]);
+    return Stack(
+      children: [
+        Container(alignment: Alignment.center, child: _forecastMap()),
+        Container(alignment: Alignment.centerRight, child: _forecastLegend()),
+        _getOpacitySlider(),
+        _getEstimatedTasktIcon(),
+        _regionModelListener(),
+        _raspHandlerWidget(),
+      ],
+    );
   }
 
   Widget _forecastLegend() {
     return BlocConsumer<RaspDataBloc, RaspDataState>(
-        listener: (context, state) {},
-        buildWhen: (previous, current) {
-          return current is RaspInitialState || current is RaspForecastImageSet;
-        },
-        builder: (context, state) {
-          if (state is RaspForecastImageSet) {
-            // print('Processing RaspForecastImageSet for forecastLegend');
-            return InteractiveViewer(
-              panEnabled: true,
-              maxScale: 4.0,
-              child: Image(
-                image: NetworkImage(RASP_BASE_URL +
-                    state.soaringForecastImageSet.sideImage!.imageUrl),
-                gaplessPlayback: true,
+      listener: (context, state) {},
+      buildWhen: (previous, current) {
+        return current is RaspInitialState || current is RaspForecastImageSet;
+      },
+      builder: (context, state) {
+        if (state is RaspForecastImageSet) {
+          // print('Processing RaspForecastImageSet for forecastLegend');
+          return InteractiveViewer(
+            panEnabled: true,
+            maxScale: 4.0,
+            child: Image(
+              image: NetworkImage(
+                RASP_BASE_URL +
+                    state.soaringForecastImageSet.sideImage!.imageUrl,
               ),
-            );
-          }
-          return SizedBox.shrink();
-        });
+              gaplessPlayback: true,
+            ),
+          );
+        }
+        return SizedBox.shrink();
+      },
+    );
   }
 
   Widget _forecastMap() {
     return BlocConsumer<RaspDataBloc, RaspDataState>(
-        listener: (context, state) {
-      if (state is RaspForecastImageSet) {
-        // print('Received RaspForecastImageSet in ForecastMap');
-        soaringForecastImageSet = state.soaringForecastImageSet;
-        updateForecastOverlay();
-        return;
-      }
-      if (state is RaspTaskTurnpoints) {
-        _updateTaskTurnpoints(state.taskTurnpoints);
-        _routeIconIsVisible = state.taskTurnpoints.length > 0;
-        return;
-      }
-      // if (state is OptimizedTaskRouteState && state.optimizedTaskRoute != null) {
-      //   _plotOptimizedRoute(state.optimizedTaskRoute!);
-      // }
-      if (state is LocalForecastState) {
-        _placeLocalForecastMarker(state.latLngForecast);
-        return;
-      }
-      if (state is TurnpointsInBoundsState) {
-        //print('Received TurnpointsInBoundsState in ForecastMap');
-        _updateTurnpointMarkers(state.turnpoints);
-        // save for when zooming map and want to resize icons;
-        _turnpoints.clear();
-        _turnpoints.addAll(state.turnpoints);
-        _updateTurnpointMarkers(state.turnpoints);
-        return;
-      }
-      if (state is ForecastOverlayOpacityState) {
-        _forecastOverlayOpacity = state.opacity;
-        updateForecastOverlay();
-        return;
-      }
-    }, buildWhen: (previous, current) {
-      return current is RaspInitialState ||
-          current is RaspForecastImageSet ||
-          current is RaspTaskTurnpoints ||
-          current is LocalForecastState ||
-          current is TurnpointsInBoundsState ||
-          current is RedisplayMarkersState ||
-          current is ForecastOverlayOpacityState ||
-          current is ForecastBoundsState;
-    }, builder: (context, state) {
-      if (state is RaspInitialState) {
-        return SizedBox.shrink();
-      }
-      return FlutterMap(
+      listener: (context, state) {
+        if (state is RaspForecastImageSet) {
+          // print('Received RaspForecastImageSet in ForecastMap');
+          soaringForecastImageSet = state.soaringForecastImageSet;
+          updateForecastOverlay();
+          return;
+        }
+        if (state is RaspTaskTurnpoints) {
+          _updateTaskTurnpoints(state.taskTurnpoints);
+          _routeIconIsVisible = state.taskTurnpoints.length > 0;
+          return;
+        }
+        // if (state is OptimizedTaskRouteState && state.optimizedTaskRoute != null) {
+        //   _plotOptimizedRoute(state.optimizedTaskRoute!);
+        // }
+        if (state is LocalForecastState) {
+          _placeLocalForecastMarker(state.latLngForecast);
+          return;
+        }
+        if (state is TurnpointsInBoundsState) {
+          //print('Received TurnpointsInBoundsState in ForecastMap');
+          _updateTurnpointMarkers(state.turnpoints);
+          // save for when zooming map and want to resize icons;
+          _turnpoints.clear();
+          _turnpoints.addAll(state.turnpoints);
+          _updateTurnpointMarkers(state.turnpoints);
+          return;
+        }
+        if (state is ForecastOverlayOpacityState) {
+          _forecastOverlayOpacity = state.opacity;
+          updateForecastOverlay();
+          return;
+        }
+      },
+      buildWhen: (previous, current) {
+        return current is RaspInitialState ||
+            current is RaspForecastImageSet ||
+            current is RaspTaskTurnpoints ||
+            current is LocalForecastState ||
+            current is TurnpointsInBoundsState ||
+            current is RedisplayMarkersState ||
+            current is ForecastOverlayOpacityState ||
+            current is ForecastBoundsState;
+      },
+      builder: (context, state) {
+        if (state is RaspInitialState) {
+          return SizedBox.shrink();
+        }
+        return FlutterMap(
           mapController: _mapController.mapController,
           options: MapOptions(
             initialCenter: _mapCenter,
             interactionOptions: const InteractionOptions(
-              flags: InteractiveFlag.drag |
+              enableMultiFingerGestureRace: true,
+              flags:
+                  InteractiveFlag.drag |
                   InteractiveFlag.pinchMove |
-                  InteractiveFlag.pinchZoom,
+                  InteractiveFlag.pinchZoom |
+                  InteractiveFlag.scrollWheelZoom |
+                  InteractiveFlag.doubleTapZoom,
             ),
             onMapReady: (() {
               _mapReady = true;
               _sendEvent(MapReadyEvent());
               _mapController.animatedFitCamera(
-                  cameraFit: CameraFit.bounds(bounds: _forecastLatLngBounds));
+                cameraFit: CameraFit.bounds(bounds: _forecastLatLngBounds),
+              );
             }),
 
             onMapEvent: ((mapEvent) => _processMapEvent(mapEvent)),
@@ -241,27 +246,24 @@ class RaspMapState extends State<RaspMap>
           children: [
             // !!!---- Order of layers very important for receiving click events --- !!!
             TileLayer(
-                urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-                subdomains: ['a', 'b', 'c'],
-                userAgentPackageName: "org.soaringforecast.rasp"),
-            OverlayImageLayer(
-              key: null,
-              overlayImages: _overlayImages,
+              urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+              subdomains: ['a', 'b', 'c'],
+              userAgentPackageName: "org.soaringforecast.rasp",
             ),
+            OverlayImageLayer(key: null, overlayImages: _overlayImages),
             TextSourceAttribution(
               "OpenStreetMap",
               onTap: () => launchUrl(
-                  Uri.parse('https://www.openstreetmap.org/copyright')),
+                Uri.parse('https://www.openstreetmap.org/copyright'),
+              ),
             ),
             PolygonLayer(polygons: _suaPolygons),
-            PolylineLayer(
-              polylines: _combinedTaskLines,
-            ),
-            MarkerLayer(
-              markers: _mapMarkers,
-            ),
-          ]);
-    });
+            PolylineLayer(polylines: _combinedTaskLines),
+            MarkerLayer(markers: _mapMarkers),
+          ],
+        );
+      },
+    );
   }
 
   //Future<void> _seeIfSUATapped(LatLng point) async {
@@ -274,7 +276,7 @@ class RaspMapState extends State<RaspMap>
   //  var y = (pt.y / tileSize).floor();
   //  var tile = geoJsonIndex.getTile(_mapController.zoom.floor(), x, y);
   //  //print("$x, $y  $point $pt  tile ${tile!.x} ${tile!.y} ${tile!.z}");
-//
+  //
   //  if (tile != null) {
   //    StringBuffer sb = StringBuffer();
   //    // Multiple SUA areas/features may show up in one tile,
@@ -308,49 +310,52 @@ class RaspMapState extends State<RaspMap>
 
   Widget _getSoundingDisplayWidget() {
     return BlocConsumer<RaspDataBloc, RaspDataState>(
-        listener: (context, state) {},
-        buildWhen: (previous, current) {
-          return current is RaspInitialState ||
-              current is SoundingForecastImageSet;
-        },
-        builder: (context, state) {
-          if (state is SoundingForecastImageSet) {
-            final imageUrl = state.soaringForecastImageSet.bodyImage!.imageUrl;
-            return Visibility(
-              visible: _soundingsAreVisible,
-              child: Container(
-                color: Colors.white,
-                child: Stack(
-                  children: [
-                    Align(
-                      alignment: Alignment.center,
-                      child: InteractiveViewer(
-                        panEnabled: true,
-                        maxScale: 4.0,
-                        child: Image(
-                          image: NetworkImage(RASP_BASE_URL + imageUrl),
-                          gaplessPlayback: true,
-                        ),
+      listener: (context, state) {},
+      buildWhen: (previous, current) {
+        return current is RaspInitialState ||
+            current is SoundingForecastImageSet;
+      },
+      builder: (context, state) {
+        if (state is SoundingForecastImageSet) {
+          final imageUrl = state.soaringForecastImageSet.bodyImage!.imageUrl;
+          return Visibility(
+            visible: _soundingsAreVisible,
+            child: Container(
+              color: Colors.white,
+              child: Stack(
+                children: [
+                  Align(
+                    alignment: Alignment.center,
+                    child: InteractiveViewer(
+                      panEnabled: true,
+                      maxScale: 4.0,
+                      child: Image(
+                        image: NetworkImage(RASP_BASE_URL + imageUrl),
+                        gaplessPlayback: true,
                       ),
                     ),
-                    Align(
-                        alignment: Alignment.topRight,
-                        child: IconButton(
-                            icon: const Icon(Icons.close),
-                            onPressed: () {
-                              setState(() {
-                                _soundingsAreVisible = false;
-                                _sendEvent(DisplayCurrentForecastEvent());
-                              });
-                            }))
-                  ],
-                ),
+                  ),
+                  Align(
+                    alignment: Alignment.topRight,
+                    child: IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () {
+                        setState(() {
+                          _soundingsAreVisible = false;
+                          _sendEvent(DisplayCurrentForecastEvent());
+                        });
+                      },
+                    ),
+                  ),
+                ],
               ),
-            );
-          }
-          ;
-          return SizedBox.shrink();
-        });
+            ),
+          );
+        }
+        ;
+        return SizedBox.shrink();
+      },
+    );
   }
 
   Widget _raspHandlerWidget() {
@@ -370,29 +375,32 @@ class RaspMapState extends State<RaspMap>
     if (taskTurnpoints.length == 0) {
       //  _printMapBounds("TaskTurnpoints.length = 0 ", _forecastLatLngBounds);
       _mapController.animatedFitCamera(
-          cameraFit: CameraFit.bounds(bounds: _forecastLatLngBounds));
+        cameraFit: CameraFit.bounds(bounds: _forecastLatLngBounds),
+      );
     } else {
       List<LatLng> points = <LatLng>[];
       for (var taskTurnpoint in taskTurnpoints) {
         // print('adding taskturnpoint: ${taskTurnpoint.title}');
-        var turnpointLatLng =
-            LatLng(taskTurnpoint.latitudeDeg, taskTurnpoint.longitudeDeg);
+        var turnpointLatLng = LatLng(
+          taskTurnpoint.latitudeDeg,
+          taskTurnpoint.longitudeDeg,
+        );
         points.add(turnpointLatLng);
-        _taskMarkers.add(Marker(
-          width: 80.0,
-          height: 40.0,
-          point: turnpointLatLng,
-          child: _getTaskTurnpointMarker(taskTurnpoint),
-          //anchorPos: AnchorPos.align(AnchorAlign.top)
-        ));
+        _taskMarkers.add(
+          Marker(
+            width: 80.0,
+            height: 40.0,
+            point: turnpointLatLng,
+            child: _getTaskTurnpointMarker(taskTurnpoint),
+            //anchorPos: AnchorPos.align(AnchorAlign.top)
+          ),
+        );
         updateMapLatLngCorner(turnpointLatLng);
       }
       _rebuildMarkerArray();
-      _taskTurnpointCourse.add(Polyline(
-        points: points,
-        strokeWidth: 2.0,
-        color: Colors.red,
-      ));
+      _taskTurnpointCourse.add(
+        Polyline(points: points, strokeWidth: 2.0, color: Colors.red),
+      );
       _rebuildTaskLinesArray();
       // Only do this if view
       LatLng southwest = new LatLng(_swLat, _swLong);
@@ -401,7 +409,8 @@ class RaspMapState extends State<RaspMap>
       // latLngBounds.pad(.2);
       // _printMapBounds("_updateTaskTurnpoints ", latLngBounds);
       _mapController.animatedFitCamera(
-          cameraFit: CameraFit.bounds(bounds: latLngBounds));
+        cameraFit: CameraFit.bounds(bounds: latLngBounds),
+      );
     }
   }
 
@@ -415,21 +424,22 @@ class RaspMapState extends State<RaspMap>
       //  _printMapBounds("TaskTurnpoints.length = 0 ", _forecastLatLngBounds);
       _rebuildTaskLinesArray();
       _mapController.animatedFitCamera(
-          cameraFit: CameraFit.bounds(bounds: _forecastLatLngBounds));
+        cameraFit: CameraFit.bounds(bounds: _forecastLatLngBounds),
+      );
     } else {
       for (var routePoint
           in estimatedFlightRoute.routeSummary!.routeTurnpoints!) {
         // print('adding taskturnpoint: ${taskTurnpoint.title}');
         var latLngPoint = LatLng(
-            double.parse(routePoint.lat!), double.parse(routePoint.lon!));
+          double.parse(routePoint.lat!),
+          double.parse(routePoint.lon!),
+        );
         routePoints.add(latLngPoint);
         updateMapLatLngCorner(latLngPoint);
       }
-      _optimizedTaskRoute.add(Polyline(
-        points: routePoints,
-        strokeWidth: 2.0,
-        color: Colors.black,
-      ));
+      _optimizedTaskRoute.add(
+        Polyline(points: routePoints, strokeWidth: 2.0, color: Colors.black),
+      );
       _rebuildTaskLinesArray();
       // Only do this if view
       LatLng southwest = new LatLng(_swLat, _swLong);
@@ -438,7 +448,8 @@ class RaspMapState extends State<RaspMap>
       //latLngBounds.pad(.2);
       // _printMapBounds("_updateTaskTurnpoints ", latLngBounds);
       _mapController.animatedFitCamera(
-          cameraFit: CameraFit.bounds(bounds: latLngBounds));
+        cameraFit: CameraFit.bounds(bounds: latLngBounds),
+      );
     }
   }
 
@@ -449,36 +460,37 @@ class RaspMapState extends State<RaspMap>
       },
       onLongPress: () {
         _getLocalForecast(
-            latLng:
-                LatLng(taskTurnpoint.latitudeDeg, taskTurnpoint.longitudeDeg),
-            turnpointName: taskTurnpoint.title,
-            turnpointCode: taskTurnpoint.code,
-            forTask: true);
+          latLng: LatLng(taskTurnpoint.latitudeDeg, taskTurnpoint.longitudeDeg),
+          turnpointName: taskTurnpoint.title,
+          turnpointCode: taskTurnpoint.code,
+          forTask: true,
+        );
       },
       child: Container(
-          color: Colors.white,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(
-                flex: 2,
-                child: Text(taskTurnpoint.title, textAlign: TextAlign.center),
+        color: Colors.white,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              flex: 2,
+              child: Text(taskTurnpoint.title, textAlign: TextAlign.center),
+            ),
+            Expanded(
+              flex: 2,
+              child: Text(
+                '${taskTurnpoint.distanceFromPriorTurnpoint.toStringAsFixed(0)} '
+                '/ ${taskTurnpoint.distanceFromStartingPoint.toStringAsFixed(0)} km',
+                textAlign: TextAlign.center,
               ),
-              Expanded(
-                flex: 2,
-                child: Text(
-                    '${taskTurnpoint.distanceFromPriorTurnpoint.toStringAsFixed(0)} '
-                    '/ ${taskTurnpoint.distanceFromStartingPoint.toStringAsFixed(0)} km',
-                    textAlign: TextAlign.center),
-              ),
-              Expanded(
-                flex: 1,
-                child:
-                    Icon(Icons.arrow_drop_down_outlined, color: Colors.white),
-              )
-            ],
-          )),
+            ),
+            Expanded(
+              flex: 1,
+              child: Icon(Icons.arrow_drop_down_outlined, color: Colors.white),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -488,13 +500,18 @@ class RaspMapState extends State<RaspMap>
     double markerSize = getMarkerSize();
     for (var turnpoint in turnpoints) {
       // print('adding turnpoint: ${turnpoint.title}');
-      var turnpointLatLng =
-          LatLng(turnpoint.latitudeDeg, turnpoint.longitudeDeg);
-      _turnpointMarkers.add(Marker(
+      var turnpointLatLng = LatLng(
+        turnpoint.latitudeDeg,
+        turnpoint.longitudeDeg,
+      );
+      _turnpointMarkers.add(
+        Marker(
           width: markerSize,
           height: markerSize,
           point: turnpointLatLng,
-          child: _getTurnpointMarker(turnpoint)));
+          child: _getTurnpointMarker(turnpoint),
+        ),
+      );
       // anchorPos: AnchorPos.align(AnchorAlign.top)));
     }
     _rebuildMarkerArray();
@@ -504,8 +521,8 @@ class RaspMapState extends State<RaspMap>
     return (_mapZoom < 8.0)
         ? 12
         : (_mapZoom < 9.0)
-            ? 24
-            : 48;
+        ? 24
+        : 48;
   }
 
   Widget _getTurnpointMarker(final Turnpoint turnpoint) {
@@ -515,33 +532,37 @@ class RaspMapState extends State<RaspMap>
       },
       onLongPress: () {
         _getLocalForecast(
-            latLng: LatLng(turnpoint.latitudeDeg, turnpoint.longitudeDeg),
-            turnpointName: turnpoint.title,
-            turnpointCode: turnpoint.code);
+          latLng: LatLng(turnpoint.latitudeDeg, turnpoint.longitudeDeg),
+          turnpointName: turnpoint.title,
+          turnpointCode: turnpoint.code,
+        );
       },
       child: ClipOval(
         child: Container(
-            color: Colors.transparent,
-            child: Stack(
-              alignment: AlignmentDirectional.center,
-              children: [
-                SizedBox.expand(
-                  child: SvgPicture.asset(
-                    'assets/svg/ic_turnpoint_white_48dp.svg',
-                    color: TurnpointUtils.getColorForTurnpointIcon(
-                        turnpoint.style),
+          color: Colors.transparent,
+          child: Stack(
+            alignment: AlignmentDirectional.center,
+            children: [
+              SizedBox.expand(
+                child: SvgPicture.asset(
+                  'assets/svg/ic_turnpoint_white_48dp.svg',
+                  color: TurnpointUtils.getColorForTurnpointIcon(
+                    turnpoint.style,
                   ),
                 ),
-                Text(
-                    turnpoint.title.length > 4
-                        ? turnpoint.title.substring(0, 4)
-                        : turnpoint.title,
-                    style: _mapZoom < 9
-                        ? textStyleBlackFontSize12
-                        : textStyleBlackFontSize18,
-                    textAlign: TextAlign.center),
-              ],
-            )),
+              ),
+              Text(
+                turnpoint.title.length > 4
+                    ? turnpoint.title.substring(0, 4)
+                    : turnpoint.title,
+                style: _mapZoom < 9
+                    ? textStyleBlackFontSize12
+                    : textStyleBlackFontSize18,
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -557,12 +578,17 @@ class RaspMapState extends State<RaspMap>
     _soundingMarkers.clear();
     for (var sounding in soundings) {
       var soundingLatLng = LatLng(
-          double.parse(sounding.latitude!), double.parse(sounding.longitude!));
-      _soundingMarkers.add(Marker(
+        double.parse(sounding.latitude!),
+        double.parse(sounding.longitude!),
+      );
+      _soundingMarkers.add(
+        Marker(
           height: 40.0,
           width: 70.0,
           point: soundingLatLng,
-          child: _getSoundingMarker(sounding)));
+          child: _getSoundingMarker(sounding),
+        ),
+      );
       // anchorPos: AnchorPos.align(AnchorAlign.top)));
     }
     setState(() {
@@ -577,46 +603,49 @@ class RaspMapState extends State<RaspMap>
         _displaySoundingsView(sounding);
       },
       child: Container(
-          color: Colors.transparent,
-          //margin: new EdgeInsets.all(4.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              SizedBox(
-                height: 30,
-                width: 70,
-                child: Container(
-                  color: Colors.white,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      Expanded(
-                          flex: 4, child: Image.asset('assets/png/skew_t.png')),
-                      Expanded(
-                        flex: 6,
-                        child: Text(
-                          sounding.location!.length > 5
-                              ? sounding.location!.substring(0, 5)
-                              : sounding.location!,
-                          style: textStyleBlackFontSize12,
-                          textAlign: TextAlign.left,
-                        ),
+        color: Colors.transparent,
+        //margin: new EdgeInsets.all(4.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            SizedBox(
+              height: 30,
+              width: 70,
+              child: Container(
+                color: Colors.white,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Expanded(
+                      flex: 4,
+                      child: Image.asset('assets/png/skew_t.png'),
+                    ),
+                    Expanded(
+                      flex: 6,
+                      child: Text(
+                        sounding.location!.length > 5
+                            ? sounding.location!.substring(0, 5)
+                            : sounding.location!,
+                        style: textStyleBlackFontSize12,
+                        textAlign: TextAlign.left,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
-              Container(
-                height: 10,
-                width: 10,
-                child: SvgPicture.asset(
-                  'assets/svg/ic_downward_triangle.svg',
-                  fit: BoxFit.scaleDown,
-                  color: Colors.white,
-                ),
+            ),
+            Container(
+              height: 10,
+              width: 10,
+              child: SvgPicture.asset(
+                'assets/svg/ic_downward_triangle.svg',
+                fit: BoxFit.scaleDown,
+                color: Colors.white,
               ),
-            ],
-          )),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -650,15 +679,16 @@ class RaspMapState extends State<RaspMap>
           color: Colors.white,
           constraints: BoxConstraints(maxHeight: 200),
           child: TextFormField(
-              readOnly: true,
-              initialValue: latLngForecast.getForecastText(),
-              textAlign: TextAlign.center,
-              style: TextStyle(backgroundColor: Colors.white),
-              maxLines: 5,
-              minLines: 5,
-              onTap: () {
-                _removeLocalForecastMarker();
-              }),
+            readOnly: true,
+            initialValue: latLngForecast.getForecastText(),
+            textAlign: TextAlign.center,
+            style: TextStyle(backgroundColor: Colors.white),
+            maxLines: 5,
+            minLines: 5,
+            onTap: () {
+              _removeLocalForecastMarker();
+            },
+          ),
         ),
         Icon(Icons.arrow_drop_down, color: Colors.white),
       ],
@@ -691,10 +721,11 @@ class RaspMapState extends State<RaspMap>
       var imageUrl = soaringForecastImageSet!.bodyImage!.imageUrl;
       var raspUrl = RASP_BASE_URL + imageUrl;
       var overlayImage = OverlayImage(
-          bounds: _forecastLatLngBounds,
-          opacity: _forecastOverlayOpacity / 100,
-          imageProvider: NetworkImage(raspUrl),
-          gaplessPlayback: true);
+        bounds: _forecastLatLngBounds,
+        opacity: _forecastOverlayOpacity / 100,
+        imageProvider: NetworkImage(raspUrl),
+        gaplessPlayback: true,
+      );
 
       if (_overlayImages.length == 0) {
         _overlayImages.add(overlayImage);
@@ -704,19 +735,23 @@ class RaspMapState extends State<RaspMap>
     }
   }
 
-  _getLocalForecast(
-      {required LatLng latLng,
-      String? turnpointName = null,
-      String? turnpointCode,
-      bool forTask = false}) {
+  _getLocalForecast({
+    required LatLng latLng,
+    String? turnpointName = null,
+    String? turnpointCode,
+    bool forTask = false,
+  }) {
     widget.runAnimation(false);
     // debugPrint('Local forecast requested at : ${latLng.latitude.toString()}  :'
     //     '  ${latLng.longitude.toString()}');
-    _sendEvent(DisplayLocalForecastEvent(
+    _sendEvent(
+      DisplayLocalForecastEvent(
         latLng: latLng,
         turnpointName: turnpointName,
         turnpointCode: turnpointCode,
-        forTask: forTask));
+        forTask: forTask,
+      ),
+    );
   }
 
   void _sendEvent(dynamic event) {
@@ -765,7 +800,7 @@ class RaspMapState extends State<RaspMap>
     _combinedTaskLines.addAll(_optimizedTaskRoute);
   }
 
-// Currently only display max of 1, so if changes in future need to revisit logic
+  // Currently only display max of 1, so if changes in future need to revisit logic
   void _removeLocalForecastMarker() {
     _latLngMarkers.clear();
     _rebuildMarkerArray();
@@ -773,8 +808,11 @@ class RaspMapState extends State<RaspMap>
   }
 
   void _displayTurnpointOverheadView(Turnpoint turnpoint) async {
-    await Navigator.pushNamed(context, TurnpointViewRouteBuilder.routeName,
-        arguments: TurnpointOverHeadArgs(turnpoint: turnpoint));
+    await Navigator.pushNamed(
+      context,
+      TurnpointViewRouteBuilder.routeName,
+      arguments: TurnpointOverHeadArgs(turnpoint: turnpoint),
+    );
   }
 
   void _updateGeoJsonSuaDetails(String suaDetail) async {
@@ -787,138 +825,144 @@ class RaspMapState extends State<RaspMap>
     });
   }
 
-//Widget _getGeoJsonWidget() {
-// return GeoJSONWidget(
-//   drawClusters: false,
-//   drawFeatures: true,
-//   index: geoJsonIndex,
-//   options: GeoJSONOptions(
-//     featuresHaveSameStyle: false,
-//     overallStyleFunc: (TileFeature feature) {
-//       var paint = Paint()
-//         ..style = PaintingStyle.stroke
-//         ..color = Colors.blue.shade200
-//         ..strokeWidth = 5
-//         ..isAntiAlias = false;
-//       if (feature.type == 3) {
-//         // lineString
-//         ///paint.style = PaintingStyle.fill;
-//       }
-//       return paint;
-//     },
-//     // f
-//     ///clusterFunc: () { return Text("Cluster"); },
-//     ///lineStringFunc: () { if(CustomImages.imageLoaded) return CustomImages.plane;}
-//     lineStringStyle: (feature) {
-//       return Paint()
-//         ..style = PaintingStyle.stroke
-//         ..color = Colors.red
-//         ..strokeWidth = 2
-//         ..isAntiAlias = true;
-//     },
-//     polygonFunc: null,
-//     polygonStyle: (feature) {
-//       var suaColor = suaColors.firstWhere(
-//           (sua) => sua.suaClassType == feature.tags['TYPE'],
-//           orElse: (() => SUAColor.classUnKnown));
-//       suaColor.airspaceColor;
-//       var paint = Paint()
-//         ..style = PaintingStyle.stroke
-//         ..strokeWidth = 2
-//         ..isAntiAlias = true
-//         ..color = suaColor.airspaceColor;
-//       paint.isAntiAlias = false;
-//       return paint;
-//     },
-//     polygonLabel: (feature, canvas, offsets) {
-//       Label.paintText(
-//         canvas,
-//         offsets,
-//         feature.tags['TYPE'],
-//         // If I don't include as TextStyle I get class conflict. Don't know why AS is showing that
-//         textStyleBlack87FontSize14,
-//         _mapController.rotation, // rotationRad,
-//         rotate: true, //polygonOpt.rotateLabel,
-//         labelPlacement:
-//             PolygonLabelPlacement.centroid, //polygonOpt.labelPlacement
-//       );
-//     },
-//   ),
-// );
-//
+  //Widget _getGeoJsonWidget() {
+  // return GeoJSONWidget(
+  //   drawClusters: false,
+  //   drawFeatures: true,
+  //   index: geoJsonIndex,
+  //   options: GeoJSONOptions(
+  //     featuresHaveSameStyle: false,
+  //     overallStyleFunc: (TileFeature feature) {
+  //       var paint = Paint()
+  //         ..style = PaintingStyle.stroke
+  //         ..color = Colors.blue.shade200
+  //         ..strokeWidth = 5
+  //         ..isAntiAlias = false;
+  //       if (feature.type == 3) {
+  //         // lineString
+  //         ///paint.style = PaintingStyle.fill;
+  //       }
+  //       return paint;
+  //     },
+  //     // f
+  //     ///clusterFunc: () { return Text("Cluster"); },
+  //     ///lineStringFunc: () { if(CustomImages.imageLoaded) return CustomImages.plane;}
+  //     lineStringStyle: (feature) {
+  //       return Paint()
+  //         ..style = PaintingStyle.stroke
+  //         ..color = Colors.red
+  //         ..strokeWidth = 2
+  //         ..isAntiAlias = true;
+  //     },
+  //     polygonFunc: null,
+  //     polygonStyle: (feature) {
+  //       var suaColor = suaColors.firstWhere(
+  //           (sua) => sua.suaClassType == feature.tags['TYPE'],
+  //           orElse: (() => SUAColor.classUnKnown));
+  //       suaColor.airspaceColor;
+  //       var paint = Paint()
+  //         ..style = PaintingStyle.stroke
+  //         ..strokeWidth = 2
+  //         ..isAntiAlias = true
+  //         ..color = suaColor.airspaceColor;
+  //       paint.isAntiAlias = false;
+  //       return paint;
+  //     },
+  //     polygonLabel: (feature, canvas, offsets) {
+  //       Label.paintText(
+  //         canvas,
+  //         offsets,
+  //         feature.tags['TYPE'],
+  //         // If I don't include as TextStyle I get class conflict. Don't know why AS is showing that
+  //         textStyleBlack87FontSize14,
+  //         _mapController.rotation, // rotationRad,
+  //         rotate: true, //polygonOpt.rotateLabel,
+  //         labelPlacement:
+  //             PolygonLabelPlacement.centroid, //polygonOpt.labelPlacement
+  //       );
+  //     },
+  //   ),
+  // );
+  //
 
   Widget _getOpacitySlider() {
     return Positioned(
-        top: 20,
-        left: 0,
-        right: 0,
-        child: AnimatedOpacity(
-          opacity: _forecastOverlaySliderIsVisible ? 1.0 : 0.0,
-          duration: const Duration(milliseconds: 2000),
-          onEnd: (() {
-            if (_forecastOverlaySliderIsVisible) _startHideOpacityTimer();
-          }),
-          child: Visibility(
-            visible: _forecastOverlaySliderIsVisible,
-            child: IntrinsicHeight(
-              child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: <Widget>[
-                    Container(
-                      color: Colors.white,
-                      child: Center(
-                        child: Padding(
-                          padding: const EdgeInsets.only(left: 8),
-                          child: Text("0",
-                              textAlign: TextAlign.center,
-                              style: textStyleBoldBlack87FontSize14),
-                        ),
+      top: 20,
+      left: 0,
+      right: 0,
+      child: AnimatedOpacity(
+        opacity: _forecastOverlaySliderIsVisible ? 1.0 : 0.0,
+        duration: const Duration(milliseconds: 2000),
+        onEnd: (() {
+          if (_forecastOverlaySliderIsVisible) _startHideOpacityTimer();
+        }),
+        child: Visibility(
+          visible: _forecastOverlaySliderIsVisible,
+          child: IntrinsicHeight(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                Container(
+                  color: Colors.white,
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 8),
+                      child: Text(
+                        "0",
+                        textAlign: TextAlign.center,
+                        style: textStyleBoldBlack87FontSize14,
                       ),
                     ),
-                    Container(
-                      color: Colors.white,
-                      child: Slider(
-                        value: _forecastOverlayOpacity,
-                        max: 100,
-                        min: 0,
-                        divisions: 100,
-                        label: _forecastOverlayOpacity.round().toString(),
-                        onChanged: (double value) {
-                          if (_hideOpacityTimer != null) {
-                            _hideOpacityTimer!.cancel();
-                            _hideOpacityTimer = null;
-                          }
-                          // changing value in setState() doesn't cause overlay opacity change
-                          // so save value and receive updated value from bloc state issue
-                          _sendEvent(SetForecastOverlayOpacityEvent(value));
-                          setState(() {
-                            // but need to set value in setState to redraw slider
-                            _forecastOverlayOpacity = value;
-                          });
-                        },
-                        onChangeEnd: (double value) {
-                          setState(() {
-                            _startHideOpacityTimer();
-                          });
-                        },
+                  ),
+                ),
+                Container(
+                  color: Colors.white,
+                  child: Slider(
+                    value: _forecastOverlayOpacity,
+                    max: 100,
+                    min: 0,
+                    divisions: 100,
+                    label: _forecastOverlayOpacity.round().toString(),
+                    onChanged: (double value) {
+                      if (_hideOpacityTimer != null) {
+                        _hideOpacityTimer!.cancel();
+                        _hideOpacityTimer = null;
+                      }
+                      // changing value in setState() doesn't cause overlay opacity change
+                      // so save value and receive updated value from bloc state issue
+                      _sendEvent(SetForecastOverlayOpacityEvent(value));
+                      setState(() {
+                        // but need to set value in setState to redraw slider
+                        _forecastOverlayOpacity = value;
+                      });
+                    },
+                    onChangeEnd: (double value) {
+                      setState(() {
+                        _startHideOpacityTimer();
+                      });
+                    },
+                  ),
+                ),
+                Container(
+                  color: Colors.white,
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: Text(
+                        "100",
+                        textAlign: TextAlign.center,
+                        style: textStyleBoldBlack87FontSize14,
                       ),
                     ),
-                    Container(
-                      color: Colors.white,
-                      child: Center(
-                        child: Padding(
-                          padding: const EdgeInsets.only(right: 8.0),
-                          child: Text("100",
-                              textAlign: TextAlign.center,
-                              style: textStyleBoldBlack87FontSize14),
-                        ),
-                      ),
-                    ),
-                  ]),
+                  ),
+                ),
+              ],
             ),
           ),
-        ));
+        ),
+      ),
+    );
   }
 
   showOverlayOpacitySlider() {
@@ -947,11 +991,14 @@ class RaspMapState extends State<RaspMap>
               onPressed: () async {
                 widget.runAnimation(false);
                 await Navigator.pushNamed(
-                    context, EstimatedTaskRouteBuilder.routeName);
+                  context,
+                  EstimatedTaskRouteBuilder.routeName,
+                );
                 // Need to wait a frame otherwise resultant refresh goes to
                 // estimated task
                 WidgetsBinding.instance.addPostFrameCallback(
-                    (_) => _sendEvent(RefreshModelDateEvent()));
+                  (_) => _sendEvent(RefreshModelDateEvent()),
+                );
               },
               child: Stack(
                 alignment: Alignment.center,
@@ -961,10 +1008,7 @@ class RaspMapState extends State<RaspMap>
                     height: 40,
                     width: 40,
                   ),
-                  Text(
-                    "Task\nEstimates",
-                    style: textStyleBoldBlackFontSize14,
-                  ),
+                  Text("Task\nEstimates", style: textStyleBoldBlackFontSize14),
                 ],
               ),
             ),
@@ -974,29 +1018,31 @@ class RaspMapState extends State<RaspMap>
 
   _regionModelListener() {
     return BlocListener<RegionModelBloc, RegionModelState>(
-        listener: (context, state) async {
-          if (state is CenterOfMapState) {
-            setState(() {
-              _mapCenter = state.latLng;
-            });
+      listener: (context, state) async {
+        if (state is CenterOfMapState) {
+          setState(() {
+            _mapCenter = state.latLng;
+          });
+        }
+        if (state is SuaDetailsState) {
+          _updateGeoJsonSuaDetails(state.suaDetails);
+          return;
+        }
+        if (state is RegionSoundingsState) {
+          _placeSoundingMarkers(state.soundings);
+        }
+        if (state is RegionLatLngBoundsState) {
+          _forecastLatLngBounds = state.latLngBounds;
+          _sendEvent(ViewBoundsEvent(_forecastLatLngBounds));
+          if (_mapReady) {
+            _mapController.animatedFitCamera(
+              cameraFit: CameraFit.bounds(bounds: _forecastLatLngBounds),
+            );
           }
-          if (state is SuaDetailsState) {
-            _updateGeoJsonSuaDetails(state.suaDetails);
-            return;
-          }
-          if (state is RegionSoundingsState) {
-            _placeSoundingMarkers(state.soundings);
-          }
-          if (state is RegionLatLngBoundsState) {
-            _forecastLatLngBounds = state.latLngBounds;
-            _sendEvent(ViewBoundsEvent(_forecastLatLngBounds));
-            if (_mapReady) {
-              _mapController.animatedFitCamera(
-                  cameraFit: CameraFit.bounds(bounds: _forecastLatLngBounds));
-            }
-            return;
-          }
-        },
-        child: SizedBox.shrink());
+          return;
+        }
+      },
+      child: SizedBox.shrink(),
+    );
   }
 }

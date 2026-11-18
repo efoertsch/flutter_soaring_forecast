@@ -18,12 +18,14 @@ const String RASP_BASE_URL = BASE_URL + 'rasp/';
 const String RASP_OPTIONS_BASE_URL = BASE_URL + 'soaringforecast/';
 //const String RASP_OPTIONS_BASE_URL = BASE_URL + '/soaringforecast/';
 
-const String BASE_AIRPORT_URL = 'https://ourairports.com/data/';
-// Can't download via ourairports.com/data url anymore
-//const String BASE_AIRPORT_URL = 'https://davidmegginson.github.io/ourairports-data/';
 const String AIRPORT_FILE_NAME = 'airports.csv';
-//const String AIRPORT_URL = RASP_OPTIONS_BASE_URL + 'airports.csv';
-const String AIRPORT_URL = BASE_AIRPORT_URL + AIRPORT_FILE_NAME;
+// ourairports.com site seems undependable. Switching download to gbsc site
+//const String BASE_AIRPORT_URL = 'https://ourairports.com/data/';
+// Below url is for local development with ngrok (in terminal and in drupal_gbsc directory
+// with Orbstack and Drupal running, execute ddev share. note double check ngok url
+//const String BASE_AIRPORT_URL = 'https://prelaw-squiggly-moneybags.ngrok-free.dev/soaringforecast/';
+//const String AIRPORT_URL = BASE_AIRPORT_URL + AIRPORT_FILE_NAME;
+const String AIRPORT_URL = RASP_OPTIONS_BASE_URL + AIRPORT_FILE_NAME;
 
 const String GOES_GIF =
     "https://cdn.star.nesdis.noaa.gov/GOES16/ABI/GIFS/GOES16-NE-GEOCOLOR-600x600.gif";
@@ -274,7 +276,7 @@ class TurnpointMenu {
   static const String emailTurnpoints = 'Email Turnpoints';
   static const String clearTurnpointDatabase = 'Clear Turnpoint Database';
   static const String customImport = 'Custom Import';
-  static const String importFromDownload = "Import From Download";
+  static const String importFromFile = "Import From File";
   static const String turnpoints = "Turnpoints";
   static const String turnpoint = "Turnpoint";
   static const String turnpointImport = "Turnpoint Import";

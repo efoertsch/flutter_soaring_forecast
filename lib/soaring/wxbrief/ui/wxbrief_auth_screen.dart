@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:cupertino_will_pop_scope/cupertino_will_pop_scope.dart';
+import 'package:flutter/foundation.dart' show kIsWasm;
 import 'package:flutter/material.dart' hide Feedback;
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -24,35 +25,35 @@ class _WxBriefAuthScreenState extends State<WxBriefAuthScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (Platform.isAndroid) {
-      return ConditionalWillPopScope(
-        onWillPop: _onWillPop,
-        shouldAddCallback: true,
-        child: _buildSafeArea(context),
-      );
-    } else {
-      //iOS
+    if (kIsWasm || !Platform.isAndroid) {
       return GestureDetector(
         onHorizontalDragUpdate: (details) {
           if (details.delta.direction >= 0) {
             _onWillPop();
           }
         },
-        child: _buildSafeArea(context),
+        child: _buildSafeArea(),
+      );
+    } else {
+      // Android
+      return ConditionalWillPopScope(
+        onWillPop: _onWillPop,
+        shouldAddCallback: true,
+        child: _buildSafeArea(),
       );
     }
   }
 
-  Widget _buildSafeArea(BuildContext context) {
+  Widget _buildSafeArea() {
     return SafeArea(
       child: Scaffold(
-        appBar: getAppBar(context),
+        appBar: getAppBar(),
         body: _getBody(),
       ),
     );
   }
 
-  AppBar getAppBar(BuildContext context) {
+  AppBar getAppBar() {
     return AppBar(
       title: Text(WxBriefLiterals.WXBRIEF_AUTHORIZATION),
       leading: BackButton(onPressed: () => Navigator.pop(context)),

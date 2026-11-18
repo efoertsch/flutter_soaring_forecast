@@ -102,7 +102,7 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
                     onPressed: () {
                       if ((_searchResult.currentInstanceIndex ==
                                   _searchResult.totalInstanceCount &&
-                              kIsWeb) ||
+                              kIsWasm) ||
                           (_searchResult.currentInstanceIndex ==
                                   _searchResult.totalInstanceCount &&
                               _searchResult.isSearchCompleted)) {
@@ -125,7 +125,7 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
           _searchResult = _pdfViewerController.searchText(
             searchString,
           );
-          if (kIsWeb) {
+          if (kIsWasm) {
             setState(() {});
           } else {
             _searchResult.addListener(() {

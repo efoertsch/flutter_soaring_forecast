@@ -1,7 +1,10 @@
 import 'dart:collection';
+import 'dart:convert' show utf8;
 import 'dart:io';
 
 import 'package:csv/csv.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart' show debugPrint, Uint8List;
 import 'package:flutter_soaring_forecast/soaring/drift/turnpoint/turnpoints.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/repository.dart';
 import 'package:flutter_soaring_forecast/soaring/turnpoints/turnpoint_utils.dart';
@@ -51,10 +54,11 @@ class TurnpointsImporter {
   }
 
   static Future<List<Turnpoint>> getTurnpointsFromFile(
-      File turnpointFile) async {
-    String turnpointString = await turnpointFile.readAsString();
-    turnpointString = turnpointString.replaceAll('\r\n', '\n');
-    List<List<dynamic>> parsedTurnpoints = csv.decode(turnpointString);
+      PlatformFile turnpointFile) async {
+    Uint8List byteList = await turnpointFile.readAsBytes();
+    String turnpointList = utf8.decode(byteList).replaceAll('\r\n', '\n');
+    debugPrint(turnpointList);
+    List<List<dynamic>> parsedTurnpoints = csv.decode(turnpointList);
     return await convertTurnpointCsvListToTurnpoints(parsedTurnpoints);
   }
 

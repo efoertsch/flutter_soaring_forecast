@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:equatable/equatable.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_soaring_forecast/soaring/drift/turnpoint/turnpoints.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/turnpoint_regions.dart';
@@ -69,13 +70,8 @@ class DeleteAllTurnpointsEvent extends TurnpointEvent {
   List<Object?> get props => [];
 }
 
-class GetCustomImportFileNamesEvent extends TurnpointEvent {
-  @override
-  List<Object?> get props => [];
-}
-
 class ImportTurnpointsFromFileEvent extends TurnpointEvent {
-  final File turnpointFile;
+  final PlatformFile turnpointFile;
 
   ImportTurnpointsFromFileEvent(this.turnpointFile);
 

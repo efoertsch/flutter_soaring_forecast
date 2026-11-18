@@ -1,3 +1,16 @@
+Web - WIP
+1.  To run app on Chrome browser you need to disable CORS and run with the same port number
+    so the drift database will not be recreated each time
+    a. Edit Run/Edit Configurations. In Additional run args add:
+        web-server --web-browser-flag "--disable-web-security" --wasm --web-port 8080
+2. As alternative
+       a. In Android Studio, open 2 terminal windows
+       b. In the first terminal window, execute:
+           flutter run -d web-server --web-browser-flag "--disable-web-security" --wasm --web-port 8080
+       c. In the second terminal window, execute:
+           open -na "Google Chrome" --args --user-data-dir="/tmp/chrome_dev" --disable-web-security http://localhost:8080
+
+iOS
 If you make changes to ios Info.plist, remove the app from simulator, then run fluttter clean, flutter run.
 The values in Info.plist are cached on simulator and extreme measures needed to get app updates into device. 
 

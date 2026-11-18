@@ -60,7 +60,7 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
     _isReadOnly = widget.turnpointOverHeadArgs.isReadOnly;
     turnpoint = originalTurnpoint.clone();
     _displayCloseButton =
-        (Platform.isIOS && _isReadOnly) || turnpoint.latitudeDeg != 0;
+          _isReadOnly || turnpoint.latitudeDeg != 0;
     super.initState();
   }
 
@@ -342,7 +342,7 @@ class _TurnpointOverheadViewState extends State<TurnpointOverheadView>
         setState(() {
           _displaySaveResetButtons = false;
           _displayCloseButton =
-              (Platform.isIOS && _isReadOnly) || !_gotLocation;
+              _isReadOnly|| !_gotLocation;
           _displaySaveButton = _gotLocation;
           turnpoint.latitudeDeg = originalTurnpoint.latitudeDeg;
           turnpoint.longitudeDeg = originalTurnpoint.longitudeDeg;

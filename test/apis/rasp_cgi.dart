@@ -9,6 +9,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 Future<void> main() async {
   late AppDatabase appDatabase;
+  late Repository repository;
+
   setUp(() {
     // Create a fresh in-memory database before each test
     appDatabase = AppDatabase.forTesting(NativeDatabase.memory());
