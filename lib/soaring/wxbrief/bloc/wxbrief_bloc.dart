@@ -15,6 +15,7 @@ import 'package:flutter_soaring_forecast/soaring/wxbrief/data/route_briefing_req
 import 'package:flutter_soaring_forecast/soaring/wxbrief/data/wxbrief_defaults.dart';
 import 'package:intl/intl.dart';
 
+import '../../app/web_pdf_handler.dart';
 import '../../drift/app_database.dart' show Airport;
 import '../../drift/turnpoint/turnpoints.dart';
 import '../../turnpoints/cup/cup_styles.dart';
@@ -324,6 +325,10 @@ class WxBriefBloc extends Bloc<WxBriefEvent, WxBriefState> {
   FutureOr<void> _createRouteBriefingPDF(
       String ngbv2pdfBriefing, Emitter<WxBriefState> emit) async {
     Uint8List bytes = base64Decode(ngbv2pdfBriefing);
+    if (kIsWeb) {
+      openPdfInNewTab(bytes);
+      return;
+    }
     final filePath = await repository.writeWxBriefToDirectory("WxBrief.pdf", bytes);
     // filePath is MediaStore name. Convert to file path
     if (filePath == null) {

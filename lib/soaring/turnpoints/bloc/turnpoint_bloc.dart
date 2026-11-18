@@ -39,7 +39,6 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
     on<GetElevationAtLatLong>(_getElevationAtLatLong);
     on<DownloadTurnpointsToFile>(_downloadTurnpointsToFile);
     on<DownloadTurnpointToFile>(_downloadTurnpointToFile);
-    on<GetCustomImportFileNamesEvent>(_getCustomImportFileNames);
     on<ImportTurnpointsFromFileEvent>(_importTurnpointsFromFile);
   }
 
@@ -91,12 +90,8 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
     }
   }
 
-  void _getListOfTurnpointExchangeFiles(
+  Future<void> _getListOfTurnpointExchangeFiles(
       GetTurnpointFileNamesEvent event, Emitter<TurnpointState> emit) async {
-    await _loadTurnpointFileNames(emit);
-  }
-
-  Future<void> _loadTurnpointFileNames(Emitter<TurnpointState> emit) async {
     try {
       turnpointFiles.clear();
       turnpointFiles
@@ -297,28 +292,6 @@ class TurnpointBloc extends Bloc<TurnpointEvent, TurnpointState> {
   String _getCurrentDateAndTime() {
     DateTime now = DateTime.now();
     return DateFormat('yyyy_MM_dd').format(now);
-  }
-
-
-  FutureOr<List<File>> _getCustomImportFileNames(
-      GetCustomImportFileNamesEvent event, Emitter<TurnpointState> emit) async {
-    List<File> cupfiles = [];
-    try {
-      Directory? directory = await repository.getPublicDownloadsDir();
-      if (directory != null) {
-        directory
-            .listSync()
-            .where((file) => file is File && file.path.endsWith(".cup"))
-            .forEach((file) {
-          cupfiles.add(file as File);
-        });
-        emit(CustomTurnpointFileListState(cupfiles));
-      }
-    } catch (e) {
-      emit(TurnpointErrorState("Error getting list of .cup files"));
-      print("Exception getting list of cup files" + e.toString());
-    }
-    return cupfiles;
   }
 
   // import turnpoints from file in Download directory

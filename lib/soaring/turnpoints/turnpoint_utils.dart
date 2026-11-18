@@ -263,6 +263,7 @@ class TurnpointUtils {
 
   static SeeYouFormat determineTurnpointFileFormat(List firstLineOfTurnpoints) {
     Function eq = const ListEquality().equals;
+    debugPrint(firstLineOfTurnpoints.toString());
     if (eq(firstLineOfTurnpoints, WITH_WIDTH_AND_DESCRIPTION_LABELS)) {
       return SeeYouFormat.WITH_WIDTH_AND_DESCRIPTION;
     }

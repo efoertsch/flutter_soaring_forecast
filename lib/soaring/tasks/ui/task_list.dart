@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/main.dart';
@@ -23,7 +24,7 @@ class TaskListScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     _context = context;
     BlocProvider.of<TaskBloc>(context).add(TaskListEvent());
-    if (Platform.isAndroid) {
+    if (kIsWasm ||  Platform.isAndroid) {
       return _buildScaffold(context);
     } else {
       //iOS

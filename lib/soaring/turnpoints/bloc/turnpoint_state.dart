@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:equatable/equatable.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_soaring_forecast/soaring/drift/turnpoint/turnpoints.dart';
 import 'package:flutter_soaring_forecast/soaring/repository/options/turnpoint_regions.dart';
@@ -131,12 +132,6 @@ class TurnpointFilesFoundState extends TurnpointState {
   List<Object?> get props => [turnpointFiles];
 }
 
-class CustomTurnpointFileListState extends TurnpointState {
-  final List<File> customTurnpointFiles;
-  CustomTurnpointFileListState(this.customTurnpointFiles);
-  @override
-  List<Object?> get props => [customTurnpointFiles];
-}
 
 class TempTurnpointsDownloadDirectory extends TurnpointState {
   final File tempFile;

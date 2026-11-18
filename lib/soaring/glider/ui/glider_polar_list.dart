@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:cupertino_will_pop_scope/cupertino_will_pop_scope.dart';
+import 'package:flutter/foundation.dart' show kIsWasm;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/soaring/app/common_widgets.dart';
@@ -108,38 +109,38 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (Platform.isAndroid) {
-      return ConditionalWillPopScope(
-        onWillPop: _onWillPop,
-        shouldAddCallback: true,
-        child: _buildSafeArea(context),
-      );
-    } else {
-      //iOS
+    if (kIsWasm || !Platform.isAndroid) {
       return GestureDetector(
         onHorizontalDragUpdate: (details) {
           if (details.delta.direction >= 0) {
             _onWillPop();
           }
         },
-        child: _buildSafeArea(context),
+        child: _buildSafeArea(),
+      );
+    } else {
+      // Android
+      return ConditionalWillPopScope(
+        onWillPop: _onWillPop,
+        shouldAddCallback: true,
+        child: _buildSafeArea(),
       );
     }
   }
 
-  SafeArea _buildSafeArea(BuildContext context) {
+  SafeArea _buildSafeArea() {
     return SafeArea(
       child: Scaffold(
-        appBar: _getAppBar(context),
+        appBar: _getAppBar(),
         body: _getBody(),
         bottomNavigationBar: SafeArea(
-          child: _getBottomAppBar(context),
+          child: _getBottomAppBar(),
         ),
       ),
     );
   }
 
-  BottomAppBar _getBottomAppBar(BuildContext context) {
+  BottomAppBar _getBottomAppBar() {
     return BottomAppBar(
       child: Row(
         mainAxisSize: MainAxisSize.max,
@@ -191,7 +192,7 @@ class _GliderPolarListScreenState extends State<GliderPolarListScreen> {
     );
   }
 
-  AppBar _getAppBar(BuildContext context) {
+  AppBar _getAppBar() {
     return AppBar(
         leading: BackButton(
           onPressed: () => Navigator.pop(context),

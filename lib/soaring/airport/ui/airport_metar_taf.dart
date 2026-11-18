@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:after_layout/after_layout.dart';
 import 'package:cupertino_will_pop_scope/cupertino_will_pop_scope.dart';
+import 'package:flutter/foundation.dart' show kIsWasm;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/main.dart';
@@ -36,14 +37,7 @@ class _AirportMetarTafState extends State<AirportMetarTaf>
 
   @override
   Widget build(BuildContext context) {
-    if (Platform.isAndroid) {
-      return ConditionalWillPopScope(
-        onWillPop: _onWillPop,
-        shouldAddCallback: true,
-        child: _buildSafeArea(),
-      );
-    } else {
-      //iOS
+    if (kIsWasm || !Platform.isAndroid) {
       return GestureDetector(
         onHorizontalDragUpdate: (details) {
           if (details.delta.direction >= 0) {
@@ -52,8 +46,16 @@ class _AirportMetarTafState extends State<AirportMetarTaf>
         },
         child: _buildSafeArea(),
       );
+    } else {
+      // Android
+      return ConditionalWillPopScope(
+        onWillPop: _onWillPop,
+        shouldAddCallback: true,
+        child: _buildSafeArea(),
+      );
     }
   }
+
 
   Widget _buildSafeArea() {
     return SafeArea(

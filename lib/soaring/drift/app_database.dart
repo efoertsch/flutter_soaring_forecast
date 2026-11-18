@@ -40,6 +40,10 @@ class AppDatabase extends _$AppDatabase {
   static QueryExecutor _openConnection() {
     return driftDatabase(
       name: 'app_database',
+      web: DriftWebOptions(
+        sqlite3Wasm: Uri.parse('sqlite3.wasm'),
+        driftWorker: Uri.parse('drift_worker.js'), // or drift_worker.js depending on your setup file name
+      ),
       native: DriftNativeOptions(
         databasePath: () async {
          if (Platform.isAndroid) {
@@ -51,6 +55,7 @@ class AppDatabase extends _$AppDatabase {
            return p.join(dbFolder.path, 'app_database.db');
          }
         },
+
         shareAcrossIsolates: true,
         // share database between workmanager and app
       ),

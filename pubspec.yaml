@@ -11,7 +11,7 @@ description: A new Flutter application.
 # In iOS, build-name is used as CFBundleShortVersionString while build-number used as CFBundleVersion.
 # Read more about iOS versioning at
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
-version: 1.18.0+53
+version: 1.18.1+54
 
 environment:
   #sdk: ">=3.4.3 <=3.13.5"   # <=3.7.2"
@@ -54,13 +54,13 @@ dependencies:
   device_info_plus: ^13.3.0  # Get platform-specific device info. In this case used to get Android version
   vector_math: ^2.1.4    # methods used for thermalling sink rate calculations
 
-  flutter_cache_manager: ^3.3.0
+  flutter_cache_manager: ^3.5.0
   intl: ^0.20.3   # used for date/time formatting,  syncfusion_flutter_pdfviewer 28.2.4 depends on intl >=0.18.1 <0.20.0
   after_layout: ^1.2.0
 
   drift: ^2.35.2 # or latest
   drift_flutter: ^0.3.1
-
+  sqlite3_flutter_libs: ^0.6.0+eol
 
   # https://pub.dev/packages/csv/install
   csv: ^8.0.0
@@ -95,6 +95,7 @@ dependencies:
   flutter_map: <8.0.0  # can't upgrade until get update to or replace flutter_map_geojson
   flutter_map_animations: ^0.8.0  # see flutter_map above
   google_maps_flutter:  2.19.0 #  2.6 (iOS 12+) used for overhead view of turnpoints
+
   #google_maps_flutter_ios_sdk9:  2.19.0 #  2.6 (iOS 12+) used for overhead view of turnpoints
   #flutter_map_geojson: ^1.0.8  # replaced geojson_vector_slicer
   flutter_map_geojson:   # needed to apply pull request for > Fix: int is not a subtype of double
@@ -109,6 +110,7 @@ dependencies:
   cupertino_icons: ^1.0.5
   firebase_core: 4.15.0
   firebase_crashlytics: ^5.4.0
+  web: ^1.1.2
 
 #https://pub.dev/packages/flutter_launcher_icons
 flutter_launcher_icons:
@@ -122,15 +124,13 @@ flutter_launcher_icons:
     generate: true
     image_path: 'assets/png/glider_icon_1024.png'
 
-
-
 dev_dependencies:
   flutter_driver:
     sdk: flutter
-  drift_dev: ^2.35.0
+  drift_dev: ^2.35.3
 
   retrofit_generator: ^10.2.12
-  build_runner: '^2.16.1'
+  build_runner: ^2.16.2
   flutter_lints: ^5.0.0 # Contains a set of recommended lints for Flutter code
 
   flutter_test:

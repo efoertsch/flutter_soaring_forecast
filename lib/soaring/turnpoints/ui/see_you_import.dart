@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:after_layout/after_layout.dart';
 import 'package:cupertino_will_pop_scope/cupertino_will_pop_scope.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart' show kIsWasm;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_soaring_forecast/main.dart';
@@ -41,20 +42,20 @@ class _SeeYouImportScreenState extends State<SeeYouImportScreen>
 
   @override
   Widget build(BuildContext context) {
-    if (Platform.isAndroid) {
-      return ConditionalWillPopScope(
-        onWillPop: _onWillPop,
-        shouldAddCallback: true,
-        child: _buildSafeArea(),
-      );
-    } else {
-      //iOS
+    if (kIsWasm || !Platform.isAndroid) {
       return GestureDetector(
         onHorizontalDragUpdate: (details) {
           if (details.delta.direction >= 0) {
             _onWillPop();
           }
         },
+        child: _buildSafeArea(),
+      );
+    } else {
+      // Android
+      return ConditionalWillPopScope(
+        onWillPop: _onWillPop,
+        shouldAddCallback: true,
         child: _buildSafeArea(),
       );
     }
@@ -192,7 +193,7 @@ class _SeeYouImportScreenState extends State<SeeYouImportScreen>
         itemBuilder: (BuildContext context) {
           return {
             TurnpointMenu.turnpointExchange,
-            TurnpointMenu.importFromDownload ,
+            TurnpointMenu.importFromFile ,
             TurnpointMenu.clearTurnpointDatabase,
           }.map((String choice) {
             return PopupMenuItem<String>(
@@ -221,7 +222,7 @@ class _SeeYouImportScreenState extends State<SeeYouImportScreen>
             button2Text: "Yes",
             button2Function: _sendDeleteTurnpointsEvent);
         break;
-      case TurnpointMenu.importFromDownload :
+      case TurnpointMenu.importFromFile :
         //_checkForCustomImportPermission();
         _pickFiles();
         break;
@@ -234,18 +235,18 @@ class _SeeYouImportScreenState extends State<SeeYouImportScreen>
     return true;
   }
 
-  void _checkForCustomImportPermission() async {
-    checkFileAccess(
-        permissionGrantedFunction: _goToCustomSeeYouImport,
-        requestPermissionFunction: _openAppSettingsFunction,
-        permissionDeniedFunction: _openAppSettingsFunction);
-  }
+  // void _checkForCustomImportPermission() async {
+  //   checkFileAccess(
+  //       permissionGrantedFunction: _goToCustomSeeYouImport,
+  //       requestPermissionFunction: _openAppSettingsFunction,
+  //       permissionDeniedFunction: _openAppSettingsFunction);
+  //}
 
-  void _goToCustomSeeYouImport() async {
-    await Navigator.pushNamed(
-        context, CustomTurnpointFileImportRouteBuilder.routeName);
-    debugPrint("returned from CustomTurnpointFileImport");
-  }
+  // void _goToCustomSeeYouImport() async {
+  //   await Navigator.pushNamed(
+  //       context, CustomTurnpointFileImportRouteBuilder.routeName);
+  //   debugPrint("returned from CustomTurnpointFileImport");
+  // }
 
   Future<void> _openAppSettingsFunction() async {
     await openAppSettings();
@@ -268,9 +269,9 @@ class _SeeYouImportScreenState extends State<SeeYouImportScreen>
 
   void _pickFiles() async {
     bool hasUserAborted = true;
-    List<PlatformFile>? pickedFiles;
+     PlatformFile? pickedFile;
     try {
-      pickedFiles = await FilePicker.pickFiles(
+      pickedFile = await FilePicker.pickFile(
          type: FileType.custom, allowedExtensions: ['cup'],
         onFileLoading: (FilePickerStatus status) =>
             debugPrint(status.toString()),
@@ -285,8 +286,9 @@ class _SeeYouImportScreenState extends State<SeeYouImportScreen>
         darwinOptions: const DarwinOptions(
           assetRepresentationMode: DarwinAssetRepresentationMode.current,
         ),
+        webOptions: const WebOptions(),
       );
-      hasUserAborted = pickedFiles.length ==0;
+      hasUserAborted = pickedFile == null;
     } on PlatformException catch (e) {
       _logException('Unsupported operation: $e');
     } catch (e) {
@@ -295,7 +297,7 @@ class _SeeYouImportScreenState extends State<SeeYouImportScreen>
     if (!mounted) return;
 
     if (!hasUserAborted) {
-      _sendEvent(ImportTurnpointsFromFileEvent(File(pickedFiles!.first.path.toString())));
+      _sendEvent(ImportTurnpointsFromFileEvent(pickedFile!));
     } else {
       CommonWidgets.showInfoDialog(
           context: context,

@@ -3,6 +3,7 @@
 import 'dart:io';
 
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:flutter/foundation.dart' show kIsWasm;
 import 'package:permission_handler/permission_handler.dart';
 
 // Used to check for directory access for tunpoint(s) import/export to download directory
@@ -12,6 +13,7 @@ import 'package:permission_handler/permission_handler.dart';
 Future<void> checkFileAccess({required Function permissionGrantedFunction,
   required Function requestPermissionFunction,
   required Function permissionDeniedFunction}) async {
+  if (kIsWasm) return;
   if (Platform.isIOS ){
     permissionGrantedFunction();
     return;
